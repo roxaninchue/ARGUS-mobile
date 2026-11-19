@@ -94,7 +94,11 @@ object TaskMemory {
         "i", "is", "was", "be", "do", "did", "done", "again", "now", "please", "same", "before", "but", "can", "could", "would", "will", "just",
         "check", "retry", "try", "continue", "go", "ok", "okay", "yes", "thing", "time", "last", "as", "at", "up", "so", "what", "about", "signed",
         "logged", "login", "sign", "log", "have", "has", "its", "it's", "your", "we", "were", "where", "how", "going", "still", "back", "then",
-        "there", "here", "first", "second", "other", "already", "finish", "keep", "carry", "resume", "repeat", "like", "usual", "any", "news")
+        "there", "here", "first", "second", "other", "already", "finish", "keep", "carry", "resume", "repeat", "like", "usual", "any", "news",
+        // 2026-11-19 ("save Finn … flashcard fix to memory" was answered as the old NET103 flashcards task): words that sit in
+        // almost every request say nothing about which task is meant, so two of them no longer bind one.
+        "save", "store", "saved", "remember", "memory", "task", "tasks", "email", "mail", "name", "com", "net", "org", "www", "http", "https",
+        "make", "get", "give", "need", "want", "let", "know", "ask", "later", "today", "tomorrow", "pleas", "pls", "thanks", "fix", "new", "help")
 
     fun stem(w: String): String = when {
         w.length > 5 && w.endsWith("ing") -> w.dropLast(3)
@@ -140,8 +144,13 @@ object TaskMemory {
         val best = scored.filter { it.second > 0 }.maxWithOrNull(compareBy<Pair<Rec, Int>> { it.second }.thenBy { it.first.updated })
         if (k == Kind.NEW) {
             // A short line that points back ("book the Marlin one", "play it") is a reference when one word names a task.
-            val pointer = pronounRe.containsMatchIn(text) && text.trim().split(Regex("\\s+")).size <= 10
-            return if (best != null && (best.second >= 2 || (pointer && best.second >= 1))) Resolution(k, best.first, score = best.second) else Resolution(k, null)
+            // 2026-11-19: a long new request names an old task only when most of its words are that task's (3+ and over half),
+            // never on two shared words; a short pointer ("book the Marlin one") still binds on one.
+            val nWords = text.trim().split(Regex("\\s+")).size
+            val pointer = pronounRe.containsMatchIn(text) && nWords <= 10
+            val q = words(text).size.coerceAtLeast(1)
+            val named = best != null && ((nWords <= 10 && best.second >= 2) || (best.second >= 3 && best.second * 2 > q))
+            return if (best != null && (named || (pointer && best.second >= 1))) Resolution(k, best.first, score = best.second) else Resolution(k, null)
         }
         if (best != null) return Resolution(k, best.first, sub, best.second)
         val recent = all.filter { now - it.updated <= RECENT_MS }.ifEmpty { return Resolution(k, null, sub) }
@@ -174,7 +183,8 @@ object TaskMemory {
     /** The system-prompt block for a resolved reference ("" when nothing was resolved). */
     fun block(r: Resolution?): String {
         val t = r?.rec ?: return ""
-        val sb = StringBuilder("\nTASK MEMORY (the user is referring back to an earlier task; continue THIS one, don't start over or ask what they mean): ")
+        val sb = StringBuilder(if (r.kind == Kind.NEW) "\nTASK MEMORY (an earlier task that may relate to this message; the message itself comes first): "
+            else "\nTASK MEMORY (the user is referring back to an earlier task; continue THIS one, don't start over or ask what they mean): ")
         sb.append("goal \u201c").append(t.goal.take(300)).append("\u201d; state: ").append(t.state.name.lowercase().replace('_', ' '))
         if (t.surface != Surface.NONE) sb.append("; it was done in ").append(surfaceName(t.surface))
             .append(". Keep using that same surface (sign-ins live there); never switch to another surface for this task unless the user asks")
@@ -191,7 +201,7 @@ object TaskMemory {
             Kind.AGAIN -> sb.append(". Do the same task again")
             Kind.THAT_ONE -> sb.append(". \u2018That one\u2019 means something from this task's findings")
             Kind.STATUS -> sb.append(". Answer how it stands from this record")
-            Kind.NEW -> sb.append(". Their words name this task")
+            Kind.NEW -> sb.append(". Their words seem to name this task; if their message asks for something else, do what it asks and ignore this record")
         }
         return sb.append(".").toString()
     }

@@ -2971,6 +2971,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             job = scope.launch(ctxTag + taint + CallState().element()) { runLoop() }
         }
 
+        /** 2026-11-19: the chat lane sees only a few turns, so it also gets the rolling summary and the pinned task. */
+        fun liteMemo(): String = (if (Settings.longChat) LongChat.summaryBlock(LongChat.State(lcSummary, lcUpto)) else "") + GoalPin.block(turnGoal)
+
         /** v0.41.0: what the chat lane reads (the newest turns in its context window), without building the full prompt. */
         fun liteHistory(): JSONArray {
             val base = ctxFrom.coerceIn(0, history.length())
@@ -3382,7 +3385,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: TaskMemory.resolve", e); null }
                 turnTaskId = turnRef?.rec?.id
                 turnRef?.let { r -> if (r.kind == TaskMemory.Kind.SIGNED_IN) turnSignedIn = r.rec?.needsSignIn.orEmpty() }
-                turnRef?.rec?.let { r -> if (r.state != TaskMemory.State.ACTIVE) TaskMemoryStore.put(r.copy(state = TaskMemory.State.ACTIVE, updated = System.currentTimeMillis())) }
+                // 2026-11-19: a NEW message that only seems to name an old task no longer brings it back to ACTIVE.
+                turnRef?.takeIf { it.kind != TaskMemory.Kind.NEW }?.rec?.let { r -> if (r.state != TaskMemory.State.ACTIVE) TaskMemoryStore.put(r.copy(state = TaskMemory.State.ACTIVE, updated = System.currentTimeMillis())) }
                 resumeGoal = null
                 var nudgeCount = 0
                 var rewroteClaim = false
@@ -3583,8 +3587,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     promptGroups = groupsOn.toSet()
                     var req = kotlinx.coroutines.withContext(Dispatchers.Default) {
                         if (lite) { if (SharedPersona.applies(Settings.personaId) && SharedPersona.get() != null)
-                            SharedPersona.prepend(ChatLane.messages(liteHistory(), lastUserText(), SharedPersona.contextLine(null, ""), Settings.greetName(), TurnContextSource.block(lastUserText()) + liteQuery()))
-                        else ChatLane.messages(liteHistory(), lastUserText(), personaText(), Settings.greetName(), TurnContextSource.block(lastUserText()) + liteQuery()) } else requestMessages() }
+                            SharedPersona.prepend(ChatLane.messages(liteHistory(), lastUserText(), SharedPersona.contextLine(null, ""), Settings.greetName(), TurnContextSource.block(lastUserText()) + liteQuery() + liteMemo()))
+                        else ChatLane.messages(liteHistory(), lastUserText(), personaText(), Settings.greetName(), TurnContextSource.block(lastUserText()) + liteQuery() + liteMemo()) } else requestMessages() }
                     // Orient loop, step 1 (context → orientation): where the phone is, sent with the first call only, never saved.
                     val orientNow = !lite && !orientSent && orientNote.isNotEmpty()
                     if (orientNow) { req.put(JSONObject().put("role", "user").put("content", orientNote)); orientSent = true }
