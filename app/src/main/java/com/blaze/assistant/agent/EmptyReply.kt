@@ -28,7 +28,7 @@ object EmptyReply {
     const val TRIES = 3
 
     private val think = Regex("<(think|thought|thinking)>[\\s\\S]*?(</\\1>|$)", RegexOption.IGNORE_CASE)
-    private val follow = Regex("<{1,2}/?follow[- ]?ups?:[^>]*>{0,2}", RegexOption.IGNORE_CASE)
+    private val follow = FollowUpMarker.ANY   // any spelling of the chips marker (2026-11-19)
 
     /** The words a person would see from a model message's content (reasoning tags and follow-up chips removed). */
     fun visible(content: Any?): String {

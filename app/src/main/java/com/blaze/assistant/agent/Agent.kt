@@ -59,8 +59,6 @@ data class ChatMessage(val id: Long, val role: Role, val text: String, val files
 /** Splits a raw reply into what's shown, hidden reasoning (<think> tags) and follow-up suggestions. */
 object ReplyParts {
     private val thinkRe = Regex("<(think|thought|thinking)>([\\s\\S]*?)(</\\1>|$)", RegexOption.IGNORE_CASE)
-    // Tolerant: "<<follow-ups: a | b>>", "<</follow-ups: a | b>>", "<follow ups: a|b>", "<<followups:a|b" at the end.
-    private val fuRe = Regex("<{1,2}\\s*/?\\s*follow[\\s_-]?ups?\\s*:([\\s\\S]*?)(>{1,2}|$)", RegexOption.IGNORE_CASE)
 
     data class Parts(val text: String, val thinking: String, val followups: List<String>)
 
@@ -75,14 +73,10 @@ object ReplyParts {
         val thinking = (listOf(clean.thinking) + thinkRe.findAll(raw).map { it.groupValues[2].trim() }).filter { it.isNotBlank() }.joinToString("\n\n")
         // v0.45.3: Autopilot's hidden <<done>> / <<continue>> marker is never shown, spoken or kept (a half-typed one waits).
         var text = AutoContinue.strip(thinkRe.replace(raw, ""), final)
-        val fu = fuRe.find(text)
-        val followups = fu?.takeIf { it.groupValues[2].isNotEmpty() || (final && it.groupValues[1].contains('|')) }?.groupValues?.get(1)
-            ?.split('|')?.map { it.trim().trim('"', '-', '•', ' ', '<', '>', '/') }?.filter { it.isNotEmpty() && ChipGate.allowed(it) }?.take(3) ?: emptyList()
-        if (fu != null) text = text.substring(0, fu.range.first)
-        // Hide a half-typed "<<follow-ups" / "</follow" while streaming.
-        val cut = text.lastIndexOf('<')
-        if (cut >= 0 && text.length - cut < 18 && Regex("^<{1,2}\\s*/?\\s*(f(o(l(l(o(w[\\s_-]?(u(ps?)?)?)?)?)?)?)?)?$", RegexOption.IGNORE_CASE).matches(text.substring(cut).trimEnd()))
-            text = text.substring(0, cut)
+        // 2026-11-19: the follow-up marker (any near-miss spelling) and every other <<…>> control marker (FollowUpMarker).
+        val fu = FollowUpMarker.split(text, final)
+        text = fu.text
+        val followups = fu.chips.filter { ChipGate.allowed(it) }.take(3)
         return Parts(text.trim(), thinking, followups)
     }
 }

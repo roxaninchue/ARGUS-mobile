@@ -22,7 +22,7 @@ object ScheduleTruth {
     private val itemRe = Regex("""(\d{2}:\d{2}(?:\u2013\d{2}:\d{2})?|all day) "([^"]+)"((?: \([^)]*\))*)""")
     private val nextRe = Regex("""^next after that day \(not that day\): \w{3} \d{1,2} \w{3} (?:\d{2}:\d{2}(?:\u2013\d{2}:\d{2})? )?(.+)$""")
     private val emptyRe = Regex("""(?i)\b(nothing(?: is)? (?:scheduled|planned|on|booked|lined up)|no (?:events|plans|items|reminders|meetings|classes)\b|you(?:'re| are) (?:free|clear)|(?:an? )?(?:empty|clear|free) (?:day|schedule|calendar)|nothing (?:for )?today)""")
-    private val follow = Regex("""<{1,2}/?follow[- ]?ups?:[^>]*>{0,2}""", RegexOption.IGNORE_CASE)
+    private val follow = FollowUpMarker.ANY   // any spelling of the chips marker (2026-11-19)
     private val dayWord = Regex("""(?i)\b(mon|tue|wed|thu|fri|sat|sun)\w*\b|\btomorrow\b|\bnext\b""")
 
     /** The dated schedule lines with items in a [context] block (empty when the block has none). */
