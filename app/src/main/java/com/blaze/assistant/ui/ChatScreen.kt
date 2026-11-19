@@ -138,6 +138,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Calendar
+import com.blaze.assistant.ui.argus.kit.NotchBackdrop
+import com.blaze.assistant.ui.argus.kit.NotchOverlay
+import dev.chrisbanes.haze.haze
 
 /** What the message list draws: a message, or a folded run of steps. [pos] = its place in a run from one side (v0.24.0). */
 internal sealed class Item(val key: String) {
@@ -336,7 +339,7 @@ fun ChatScreen() {
         if (fresh && listenReq > 0 && mood == Mood.IDLE) onMic()
     }
 
-    // Call Blaze: full-screen voice call.
+    // Call ARGUS: full-screen voice call.
     var inCall by remember { mutableStateOf(false) }
     val callPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) inCall = true else Toast.makeText(ctx, "${BrandName.NAME} needs the microphone for calls.", Toast.LENGTH_SHORT).show()
@@ -375,6 +378,8 @@ fun ChatScreen() {
     var plusOpen by remember { mutableStateOf(false) }
     // P1-SH-01: the notch's mode pill and the top bar's New sheet (ARGUS shell only).
     var notchOpen by remember { mutableStateOf(false) }
+    // 2026-11-19: the page under the open pill is blurred through this (NotchBackdrop); the chat sheet is its source only while open
+    val notchHaze = remember { dev.chrisbanes.haze.HazeState() }
     var newOpen by remember { mutableStateOf(false) }
     // Owner 16 Nov 2026: the Inbox sheet (bell) and its unread count
     var inboxOpen by remember { mutableStateOf(false) }
@@ -581,7 +586,7 @@ fun ChatScreen() {
     val chatBody = nav.tab == ChatNav.CHAT || nav.inProjectChat
     // 0.52.3: the floating composer is on Home too (Hark's "Message ARGUS"); a message from Home opens the Chat tab.
     val composerShown = chatBody || nav.tab == ChatNav.HOME || ChatNav.isMode(nav.tab)
-    // 0.46.0 Blaze Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
+    // 0.46.0 ARGUS Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
     val stage by com.blaze.assistant.stage.StageStore.state.collectAsState()
     val stageActive = com.blaze.assistant.stage.StageStore.enabled && nav.tab == ChatNav.CHAT && !nav.inProjectChat && showing.isEmpty()
     // Living UI 0.2.1: landscape Living on the main chat trades the top bars, the Chat | Living switch and the full-width
@@ -759,6 +764,7 @@ fun ChatScreen() {
         // The full chat sheet: top pills, thread, Hold to talk / Type / Photo.
         Box(Modifier.fillMaxSize().graphicsLayer { translationY = (1f - p) * sheetH
                 }
+            .then(if (notchOpen) Modifier.haze(notchHaze) else Modifier)
             .then(if (swipeMode && p < 1f) Modifier.background(c.paper).glassBackground(c.dark) else Modifier)) {
         // v0.45.8: Design is its own full-screen view: no chat top bar over its canvas.
         val designFull = DesignNav.fullScreen(showing, nav)
@@ -1109,15 +1115,20 @@ fun ChatScreen() {
         // P1-SH-01: the notch, centred in the ARGUS top bar and drawn over the page so its pill drops over it. A tap outside
         // or Back closes the pill; pulling on past it opens Voice (the call screen).
         if (!landRail && showing != "design" && !(ChatExpand.on && chatBody)) {
+            // 2026-11-19 (owner): open = the page softly blurred (or scrimmed) with the glance layer on it; Back or the edge
+            // swipe = back to the normal page of this mode, like tapping the mode you're in (NotchOverlay)
+            val modeNow = if (ChatNav.isMode(nav.tab)) nav.tab else ChatNav.CHAT
             if (notchOpen) {
-                Box(Modifier.fillMaxSize().clickable(remember { MutableInteractionSource() }, indication = null) { notchOpen = false })
-                BackHandler { notchOpen = false }
+                NotchBackdrop(notchHaze, onClose = { notchOpen = NotchOverlay.outside(modeNow).open })
+                BackHandler { notchOpen = false; exitView(); composer.closeSpotlight() }
             }
             Box(Modifier.fillMaxWidth().statusBarsPadding().padding(top = ((com.blaze.assistant.ui.argus.kit.ShellSpec.TOP_BAR_DP - com.blaze.assistant.ui.argus.kit.KitSpec.TARGET) / 2).dp),
                 contentAlignment = Alignment.TopCenter) {
-                com.blaze.assistant.ui.argus.kit.NotchSwitcher(mode = if (ChatNav.isMode(nav.tab)) nav.tab else ChatNav.CHAT, open = notchOpen,
+                com.blaze.assistant.ui.argus.kit.NotchSwitcher(mode = modeNow, open = notchOpen,
                     onOpen = { notchOpen = it; if (it) newOpen = false },
-                    onMode = { m -> exitView(); composer.closeSpotlight(); go(navNow().switchTab(m)) },
+                    // another mode switches as before; the mode you're in closes the pill and goes back to its normal page
+                    onMode = { m -> val st = NotchOverlay.tap(modeNow, m); exitView(); composer.closeSpotlight()
+                        if (st.effect == NotchOverlay.Effect.SWITCH) go(navNow().switchTab(st.mode)) },
                     onVoice = { startCall() })
             }
         }

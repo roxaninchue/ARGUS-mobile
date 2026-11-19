@@ -1,3 +1,13 @@
+## Unreleased: notch glance layer (branch feat/notch-glance)
+
+2026-11-19, owner spec.
+- **Notch overlay:** opening the mode pill from the notch now lightly blurs the page behind it (Haze, 12 dp, with a 10 % scrim); with Reduced motion, a low-RAM phone, Android < 12 or the thermal governor's say-so it is a plain 32 % scrim instead. Tapping another mode switches as before; tapping the mode you're in, Back or the edge swipe closes the pill and returns to that mode's normal page (`ui/argus/kit/NotchOverlay.kt`, `NotchGlance.kt`).
+- **Glance layer** on the blurred page: a digital clock with the date, the next reminder or alarm within a day, the task in progress (a running helper, else an active goal), and Stage cards that were taken off the Stage. Tap a card to put it back on the Stage; pin or remove any item. Reads only what the app already holds; no network calls (`glance/`).
+- **Stage shelf:** a card that leaves the Stage (closed, pushed out by the widget cap, cleared by a layout) is kept on a shelf of 6 (pinned ones kept beyond that); a timer comes back ready with Start, never running (`stage/StageShelf.kt`, `StageStore`).
+- **Argus reaches it:** one `glance` tool (list, pin, unpin, remove, restore) in the Stage tool group, sent while the Stage or its shelf has cards.
+- **docs/argus-reach.md:** audit of where Argus doesn't reach yet and the plan for surface specialists.
+- Tests: NotchOverlayTest 6, StageShelfTest 5, GlanceTest 9 (JVM, kotlinc); not run: Gradle, Android compile of ChatScreen, Compose rendering, a phone.
+
 ## Unreleased: language wheel, heads-ups pause, faster intro, forms for planning
 
 2026-11-19, owner's list.

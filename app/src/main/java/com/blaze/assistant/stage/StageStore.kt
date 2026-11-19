@@ -14,6 +14,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.blaze.assistant.R
 import com.blaze.assistant.agent.Settings
+import com.blaze.assistant.glance.Glance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,10 +25,14 @@ import org.json.JSONObject
 /**
  * 0.46.0 the Stage on the phone: the state (saved, so it survives the app closing), the stage_* tools, and the timers.
  * Timers are real: an exact alarm at the phase's end (fires with the app closed), a lock-screen countdown notification
- * (Android's own chronometer, so nothing in Blaze ticks while the screen is off), and "time's up" / "break" alerts.
+ * (Android's own chronometer, so nothing in ARGUS ticks while the screen is off), and "time's up" / "break" alerts.
  */
 object StageStore {
     private const val KEY = "stage_state_v1"; private const val TKEY = "stage_timers_v1"
+    /** 2026-11-19: cards taken off the Stage ([StageShelf]), for the notch's glance layer. */
+    private const val SKEY = "stage_shelf_v1"
+    private val _shelf = MutableStateFlow<List<ShelfCard>>(emptyList())
+    val shelf: StateFlow<List<ShelfCard>> = _shelf
     private val _state = MutableStateFlow(StageState())
     val state: StateFlow<StageState> = _state
     private val _timers = MutableStateFlow<Map<String, TimerState>>(emptyMap())
@@ -46,6 +51,7 @@ object StageStore {
             val dm = ctx.resources.displayMetrics
             _state.value = StageTools.decode(Settings.str(KEY, ""), if (dm.heightPixels > 0) dm.widthPixels.toFloat() / dm.heightPixels else 0f)
             _timers.value = decodeTimers(Settings.str(TKEY, ""))
+            _shelf.value = StageShelf.decode(Settings.str(SKEY, ""))
             // Timers that ended while the app was closed catch up (exact end times, no drift).
             val now = System.currentTimeMillis()
             _timers.value = _timers.value.mapValues { StageTimer.advance(it.value, now).first }
@@ -58,7 +64,7 @@ object StageStore {
     /** Width / height of the Stage as last laid out (saved with the layout, to spot a turned screen on restore). */
     @Volatile var aspect: Float = 0f
 
-    private fun save() { try { Settings.setStr(KEY, StageTools.encode(_state.value, aspect)); Settings.setStr(TKEY, encodeTimers(_timers.value)) } catch (_: Throwable) { } }
+    private fun save() { try { Settings.setStr(KEY, StageTools.encode(_state.value, aspect)); Settings.setStr(TKEY, encodeTimers(_timers.value)); Settings.setStr(SKEY, StageShelf.encode(_shelf.value)) } catch (_: Throwable) { } }
 
     fun encodeTimers(m: Map<String, TimerState>): String = JSONArray(m.values.map { it.toJson() }).toString()
     fun decodeTimers(s: String?): Map<String, TimerState> = try { JSONArray(s ?: "[]").let { a -> (0 until a.length()).map { TimerState.from(a.getJSONObject(it)) }.associateBy { it.id } } } catch (_: Exception) { emptyMap() }
@@ -71,11 +77,42 @@ object StageStore {
         _state.value = r.state
         val gone = before.items.map { it.id }.toSet() - r.state.items.map { it.id }.toSet()
         if (gone.isNotEmpty()) { gone.forEach { id -> _timers.value[id]?.let { t -> app?.let { cancel(it, t) } } }; _timers.value = _timers.value - gone }
+        // 2026-11-19: whatever leaves the Stage goes on the shelf (the glance layer behind the notch shows it)
+        if (gone.isNotEmpty()) _shelf.value = StageShelf.took(_shelf.value, before.items.filter { it.id in gone }, System.currentTimeMillis(), shelfKeep())
         save()
         return r
     }
 
     fun back(): Boolean = dispatch(StageAction.Back).handled
+
+    // ---------------- the shelf (2026-11-19, the notch's glance layer) ----------------
+
+    /** Glance ids the user or ARGUS pinned: they stay on the shelf past [StageShelf.CAP]. */
+    @Volatile var shelfKeep: () -> Set<String> = {
+        try { Glance.Prefs.from(Settings.str(Glance.PREFS_KEY, "")).pins.filter { it.startsWith(Glance.STAGE) }.toSet() }
+        catch (_: Throwable) { emptySet() }
+    }
+
+    @Synchronized fun shelfDrop(id: String): Boolean {
+        val before = _shelf.value
+        _shelf.value = StageShelf.drop(before, id)
+        if (_shelf.value.size == before.size) return false
+        save(); return true
+    }
+
+    /** Put a shelf card back on the Stage as a widget (a timer comes back ready with Start, never running). */
+    @Synchronized fun restore(ctx: Context, id: String): String {
+        init(ctx)
+        if (!enabled) return "The Stage is off in Settings › Look & feel."
+        val bare = id.removePrefix("stage:")
+        val card = _shelf.value.firstOrNull { it.id == bare } ?: return "Nothing called $id on the shelf."
+        _shelf.value = StageShelf.drop(_shelf.value, card.id)
+        val r = dispatch(StageAction.Show(card.kind, card.props - "autostart", StageMode.WIDGET))
+        val item = r.id?.let { r.state.byId(it) }
+        if (item != null && item.kind == StageKind.TIMER) replaceTimer(ctx, item)
+        save()
+        return if (r.handled) "${card.title} is back on the Stage. id=${r.id}" else r.note
+    }
 
     // ---------------- timers ----------------
 

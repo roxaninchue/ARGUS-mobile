@@ -110,6 +110,7 @@ object ToolRegistry {
         one("money", d(READ, "add_bill" to WRITE_LOCAL, "add_receipt" to WRITE_LOCAL, "remove_bill" to DELETE, "enable" to SETTINGS, "disable" to SETTINGS))
         one("servers", d(WRITE_LOCAL, "list" to READ, "logs" to READ))   // keeps named servers running on the phone
         one("clipboard", d(WRITE_LOCAL, "get" to READ, "get_image" to READ, "history" to READ))
+        one("glance", d(WRITE_LOCAL, "list" to READ))   // 2026-11-19: the notch's glance layer (pins / removals are local and undoable)
         one("life_todo", d(WRITE_LOCAL, "list" to READ))   // 2026-11-18: Life to-do items (home/LifeTodo); a removed item is a small, local edit
 
         // ---------------- DELETE: something is gone ----------------

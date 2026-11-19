@@ -125,9 +125,9 @@ object ToolRouter {
             r("""\b(widgets?|home ?board|home tab|on (?:my )?home|board|dashboard|track(?:ing)?|follow(?:ing)?|keep an eye|scores?|fixtures|new videos|uploads|crypto|bitcoin|exchange rate|stock price)\b"""),
             { it.startsWith("home_widget_") || it == com.blaze.assistant.home.LifeTodo.TOOL }),
         // 0.46.0 Blaze Stage: change, move, close and arrange cards and the chat / top bar / reply bar on the chat Stage.
-        Group("stage", "the chat Stage: update / move / close cards (timer, music, video, quiz, flashcards, plan), hide or dock the chat, top bar, reply bar, layouts",
+        Group("stage", "the chat Stage: update / move / close cards (timer, music, video, quiz, flashcards, plan), hide or dock the chat, top bar, reply bar, layouts; the glance layer behind the notch (glance: list, pin, unpin, remove, put a card back)",
             r("""\b(stage|hero|widgets?|mini ?player|timer|pomodoro|countdown|stopwatch|focus (?:mode|session|timer)|study (?:for )?\d+|\d+ ?(?:min|mins|minutes|hours?) (?:of )?(?:study|focus|work)|pause (?:it|the timer|the music)|make (?:it|the \w+) (?:big|bigger|small|smaller)|hide (?:the )?(?:chat|top bar|reply bar)|show (?:the )?(?:chat|top bar)|reset (?:the )?layout|move (?:the )?\w+ (?:to|up|down))\b"""),
-            { it.startsWith("stage_") }),
+            { it.startsWith("stage_") || it == "glance" }),
         // P1-TM-05: the team's jobs queue (TeamHooks.tools adds these).
         Group("jobs", "team jobs: add, delegate, close, update, retry a job; a bot's recent jobs",
             r("""\b(jobs?|tasks?|to-?dos?|assign\w*|delegate|hand (?:it|this) to|queue|due|deadline)\b"""),

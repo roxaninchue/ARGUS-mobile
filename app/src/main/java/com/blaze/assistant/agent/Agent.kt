@@ -16,6 +16,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.sync.withLock
+import com.blaze.assistant.glance.GlanceStore
+import com.blaze.assistant.glance.GlanceTool
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -263,7 +265,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             } else Notifier.question(question)
         }
         if (Voice.lastTurnByVoice && Voice.shouldSpeak()) Voice.speak(question)
-        // Autopilot: the card stays up for two minutes in case they're there, then Blaze decides itself.
+        // Autopilot: the card stays up for two minutes in case they're there, then ARGUS decides itself.
         val ap = Modes.autopilot
         // v0.38.0: Autopilot is the default now, so the user is often right there: two minutes before deciding alone.
         val a = kotlinx.coroutines.withTimeoutOrNull(if (ap) 120_000L else 15 * 60_000L) { d.await() }
@@ -1400,8 +1402,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         Learning.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.update.Updater.tool())
         t.put(com.blaze.assistant.ui.Views.tool())
-        // 0.46.0 Blaze Stage: heroes / widgets / layout on the chat itself (Stage first; open_view only when asked or the Stage can't host it).
+        // 0.46.0 Stage: heroes / widgets / layout on the chat itself (Stage first; open_view only when asked or the Stage can't host it).
         if (com.blaze.assistant.stage.StageStore.enabled) com.blaze.assistant.stage.StageTools.definitions().forEach { t.put(it) }
+        t.put(GlanceTool.def())   // 2026-11-19: the notch's glance layer (list / pin / unpin / remove / restore)
         t.put(SelfKnowledge.tool())
         t.put(Awareness.tool())
         t.put(com.blaze.assistant.proactive.Jarvis.tool())
@@ -3326,7 +3329,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val groupsOn = HashSet<String>().apply {
                     if (bulk) addAll(ToolRouter.groups.map { it.id })
                     addAll(ToolPick.ALWAYS_GROUPS); addAll(ToolRouter.usedIn(history))
-                    if (com.blaze.assistant.stage.StageStore.state.value.items.isNotEmpty()) add("stage")
+                    if (com.blaze.assistant.stage.StageStore.let { s -> s.state.value.items.isNotEmpty() || s.shelf.value.isNotEmpty() }) add("stage")   // + the glance layer's shelf
                     turnExec = ExecRoute.Exec.ANY
                 }
                 timer.mark("route"); if (agentId == null) StartTrace.stage("route")
@@ -5359,6 +5362,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         com.blaze.assistant.media.GalleryOps.run(app, args) }
                     name in com.blaze.assistant.stage.StageTools.NAMES -> { add(Role.STEP, com.blaze.assistant.stage.StageTools.step(name, args))
                         com.blaze.assistant.stage.StageStore.run(app, name, args) }
+                    name == GlanceTool.NAME -> { add(Role.STEP, GlanceTool.step(args)); GlanceStore.run(app, args) }
                     name == com.blaze.assistant.mediaapps.MusicTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.MusicTools.describe(args))
                         com.blaze.assistant.mediaapps.MusicTools.run(app, args) }
                     name == com.blaze.assistant.mediaapps.VideoTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.VideoTools.describe(args))
