@@ -23,7 +23,7 @@ object PrefCoerce {
     /** Every pref the app reads as a boolean. */
     val BOOL_KEYS = setOf("a11y_explainer_seen", "a11y_seen", "adaptive_think", "app_lock", "auto_hide_panel", "auto_learn", "auto_titles", "bg_agents", "blazequery", "bq_gateway", "call_bye",
         "call_earpiece", "call_greet", "chat_lane", "classroom_on", "compact_panel", "confirm_risky", "dash_auto", "dash_lan", "digest_mode", "duo_on",
-        "duo_split", "duo_team", "evening_brief", "fast_lane", "fastest_first", "fold_answers", "followups", "habit_offers", "haptics", "home_headsups",
+        "duo_split", "duo_team", "evening_brief", "fast_lane", "fastest_first", "fold_answers", "followups", "habit_offers", "haptics", "headsups_paused", "home_headsups",
         "home_look_glass_v31", "home_onboarded", "home_wifi_only", "jarvis_camera", "jarvis_screen", "key_catch_armed", "key_catcher", "learn_approval",
         "learned_router", "life_logs_record", "long_chat", "look_music", "look_still", "low_data", "mh_teach_intro_seen", "mind_review", "mode_bar",
         "morning_brief", "myvoice_keep_slow", "onboarded", "orb_pinned", "particles", "pc_inbox", "persona_merged_051", "phone_control", "proactive", "proactive_speak",

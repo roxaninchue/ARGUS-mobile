@@ -85,6 +85,7 @@ import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.drawArgusMark
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 /** The metallic ARGUS logo (res/drawable-nodpi/argus_logo.webp), decoded off the main thread once. */
 object ArgusLogoCache {
@@ -121,7 +122,7 @@ fun ArgusLogo(width: Dp, modifier: Modifier = Modifier) {
 
 /**
  * First run, owner 2026-11-18 ([SpaceOnboarding]): [SpaceOnboarding.Step.INTRO] the logo clip on black ([IntroStep]),
- * [SpaceOnboarding.Step.LANGUAGE] the language pill on the space view, [SpaceOnboarding.Step.SIGN_IN] the account card
+ * [SpaceOnboarding.Step.LANGUAGE] the language wheel on the space view, [SpaceOnboarding.Step.SIGN_IN] the account card
  * (account lock: no skipping). [accountCard] is the existing account sign-in UI. The setup downloads run in the background
  * (SetupRunner); their screen ([SpaceSetupScreen]) opens from Life's "Finishing setup" card.
  */
@@ -168,102 +169,83 @@ fun SpaceFirstRunBeforeLock(onDone: () -> Unit) {
 }
 
 /**
- * Owner 2026-11-18: the language step is one clean pill in the middle of the screen with the language in use (the
- * phone's to begin with, [com.blaze.assistant.i18n.AppLang.initial] at start). A tap grows it into a box, up and down at once, holding every
- * language by its own name in a smooth list (no typing); picking one switches the app and folds the box back into the
- * pill. The round arrow at the far right of the screen, apart from the pill, moves on. Springs, the space view's colours.
+ * Owner 2026-11-19: the language step is a wheel on the page itself (no pop-out box). The language in use sits in a framed
+ * middle row with two languages above and two below ([LanguagePick.side]; one each side on a short window), fading out
+ * towards the edges, and the rest scroll in. It snaps row by row, and whichever language settles in the frame becomes the
+ * app's language ([LanguagePick.centred]). A tap on a row scrolls it into the frame. The round arrow at the far right,
+ * level with the frame, moves on. The space view's colours; the language list is [com.blaze.assistant.i18n.AppLang.PICKABLE].
  */
 @Composable
 private fun LanguageStep(onNext: () -> Unit) {
     val look = SpaceLook.Dark
     val sel = com.blaze.assistant.i18n.AppLang.code.value
     val langs = com.blaze.assistant.i18n.AppLang.PICKABLE
-    var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
-    val motion = com.blaze.assistant.ui.MotionTokens.enabled
-    val t by androidx.compose.animation.core.animateFloatAsState(if (open) 1f else 0f,
-        if (motion) androidx.compose.animation.core.spring(dampingRatio = 0.82f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
-        else androidx.compose.animation.core.snap(), label = "language")
-    androidx.activity.compose.BackHandler(enabled = open) { open = false }
     val pick: (String) -> Unit = { code ->
-        com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, code)
-        com.blaze.assistant.i18n.AppLang.apply(code); com.blaze.assistant.ui.FontPick.refresh()
-        open = false
+        if (code != com.blaze.assistant.i18n.AppLang.code.value) {
+            com.blaze.assistant.agent.Settings.setStr(com.blaze.assistant.i18n.AppLang.PREF, code)
+            com.blaze.assistant.i18n.AppLang.apply(code); com.blaze.assistant.ui.FontPick.refresh()
+        }
     }
     val short = com.blaze.assistant.ui.common.WindowUi.short()
+    val side = LanguagePick.side(short)
     val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
+    val motion = com.blaze.assistant.ui.MotionTokens.enabled
     val density = androidx.compose.ui.platform.LocalDensity.current
-    var pillW by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(200f) }
+    val rowPx = with(density) { LanguagePick.ROW_H.dp.toPx() }
+    val list = androidx.compose.foundation.lazy.rememberLazyListState(LanguagePick.index(sel, langs.map { it.code }))
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    // Settled: the row in the frame is the app's language
+    androidx.compose.runtime.LaunchedEffect(list) {
+        androidx.compose.runtime.snapshotFlow { list.isScrollInProgress }.collect { moving ->
+            if (!moving) langs.getOrNull(LanguagePick.centred(list.firstVisibleItemIndex, list.firstVisibleItemScrollOffset, rowPx, langs.size))?.let { pick(it.code) }
+        }
+    }
     BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().cutoutSafe()) {
-        val w = maxWidth.value; val h = maxHeight.value
-        // The heading over the pill (it steps back while the list is open)
-        Column(Modifier.align(Alignment.TopCenter).padding(top = if (short) 10.dp else 44.dp, start = 24.dp, end = 24.dp)
-            .graphicsLayer { alpha = 1f - 0.7f * t.coerceIn(0f, 1f) }, horizontalAlignment = Alignment.CenterHorizontally) {
+        val w = maxWidth.value
+        val wheelW = LanguagePick.width(w)
+        Column(Modifier.align(Alignment.TopCenter).padding(top = if (short) 10.dp else 44.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
             ArgusLogo(if (short) 56.dp else 96.dp)
             Spacer(Modifier.height(if (short) 8.dp else 16.dp))
             Text(tr("Choose your language"), textAlign = TextAlign.Center, style = SpaceType.headline(if (short) 22.sp else 28.sp, look.ink))
         }
-        Text(tr("{0} always replies in the language you write in.", BrandName.UPPER), textAlign = TextAlign.Center,
-            style = SpaceType.body(14.sp, look.sub),
-            modifier = Modifier.align(Alignment.Center).offset(y = (LanguagePick.PILL_H / 2f + 30f).dp).padding(horizontal = 40.dp)
-                .graphicsLayer { alpha = 1f - t.coerceIn(0f, 1f) })
-        // The pill: the language in use, centred
-        val name = com.blaze.assistant.i18n.AppLang.lang(sel).name
-        Row(Modifier.align(Alignment.Center).height(LanguagePick.PILL_H.dp)
-            .widthIn(min = LanguagePick.pillMin(w).dp, max = LanguagePick.pillMax(w).dp)
-            .onSizeChanged { pillW = with(density) { it.width.toDp().value } }
-            .graphicsLayer { alpha = if (t > 0.02f) 0f else 1f }
-            .clip(SpaceShapes.pill).background(look.card).border(1.dp, look.hair, SpaceShapes.pill)
-            .clickable(enabled = !open, onClickLabel = tr("Change language")) { open = true }
-            .semantics { role = androidx.compose.ui.semantics.Role.Button; contentDescription = tr("Language: {0}", name) }
-            .testTag(SpaceTags.LANGUAGE_PILL).padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("globe", 18), null, Modifier.size(18.dp), tint = look.sub)
-            Spacer(Modifier.width(10.dp))
-            Text(name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                style = SpaceType.body(19.sp, look.ink, FontWeight.Medium).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(name)))
-            Spacer(Modifier.width(10.dp))
-            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("chevron-down", 16), null, Modifier.size(16.dp), tint = look.sub)
-        }
-        // The continue button: its own round button at the far right, level with the pill
-        SpaceRoundButton(tr("Continue"), onNext, Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp)
-            .graphicsLayer { alpha = 1f - t.coerceIn(0f, 1f) }, tag = SpaceTags.LANGUAGE_NEXT, size = LanguagePick.NEXT.dp, fill = look.primaryFill) {
-            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
-                Modifier.size(22.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }, tint = look.primaryInk)
-        }
-        // The open list: grows out of the pill (up and down), then the rows fade in
-        if (t > 0.001f) {
-            val target = LanguagePick.box(h / 2f, h, LanguagePick.contentHeight(langs.size))
-            val top = LanguagePick.lerp(h / 2f - LanguagePick.PILL_H / 2f, target.top, t)
-            val bh = LanguagePick.lerp(LanguagePick.PILL_H, target.height, t)
-            val bw = LanguagePick.lerp(pillW, LanguagePick.width(w), t)
-            val shape = androidx.compose.foundation.shape.RoundedCornerShape(LanguagePick.lerp(LanguagePick.PILL_H / 2f, 26f, t.coerceIn(0f, 1f)).dp)
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f * t.coerceIn(0f, 1f)))
-                .clickable(interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                    indication = null, onClickLabel = tr("Close")) { open = false })
-            val list = androidx.compose.foundation.lazy.rememberLazyListState()
-            val at = langs.indexOfFirst { it.code == sel }.coerceAtLeast(0)
-            androidx.compose.runtime.LaunchedEffect(open) {
-                if (open) list.scrollToItem(LanguagePick.firstRow(at, (target.height / LanguagePick.ROW_H).toInt()))
-            }
-            Box(Modifier.align(Alignment.TopCenter).offset(y = top.dp).size(bw.dp, bh.dp).clip(shape).background(look.menu)
-                .border(1.dp, look.hair, shape).testTag(SpaceTags.LANGUAGE_LIST)) {
-                androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize().graphicsLayer { alpha = ((t - 0.35f) / 0.65f).coerceIn(0f, 1f) },
-                    state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = LanguagePick.PAD.dp)) {
-                    items(langs.size, key = { langs[it].code }) { i ->
-                        val l = langs[i]
-                        val on = l.code == sel
-                        Row(Modifier.fillMaxWidth().height(LanguagePick.ROW_H.dp)
-                            .selectable(selected = on, enabled = open, role = androidx.compose.ui.semantics.Role.RadioButton) { pick(l.code) }
-                            .padding(horizontal = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(l.name, modifier = Modifier.weight(1f), maxLines = 1,
-                                style = SpaceType.body(18.sp, if (on) look.ink else look.sub).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(l.name),
-                                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal))
-                            if (on) androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Check, contentDescription = null,
-                                tint = look.ink, modifier = Modifier.size(20.dp))
-                        }
+        // The frame: the middle row, the language in use
+        Box(Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.ROW_H.dp).clip(SpaceShapes.pill).background(look.card)
+            .border(1.dp, look.hair, SpaceShapes.pill).testTag(SpaceTags.LANGUAGE_FRAME))
+        // The wheel: every language by its own name, snapping into the frame
+        androidx.compose.foundation.lazy.LazyColumn(Modifier.align(Alignment.Center).size(wheelW.dp, LanguagePick.height(short).dp)
+            .testTag(SpaceTags.LANGUAGE_WHEEL)
+            .semantics { contentDescription = tr("Language: {0}", com.blaze.assistant.i18n.AppLang.lang(sel).name) },
+            state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = (side * LanguagePick.ROW_H).dp),
+            flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(list)) {
+            items(langs.size, key = { langs[it].code }) { i ->
+                val l = langs[i]
+                val on = l.code == sel
+                Box(Modifier.fillMaxWidth().height(LanguagePick.ROW_H.dp)
+                    .graphicsLayer {
+                        val info = list.layoutInfo
+                        val item = info.visibleItemsInfo.firstOrNull { it.index == i }
+                        alpha = if (item == null) 0f else LanguagePick.fade(
+                            kotlin.math.abs(item.offset + item.size / 2f - (info.viewportStartOffset + info.viewportEndOffset) / 2f) / rowPx, side)
                     }
+                    .selectable(selected = on, role = androidx.compose.ui.semantics.Role.RadioButton) {
+                        scope.launch { if (motion) list.animateScrollToItem(i) else list.scrollToItem(i) }
+                    }
+                    .padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
+                    Text(l.name, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                        style = SpaceType.body(if (on) 19.sp else 17.sp, if (on) look.ink else look.sub).copy(fontFamily = com.blaze.assistant.ui.Type.sansFor(l.name),
+                            fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal))
                 }
             }
+        }
+        Text(tr("{0} always replies in the language you write in.", BrandName.UPPER), textAlign = TextAlign.Center,
+            style = SpaceType.body(14.sp, look.sub),
+            modifier = Modifier.align(Alignment.Center).offset(y = (LanguagePick.height(short) / 2f + 24f).dp).padding(horizontal = 40.dp))
+        // The continue button: its own round button at the far right, level with the frame
+        SpaceRoundButton(tr("Continue"), onNext, Modifier.align(Alignment.CenterEnd).padding(end = LanguagePick.NEXT_EDGE.dp),
+            tag = SpaceTags.LANGUAGE_NEXT, size = LanguagePick.NEXT.dp, fill = look.primaryFill) {
+            androidx.compose.material3.Icon(com.blaze.assistant.ui.argus.icons.Lucide.icon("arrow-right", 22), null,
+                Modifier.size(22.dp).graphicsLayer { scaleX = if (rtl) -1f else 1f }, tint = look.primaryInk)
         }
     }
 }

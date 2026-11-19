@@ -138,14 +138,14 @@ class SpaceShotsTest {
         rule.onNodeWithText("Working").assertIsDisplayed()
     }
 
-    // owner 2026-11-18: the language step is one pill on the space view with a round continue button apart from it
+    // owner 2026-11-19: the language step is a wheel on the space view (framed middle row) with a round continue button apart from it
     @Test fun language() {
         val b = capture("space-onboarding-language") {
             SpaceOnboardingScreen(SpaceOnboarding.Step.LANGUAGE, signedIn = false, onNext = {}, accountCard = {})
         }
-        rule.onNodeWithTag(SpaceTags.LANGUAGE_PILL, useUnmergedTree = true).assertExists()
+        rule.onNodeWithTag(SpaceTags.LANGUAGE_FRAME, useUnmergedTree = true).assertExists()
+        rule.onNodeWithTag(SpaceTags.LANGUAGE_WHEEL, useUnmergedTree = true).assertExists()
         rule.onNodeWithTag(SpaceTags.LANGUAGE_NEXT, useUnmergedTree = true).assertExists()
-        rule.onNodeWithTag(SpaceTags.LANGUAGE_LIST, useUnmergedTree = true).assertDoesNotExist()
         assertTrue("the language step is on the space view", lum(px(b, 4f, 4f)) < 3 * 60)
     }
 

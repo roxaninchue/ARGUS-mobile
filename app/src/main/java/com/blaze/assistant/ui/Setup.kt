@@ -92,7 +92,7 @@ object ComeBack {
 
 /*
  * 0.52.3: the old three-page first run (SetupFlow, its permission checklist and SetupRow) is gone. First run is
- * space/SpaceOnboarding.kt (owner 2026-11-18: the logo clip, the language pill, sign-in; the downloads then finish by
+ * space/SpaceOnboarding.kt (owner 2026-11-18: the logo clip, the language wheel, sign-in; the downloads then finish by
  * themselves, setup/SetupRunner.kt). Permissions are asked when a task needs them (PermissionGate), from the "Set up ARGUS"
  * checklist in Life (setup/SetupChecklist.kt) or from Settings › System Preferences › Permissions.
  */

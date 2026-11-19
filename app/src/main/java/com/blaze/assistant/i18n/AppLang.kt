@@ -76,7 +76,7 @@ object AppLang {
     }
 
     /**
-     * The language the app opens in (and onboarding's language pill shows first, owner 2026-11-18): the saved choice,
+     * The language the app opens in (and onboarding's language wheel opens on, owner 2026-11-18): the saved choice,
      * else the phone's when ARGUS has it, else English.
      */
     fun initial(saved: String?, deviceTag: String?): String = if (saved.isNullOrBlank()) fromDevice(deviceTag) else lang(saved).code

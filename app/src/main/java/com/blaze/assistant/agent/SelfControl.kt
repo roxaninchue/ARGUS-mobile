@@ -130,7 +130,7 @@ object SelfControl {
         "screen_memory" to "screen memory", "confirm_risky" to "confirm risky taps", "voice_loop" to "conversation mode",
         "show_taps" to "show where I tap", "sounds" to "sounds", "compact_panel" to "compact panel",
         "wake_gate" to "wake sound gate", "wake_screen_off" to "listen with screen off", "wake_charging" to "listen while charging", "wake_pocket" to "pause in pocket",
-        "digest_mode" to "save non-urgent heads-ups for the briefs", "evening_brief" to "evening brief", "morning_brief" to "morning brief", "home_headsups" to "heads-ups about new things on Home", "speed_mode" to "speed mode (no animations)",
+        "digest_mode" to "save non-urgent heads-ups for the briefs", "evening_brief" to "evening brief", "morning_brief" to "morning brief", "home_headsups" to "heads-ups about new things on Home", "headsups_paused" to "pause every message you start on your own (heads-ups)", "speed_mode" to "speed mode (no animations)",
         "tool_cache" to "reuse identical web lookups", "speculative_fetch" to "prefetch top search results on Wi-Fi", "learned_router" to "learned tool router",
         "adaptive_think" to "adaptive thinking budget", "token_ledger" to "token ledger")
 

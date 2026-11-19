@@ -1,3 +1,12 @@
+## Unreleased: language wheel, heads-ups pause, faster intro, forms for planning
+
+2026-11-19, owner's list.
+- **Language wheel** (`ui/space/SpaceOnboarding.kt` LanguageStep, `LanguagePick`): the pop-out box is gone. The language in use sits in a framed middle row with two languages above and below (one each side on a short window), fading towards the edges; the rest scroll in on the same page. It snaps row by row, and the language that settles in the frame becomes the app's language. A tap on a row scrolls it into the frame. Tags `space_language_frame` / `space_language_wheel` replace the pill and list tags.
+- **Heads-ups paused** (`proactive/ProactiveDial.kt` `PAUSED_KEY` = `headsups_paused`, Settings › Notifications & proactivity › Pause heads-ups): one switch stops every message ARGUS starts on its own: background checks (and the briefs they carry), Home news, follow-up nudges, the getting-to-know-you questions, screen and camera glances, routine ideas, battery offers and call offers. No model call is spent on them while paused. Replies, finished tasks, reminders, the user's own routines and questions during a task they started still notify, and a follow-up the user said yes to still reminds them. Switching it off brings everything back; the dial underneath keeps its setting. ARGUS can flip it too (`set_setting headsups_paused`).
+- **Faster intro** (`setup/FirstRun.kt`, `setup/FirstRunIntro.kt`, `Agent.introduce`): the checklist and the introduction arrive together. In English there is no model call: the introduction is posted at once. Other languages get one model reply with no tools (so no tool step), written from the English text; the fixed introduction is posted if none comes in 30 s.
+- **Smart UI** (`ui/RichReplies.kt` PROMPT): one line saying a form, choices or a tool is welcome when a reply needs several details or is planning something, as an option.
+- Tests: ProactiveDialTest +2, SetupChecklistTest (intro tests rewritten), SpaceLogicTest / OnboardingLandscapeTest (wheel), SpaceShotsTest (tags), RichRepliesTest +1. Rename guard baseline lowered (17773).
+
 ## Unreleased: flashcards phase 3, card sources, typed answers checked by the model, study reminder
 
 2026-11-18 night, last part of the owner's flashcards redesign.

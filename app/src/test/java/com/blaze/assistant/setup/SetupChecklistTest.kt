@@ -99,37 +99,44 @@ class SetupChecklistTest {
         assertEquals(0, s.all().count { it.type == WidgetTypes.TODO })
     }
 
-    @Test fun theIntroductionIsTheModelsWithAFixedFallback() {
+    /** Owner 2026-11-19, faster intro: English needs no model call; another language gets one reply written from the fixed one. */
+    @Test fun theIntroductionIsFixedInEnglishAndOneReplyElsewhere() {
+        assertFalse(FirstRunIntro.needsModel("en")); assertFalse(FirstRunIntro.needsModel("en-GB")); assertFalse(FirstRunIntro.needsModel(" EN_us "))
+        assertTrue(FirstRunIntro.needsModel("fr")); assertTrue(FirstRunIntro.needsModel("bem")); assertTrue(FirstRunIntro.needsModel("sw"))
+        assertFalse("nothing picked: English", FirstRunIntro.needsModel(""))
         val k = FirstRunIntro.kickoff(listOf("Connect your calendar", "Allow notifications"), "French")
         assertTrue(k.startsWith("[A note from the ARGUS app, not a message from the user"))
         assertTrue(k.contains("Connect your calendar; Allow notifications"))
-        assertTrue(k.contains("\u201cSet up ARGUS\u201d checklist") && k.contains("Life tab"))
+        assertTrue(k.contains("\u201cSet up ARGUS\u201d checklist is already at the top of their Life tab"))
         assertTrue(k.contains("They picked French as the app's language."))
-        assertTrue(k.contains("Introduce yourself"))
+        assertTrue(k.contains("Introduce yourself to the user in French"))
+        assertTrue("written from the fixed introduction", k.endsWith(FirstRunIntro.FALLBACK))
+        assertFalse("no tool to call: the checklist is already there", k.contains(com.blaze.assistant.home.LifeTodo.TOOL))
         // docs/MODEL-FIRST.md: plain facts, no shouting
         for (w in listOf("ALWAYS", "NEVER", "MUST", "EVERY")) assertFalse(w, Regex("\\b$w\\b").containsMatchIn(k))
-        // ARGUS makes the checklist itself, with its tool, in the same turn as the introduction
-        assertTrue(k.contains("life_todo tool (action setup)"))
-        assertEquals(setOf(com.blaze.assistant.home.LifeTodo.TOOL), FirstRunIntro.TOOLS)
-        assertTrue(FirstRunIntro.kickoff(emptyList(), "").contains("They picked English"))
+        val m = FirstRunIntro.messages(emptyList(), "")
+        assertEquals(1, m.length()); assertEquals("user", m.getJSONObject(0).getString("role"))
+        assertTrue(m.getJSONObject(0).getString("content").contains("They picked English"))
         assertTrue(FirstRunIntro.FALLBACK.contains("Set up ARGUS") && FirstRunIntro.FALLBACK.contains("Life"))
         assertEquals("Hello there", FirstRunIntro.pick("  Hello there ", "fb"))
         assertEquals("fb", FirstRunIntro.pick("   ", "fb"))
         assertEquals("fb", FirstRunIntro.pick(null, "fb"))
-        assertTrue(FirstRunIntro.TIMEOUT_MS in 10_000L..120_000L)
+        assertTrue(FirstRunIntro.TIMEOUT_MS in 10_000L..60_000L)
     }
 
-    /** Owner's spec: after sign-in ARGUS introduces itself and makes the checklist with life_todo; the app's list is only the fallback. */
-    @Test fun argusMakesTheChecklistInTheIntroTurn() {
+    /** Owner 2026-11-19: the checklist and the introduction arrive together; English skips the model, others send no tools. */
+    @Test fun theChecklistAndTheIntroductionArriveTogether() {
         fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
         val fr = src("setup/FirstRun.kt")
         val welcome = fr.substring(fr.indexOf("fun welcome("), fr.indexOf("fun sync("))
-        assertTrue("the hidden turn carries life_todo", welcome.contains("tools = FirstRunIntro.TOOLS"))
-        assertTrue("the app's checklist only after the turn, before the message", welcome.contains("beforePost = {") && welcome.contains("ensureChecklist(app)"))
-        assertFalse("no checklist before ARGUS's turn", welcome.substring(0, welcome.indexOf("Agent.introduce")).contains("HomeBoard.checklist"))
+        assertTrue("English: no model call", welcome.contains("if (!FirstRunIntro.needsModel(lang.code)) null else"))
+        assertTrue("one reply, no tools", welcome.contains("LlmClient.complete(FirstRunIntro.messages(open, lang.english), null, null, null,"))
+        assertTrue("the checklist just before the message", welcome.contains("beforePost = {") && welcome.contains("ensureChecklist(app)"))
+        assertFalse("no hidden agent turn", welcome.contains("tools = "))
         val agent = src("agent/Agent.kt")
-        assertTrue(agent.contains("val joinNames = widenNames + pinTools +"))
-        assertTrue(agent.contains("it.pinTools = tools"))
-        assertTrue(agent.indexOf("beforePost()") < agent.indexOf("FirstRunIntro.pick(text, fallback)"))
+        val intro = agent.substring(agent.indexOf("fun introduce("), agent.indexOf("fun messagesOf("))
+        assertFalse("no Session, no tool loop", intro.contains("Session(") || intro.contains(".send("))
+        assertTrue(intro.indexOf("write()") < intro.indexOf("beforePost()"))
+        assertTrue(intro.indexOf("beforePost()") < intro.indexOf("FirstRunIntro.pick(text, fallback)"))
     }
 }

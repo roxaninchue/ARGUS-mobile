@@ -73,6 +73,7 @@ object FollowUps {
         val ctx = app ?: return
         if (JarvisLogic.Level.of(Settings.str("jarvis_level", "eager")) == JarvisLogic.Level.OFF) return
         if (msgs.any { it.self }) markReplied(pkg, conv)
+        if (Proactive.paused) return   // owner 2026-11-19: heads-ups paused, so no plan is looked for (no model call)
         val theirs = msgs.filter { !it.self && FollowUpLogic.looksLikePlan(it.text) }
         if (theirs.isEmpty()) return
         val key = "$pkg|$conv"
@@ -122,7 +123,7 @@ object FollowUps {
     private fun notifyAsk(ctx: Context, i: Item) {
         val text = FollowUpLogic.askText(i)
         // Unreleased after 0.52.3: a plan Argus noticed on its own is a heads-up the dial judges (Off / Low drop it).
-        if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.FOLLOW_UP, false)) return
+        if (!ProactiveDial.allows(Proactive.level, ProactiveDial.Source.FOLLOW_UP, false, Proactive.paused)) return
         val why = ProactiveDial.Why.newPlan(i.person, i.app)
         try { com.blaze.assistant.agent.Agent.recordHeadsUp(text, why) } catch (_: Throwable) { }
         if (Proactive.quietNow()) return
@@ -180,6 +181,7 @@ object FollowUps {
         if (app == null) return
         val now = System.currentTimeMillis()
         val i = all().firstOrNull { FollowUpLogic.shouldNudge(it, pkg, now) } ?: return
+        if (Proactive.paused && !(i.status == Status.GOING || i.reminderSet)) return   // paused: kept for later, not marked nudged
         update(i.id) { it.copy(nudgedAt = now) }
         scope.launch {
             delay(2_500)   // let the app come up first

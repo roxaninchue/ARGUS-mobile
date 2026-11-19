@@ -400,52 +400,46 @@ object SpaceOnboarding {
 }
 
 /**
- * Owner 2026-11-18: the language step's pill and the list it opens into, as numbers (dp) so tests pin the geometry. The
- * list grows out of the pill, up and down at once, and slides to stay on screen.
+ * Owner 2026-11-19: the onboarding language wheel (SpaceOnboarding's LanguageStep). The language in use sits in a framed
+ * middle row with [side] languages above and below; the rest scroll in on the same page and snap row by row.
  */
 object LanguagePick {
-    const val PILL_H = 56f
     const val ROW_H = 52f
-    const val PAD = 8f
-    const val MARGIN = 24f
     const val MAX_W = 340f
     /** The continue button's size and its gap from the screen's right edge. */
     const val NEXT = 56f
     const val NEXT_EDGE = 24f
 
-    fun contentHeight(rows: Int): Float = rows.coerceAtLeast(1) * ROW_H + 2 * PAD
+    /** Languages shown above and below the frame: two, one on a short window (a phone held sideways). */
+    fun side(short: Boolean): Int = if (short) 1 else 2
 
-    data class Box(val top: Float, val height: Float)
+    /** The wheel's height: the frame and [side] rows each way. */
+    fun height(short: Boolean): Float = (2 * side(short) + 1) * ROW_H
 
     /**
-     * The open list: [content] tall at most and never shorter than the pill, centred on the pill's centre [anchorY] (it
-     * grows up and down equally) and moved to stay [MARGIN] inside [avail].
+     * The wheel's width: never reaching the continue button at the screen's edge (nor its twin space on the other side),
+     * at most [MAX_W], down to a 280 dp window (split screen); a long name ellipsizes before it touches the arrow.
      */
-    fun box(anchorY: Float, avail: Float, content: Float): Box {
-        val maxH = (avail - 2 * MARGIN).coerceAtLeast(PILL_H)
-        val h = content.coerceAtLeast(PILL_H).coerceAtMost(maxH)
-        val lo = MARGIN.coerceAtMost(avail - MARGIN - h)
-        val top = (anchorY - h / 2f).coerceIn(lo, (avail - MARGIN - h).coerceAtLeast(lo))
-        return Box(top, h)
+    fun width(avail: Float): Float = (avail - 2 * (NEXT + NEXT_EDGE + 8f)).coerceAtMost(MAX_W).coerceAtLeast(96f)
+
+    /** Where the wheel opens: the language in use (the first one when it isn't listed). */
+    fun index(code: String, codes: List<String>): Int = codes.indexOf(code).coerceAtLeast(0)
+
+    /**
+     * The row in the frame, from the list's scroll position: the first row at the frame ([first]) unless it has moved more
+     * than half a row ([offsetPx] of [rowPx]) past it. Kept inside [count].
+     */
+    fun centred(first: Int, offsetPx: Int, rowPx: Float, count: Int): Int {
+        if (count <= 0) return 0
+        return (first + if (rowPx > 0f && offsetPx > rowPx / 2f) 1 else 0).coerceIn(0, count - 1)
     }
 
-    /**
-     * The pill's widest: it never reaches the continue button at the screen's edge (nor its twin space on the other side),
-     * down to a 280 dp window (split screen); the name ellipsizes before the pill touches the arrow.
-     */
-    fun pillMax(avail: Float): Float = (avail - 2 * (NEXT + NEXT_EDGE + 8f)).coerceAtMost(MAX_W).coerceAtLeast(96f)
-
-    /** The pill's narrowest: 150 dp, never wider than [pillMax] (a narrow window would otherwise push it into the arrow). */
-    fun pillMin(avail: Float): Float = 150f.coerceAtMost(pillMax(avail))
-
-    /** The list's width: the room there is, at most [MAX_W]. */
-    fun width(avail: Float): Float = (avail - 2 * MARGIN).coerceAtMost(MAX_W).coerceAtLeast(PILL_H)
-
-    /** The first row to show when it opens, so the language in use sits in the middle. */
-    fun firstRow(index: Int, visibleRows: Int): Int = (index - visibleRows / 2).coerceAtLeast(0)
-
-    /** Between the pill ([t] = 0) and the open list ([t] = 1). */
-    fun lerp(a: Float, b: Float, t: Float): Float = a + (b - a) * t
+    /** A row's opacity [rows] away from the frame's centre: full in the frame, fading out past [side] rows. */
+    fun fade(rows: Float, side: Int): Float {
+        val r = rows.coerceAtLeast(0f)
+        if (r <= 0.5f) return 1f
+        return (1f - (r - 0.5f) / (side + 0.5f) * 0.85f).coerceIn(0f, 1f)
+    }
 }
 
 /**
@@ -565,10 +559,10 @@ object SpaceTags {
     const val ONBOARDING = "space_onboarding"
     const val ONBOARDING_LOGO = "space_onboarding_logo"
     const val ONBOARDING_START = "space_onboarding_start"
-    /** Owner 2026-11-18: the opening clip, the language pill, the list it opens into, and the round continue button. */
+    /** Owner 2026-11-18: the opening clip; owner 2026-11-19: the language wheel, its frame, and the round continue button. */
     const val ONBOARDING_INTRO = "space_onboarding_intro"
-    const val LANGUAGE_PILL = "space_language_pill"
-    const val LANGUAGE_LIST = "space_language_list"
+    const val LANGUAGE_FRAME = "space_language_frame"
+    const val LANGUAGE_WHEEL = "space_language_wheel"
     const val LANGUAGE_NEXT = "space_language_next"
     const val SETUP = "space_setup"
     const val SETUP_PROGRESS = "space_setup_progress"
@@ -585,7 +579,7 @@ object SpaceTags {
 
     val FIXED = listOf(ROOT, BACKDROP, TOP_BAR, LEFT_BUTTON, PILL, AVATAR, HOME, HERO, ANSWER, PROJECTS_CARD, SUGGESTIONS, NEW_CHAT,
         SETUP_CARD, SIGN_IN, COMPOSER, COMPOSER_FIELD, COMPOSER_PLUS, COMPOSER_MIC, COMPOSER_SEND, SPOTLIGHT, SPOTLIGHT_FIELD, SCRIM,
-        PROFILE, PROFILE_SEARCH, ONBOARDING, ONBOARDING_LOGO, ONBOARDING_START, ONBOARDING_INTRO, LANGUAGE_PILL, LANGUAGE_LIST, LANGUAGE_NEXT, SETUP, SETUP_PROGRESS, SETUP_CONTINUE,
+        PROFILE, PROFILE_SEARCH, ONBOARDING, ONBOARDING_LOGO, ONBOARDING_START, ONBOARDING_INTRO, LANGUAGE_FRAME, LANGUAGE_WHEEL, LANGUAGE_NEXT, SETUP, SETUP_PROGRESS, SETUP_CONTINUE,
         PROJECTS, PROJECT_NEW)
 }
 
