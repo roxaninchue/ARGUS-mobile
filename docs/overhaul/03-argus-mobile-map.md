@@ -87,7 +87,7 @@ lines; 451 JVM test files, 3 androidTest files; 57 bundled skills, 10 built-in s
 | Argus Phone browser engine (single-page task surface) | `browser/phone/*` (`phone_*` tools, PhoneDriver, DomCache) |
 | Site apps (PWA-like) | `siteapps/*` |
 | App Store (curated APKs, VirusTotal check) | `appstore/*`, `store/catalog.json` (+ `build_cat.py`, `verify.py`, `STORE_CLEANROOM.md`) |
-| Music / Video / Movies / Gallery | `mediaapps/*` (media3 MusicService, VideoActivity, Downloads, Lyrics, Argus DJ, Clip Studio, BeatLab), `mediaapps/store/*` + `:storeapi` module (StoreSource), required private `:youtube` (no build without it, 2026-11-19), `movies/*` (QuickJS provider sandbox), `media/*` (Gallery) |
+| Music / Video / Movies / Gallery | `mediaapps/*` (media3 MusicService, VideoActivity, Downloads, Lyrics, Argus DJ, Clip Studio, BeatLab), `mediaapps/store/*` + `:storeapi` module (StoreSource), required in-repo `:youtube` (youtube/, rebuilt here 2026-11-19; no build without it), `movies/*` (QuickJS provider sandbox), `media/*` (Gallery) |
 | Desktop link / local dashboard | `link/DesktopLink.kt` (QR pairing, pinned cert), `link/PcMessages.kt`, `dashboard/*` (127.0.0.1:8787 web chat) |
 | Updates | `update/*` (in-app APK updates, VersionFeed) |
 
@@ -280,7 +280,7 @@ become one (winner named) · **Service** = stays server-side, app gets a client.
 |---|---|
 | Process rules | Commit straight to `main`; every commit title ends with `[skip ci]`; **no build until the owner says build**. Every CI push is a 15–25 min round and workflows cancel-in-progress, so batch. Source of truth GitLab `blazeinchue/argus-mobile` (87806466); CI runs on the GitHub mirror (GitLab CI out of credits; `.gitlab-ci.yml` left alone). Never push/merge on GitHub. |
 | Identity | Never change `applicationId` (`com.argus.assistant`, owned by MR !26 `feat/argus-identity-signing`) or signing; never touch `keystore/` or the "Rotate signing key" CI step; release key lives outside the repo (v3 lineage). Keep the Kotlin package name too (prefs, components, tests pin it). |
-| Build | Gradle 8.7, AGP with `compileSdk`/`targetSdk` 34, `minSdk` 26, JVM 17 (CI also JDK 21), Compose BOM 2024.09; `gradle.properties` memory settings must stay (7 GB runners OOM otherwise); Go 1.26 builds `wgproxy`/`blazerouter` before Gradle; `:youtube` required private module (no build without it, 2026-11-19). ABIs arm64-v8a + armeabi-v7a. |
+| Build | Gradle 8.7, AGP with `compileSdk`/`targetSdk` 34, `minSdk` 26, JVM 17 (CI also JDK 21), Compose BOM 2024.09; `gradle.properties` memory settings must stay (7 GB runners OOM otherwise); Go 1.26 builds `wgproxy`/`blazerouter` before Gradle; `:youtube` required in-repo module (youtube/, rebuilt here 2026-11-19; no build without it). ABIs arm64-v8a + armeabi-v7a. |
 | Data compatibility | `blaze.db` schema is shared with Desktop/CLI → only side tables; prefs must stay backward compatible; old setting keys keep defaults. |
 | Deployed wire names | `blaze-auto`, `X-Argus-*`, `blaze-auth`, `ai.blaze-app.workers.dev` stay until a two-name redeploy. |
 | Licence | Argus is PolyForm Noncommercial 1.0.0. Bot HQ code is MIT (fine to port with notice in THIRD_PARTY_NOTICES) but its **Grok Bot artwork/icons are not** — don't copy. A-team has no LICENSE (same owner; add one before copying code). PRoot (GPL-2.0) ships as a separate executable (keep it that way); no GPL code linked into the app (NewPipe precedent). |

@@ -2,6 +2,8 @@
 
 2026-11-19, owner's target. Kotlin package, Gradle `namespace` and `applicationId` are `com.argus.assistant` (were `com.blaze.assistant`); project name Argus. Source folders moved with `git mv` (1,505 files), `Blaze*` classes and files renamed to `Argus*` (ArgusApp, ArgusDocs, ArgusThread, ArgusDb, ArgusQuery, ArgusRouter…), manifest, ProGuard rules, CI test names and docs follow. Kept on purpose: server names (`X-Blaze-*`, `blaze_*`, gateway hosts), `blaze://` links, `blazerouter/`, and every key or file name already on phones. The new applicationId installs **beside** the old Blaze app rather than updating it. Scripts: `tools/rename/` (rename.py, post.py, commit.py, NOTES.md). Rename guard baseline 17,829 → 2,642.
 
+- **YouTube plug-in rebuilt in this repo** (owner, 2026-11-19): the private plug-in repo is unreachable, so `youtube/` (Gradle `:youtube`, `com.argus.assistant.mediaapps.youtube.YouTubeSource`) was written from scratch here: YouTube search (videos, more pages), video details and captions, plain-url streams from the first InnerTube app client whose stream really downloads, the quality picker, refresh of expired links. JVM tests on fixtures plus a live smoke test (`YT_LIVE=1`). CI needs no plug-in checkout or secret any more; there is still no build without YouTube.
+
 ## Unreleased: follow-up chips read any spelling of their marker, no control marker shows as text
 
 2026-11-19, Finn's screenshot: a reply ended with the raw text "<<follow-offs: Turn on calendar access | Make tonight 2 hours | Start a 25-min timer now>>".

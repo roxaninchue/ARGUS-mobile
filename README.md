@@ -11,19 +11,24 @@ Chat, voice ("Hey Blaze"), floating orb, and phone control through an Accessibil
 
 Local and CI builds are signed with the Android SDK's own debug key. No signing key lives in this repo: releases are re-signed outside it with the private Argus release key and a v3 lineage from the old key (rotated in 0.45.15; the old key is public and burned).
 
-### YouTube plug-in (private, required)
-The YouTube Store plug-in (Gradle module `:youtube`) lives in a separate private repo
-(ask the owner for access), not here. `youtube/` is in
-`.gitignore`. **There is no build without it** (owner, 2026-11-19): Gradle stops with an error when
-`youtube/build.gradle.kts` is missing.
-- **Local dev with YouTube:** clone the private YouTube plug-in repo as `youtube/` in this folder
-  (needs access), run `tools/rename/youtube-plugin.sh` (renames its package to `com.argus.assistant` until the plug-in
-  repo is renamed upstream), then `./gradlew :storeapi:test :youtube:test assembleRelease`. Commit plug-in changes inside `youtube/`
-  (its own repo).
-- **CI (GitHub):** every workflow that runs Gradle checks the plug-in repo's `main` out into `youtube/` with the Actions
-  secret `BLAZE_MOBILE_TOKEN` (fine-grained PAT, Contents: read), then runs `tools/rename/youtube-plugin.sh`. No secret
-  (forks) or a failed checkout fails the build.
-- **Daily check:** retired (0.45.18). Blaze-mobile keeps its own `sync.yml`.
+### YouTube plug-in (in this repo, required)
+The YouTube Store plug-in (Gradle module `:youtube`) lives in this repo under `youtube/` (rebuilt here on 2026-11-19 after
+the old private plug-in repo became unreachable; owner's call to make it public). **There is no build without it**
+(owner, 2026-11-19): `settings.gradle.kts` always includes it and stops with an error if `youtube/build.gradle.kts` is
+missing, and the app always depends on it.
+- **What it is:** `com.argus.assistant.mediaapps.youtube.YouTubeSource`, a `StoreSource` (`:storeapi`) found by class name
+  (`StoreSources.plugin(StoreSources.YOUTUBE_CLASS)`). Its own small InnerTube client (no third-party extractor, no GPL):
+  search (videos only, more pages), video details + caption tracks, plain-url streams from the first app client whose
+  stream really downloads, the quality picker, refresh of expired urls. Pure Kotlin/JVM; org.json is compileOnly
+  (Android has it). Its R8 keep rule ships in its jar (`META-INF/proguard/youtube.pro`).
+- **Tests:** `./gradlew :storeapi:test :youtube:test` (JVM, fixtures in `youtube/src/test/resources/youtube`, no network).
+  `YT_LIVE=1 ./gradlew :youtube:test --tests '*YouTubeLiveSmokeTest'` hits real YouTube (search must work; a bot-checked
+  player is a warning unless `YT_LIVE_STRICT=1`).
+- **Which YouTube the Stores use:** since v0.33.0 the Music / Video Store chips, "Download by link" and the media tools use
+  the app's built-in `YouTubeStoreSource` (`mediaapps/store/`); the plug-in is compiled, tested and shipped in every APK
+  and reachable by class name, ready to take over if that is ever switched.
+- **CI:** nothing extra: the plug-in comes with the checkout, no secret. `youtube-daily.yml` builds it daily and runs the
+  live smoke test.
 
 ## Layout
 - `agent/` – Agent loop, LlmClient (OpenAI-compatible), Providers, Settings, Memory, ChatStore, Secrets (Keystore encryption), LongChat (rolling summary, FTS chat search, artifacts), Mind + MindReview (one mind: journal, memories, context ladder, idle review)

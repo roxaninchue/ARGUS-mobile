@@ -171,9 +171,9 @@ No third-party code is bundled for these; Blaze calls their public APIs. Content
 - **Blender open movies** (Big Buck Bunny, Elephants Dream, Sintel, Tears of Steel, Cosmos Laundromat, Spring, Agent 327, Sprite Fright, Caminandes): © Blender Foundation / Blender Studio, CC BY (Agent 327: CC BY-ND; Spring: public domain mark) as stated on each archive.org item. https://studio.blender.org/films/
 - **LRCLIB** (https://lrclib.net): lyrics, looked up on demand, no key.
 
-## YouTube plug-in (v0.30.1, optional module `youtube/`)
+## YouTube plug-in (module `youtube/`, in this repo; rebuilt 2026-11-19)
 
-Blaze's own code (InnerTube JSON client); no third-party extractor. **NewPipeExtractor was not used:** it is GPL-3.0. Blaze-agent is licensed PolyForm Noncommercial 1.0.0 (LICENSE.md), which adds a non-commercial restriction GPL-3.0 forbids, and the APK bundles proprietary Google Play services / ML Kit libraries; a GPL-3.0 dependency would require the whole APK to be GPL-3.0. If the YouTube module moves to a private repo, it still must not pull in GPL code while it ships inside Blaze. Downloading from YouTube may breach YouTube's Terms of Service; the module is isolated so builds can leave it out (delete `youtube/`). Its source now lives in the private repo blazeinchue/Blaze-mobile and is only checked out into `youtube/` at build time; this public repo no longer contains it.
+Argus's own code (InnerTube JSON client over HttpURLConnection, org.json from Android); no third-party extractor. **NewPipeExtractor was not used:** it is GPL-3.0. This repo is licensed PolyForm Noncommercial 1.0.0 (LICENSE.md), which adds a non-commercial restriction GPL-3.0 forbids, and the APK bundles proprietary Google Play services / ML Kit libraries; a GPL-3.0 dependency would require the whole APK to be GPL-3.0. The module must not pull in GPL code. Downloading from YouTube may breach YouTube's Terms of Service. The plug-in was kept in a private repo for a while; on 2026-11-19 that repo became unreachable and the owner chose to rebuild the plug-in from scratch in this public repo (`youtube/`, under this repo's licence). Every build includes it (owner, 2026-11-19).
 
 ## Movies (v0.46.2)
 

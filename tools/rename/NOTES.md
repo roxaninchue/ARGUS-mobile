@@ -60,7 +60,7 @@ DuoAll20Test was checked by script to exist in main sources.
 - A GitHub build of this branch would release-sign it; build.yml was not edited (owner's "build"), and its shot-test
   filters (`com.blaze.assistant.ui.ShotsTest*` …) now match nothing; home-focus-check.yml / youtube-daily.yml /
   mobile-build.yml name the old package too.
-- :youtube (private Blaze-mobile) implements com.blaze.assistant.mediaapps.store.* from :storeapi; must be renamed with it.
+- :youtube (private Blaze-mobile) implemented com.blaze.assistant.mediaapps.store.* from :storeapi. Superseded 2026-11-19: rebuilt in this repo (below).
 - Persisted keys kept although a new applicationId starts with empty data: chosen so a later switch back to the old
   applicationId (or a data import) keeps working.
 
@@ -92,3 +92,28 @@ DuoAll20Test was checked by script to exist in main sources.
   rotation and every publish step stay off this branch (they are also gated on the upstream repo / main).
 - Still owed by the owner: assetlinks.json on blazeinchue.pages.dev (+ com.argus.assistant and the signing cert), the upstream
   plug-in rename (then drop the rewrite), whether the BLAZE_MOBILE_TOKEN secret exists on the GitHub mirror.
+
+## YouTube plug-in rebuilt in this repo (2026-11-19, owner decision; supersedes the build-time rewrite above)
+- The owner lost access to the account holding the private plug-in repo (lacksonkapapahue/Blaze-mobile); run #86 failed at
+  "YouTube plug-in token (required)". Owner's call: rebuild the plug-in from scratch inside argus-mobile, public.
+- youtube/ (Gradle :youtube, pure Kotlin/JVM, committed): package com.argus.assistant.mediaapps.youtube.
+  YtNet.kt (YtClient / YtClients: VISIONOS, ANDROID_VR, ANDROID, IOS stream clients + WEB for search; YtTransport +
+  HttpTransport over HttpURLConnection; YtApi: visitor_id, search, player, oEmbed, stream probe), YtParse.kt (video ids from
+  any link, search / continuation pages, player → StoreDetail with captions, choices: AAC/Opus, H.264+AAC ≤1080p,
+  progressive mp4, VP9+Opus .webm for uncovered heights; default 720p / best AAC), YouTubeSource.kt (object YouTubeSource :
+  StoreSource, id "youtube"; YouTubeEngine with client fallback + ~1.5 MB stream probe, refresh, describe).
+  Deps: api(:storeapi), kotlinx-coroutines-core 1.8.1, org.json compileOnly (Android) / testImplementation.
+  R8: META-INF/proguard/youtube.pro keeps YouTubeSource (reflection via StoreSources.plugin).
+- Tests: YtParseTest 11, YouTubeEngineTest 8 (fake transport, no network), YouTubeLiveSmokeTest (skipped unless YT_LIVE=1).
+  Local (Gradle 8.11.1, JDK 17, /workspace/tools): `:storeapi:test :youtube:test` green, 19/19. Live from the sandbox:
+  search 20 results + page 2 OK; player → "Sign in to confirm you're not a bot" for every client (sandbox IP), so streams
+  are not verified end-to-end here (same as the old plug-in; needs a phone).
+- App: StoreSourcesTest asserts StoreSources.plugin(YOUTUBE_CLASS) finds it. The Store chips still use the built-in
+  YouTubeStoreSource (v0.33.0) — not switched (owner's call).
+- Removed: plug-in checkout / required-token / rewrite steps in build.yml, youtube-daily.yml, home-focus-check, home-intro-check,
+  lowram-smoke, mobile-build, tools/ci/builds-repo/mobile-build.yml; tools/rename/youtube-plugin.sh; keep-blaze.txt entries
+  BLAZE_MOBILE_TOKEN and Blaze-mobile\b (replaced by a narrow Blaze-mobile-builds\b for the public builds-repo name);
+  youtube/ in .gitignore. Baseline ratcheted down. settings.gradle.kts still throws without youtube/build.gradle.kts.
+- youtube-daily.yml: no secret; runs on the old upstream repo or the mirror roxaninchue/ARGUS-mobile; build + dex check +
+  `YT_LIVE=1 ./gradlew :youtube:test --tests '*YouTubeLiveSmokeTest'` (stream refusal = warning unless YT_LIVE_STRICT=1).
+- Owner: the BLAZE_MOBILE_TOKEN secret on the mirror can be deleted; assetlinks.json is still owed.
