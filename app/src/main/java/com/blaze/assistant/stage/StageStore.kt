@@ -14,7 +14,9 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.blaze.assistant.R
 import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.glance.Glance
+import com.blaze.assistant.glance.ShelfDb
+import com.blaze.assistant.glance.ShelfSource
+import com.blaze.assistant.store.AndroidSql
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,10 +31,18 @@ import org.json.JSONObject
  */
 object StageStore {
     private const val KEY = "stage_state_v1"; private const val TKEY = "stage_timers_v1"
-    /** 2026-11-19: cards taken off the Stage ([StageShelf]), for the notch's glance layer. */
+    /** 2026-11-19: cards taken off the Stage ([StageShelf]), for the notch's glance layer. Round 1 kept them in this Settings string; moved into [shelfDb] once. */
     private const val SKEY = "stage_shelf_v1"
+    /** Owner, round 2: the shelf has no cap; every card is kept in its own SQLite file, read a page at a time. */
+    private const val SHELF_DB = "stage_shelf.db"
+    /** How many of the newest cards [shelf] holds: enough for "is there anything" and as the signal to re-read; never the whole shelf. */
+    const val SHELF_HEAD = 8
     private val _shelf = MutableStateFlow<List<ShelfCard>>(emptyList())
+    /** The newest [SHELF_HEAD] cards (changes whenever the shelf does). The whole shelf is [shelfSource], paged. */
     val shelf: StateFlow<List<ShelfCard>> = _shelf
+    @Volatile private var shelfDb: ShelfDb? = null
+    /** The whole shelf, newest first, a page at a time (the glance layer and the `glance` tool read it). */
+    val shelfSource: ShelfSource get() = shelfDb ?: ShelfSource.EMPTY
     private val _state = MutableStateFlow(StageState())
     val state: StateFlow<StageState> = _state
     private val _timers = MutableStateFlow<Map<String, TimerState>>(emptyMap())
@@ -40,7 +50,7 @@ object StageStore {
     @Volatile private var loaded = false
     @Volatile var app: Context? = null
 
-    /** The Stage on/off switch (Settings › Look & feel); off = Blaze never puts cards on the chat. */
+    /** The Stage on/off switch (Settings › Look & feel); off = ARGUS never puts cards on the chat. */
     val enabled: Boolean get() = try { Settings.bool("stage_on", true) } catch (_: Throwable) { true }
 
     fun init(ctx: Context) {
@@ -51,7 +61,7 @@ object StageStore {
             val dm = ctx.resources.displayMetrics
             _state.value = StageTools.decode(Settings.str(KEY, ""), if (dm.heightPixels > 0) dm.widthPixels.toFloat() / dm.heightPixels else 0f)
             _timers.value = decodeTimers(Settings.str(TKEY, ""))
-            _shelf.value = StageShelf.decode(Settings.str(SKEY, ""))
+            openShelf(ctx)
             // Timers that ended while the app was closed catch up (exact end times, no drift).
             val now = System.currentTimeMillis()
             _timers.value = _timers.value.mapValues { StageTimer.advance(it.value, now).first }
@@ -64,7 +74,7 @@ object StageStore {
     /** Width / height of the Stage as last laid out (saved with the layout, to spot a turned screen on restore). */
     @Volatile var aspect: Float = 0f
 
-    private fun save() { try { Settings.setStr(KEY, StageTools.encode(_state.value, aspect)); Settings.setStr(TKEY, encodeTimers(_timers.value)); Settings.setStr(SKEY, StageShelf.encode(_shelf.value)) } catch (_: Throwable) { } }
+    private fun save() { try { Settings.setStr(KEY, StageTools.encode(_state.value, aspect)); Settings.setStr(TKEY, encodeTimers(_timers.value)) } catch (_: Throwable) { } }
 
     fun encodeTimers(m: Map<String, TimerState>): String = JSONArray(m.values.map { it.toJson() }).toString()
     fun decodeTimers(s: String?): Map<String, TimerState> = try { JSONArray(s ?: "[]").let { a -> (0 until a.length()).map { TimerState.from(a.getJSONObject(it)) }.associateBy { it.id } } } catch (_: Exception) { emptyMap() }
@@ -78,7 +88,7 @@ object StageStore {
         val gone = before.items.map { it.id }.toSet() - r.state.items.map { it.id }.toSet()
         if (gone.isNotEmpty()) { gone.forEach { id -> _timers.value[id]?.let { t -> app?.let { cancel(it, t) } } }; _timers.value = _timers.value - gone }
         // 2026-11-19: whatever leaves the Stage goes on the shelf (the glance layer behind the notch shows it)
-        if (gone.isNotEmpty()) _shelf.value = StageShelf.took(_shelf.value, before.items.filter { it.id in gone }, System.currentTimeMillis(), shelfKeep())
+        if (gone.isNotEmpty()) shelfAdd(before.items.filter { it.id in gone }.map { StageShelf.card(it, System.currentTimeMillis()) })
         save()
         return r
     }
@@ -87,26 +97,36 @@ object StageStore {
 
     // ---------------- the shelf (2026-11-19, the notch's glance layer) ----------------
 
-    /** Glance ids the user or ARGUS pinned: they stay on the shelf past [StageShelf.CAP]. */
-    @Volatile var shelfKeep: () -> Set<String> = {
-        try { Glance.Prefs.from(Settings.str(Glance.PREFS_KEY, "")).pins.filter { it.startsWith(Glance.STAGE) }.toSet() }
-        catch (_: Throwable) { emptySet() }
+    /** Open stage_shelf.db (in memory if the file can't be opened) and move round 1's Settings copy into it once. */
+    private fun openShelf(ctx: Context) {
+        val db = try {
+            val f = ctx.getDatabasePath(SHELF_DB); f.parentFile?.mkdirs()
+            ShelfDb(AndroidSql(f.path))
+        } catch (_: Throwable) { try { ShelfDb(AndroidSql(":memory:")) } catch (_: Throwable) { null } }
+        shelfDb = db
+        try {
+            val old = Settings.str(SKEY, "")
+            if (db != null && old.isNotBlank()) { db.add(StageShelf.decode(old).reversed()); Settings.setStr(SKEY, "") }
+        } catch (_: Throwable) { }
+        shelfHead()
     }
 
+    private fun shelfHead() { _shelf.value = try { shelfSource.page(0, SHELF_HEAD) } catch (_: Throwable) { emptyList() } }
+
+    private fun shelfAdd(cards: List<ShelfCard>) { try { shelfDb?.add(cards) } catch (_: Throwable) { }; shelfHead() }
+
     @Synchronized fun shelfDrop(id: String): Boolean {
-        val before = _shelf.value
-        _shelf.value = StageShelf.drop(before, id)
-        if (_shelf.value.size == before.size) return false
-        save(); return true
+        val gone = try { shelfDb?.drop(id) == true } catch (_: Throwable) { false }
+        if (gone) shelfHead()
+        return gone
     }
 
     /** Put a shelf card back on the Stage as a widget (a timer comes back ready with Start, never running). */
     @Synchronized fun restore(ctx: Context, id: String): String {
         init(ctx)
         if (!enabled) return "The Stage is off in Settings › Look & feel."
-        val bare = id.removePrefix("stage:")
-        val card = _shelf.value.firstOrNull { it.id == bare } ?: return "Nothing called $id on the shelf."
-        _shelf.value = StageShelf.drop(_shelf.value, card.id)
+        val card = shelfSource.byId(id) ?: return "Nothing called $id on the shelf."
+        shelfDrop(card.id)
         val r = dispatch(StageAction.Show(card.kind, card.props - "autostart", StageMode.WIDGET))
         val item = r.id?.let { r.state.byId(it) }
         if (item != null && item.kind == StageKind.TIMER) replaceTimer(ctx, item)

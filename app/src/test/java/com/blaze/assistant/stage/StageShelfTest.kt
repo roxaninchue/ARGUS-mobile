@@ -28,23 +28,22 @@ class StageShelfTest {
         assertEquals(StageKind.MUSIC, shelf.single().kind)
     }
 
-    @Test fun oneOfASingleKindAndNoDuplicates() {
+    /** Owner, round 2: every card is kept as it comes, music / video / browser included; only the same card moves to the top. */
+    @Test fun everyCardIsKeptAndTheSameCardMovesToTheTop() {
         var s = StageShelf.took(emptyList(), listOf(item("music1", StageKind.MUSIC, "query" to "Jazz")), 1)
         s = StageShelf.took(s, listOf(item("music5", StageKind.MUSIC, "query" to "Lo-fi")), 2)
-        assertEquals(listOf("music5"), s.map { it.id })
+        assertEquals(listOf("music5", "music1"), s.map { it.id })
         s = StageShelf.took(s, listOf(item("plan2", StageKind.PLAN)), 3)
         s = StageShelf.took(s, listOf(item("plan2", StageKind.PLAN, "title" to "Today")), 4)
-        assertEquals(listOf("plan2", "music5"), s.map { it.id })
+        assertEquals(listOf("plan2", "music5", "music1"), s.map { it.id })
         assertEquals("Today", s[0].title)
     }
 
-    @Test fun capKeepsPinnedCards() {
+    @Test fun noCap() {
         var s = emptyList<ShelfCard>()
-        for (i in 1..10) s = StageShelf.took(s, listOf(item("note$i", StageKind.NOTE, "text" to "n$i")), i.toLong(), keep = setOf("stage:note1"))
-        assertEquals(StageShelf.CAP + 1, s.size)
-        assertTrue("pinned survives the cap", s.any { it.id == "note1" })
-        assertEquals("note10", s.first().id)
-        assertTrue(s.none { it.id == "note2" })
+        for (i in 1..500) s = StageShelf.took(s, listOf(item("note$i", StageKind.NOTE, "text" to "n$i")), i.toLong())
+        assertEquals(500, s.size)
+        assertEquals("note500", s.first().id); assertEquals("note1", s.last().id)
     }
 
     @Test fun dropAndCodec() {

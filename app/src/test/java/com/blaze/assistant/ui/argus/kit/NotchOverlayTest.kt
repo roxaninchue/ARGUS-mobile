@@ -24,12 +24,24 @@ class NotchOverlayTest {
         }
     }
 
-    @Test fun backWhileOpenClosesToTheNormalPageAndIsNotOursWhileClosed() {
-        val open = NotchOverlay.back(open = true, current = "chat")
-        assertFalse(open.open); assertEquals(NotchOverlay.Effect.NORMAL, open.effect); assertEquals("chat", open.mode)
-        assertEquals(NotchOverlay.Effect.NONE, NotchOverlay.back(open = false, current = "chat").effect)
-        // Back never switches mode
-        for (m in modes) assertEquals(m, NotchOverlay.back(true, m).mode)
+    /** Owner, round 2: Back / the edge swipe while open, from ANY mode, closes the overlay and goes to the regular Chat. */
+    @Test fun backWhileOpenFromAnyModeGoesToChatAndIsNotOursWhileClosed() {
+        for (m in modes) {
+            val s = NotchOverlay.back(open = true, current = m)
+            assertFalse(s.open); assertEquals(NotchOverlay.Effect.CHAT, s.effect); assertEquals("chat", s.mode)
+        }
+        for (m in modes) assertEquals(NotchOverlay.Effect.NONE, NotchOverlay.back(open = false, current = m).effect)
+        assertEquals("life", NotchOverlay.back(false, "life").mode)
+    }
+
+    @Test fun xGoesToChatAndTheBadgeOpensSettings() {
+        val x = NotchOverlay.close()
+        assertFalse(x.open); assertEquals(NotchOverlay.Effect.CHAT, x.effect); assertEquals("chat", x.mode)
+        assertEquals(NotchOverlay.back(true, "desk"), x)   // the X is exactly Back
+        for (m in modes) {
+            val me = NotchOverlay.me(m)
+            assertFalse(me.open); assertEquals(NotchOverlay.Effect.SETTINGS, me.effect); assertEquals(m, me.mode)
+        }
     }
 
     @Test fun outsideTapAndToggle() {
@@ -58,11 +70,27 @@ class NotchOverlayTest {
         val chat = src("ChatScreen.kt")
         assertTrue("the chat sheet is the blur's source only while the pill is open", ".then(if (notchOpen) Modifier.haze(notchHaze) else Modifier)" in chat)
         assertTrue("NotchBackdrop(notchHaze, onClose = " in chat)
-        assertTrue("Back = the normal page", "BackHandler { notchOpen = false; exitView(); composer.closeSpotlight() }" in chat)
-        assertTrue("only another mode switches", "if (st.effect == NotchOverlay.Effect.SWITCH) go(navNow().switchTab(st.mode))" in chat)
+        assertTrue("X = Chat", "onExit = { notchStep(NotchOverlay.close()) }" in chat)
+        assertTrue("badge = Settings", "onMe = { notchStep(NotchOverlay.me(modeNow)) }" in chat)
+        assertTrue("Settings the way the top bar's badge opens it", "NotchOverlay.Effect.SETTINGS -> settingsPage = \"\"" in chat && "onMe = { notchOpen = false; settingsPage = \"\" }" in chat)
+        assertTrue("a switch goes through the tab switch", "NotchOverlay.Effect.SWITCH -> { exitView(); composer.closeSpotlight(); go(navNow().switchTab(st.mode)) }" in chat)
+        assertTrue("Chat = the plain chat, nothing over it", "NotchOverlay.Effect.CHAT -> { exitView(); composer.closeSpotlight(); botThread = null; appsOpen = false; go(navNow().switchTab(st.mode)) }" in chat)
+        assertTrue("Back (the overlay's handler) = Chat", "BackHandler { notchStep(NotchOverlay.back(true, modeNow)) }" in chat)
+        // BackRule's window interceptor runs backToChat before any BackHandler: it must take the notch to Chat first
+        val btc = chat.substringAfter("fun backToChat() {").substringBefore("val over = ")
+        assertTrue("backToChat sends Back with the notch open to Chat", "if (notchOpen && settingsPage == null) { notchStep(NotchOverlay.back(true, navNow().tab)); return }" in btc)
+        assertTrue("a mode tap goes through the rules", "onMode = { m -> notchStep(NotchOverlay.tap(modeNow, m)) }" in chat)
+        assertFalse("the round-1 Back (normal page) is gone", "BackHandler { notchOpen = false; exitView(); composer.closeSpotlight() }" in chat)
         assertFalse("the old bare outside-tap box is gone", "indication = null) { notchOpen = false })" in chat)
         val glance = src("NotchGlance.kt")
         assertTrue("blur through Haze", "hazeChild(haze, HazeStyle(" in glance && "NotchOverlay.backdrop(rememberArgusBlur(), reduced)" in glance)
         assertTrue("Reduced motion read from the app's setting", "ArgusPrefs.reducedNow()" in glance)
+        assertTrue("endless, lazily", "LazyColumn(" in glance && "Glance.needMore(" in glance && "GlanceStore.window(ctx, loaded, Glance.PAGE)" in glance)
+        assertTrue("the page's own bar", "GlanceBar(initial, onMe = onMe, onExit = onExit)" in glance)
+        val bar = src("GlanceBar.kt")
+        assertTrue("badge = the top bar's avatar", "ArgusIconButton(\"user\", KitA11y.Shell.ME, onMe, kind = IconButtonKind.AVATAR" in bar)
+        assertTrue("X = the top bar's round glass button with Lucide's x", "ArgusIconButton(\"x\", tr(\"Close\"), onExit)" in bar)
+        val top = src("KitShell.kt")
+        assertTrue("the top bar's +, search and bell use the same default (glass) button", "ArgusIconButton(\"plus\", KitA11y.Shell.NEW, onPlus)" in top)
     }
 }

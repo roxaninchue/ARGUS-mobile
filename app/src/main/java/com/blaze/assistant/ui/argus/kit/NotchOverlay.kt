@@ -8,12 +8,21 @@ package com.blaze.assistant.ui.argus.kit
  *  - a DIFFERENT mode in the pill: unchanged from P1-SH-01, the pill closes and the shell switches to that mode;
  *  - the SAME mode as the current one (in Chat, tap Chat): the pill closes and the page goes back to its normal state
  *    (an open view and Spotlight close; the mode stays). This was already how the shell behaved; it is named here;
- *  - Back (the button or the edge swipe) while the pill is open: the same as tapping the current mode;
+ *  - Back (the button or the edge swipe) while the pill is open, from ANY mode (Team, Chat, Life, Desk): the overlay
+ *    closes and the shell goes to the regular Chat, not that mode's own page (owner, round 2, 19 Nov; round 1 had Back
+ *    = tapping the current mode);
+ *  - the glance page's X: the same as Back; its badge (the top bar's avatar): the overlay closes and Settings opens;
  *  - a tap outside the pill and the glance items: the pill closes, nothing else changes.
  */
 object NotchOverlay {
-    /** What the shell does after a step: nothing, back to the normal page of the current mode, or switch mode. */
-    enum class Effect { NONE, NORMAL, SWITCH }
+    /**
+     * What the shell does after a step: nothing, back to the normal page of the current mode, switch mode, go to the
+     * regular Chat (whatever the mode), or open Settings.
+     */
+    enum class Effect { NONE, NORMAL, SWITCH, CHAT, SETTINGS }
+
+    /** The Chat mode's id (ShellSpec.MODES / ChatNav.CHAT). */
+    const val CHAT = "chat"
 
     data class Step(val open: Boolean, val effect: Effect, val mode: String)
 
@@ -22,8 +31,14 @@ object NotchOverlay {
     fun tap(current: String, tapped: String): Step =
         if (tapped == current) Step(false, Effect.NORMAL, current) else Step(false, Effect.SWITCH, tapped)
 
-    /** Back while open closes it and returns to the normal page; while closed it is not the overlay's. */
-    fun back(open: Boolean, current: String): Step = if (open) Step(false, Effect.NORMAL, current) else Step(false, Effect.NONE, current)
+    /** Back while open, from any mode, closes it and goes to the regular Chat; while closed it is not the overlay's. */
+    fun back(open: Boolean, current: String): Step = if (open) close() else Step(false, Effect.NONE, current)
+
+    /** The glance page's X: close the overlay and go to the regular Chat. */
+    fun close(): Step = Step(false, Effect.CHAT, CHAT)
+
+    /** The glance page's badge: close the overlay and open Settings (the top bar's badge does the same). */
+    fun me(current: String): Step = Step(false, Effect.SETTINGS, current)
 
     fun outside(current: String): Step = Step(false, Effect.NONE, current)
 

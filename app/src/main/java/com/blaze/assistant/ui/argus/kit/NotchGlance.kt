@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -24,7 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,7 +59,9 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeChild
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /**
  * 2026-11-19 (owner spec, feat/notch-glance): what sits behind the notch's open mode pill. The page under it (the chat
@@ -62,9 +70,14 @@ import kotlinx.coroutines.delay
  * ([NotchOverlay.backdrop]). On it, the glance layer ([Glance]): the clock, then pins, the next reminder, the task in
  * progress and Stage cards that were taken off the Stage. A card's row puts it back on the Stage; pin and × act on the
  * item. A tap anywhere else is [onClose]. The pill itself is drawn by [NotchSwitcher] above this.
+ *
+ * Owner, round 2 (19 Nov): the layer is endless. The clock stays at the top; everything else is a [LazyColumn] read
+ * from the store a page at a time ([Glance.PAGE], the next one once the list nears its end, [Glance.needMore]), so the
+ * shelf is never loaded whole. Over it, where the top bar is, [GlanceBar]: the badge ([onMe] = Settings) on the left and
+ * an X ([onExit] = the regular Chat) on the right.
  */
 @Composable
-fun NotchBackdrop(haze: HazeState, onClose: () -> Unit, modifier: Modifier = Modifier) {
+fun NotchBackdrop(haze: HazeState, onClose: () -> Unit, onExit: () -> Unit, onMe: () -> Unit, initial: String?, modifier: Modifier = Modifier) {
     val c = Argus.colors
     val ctx = LocalContext.current
     val reduced = remember { ArgusPrefs.reducedNow() }
@@ -77,7 +90,25 @@ fun NotchBackdrop(haze: HazeState, onClose: () -> Unit, modifier: Modifier = Mod
     var bump by remember { mutableStateOf(0) }
     val prefs by GlanceStore.prefs.collectAsState()
     val shelf by StageStore.shelf.collectAsState()
-    val items = remember(now, prefs, shelf, bump) { try { GlanceStore.items(ctx, now) } catch (_: Throwable) { emptyList() } }
+    // a window of the layer, grown a page at a time as the list scrolls; re-read (as many as were loaded) when it changes
+    var rows by remember { mutableStateOf(emptyList<Glance.Item>()) }
+    var total by remember { mutableIntStateOf(0) }
+    LaunchedEffect(now, prefs, shelf, bump) {
+        val want = maxOf(rows.size, Glance.PAGE)
+        withContext(Dispatchers.IO) { try { GlanceStore.total(ctx, now) to GlanceStore.window(ctx, 0, want, now) } catch (_: Throwable) { null } }
+            ?.let { (t, r) -> total = t; rows = r }
+    }
+    val list = rememberLazyListState()
+    LaunchedEffect(list) {
+        // the list doesn't hold the clock (index 0 of the layer when it shows), hence + 1
+        snapshotFlow { Triple((list.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1, rows.size, total) }.collect { (last, loaded, all) ->
+            if (Glance.needMore(last, loaded, all)) withContext(Dispatchers.IO) {
+                try { GlanceStore.window(ctx, loaded, Glance.PAGE) } catch (_: Throwable) { emptyList() }
+            }.let { more -> if (rows.size == loaded) rows = rows + more }
+        }
+    }
+    val clock = rows.firstOrNull { it.kind == Glance.Kind.CLOCK }
+    val rest = rows.filter { it.kind != Glance.Kind.CLOCK }
     val scrim = Color.Black.copy(alpha = NotchOverlay.scrimAlpha(look))
 
     Box(modifier.fillMaxSize().graphicsLayer { alpha = fade.value }) {
@@ -89,20 +120,23 @@ fun NotchBackdrop(haze: HazeState, onClose: () -> Unit, modifier: Modifier = Mod
                 .clickable(remember { MutableInteractionSource() }, indication = null) { onClose() }
         )
         Column(
-            Modifier.fillMaxWidth().statusBarsPadding().padding(top = (ShellSpec.TOP_BAR_DP + 64).dp, start = 20.dp, end = 20.dp),
+            Modifier.fillMaxSize().statusBarsPadding().padding(top = (ShellSpec.TOP_BAR_DP + 64).dp, start = 20.dp, end = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items.firstOrNull { it.kind == Glance.Kind.CLOCK }?.let { clk ->
+            clock?.let { clk ->
                 Text(clk.title, style = ArgusType.display, color = c.ink,
                     modifier = Modifier.semantics { contentDescription = clk.title + ", " + clk.sub })
-                Text(clk.sub, style = ArgusType.sub, color = c.mute)
+                Text(clk.sub, style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(bottom = 8.dp))
             }
-            for (g in items.filter { it.kind != Glance.Kind.CLOCK }) GlanceRow(g,
-                onOpen = if (g.kind == Glance.Kind.STAGE_CARD) ({ GlanceStore.apply(ctx, Glance.Op.RESTORE, g.id); onClose() }) else null,
-                onPin = { GlanceStore.apply(ctx, if (g.pinned) Glance.Op.UNPIN else Glance.Op.PIN, g.id); bump++ },
-                onRemove = { GlanceStore.apply(ctx, Glance.Op.REMOVE, g.id); bump++ })
+            LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = PaddingValues(bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(rest, key = { it.id }) { g -> GlanceRow(g,
+                    onOpen = if (g.kind == Glance.Kind.STAGE_CARD) ({ GlanceStore.apply(ctx, Glance.Op.RESTORE, g.id); onClose() }) else null,
+                    onPin = { GlanceStore.apply(ctx, if (g.pinned) Glance.Op.UNPIN else Glance.Op.PIN, g.id); bump++ },
+                    onRemove = { GlanceStore.apply(ctx, Glance.Op.REMOVE, g.id); bump++ }) }
+            }
         }
+        GlanceBar(initial, onMe = onMe, onExit = onExit)
     }
 }
 
