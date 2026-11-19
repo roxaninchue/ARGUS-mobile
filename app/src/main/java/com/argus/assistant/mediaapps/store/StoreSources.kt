@@ -7,11 +7,11 @@ import java.net.URL
 
 /**
  * v0.30.1: the Store sources this build has. The free ones are built in; YouTube is a plug-in module (youtube/ →
- * Gradle :youtube), compiled into every build (2026-11-19: required, there is no build without it) and found here by
- * class name at runtime.
+ * Gradle :youtube, in this repo since 2026-11-19), compiled into every build (2026-11-19: required, there is no build
+ * without it) and found here by class name ([plugin]). The Store chips use the built-in [YouTubeStoreSource] (v0.33.0).
  */
 object StoreSources {
-    /** The YouTube plug-in's class (module :youtube, compiled into every build). */
+    /** The YouTube plug-in's class (module :youtube in youtube/, compiled into every build; R8 keep rule ships in its jar). */
     const val YOUTUBE_CLASS = "com.argus.assistant.mediaapps.youtube.YouTubeSource"
 
     /** A Kotlin `object` StoreSource by class name, or null when no such class is on the classpath. */

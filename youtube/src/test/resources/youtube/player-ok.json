@@ -1,0 +1,38 @@
+{
+ "responseContext": {"visitorData": "CgtWaXNpdG9yRml4"},
+ "playabilityStatus": {"status": "OK", "playableInEmbed": true},
+ "streamingData": {
+  "expiresInSeconds": "21540",
+  "formats": [
+   {"itag": 18, "url": "https://rr1.googlevideo.com/videoplayback?itag=18&id=fix", "mimeType": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"", "bitrate": 503000, "width": 640, "height": 360, "contentLength": "39837364", "quality": "medium", "fps": 30, "qualityLabel": "360p", "audioQuality": "AUDIO_QUALITY_LOW", "approxDurationMs": "635000"}
+  ],
+  "adaptiveFormats": [
+   {"itag": 137, "url": "https://rr1.googlevideo.com/videoplayback?itag=137&id=fix", "mimeType": "video/mp4; codecs=\"avc1.640028\"", "bitrate": 4500000, "width": 1920, "height": 1080, "contentLength": "280000000", "fps": 60, "qualityLabel": "1080p60"},
+   {"itag": 299, "url": "https://rr1.googlevideo.com/videoplayback?itag=299&id=fix", "mimeType": "video/mp4; codecs=\"avc1.64002a\"", "bitrate": 6000000, "width": 1920, "height": 1080, "contentLength": "390000000", "fps": 60, "qualityLabel": "1080p60"},
+   {"itag": 136, "url": "https://rr1.googlevideo.com/videoplayback?itag=136&id=fix", "mimeType": "video/mp4; codecs=\"avc1.4d401f\"", "bitrate": 2500000, "width": 1280, "height": 720, "contentLength": "150000000", "fps": 30, "qualityLabel": "720p"},
+   {"itag": 135, "url": "https://rr1.googlevideo.com/videoplayback?itag=135&id=fix", "mimeType": "video/mp4; codecs=\"avc1.4d401e\"", "bitrate": 1200000, "width": 854, "height": 480, "fps": 30, "qualityLabel": "480p"},
+   {"itag": 313, "url": "https://rr1.googlevideo.com/videoplayback?itag=313&id=fix", "mimeType": "video/webm; codecs=\"vp9\"", "bitrate": 20000000, "width": 3840, "height": 2160, "contentLength": "900000000", "fps": 30, "qualityLabel": "2160p"},
+   {"itag": 242, "url": "https://rr1.googlevideo.com/videoplayback?itag=242&id=fix", "mimeType": "video/webm; codecs=\"vp9\"", "bitrate": 220000, "width": 426, "height": 240, "contentLength": "12000000", "fps": 30, "qualityLabel": "240p"},
+   {"itag": 248, "signatureCipher": "s=AAA&sp=sig&url=https%3A%2F%2Frr1.googlevideo.com%2Fvideoplayback%3Fitag%3D248", "mimeType": "video/webm; codecs=\"vp9\"", "bitrate": 3000000, "height": 1080, "qualityLabel": "1080p"},
+   {"itag": 140, "url": "https://rr1.googlevideo.com/videoplayback?itag=140&id=fix", "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"", "bitrate": 130000, "contentLength": "10280000", "audioQuality": "AUDIO_QUALITY_MEDIUM", "audioSampleRate": "44100", "audioChannels": 2},
+   {"itag": 139, "url": "https://rr1.googlevideo.com/videoplayback?itag=139&id=fix", "mimeType": "audio/mp4; codecs=\"mp4a.40.5\"", "bitrate": 50000, "contentLength": "3880000", "audioQuality": "AUDIO_QUALITY_LOW"},
+   {"itag": 251, "url": "https://rr1.googlevideo.com/videoplayback?itag=251&id=fix", "mimeType": "audio/webm; codecs=\"opus\"", "bitrate": 140000, "contentLength": "9900000", "audioQuality": "AUDIO_QUALITY_MEDIUM"},
+   {"itag": 250, "url": "https://rr1.googlevideo.com/videoplayback?itag=250&id=fix", "mimeType": "audio/webm; codecs=\"opus\"", "bitrate": 70000, "contentLength": "5100000", "audioQuality": "AUDIO_QUALITY_LOW"}
+  ]
+ },
+ "captions": {"playerCaptionsTracklistRenderer": {"captionTracks": [
+  {"baseUrl": "https://www.youtube.com/api/timedtext?v=aqz-KE-bpKQ\u0026lang=en\u0026fmt=srv3", "name": {"runs": [{"text": "English"}]}, "vssId": ".en", "languageCode": "en", "isTranslatable": true},
+  {"baseUrl": "https://www.youtube.com/api/timedtext?v=aqz-KE-bpKQ\u0026lang=en\u0026kind=asr", "name": {"simpleText": "English (auto-generated)"}, "vssId": "a.en", "languageCode": "en", "kind": "asr"},
+  {"baseUrl": "https://www.youtube.com/api/timedtext?v=aqz-KE-bpKQ\u0026lang=en", "name": {"simpleText": "English duplicate"}, "vssId": ".en", "languageCode": "en"},
+  {"name": {"simpleText": "No url"}, "vssId": ".fr", "languageCode": "fr"}
+ ]}},
+ "videoDetails": {
+  "videoId": "aqz-KE-bpKQ", "title": "Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film", "lengthSeconds": "635",
+  "channelId": "UCSMOQeBJ2RAnuFungnQOxLg", "author": "Blender", "isLiveContent": false, "viewCount": "21345678",
+  "shortDescription": "Big Buck Bunny tells the story of a giant rabbit.",
+  "thumbnail": {"thumbnails": [
+   {"url": "https://i.ytimg.com/vi/aqz-KE-bpKQ/default.jpg", "width": 120, "height": 90},
+   {"url": "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", "width": 480, "height": 360}
+  ]}
+ }
+}

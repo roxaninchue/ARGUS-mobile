@@ -1,0 +1,5 @@
+{"playabilityStatus": {"status": "OK"},
+ "streamingData": {"adaptiveFormats": [
+  {"itag": 140, "signatureCipher": "s=AAA&sp=sig&url=https%3A%2F%2Frr1.googlevideo.com%2Fvideoplayback%3Fitag%3D140", "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"", "bitrate": 130000}
+ ]},
+ "videoDetails": {"videoId": "ciphered001", "title": "Only ciphered", "author": "X", "lengthSeconds": "100"}}

@@ -1,0 +1,236 @@
+{
+ "responseContext": {
+  "visitorData": "CgtWaXNpdG9yRml4"
+ },
+ "estimatedResults": "1000",
+ "contents": {
+  "twoColumnSearchResultsRenderer": {
+   "primaryContents": {
+    "sectionListRenderer": {
+     "contents": [
+      {
+       "itemSectionRenderer": {
+        "contents": [
+         {
+          "videoRenderer": {
+           "videoId": "rFZHOHl-L8A",
+           "title": {
+            "runs": [
+             {
+              "text": "lofi hip hop radio 📚 beats to relax/study to"
+             }
+            ]
+           },
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Lofi Girl"
+             }
+            ]
+           },
+           "viewCountText": {
+            "runs": [
+             {
+              "text": "12,761"
+             },
+             {
+              "text": " watching"
+             }
+            ]
+           },
+           "shortViewCountText": {
+            "runs": [
+             {
+              "text": "12K"
+             },
+             {
+              "text": " watching"
+             }
+            ]
+           },
+           "badges": [
+            {
+             "metadataBadgeRenderer": {
+              "style": "BADGE_STYLE_TYPE_LIVE_NOW",
+              "label": "LIVE"
+             }
+            },
+            {
+             "metadataBadgeRenderer": {
+              "style": "BADGE_STYLE_TYPE_SIMPLE",
+              "label": "21 products"
+             }
+            }
+           ]
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "_jH2oTNRe7g",
+           "title": {
+            "runs": [
+             {
+              "text": "cozy autumn music 🍂 lofi beats to study / relax to"
+             }
+            ]
+           },
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Lofi Girl"
+             }
+            ]
+           },
+           "lengthText": {
+            "simpleText": "1:04:42"
+           },
+           "viewCountText": {
+            "simpleText": "2,201,949 views"
+           },
+           "shortViewCountText": {
+            "simpleText": "2.2M views"
+           }
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "CLeZyIID9Bo",
+           "title": {
+            "runs": [
+             {
+              "text": "Chill Lofi Mix [chill lo-fi hip hop beats]"
+             }
+            ]
+           },
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Settle"
+             }
+            ]
+           },
+           "lengthText": {
+            "simpleText": "1:44:52"
+           },
+           "viewCountText": {
+            "simpleText": "35,371,360 views"
+           },
+           "shortViewCountText": {
+            "simpleText": "35M views"
+           },
+           "badges": [
+            {
+             "metadataBadgeRenderer": {
+              "style": "BADGE_STYLE_TYPE_SIMPLE",
+              "label": "4K"
+             }
+            }
+           ]
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "n61ULEU7CO0",
+           "title": {
+            "runs": [
+             {
+              "text": "Best of lofi hip hop 2021 ✨ [beats to relax/study to]"
+             }
+            ]
+           },
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Lofi Girl"
+             }
+            ]
+           },
+           "lengthText": {
+            "simpleText": "6:10:58"
+           },
+           "viewCountText": {
+            "simpleText": "58,841,006 views"
+           },
+           "shortViewCountText": {
+            "simpleText": "58M views"
+           },
+           "badges": [
+            {
+             "metadataBadgeRenderer": {
+              "style": "BADGE_STYLE_TYPE_SIMPLE",
+              "label": "1 product"
+             }
+            }
+           ]
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "_jH2oTNRe7g",
+           "title": {
+            "runs": [
+             {
+              "text": "cozy autumn music 🍂 lofi beats to study / relax to"
+             }
+            ]
+           },
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Lofi Girl"
+             }
+            ]
+           },
+           "lengthText": {
+            "simpleText": "1:04:42"
+           },
+           "viewCountText": {
+            "simpleText": "2,201,949 views"
+           },
+           "shortViewCountText": {
+            "simpleText": "2.2M views"
+           }
+          }
+         }
+        ]
+       }
+      },
+      {
+       "continuationItemRenderer": {
+        "trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN",
+        "continuationEndpoint": {
+         "continuationCommand": {
+          "token": "EqMDEgpsb2ZpIGJlYXRzGpADRWdJUUFV_fixture_next_page",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH"
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ },
+ "header": {
+  "searchHeaderRenderer": {
+   "chipBar": {
+    "chipCloudRenderer": {
+     "chips": [
+      {
+       "chipCloudChipRenderer": {
+        "text": {
+         "simpleText": "Shorts"
+        },
+        "navigationEndpoint": {
+         "continuationCommand": {
+          "token": "CHIP_TOKEN_must_not_be_used"
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

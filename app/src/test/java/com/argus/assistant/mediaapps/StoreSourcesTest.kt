@@ -103,6 +103,10 @@ class StoreSourcesTest {
 
     @Test fun youtubeIsAPluginFoundByName() {
         assertNull(StoreSources.plugin("com.example.NotThere"))
+        // 2026-11-19: the in-repo plug-in (:youtube) is always on the classpath and found by its class name
+        val yt = StoreSources.plugin(StoreSources.YOUTUBE_CLASS)
+        assertEquals("youtube", yt?.id)
+        assertEquals(setOf("audio", "video"), yt?.kinds)
         // v0.33.0: YouTube is built in and first in both stores
         assertEquals(listOf("youtube", "jamendo", "archive-audio"), StoreSources.forKind("audio").map { it.id }.take(3))
         assertEquals(listOf("youtube", "archive-films", "blender"), StoreSources.forKind("video").map { it.id }.take(3))

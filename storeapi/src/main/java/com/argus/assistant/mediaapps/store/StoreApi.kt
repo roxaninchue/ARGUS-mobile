@@ -12,8 +12,8 @@ package com.argus.assistant.mediaapps.store
  *
  * Free / legal sources: Jamendo (Creative Commons music, needs a Jamendo client_id), Internet Archive audio
  * (public-domain / CC only), Internet Archive Feature Films (public domain) and the Blender open movies (CC).
- * YouTube is a plug-in module (youtube/, Gradle :youtube), required in every build and found at runtime; see README
- * "YouTube plug-in".
+ * YouTube is a plug-in module (youtube/, Gradle :youtube, in this repo), required in every build and found at runtime;
+ * see README "YouTube plug-in".
  */
 data class StoreItem(
     val source: String,          // StoreSource.id

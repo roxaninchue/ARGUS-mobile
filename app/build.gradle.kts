@@ -264,7 +264,7 @@ dependencies {
     implementation("io.github.dokar3:quickjs-kt-android:1.0.0-alpha13")
     implementation("org.jsoup:jsoup:1.17.2")
     testImplementation("io.github.dokar3:quickjs-kt-jvm:1.0.0-alpha13")
-    // The YouTube Store plug-in (Gradle :youtube, private repo checked out into youtube/) is always compiled in (required).
+    // The YouTube Store plug-in (Gradle :youtube, in this repo since 2026-11-19: youtube/) is always compiled in (required).
     implementation(project(":youtube"))
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")   // 0.45.20: runTest / virtual time (PermissionGateTest)

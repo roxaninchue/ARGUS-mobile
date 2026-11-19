@@ -13,10 +13,10 @@ rootProject.name = "Argus"
 include(":app")
 // v0.30.1 Argus Music / Video Stores: the source interface, and the YouTube plug-in.
 include(":storeapi")
-// 2026-11-19 (owner): the YouTube plug-in is REQUIRED, there is no build without it. It lives in a private repo and is
-// checked out into youtube/ (CI: right after the checkout, tools/rename/youtube-plugin.sh renames its package).
+// 2026-11-19 (owner): the YouTube plug-in is REQUIRED, there is no build without it. It lives in this repo (youtube/,
+// rebuilt in-repo on 2026-11-19; the old private plug-in repo is gone), so a missing folder means a broken checkout.
 if (!file("youtube/build.gradle.kts").exists()) throw GradleException(
-    "youtube/ is missing: the YouTube plug-in (Gradle :youtube, private repo) is required, there is no build without it. " +
-    "Clone the plug-in repo into youtube/ and run tools/rename/youtube-plugin.sh (README, \"YouTube plug-in\")."
+    "youtube/ is missing: the YouTube plug-in (Gradle :youtube) is part of this repo and required, there is no build without it. " +
+    "Restore it from git (git checkout -- youtube)."
 )
 include(":youtube")

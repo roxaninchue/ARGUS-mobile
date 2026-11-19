@@ -1,0 +1,3 @@
+{"playabilityStatus": {"status": "OK"},
+ "streamingData": {"hlsManifestUrl": "https://manifest.googlevideo.com/api/manifest/hls_variant/fix", "adaptiveFormats": []},
+ "videoDetails": {"videoId": "rFZHOHl-L8A", "title": "lofi hip hop radio", "author": "Lofi Girl", "lengthSeconds": "0", "isLive": true, "isLiveContent": true}}
