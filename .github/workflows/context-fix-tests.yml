@@ -1,4 +1,4 @@
-# Temporary (2026-11-19): runs the full unit suite on x86 for fix/context-loss, since 55 Robolectric
+# Temporary (2026-11-19): runs the Robolectric classes (plus the context tests) on x86 for fix/context-loss, since 55 Robolectric
 # tests cannot start on the aarch64 machine the fixes were tested on. Not merged to main.
 name: Context fix tests
 on:
@@ -7,7 +7,7 @@ on:
 jobs:
   unit:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -18,7 +18,7 @@ jobs:
       - name: Unit suite
         run: |
           chmod +x gradlew
-          ./gradlew :app:testDebugUnitTest --continue --no-daemon --console=plain -Pkotlin.jvm.target.validation.mode=warning \
+          ./gradlew :app:testDebugUnitTest --tests '*.InstallSheetTest' --tests '*.TeamDbTest' --tests '*.BackRuleWindowTest' --tests '*.HomeFocusTest' --tests '*.HomeRedesignTest' --tests '*.KitShotsTest' --tests '*.LifeShotsTest' --tests '*.TeamShotsTest' --tests '*.CardsShotsTest' --tests '*.ThreadShotsTest' --tests '*.ContextLossTest' --tests '*.RequestBudgetTest' --tests '*.TieredMemoryTest' --tests '*.AutoCompactTest' --tests '*.VaguePromptTest' --continue --no-daemon --console=plain -Pkotlin.jvm.target.validation.mode=warning \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss32m -Dfile.encoding=UTF-8" 2>&1 | tee test.log
           exit ${PIPESTATUS[0]}
       - name: Failed tests
