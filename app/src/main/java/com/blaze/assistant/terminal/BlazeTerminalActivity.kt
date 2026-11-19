@@ -377,6 +377,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
             add(TermSheet.Item("bigger", "Bigger text", "Or pinch out on the terminal", "bigger"))
             add(TermSheet.Item("smaller", "Smaller text", "Or pinch in", "smaller"))
             if (tab?.env?.id == "phone") add(TermSheet.Item("help", "What can I type here?", "Runs help: every tool in the phone shell", "help"))
+            add(TermSheet.Item("checkpoints", "Checkpoints", "Save the files now, or roll back to an earlier state", "checkpoints"))
             add(TermSheet.Item("restart", "Restart this tab", "Stop what's running and start fresh", "restart"))
             add(TermSheet.Item("close", "Close this tab", "", "close", danger = true))
         }
@@ -394,9 +395,49 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
                 "bigger" -> setFont(TermLogic.zoom(fontPx, 1.15f))
                 "smaller" -> setFont(TermLogic.zoom(fontPx, 1 / 1.15f))
                 "help" -> runExample("help")
+                "checkpoints" -> checkpointsMenu()
                 "restart" -> tab?.let { val env = it.env; TermSessions.close(it); attach(TermSessions.open(this, env)) }
                 "close" -> tab?.let { confirmClose(it) }
             }
+        }
+    }
+
+    /**
+     * Terminal checkpoints (TermCheckpoints): save one now, turn the automatic ones on or off, or pick one to see what
+     * changed since and roll back to it. A rollback first saves the current state, so it can be undone from here too.
+     */
+    private fun checkpointsMenu() {
+        scope.launch {
+            val list = withContext(Dispatchers.IO) { try { TermCheckpoints.store.list().take(20) } catch (_: Throwable) { emptyList() } }
+            val items = buildList {
+                add(TermSheet.Item("cp:save", "Save a checkpoint now", "Your home and each Linux's own folders", "checkpoints"))
+                add(TermSheet.Item("cp:auto", if (TermCheckpoints.auto) "Automatic checkpoints: on" else "Automatic checkpoints: off",
+                    "Before every command or file change ${BrandName.NAME} makes", "checkpoints"))
+                list.forEach { c -> add(TermSheet.Item("cp=" + c.id, "${c.id} · ${TermCheckpoints.ago(c.created)}",
+                    (if (c.auto) "" else "Saved · ") + c.label.ifBlank { c.reason }.take(70), "restart")) }
+            }
+            sheet.show("Checkpoints", if (list.isEmpty()) "None yet" else "Tap one to roll back", items) { item ->
+                when {
+                    item.id == "cp:save" -> scope.launch {
+                        val r = TermCheckpoints.run(org.json.JSONObject().put("action", "save").put("label", "saved from the Terminal"))
+                        Toast.makeText(this@BlazeTerminalActivity, r.lineSequence().first().take(80), Toast.LENGTH_SHORT).show()
+                    }
+                    item.id == "cp:auto" -> { TermCheckpoints.auto = !TermCheckpoints.auto; checkpointsMenu() }
+                    item.id.startsWith("cp=") -> confirmRollback(item.id.removePrefix("cp="))
+                }
+            }
+        }
+    }
+
+    private fun confirmRollback(id: String) {
+        scope.launch {
+            val changes = TermCheckpoints.run(org.json.JSONObject().put("action", "changes").put("id", id))
+            dialog().setTitle("Roll back to $id?").setMessage(changes.take(1200))
+                .setPositiveButton("Roll back") { _, _ -> scope.launch {
+                    val r = TermCheckpoints.run(org.json.JSONObject().put("action", "rollback").put("id", id))
+                    dialog().setTitle("Rolled back").setMessage(r.take(1200)).setPositiveButton("OK", null).show()
+                } }
+                .setNegativeButton("Cancel", null).show()
         }
     }
 
