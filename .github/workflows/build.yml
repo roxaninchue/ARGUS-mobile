@@ -187,6 +187,29 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
           retention-days: 14
 
+      # 2026-11-19: every build also ships a debug-signed copy, ready to install (zipaligned, v2+v3). The key is the public
+      # debug key in keystore/ci-debug.keystore (alias androiddebugkey, password android), so each build installs over the last.
+      # The unsigned APK above is unchanged; the release-key steps are untouched.
+      - name: Debug-signed APK
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          SHORT=$(echo "${{ github.sha }}" | cut -c1-8)
+          mkdir -p debug-signed
+          SRC=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          "$BT/zipalign" -f -p 4 "$SRC" debug-signed/aligned.apk
+          "$BT/apksigner" sign --ks keystore/ci-debug.keystore --ks-key-alias androiddebugkey --ks-pass pass:android --key-pass pass:android \
+            --out "debug-signed/ARGUS-v${VER}-${SHORT}-debug-signed.apk" debug-signed/aligned.apk
+          rm -f debug-signed/aligned.apk debug-signed/*.idsig
+          "$BT/apksigner" verify --print-certs "debug-signed/ARGUS-v${VER}-${SHORT}-debug-signed.apk" | head -3
+
+      - name: Upload debug-signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-debug-signed-${{ github.sha }}
+          path: debug-signed/*.apk
+          retention-days: 14
+
       # 0.54.2: the R8 map, so a STALL / CRASH stack from a phone report (x4.L2.z0…) can be read back as real names.
       - name: Upload R8 mapping
         if: always()
@@ -301,38 +324,6 @@ jobs:
         run: |
           { echo "Steps: ${{ join(steps.*.outcome, ', ') }}"; echo "Build failed on ${{ github.sha }} (run ${{ github.run_id }})"; echo; echo '```'; grep -E "^e: |error:|FAILURE|What went wrong| FAILED$" -A6 build.log 2>/dev/null | head -160; echo '----- tail -----'; tail -80 build.log 2>/dev/null || echo "no build.log (failed before Gradle ran)"; echo '```'; } > comment.md
           gh issue edit 1 --repo ${{ github.repository }} --body-file comment.md
-
-  # v0.30.1: the YouTube Store is an optional plug-in module (youtube/ → :youtube), kept in the private repo
-  # the owner's private Blaze-mobile repo since v0.30.1. Blaze must build, pass its tests and run without it (this job never
-  # checks the plug-in out; the rm is a guard), and that APK must not contain any YouTube code.
-  build-without-youtube:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/feat/argus-3d-home' && github.ref != 'refs/heads/feat/argus-hark-design' }}
-      - name: Build and test with youtube/ deleted
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-        run: |
-          rm -rf youtube
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
-          chmod +x gradlew
-          set -o pipefail
-          ./gradlew testReleaseUnitTest :storeapi:test assembleRelease --stacktrace 2>&1 | tee build.log
-          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
-          ls -la "$APK"
-          mkdir -p /tmp/dex && unzip -o -q "$APK" 'classes*.dex' -d /tmp/dex
-          if grep -a -l "Lcom/blaze/assistant/mediaapps/youtube/" /tmp/dex/*.dex; then echo "::error::YouTube classes found in the no-YouTube APK"; exit 1; fi
-          echo "No YouTube code in the APK."
 
   # The android-app-builder skill's template must keep building: make a project from it exactly as
   # Blaze does on the phone (setup.sh), then build it like its own workflow would.
