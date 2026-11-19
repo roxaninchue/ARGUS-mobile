@@ -29,10 +29,15 @@ class CheckpointStore(
     val maxAuto: Int = 25,
     val maxManual: Int = 25,
     val maxFileBytes: Long = 64L * 1024 * 1024,
+    /** New content one snapshot may add; past it, further new or changed files are left out (kind 's'), like big files. */
+    val maxNewBytes: Long = 256L * 1024 * 1024,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
-    /** A folder to snapshot. [excludes] are paths relative to [dir] ("proc", "root/phone") skipped with all they hold. */
-    data class Scope(val name: String, val dir: File, val excludes: Set<String> = emptySet())
+    /**
+     * A folder to snapshot. [excludes] are paths relative to [dir] ("proc", "root/phone") skipped with all they hold;
+     * [skipNames] are folder names skipped at any depth (caches that rebuild themselves: ".gradle", "node_modules").
+     */
+    data class Scope(val name: String, val dir: File, val excludes: Set<String> = emptySet(), val skipNames: Set<String> = emptySet())
 
     data class Entry(val path: String, val kind: Char, val exec: Boolean, val size: Long, val mtime: Long, val ref: String) {
         // kind: 'f' file (ref = sha256), 'd' folder, 'l' symlink (ref = target), 's' skipped big file (ref = "")
@@ -120,6 +125,7 @@ class CheckpointStore(
         val out = ArrayList<Entry>()
         if (!s.dir.isDirectory) return out
         val base = s.dir.toPath()
+        var budget = maxNewBytes
         fun visit(dir: File, rel: String) {
             val kids = dir.listFiles() ?: return
             kids.sortBy { it.name }
@@ -131,14 +137,17 @@ class CheckpointStore(
                     val t = try { Files.readSymbolicLink(p).toString() } catch (_: Exception) { continue }
                     out += Entry(r, 'l', false, 0, 0, t)
                 } else if (f.isDirectory) {
+                    if (f.name in s.skipNames) continue
                     out += Entry(r, 'd', false, 0, 0, "")
                     visit(f, r)
                 } else if (f.isFile) {
                     val size = f.length(); val mtime = f.lastModified(); val exec = f.canExecute()
                     if (size > maxFileBytes) { out += Entry(r, 's', exec, size, mtime, ""); continue }
                     val old = prev[r]
-                    val hash = if (old != null && old.kind == 'f' && old.size == size && old.mtime == mtime && mtime < trust && has(old.ref)) old.ref
-                        else try { store(f) } catch (_: Exception) { continue }   // unreadable (permissions): leave it out
+                    val reuse = old != null && old.kind == 'f' && old.size == size && old.mtime == mtime && mtime < trust && has(old.ref)
+                    if (!reuse && size > budget) { out += Entry(r, 's', exec, size, mtime, ""); continue }
+                    val hash = if (reuse) old!!.ref
+                        else try { val h = store(f); budget -= size; h } catch (_: Exception) { continue }   // unreadable (permissions): leave it out
                     out += Entry(r, 'f', exec, size, mtime, hash)
                 }
             }
@@ -192,7 +201,7 @@ class CheckpointStore(
                 val p = f.toPath()
                 when {
                     Files.isSymbolicLink(p) -> out[r] = Entry(r, 'l', false, 0, 0, try { Files.readSymbolicLink(p).toString() } catch (_: Exception) { "" })
-                    f.isDirectory -> { out[r] = Entry(r, 'd', false, 0, 0, ""); visit(f, r) }
+                    f.isDirectory -> { if (f.name !in s.skipNames) { out[r] = Entry(r, 'd', false, 0, 0, ""); visit(f, r) } }
                     f.isFile -> {
                         val size = f.length(); val mtime = f.lastModified(); val exec = f.canExecute()
                         val t = then[r]

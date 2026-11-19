@@ -1389,6 +1389,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         com.blaze.assistant.browser.phone.PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Blaze Phone browser
         // 16 Nov 2026 (Finn): the terminal and the specialists are always on (their switches left Settings with Jobs and Team & bots).
         com.blaze.assistant.terminal.Terminal.tools(app).forEach { t.put(it) }
+        t.put(com.blaze.assistant.terminal.TermCheckpoints.tool())   // terminal checkpoints (rollbacks)
         com.blaze.assistant.terminal.DevTools.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.terminal.Git.tool())
         com.blaze.assistant.phone.PimEdit.tools().forEach { t.put(it) }
@@ -5037,10 +5038,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (!cmdOk(CommandPolicy.Kind.SHELL, cmd, "Run this command?", cmd.take(200), "Run", com.blaze.assistant.terminal.Terminal.risky(cmd)) {
                             !com.blaze.assistant.terminal.Terminal.risky(cmd) || confirm("Run this command?", cmd.take(200), "Run") })
                         "The user did NOT approve running that command."
-                    else if (args.optBoolean("background")) kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Terminal.startJob(cmd, args.optBoolean("linux"), args.optInt("max_minutes", 0)) }
-                    else com.blaze.assistant.terminal.StorageAccess.annotate(cmd,   // 0.53.4: say when scoped storage hid the files
-                        withMediaScan { com.blaze.assistant.terminal.Terminal.run(cmd, args.optInt("timeout_seconds", 60), args.optBoolean("linux")) } + queryVerify(cmd),
-                        com.blaze.assistant.terminal.StorageAccess.granted(app))
+                    else {
+                        // Terminal checkpoints: the files as they were before this command, so it can be rolled back.
+                        val cpNote = com.blaze.assistant.terminal.TermCheckpoints.before(name, args)
+                        (if (args.optBoolean("background")) kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Terminal.startJob(cmd, args.optBoolean("linux"), args.optInt("max_minutes", 0)) }
+                        else com.blaze.assistant.terminal.StorageAccess.annotate(cmd,   // 0.53.4: say when scoped storage hid the files
+                            withMediaScan { com.blaze.assistant.terminal.Terminal.run(cmd, args.optInt("timeout_seconds", 60), args.optBoolean("linux")) } + queryVerify(cmd),
+                            com.blaze.assistant.terminal.StorageAccess.granted(app))) + cpNote
+                    }
                 }
                 "run_ussd" -> {
                     val code = args.optString("code")
@@ -5059,8 +5064,20 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         else -> name.replace('_', ' ')
                     })
                     if (name == "file_delete" && !confirm("Delete this?", args.optString("path").take(200), "Delete", always = true)) "The user did NOT approve deleting that."
-                    else if (name == "run_code") withMediaScan { com.blaze.assistant.terminal.DevTools.run(app, name, args) }
-                    else com.blaze.assistant.terminal.DevTools.run(app, name, args)
+                    else {
+                        val cpNote = com.blaze.assistant.terminal.TermCheckpoints.before(name, args)   // "" for reads
+                        (if (name == "run_code") withMediaScan { com.blaze.assistant.terminal.DevTools.run(app, name, args) }
+                        else com.blaze.assistant.terminal.DevTools.run(app, name, args)) + cpNote
+                    }
+                }
+                com.blaze.assistant.terminal.TermCheckpoints.NAME -> {
+                    val action = args.optString("action")
+                    add(Role.STEP, when (action) { "save" -> "Saving a terminal checkpoint"; "rollback" -> "Rolling the terminal back to ${args.optString("id")}"; "changes" -> "Checking what changed in the terminal"; else -> "Terminal checkpoints" })
+                    if (action == "rollback" || action == "delete") {
+                        val (t, d) = if (action == "rollback") com.blaze.assistant.terminal.TermCheckpoints.describeRollback(args) else ("Delete checkpoint ${args.optString("id")}?" to "It can't be rolled back to afterwards.")
+                        if (!confirm(t, d, if (action == "rollback") "Roll back" else "Delete")) return "The user did NOT approve that."
+                    }
+                    com.blaze.assistant.terminal.TermCheckpoints.run(args)
                 }
                 in com.blaze.assistant.phone.PimEdit.names -> {
                     val (title, detail) = com.blaze.assistant.phone.PimEdit.describe(name, args)
@@ -5073,7 +5090,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val gitLine = cmdOf(name, args)?.second.orEmpty()
                     if (!cmdOk(CommandPolicy.Kind.GIT, gitLine, "Run this git command?", gitLine.take(200), "Run", com.blaze.assistant.terminal.Git.risky(args)) {
                             !com.blaze.assistant.terminal.Git.risky(args) || confirm("Run this git command?", "git " + args.optString("args").take(200), "Run") }) "The user did NOT approve that git command."
-                    else com.blaze.assistant.terminal.Git.run(args)
+                    else { val cpNote = com.blaze.assistant.terminal.TermCheckpoints.before(name, args); com.blaze.assistant.terminal.Git.run(args) + cpNote }
                 }
                 com.blaze.assistant.phone.Location.NAME -> { add(Role.STEP, "Checking location"); kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.phone.Location.run(app) } }
                 "linux_install" -> { add(Role.STEP, "Installing Alpine Linux"); com.blaze.assistant.terminal.Linux.install() }

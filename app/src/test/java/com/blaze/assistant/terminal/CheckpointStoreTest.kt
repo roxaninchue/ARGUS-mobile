@@ -128,6 +128,27 @@ class CheckpointStoreTest {
         assertEquals("a1", File(home, "x").readText())
     }
 
+    @Test fun cacheFoldersAreSkippedAtAnyDepth() {
+        val sc = CheckpointStore.Scope("home", home, emptySet(), setOf("node_modules"))
+        write("web/node_modules/x/index.js", "dep"); write("web/app.js", "a")
+        val st = store()
+        val cp = st.snapshot(listOf(sc)).checkpoint
+        assertTrue(st.readIndex(cp.id, "home").none { it.path.contains("node_modules") })
+        write("web/node_modules/y/index.js", "dep2"); write("web/app.js", "b")
+        assertEquals(listOf("web/app.js"), st.diff(cp.id, listOf(sc)).changed)
+        assertTrue(st.diff(cp.id, listOf(sc)).added.isEmpty())
+        st.restore(cp.id, listOf(sc), safety = false)
+        assertTrue(File(home, "web/node_modules/y/index.js").exists())   // never touched
+        assertEquals("a", File(home, "web/app.js").readText())
+    }
+
+    @Test fun oneSnapshotAddsAtMostItsBudget() {
+        write("a", "x".repeat(600)); write("b", "y".repeat(600))
+        val st = CheckpointStore(File(tmp, "checkpoints"), maxNewBytes = 1000)
+        val cp = st.snapshot(listOf(scope)).checkpoint
+        assertEquals(1, cp.files); assertEquals(1, cp.skipped)
+    }
+
     @Test fun escapingRoundTrips() {
         val s = "a\tb\nc\\d"
         assertEquals(s, CheckpointStore.unesc(CheckpointStore.esc(s)))
