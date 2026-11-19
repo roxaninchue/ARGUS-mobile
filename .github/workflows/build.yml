@@ -117,6 +117,29 @@ jobs:
           node tools/check-no-blaze.test.mjs
           node tools/check-no-blaze.mjs
 
+      # 2026-11-19: Robolectric downloads its Android jars from Maven Central while the tests run, with no retry. One failed
+      # fetch (run on b4de2eaf: android-all-instrumented 13-...-i6, .pom not found) failed all 142 sdk=33 tests at once.
+      # Fetch them here first, with retries, into ~/.m2 (where Robolectric looks before downloading) and cache them.
+      - name: Cache Robolectric Android jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-android-all-4.13-33-34
+
+      - name: Pre-fetch Robolectric Android jars
+        run: |
+          for V in 13-robolectric-9030017-i6 14-robolectric-10818077-i6; do
+            D=~/.m2/repository/org/robolectric/android-all-instrumented/$V; mkdir -p "$D"
+            for EXT in pom jar; do
+              F="$D/android-all-instrumented-$V.$EXT"
+              [ -s "$F" ] && continue
+              curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$F.part" \
+                "https://repo1.maven.org/maven2/org/robolectric/android-all-instrumented/$V/android-all-instrumented-$V.$EXT"
+              mv "$F.part" "$F"
+            done
+            ls -la "$D"
+          done
+
       - name: Build release APK
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
