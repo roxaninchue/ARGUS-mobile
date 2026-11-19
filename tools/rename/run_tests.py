@@ -31,6 +31,10 @@ for f in glob.glob(f'{MAIN}/**/*.kt', recursive=True) + glob.glob('storeapi/src/
         index.setdefault(m.group(1), []).append((f, pure))
 
 
+STUBS = os.environ.get('EXTRA', '').split()
+STUBBED = {m.group(1) for x in STUBS for m in DECL.finditer(open(x, encoding='utf8').read())}
+
+
 def compile_(files, out):
     r = subprocess.run(['kotlinc', '-nowarn', '-jvm-target', '17', '-cp', CP, *sorted(files), '-d', out],
                        capture_output=True, text=True, env=env)
@@ -59,8 +63,7 @@ def run(test):
         names |= set(re.findall(r"[Uu]nresolved reference '(\w+)'", err))
         for f in list(files):
             names |= set(re.findall(r'com\.argus\.assistant\.[a-z.]+\.([A-Z]\w*)', open(f, encoding='utf8').read()))
-        stubbed = {re.search(r'(?:object|class) (\w+)', open(x).read()).group(1) for x in files if x.startswith('/tmp/')}
-        names -= stubbed
+        names -= STUBBED
         add = set()
         for n in names:
             for f, pure in index.get(n, []):

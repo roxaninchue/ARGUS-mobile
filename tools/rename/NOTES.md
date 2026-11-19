@@ -39,8 +39,19 @@ rename.py printed: moved 1,505 files, renamed 24 Blaze*.kt files, edited 1,628 f
 - `node tools/check-no-blaze.mjs`: pass (baseline ratcheted). `node tools/check-no-blaze.test.mjs`: pass.
 - `node tools/check-do-not-port.mjs`: 0 hits, 0 register mismatches. `node tools/check-do-not-port.test.mjs`: 2/2.
 
-## Tests (kotlinc 2.0.21, JDK 17, `tools/rename/run_tests.py`, stubs in /tmp only)
-See the "Tests" section of the final report / below; updated as runs finish.
+## Tests (kotlinc 2.0.21, JDK 17, `tools/rename/run_tests.py`; stubs = tools/jvmtest/stubs copied to /tmp with
+Settings.str default + int/secret helpers, plus a TurnContextSource stub; nothing of that committed)
+Pass: OnboardingLandscapeTest 3/3, SetupChecklistTest 7/7, SpaceWiringTest 17/17, NotchOverlayTest 7/7, GlanceTest 11/11,
+GlanceShelfTest 4/4, TeamStoreTest 14/14, StageReducerTest 16/16, StageShelfTest 5/5, StagePersistTest 5/5,
+StageLayersTest 5/5, StageTimerTest 9/9, StagePerfTest 2/2 = 105/105 in 13 classes.
+Not run (closure reaches Android code, no android.jar here): QuickRepliesTest (ReplyParts lives in agent/Agent.kt),
+ArgusThreadTest and ProactiveDialTest (via QuickReplies/ClaimGuard -> Secrets, LookupLane, SecretVault),
+ArgusDocsTest (84+ files and the Gradle-generated docs dir), StageToolsTest, StageBrowserCardTest (unfinished closure),
+StageMusicLogicTest / StageCardBasicsTest / StageShotsTest (Compose / Robolectric).
+ArgusThreadTest's earlier 2 failures: its source needles quoted `blaze()` (Notifier's Person builder, renamed to
+`argus()` in code while rename.py keeps lowercase inside strings). Fixed in the test needles by post.py (same for
+DuoAll20Test); every positive `contains("...")` needle in ArgusThreadTest, QuickRepliesTest, ProactiveDialTest and
+DuoAll20Test was checked by script to exist in main sources.
 
 ## Owner decisions / flags
 - applicationId com.argus.assistant installs BESIDE the old Blaze app (no update path, no data, grants, widgets carried).
@@ -54,4 +65,8 @@ See the "Tests" section of the final report / below; updated as runs finish.
   applicationId (or a data import) keeps working.
 
 ## Next steps
-- (if continuing) run the remaining named tests with run_tests.py; record pass counts here.
+- Owner: decide the .github workflow updates (build.yml is the owner's "build" call), assetlinks.json on
+  blazeinchue.pages.dev, the :youtube plug-in rename, and whether a build of this branch may be signed as a new app.
+- With Gradle/CI (owner's call): `./gradlew :app:testDebugUnitTest` on this branch, then the shot tests (their CI filters
+  must name com.argus.assistant first).
+- Phase 3 follow-up: merge BlazeButton / BlazeColors / BlazeTheme into the ARGUS kit, then drop them from KEEP_IDS.
