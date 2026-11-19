@@ -52,8 +52,36 @@ object ThoughtFold {
     }
     const val LIVE_TAIL = 560
 
-    /** Open or not: the user's own tap wins; otherwise open only while it is still thinking. */
-    fun open(choice: Boolean?, live: Boolean, answerStarted: Boolean): Boolean = choice ?: thinkingNow(live, answerStarted)
+    /**
+     * Open or not: the user's own tap on this section wins; otherwise open only while it is still thinking, and then only
+     * when live thoughts start open ([liveOpen], Settings.liveThoughtsOpen: folding a live thought once turns it off).
+     */
+    fun open(choice: Boolean?, live: Boolean, answerStarted: Boolean, liveOpen: Boolean = true): Boolean =
+        choice ?: (thinkingNow(live, answerStarted) && liveOpen)
+
+    /**
+     * The open / closed taps, per section key, kept outside the composition. Before (20 Nov 2026) they lived only in
+     * rememberSaveable, which forgets them whenever the section leaves the screen: the live thought between tool steps,
+     * the chat rebuilt after the app comes back. Then the section opened again on its own.
+     */
+    object Choices {
+        private const val MAX = 400
+        private val map = object : LinkedHashMap<Long, Boolean>(64, 0.75f, true) {
+            override fun removeEldestEntry(e: MutableMap.MutableEntry<Long, Boolean>?) = size > MAX
+        }
+        @Synchronized fun get(key: Long): Boolean? = map[key]
+        @Synchronized fun put(key: Long, open: Boolean) { map[key] = open }
+        @Synchronized fun clear() = map.clear()
+    }
+
+    /**
+     * A tap on a section: remembered for that section, and when the thought is still streaming it also sets how live
+     * thoughts start from now on (returned as the new live default, null = unchanged).
+     */
+    fun tap(key: Long, open: Boolean, live: Boolean, answerStarted: Boolean): Boolean? {
+        Choices.put(key, open)
+        return if (thinkingNow(live, answerStarted)) open else null
+    }
 
     /** The text drawn: no stray think tags, no runs of blank lines, trimmed. */
     fun body(raw: String): String = raw.replace(leftoverTags, "").replace("\r\n", "\n").replace(blankRuns, "\n\n").trim()

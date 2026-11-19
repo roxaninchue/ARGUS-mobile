@@ -25,6 +25,24 @@ class ThoughtFoldTest {
         assertFalse(ThoughtFold.open(false, live = true, answerStarted = false))
     }
 
+    /** Finn, 20 Nov 2026: "I leave the app and come back and the thinking re-expands even when I left it collapsed". */
+    @Test fun aFoldedLiveThoughtStaysFolded() {
+        ThoughtFold.Choices.clear()
+        // Folded while it streams: remembered for the section and as the live default.
+        assertEquals(false, ThoughtFold.tap(-7L, open = false, live = true, answerStarted = false))
+        // The section left the screen (app in the background, a tool step) and came back: its choice is still there.
+        assertEquals(false, ThoughtFold.Choices.get(-7L))
+        assertFalse(ThoughtFold.open(ThoughtFold.Choices.get(-7L), live = true, answerStarted = false))
+        // A new live thought (next step, next turn) starts folded too.
+        assertFalse(ThoughtFold.open(null, live = true, answerStarted = false, liveOpen = false))
+        assertTrue(ThoughtFold.open(null, live = true, answerStarted = false, liveOpen = true))
+        // A tap on a finished thought doesn't change how live ones start.
+        assertEquals(null, ThoughtFold.tap(3L, open = true, live = false, answerStarted = true))
+        assertEquals(true, ThoughtFold.Choices.get(3L))
+        // Opening a live thought again turns the default back on.
+        assertEquals(true, ThoughtFold.tap(-8L, open = true, live = true, answerStarted = false))
+    }
+
     /** Owner, 15 Nov 2026: "instead of showing thinking I want the thought to stream in". */
     @Test fun whileItThinksTheWordsReplaceTheHeader() {
         assertFalse(ThoughtFold.headerShown(open = true, live = true, answerStarted = false))

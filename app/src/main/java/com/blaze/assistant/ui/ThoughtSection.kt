@@ -67,8 +67,15 @@ fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Bo
     val timer = remember(key) { ThoughtFold.Timer() }
     var timed by remember(key) { mutableLongStateOf(0L) }
     LaunchedEffect(key, now) { timer.mark(now, System.currentTimeMillis()); timed = timer.ms() }
-    var choice by rememberSaveable(key) { mutableStateOf<Boolean?>(null) }
-    val open = ThoughtFold.open(choice, live, answerStarted)
+    // The tap is kept in ThoughtFold.Choices too (outside the composition), and a tap on a live thought sets how live
+    // thoughts start (Settings.liveThoughtsOpen): leaving the app or the section leaving the screen no longer re-opens it.
+    var choice by rememberSaveable(key) { mutableStateOf(ThoughtFold.Choices.get(key)) }
+    var liveOpen by remember { mutableStateOf(com.blaze.assistant.agent.Settings.liveThoughtsOpen) }
+    val open = ThoughtFold.open(choice, live, answerStarted, liveOpen)
+    fun tap(v: Boolean) {
+        choice = v
+        ThoughtFold.tap(key, v, live, answerStarted)?.let { liveOpen = it; com.blaze.assistant.agent.Settings.liveThoughtsOpen = it }
+    }
     val header = ThoughtFold.header(live, answerStarted, if (ms > 0) ms else timed)
     // Owner 2026-11-14: a brain icon for thoughts. It glows in the accent and breathes slowly while thinking.
     val brainAlpha = if (now) {
@@ -83,7 +90,7 @@ fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Bo
     val textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub)
     Column(modifier.fillMaxWidth().padding(bottom = 4.dp)) {
         if (showHeader) Row(Modifier.clip(RoundedCornerShape(10.dp))
-            .clickable(onClickLabel = if (open) "Hide the thinking" else "Show the thinking", role = Role.Button) { choice = !open }
+            .clickable(onClickLabel = if (open) "Hide the thinking" else "Show the thinking", role = Role.Button) { tap(!open) }
             .semantics { stateDescription = if (open) "Expanded" else "Collapsed" }
             .padding(start = 2.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Lucide.icon(ThoughtFold.ICON, 16), null, Modifier.size(16.dp), tint = brainTint)
@@ -97,7 +104,7 @@ fun ThoughtSection(key: Long, thinking: String, live: Boolean, answerStarted: Bo
             val tail = remember(body) { ThoughtFold.liveTail(body) }
             val spans = remember(tail) { try { GlitchSpans.find(tail, PromptEcho.index()) } catch (_: Throwable) { emptyList() } }
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                .clickable(onClickLabel = "Hide the thinking", role = Role.Button) { choice = false }
+                .clickable(onClickLabel = "Hide the thinking", role = Role.Button) { tap(false) }
                 .semantics { contentDescription = ThoughtFold.LIVE; stateDescription = "Expanded" }
                 .padding(start = 2.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.Top) {
                 Icon(Lucide.icon(ThoughtFold.ICON, 14), null, Modifier.padding(top = 2.5.dp).size(14.dp), tint = brainTint)
