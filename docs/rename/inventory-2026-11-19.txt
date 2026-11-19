@@ -1,0 +1,120 @@
+# Blaze inventory 2026-11-19T17:15:34Z @ 6e8ef3c
+lines: 16531
+files: 1743
+paths named *blaze*: 48
+
+## files by top-level dir
+   1565 app
+     40 tools
+     40 blazerouter
+     31 docs
+     29 gateway
+      8 .github
+      6 store
+      4 evals
+      3 wgproxy
+      1 storeapi
+      1 settings.gradle.kts
+      1 overhaul.md
+      1 THIRD_PARTY_NOTICES.md
+      1 STORE_CLEANROOM.md
+      1 STATUS.md
+      1 README.md
+      1 LICENSE.md
+      1 HANDOFF.md
+      1 HANDOFF-gallery.md
+      1 HANDOFF-argus-hark-design.md
+      1 HANDOFF-argus-3d-home.md
+      1 HANDOFF-2026-11-15-round2.md
+      1 CHANGELOG.md
+      1 BUILDING.md
+      1 .gitlab-ci.yml
+      1 .gitignore
+
+## by risk class (plan §1)
+D  com.blaze.assistant (package refs)        7856
+C  Blaze* type names                         2183
+C  LocalBlaze                                545
+C  Role/Who .BLAZE enum                      243
+E  blaze.db                                  182
+E  getSharedPreferences("blaze…")          13
+E  notification channels blaze_*             3
+E  shared folders */Blaze                    166
+F  X-Blaze-* headers                         95
+F  blaze_* wire fields                       68
+F  User-Agent Blaze                          23
+G  *.blaze-app.workers.dev                   42
+G  blazeinchue.pages.dev                     56
+G  blaze:// deep links                       98
+G  libblazerouter / blazerouter              139
+
+## distinct Blaze* type names
+    332 BlazeShapes
+    119 BlazeQuery
+    116 BlazeAccessibilityService
+    112 BlazeThread
+    111 BlazeAccount
+    102 BlazeDb
+    100 BlazeDocs
+     81 BlazeColors
+     65 BlazeRouter
+     60 BlazeApp
+     46 BlazeDialog
+     44 BlazeView
+     36 BlazeTextField
+     35 BlazeDj
+     29 BlazeMenu
+     26 BlazeIconStyle
+     24 BlazeCamera
+     21 BlazeBrush
+     18 BlazeButton
+     17 BlazeTheme
+     17 BlazeReply
+     16 BlazeTerminalActivity
+     15 BlazeOS
+     13 BlazeInteractionService
+     12 BlazeSwitchTrack
+     11 BlazeFX
+     10 BlazeSpeed
+     10 BlazeBubble
+      8 BlazeOsCleanup
+      8 BlazeChatBar
+      7 BlazeStart
+      6 BlazeDialogCard
+      6 BlazeDesign
+      5 BlazeWidget
+      4 BlazeTextToolbar
+      4 BlazeMenuCard
+      4 BlazeGlass
+      3 BlazeTopPillModel
+      3 BlazeComposerHome
+      3 BlazeAvatar
+      2 BlazeThreadTest
+      2 BlazeStatusChip
+      2 BlazeSession
+      2 BlazeOsRemovedTest
+      2 BlazeMobile
+      2 BlazeDocsTest
+      2 BlazeDocsTask
+      2 BlazeDbTest
+      2 BlazeBrushTint
+      1 BlazeTopPill
+      1 BlazeTopOverlay
+      1 BlazeTools
+      1 BlazeTile
+      1 BlazeSpaceOnboarding
+      1 BlazeSpaceHome
+      1 BlazeSmoke
+      1 BlazeSkills
+      1 BlazeSessionService
+      1 BlazeRecognitionService
+      1 BlazeQueryTest
+      1 BlazeQueryEngineTest
+      1 BlazePhoneBridge
+      1 BlazeOsActivity
+      1 BlazeHome
+      1 BlazeCard
+      1 BlazeAssist
+
+## guard (tools/check-no-blaze.mjs)
+blaze outside the allowlist: 17781 occurrences in 1745 files (baseline 17781)

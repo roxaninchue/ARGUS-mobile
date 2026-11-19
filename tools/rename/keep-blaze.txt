@@ -1,0 +1,18 @@
+# Permanent allowlist for tools/check-no-blaze.mjs (docs/RENAME-ARGUS-PLAN.md §3).
+# One JavaScript regex per line (case-sensitive), then a tab or two spaces and "# reason".
+# A match is cut out of the line before the guard counts what is left, so list only what must say blaze forever.
+# Temporary leftovers are NOT listed here: tools/rename/baseline.json ratchets them down phase by phase.
+applicationId = "com\.blaze\.assistant"  # H: the install/update identity, never changes
+com\.blaze\.assistant\.phone\.BlazeAccessibilityService  # shim: accessibility grant is keyed by ComponentName
+com\.blaze\.assistant\.assist\.Blaze(Interaction|Session|Recognition)Service  # shim: default assistant / voice input
+com\.blaze\.assistant\.assist\.BlazeTile  # shim: Quick Settings tile placement
+com\.blaze\.assistant\.widget\.BlazeWidget  # shim: placed home-screen widgets
+com\.blaze\.assistant\.MainActivity  # activity-alias: launcher icon and pinned shortcuts
+const val OLD = "Blaze"|BrandName\.OLD  # reading text saved before the rename
+blaze://  # deep links and QR codes already in the wild
+"blaze_(custom|jobs|routine)"  # notification channel ids keep the user's channel settings
+(Music|Movies|Download|Pictures)/Blaze  # old download folders stay scanned
+([Hh]ey|OK|Ok|[Ww]ake up) [Bb]laze  # legacy wake phrases keep working
+"BLAZE"  # chat JSON role wire value, read forever
+blaze\.db  # database file name kept (plan Phase 5, option A)
+blaze-app\.workers\.dev  # account-wide workers.dev subdomain, not renamed

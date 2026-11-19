@@ -110,6 +110,13 @@ jobs:
       - name: Design JS tests
         run: node app/src/test/js/design-safe.test.mjs
 
+      # Blaze → Argus rename guard (docs/RENAME-ARGUS-PLAN.md): no new "blaze" outside tools/rename/keep-blaze.txt;
+      # counts may only go down (tools/rename/baseline.json is the ratchet).
+      - name: Rename guard (no new blaze)
+        run: |
+          node tools/check-no-blaze.test.mjs
+          node tools/check-no-blaze.mjs
+
       - name: Build release APK
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
