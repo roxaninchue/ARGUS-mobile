@@ -2,17 +2,19 @@
 # One JavaScript regex per line (case-sensitive), then a tab or two spaces and "# reason".
 # A match is cut out of the line before the guard counts what is left, so list only what must say blaze forever.
 # Temporary leftovers are NOT listed here: tools/rename/baseline.json ratchets them down phase by phase.
-applicationId = "com\.blaze\.assistant"  # H: the install/update identity, never changes
-com\.blaze\.assistant\.phone\.BlazeAccessibilityService  # shim: accessibility grant is keyed by ComponentName
-com\.blaze\.assistant\.assist\.Blaze(Interaction|Session|Recognition)Service  # shim: default assistant / voice input
-com\.blaze\.assistant\.assist\.BlazeTile  # shim: Quick Settings tile placement
-com\.blaze\.assistant\.widget\.BlazeWidget  # shim: placed home-screen widgets
-com\.blaze\.assistant\.MainActivity  # activity-alias: launcher icon and pinned shortcuts
+# 2026-11-19 package rename (tools/rename/rename.py): the owner chose applicationId com.argus.assistant, so the old
+# applicationId line and the old-FQCN shims (accessibility, assistant, tile, widget, launcher alias) no longer apply:
+# the new app installs beside Blaze and inherits no system grant. Kept below: what users' data, links and the server use.
 const val OLD = "Blaze"|BrandName\.OLD  # reading text saved before the rename
+FOLDER = "Blaze"  # SaveFileAndroid.FOLDER: shared-storage folder name, existing downloads stay findable
 blaze://  # deep links and QR codes already in the wild
 "blaze_(custom|jobs|routine)"  # notification channel ids keep the user's channel settings
-(Music|Movies|Download|Pictures)/Blaze  # old download folders stay scanned
+(Music|Movies|Downloads?|Pictures)/Blaze  # old download folders stay scanned
 ([Hh]ey|OK|Ok|[Ww]ake up) [Bb]laze  # legacy wake phrases keep working
 "BLAZE"  # chat JSON role wire value, read forever
 blaze\.db  # database file name kept (plan Phase 5, option A)
 blaze-app\.workers\.dev  # account-wide workers.dev subdomain, not renamed
+X-Blaze-[A-Za-z-]+|x-blaze-[a-z-]+  # gateway wire headers (server names)
+\bblaze_[a-z0-9_]+  # wire fields, tool names, prefs/table/file/channel keys already on phones
+blazeinchue|Blazeinchue  # GitLab namespace and Pages host
+\w*blazerouter\w*  # shared router code (blazerouter/, libblazerouter.so)
