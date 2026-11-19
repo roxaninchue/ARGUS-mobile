@@ -662,7 +662,22 @@ fun ChatScreen() {
     // 0.45.19 fix 7: Back returns to the chat from everything (BackRule); the chat is the root, so Back from Chat no
     // longer goes down to Home (that made Home and Chat a loop Back could never leave). The shell publishes what is
     // in front and how to close it; BackRule's window interceptor acts on it before any nested BackHandler.
+    // 2026-11-19 (owner, round 2): what a notch step does (NotchOverlay): back to the normal page, switch mode, go to the
+    // regular Chat (Back / the edge swipe from any mode, the glance page's X), or open Settings (the glance page's badge)
+    fun notchStep(st: NotchOverlay.Step) {
+        notchOpen = st.open
+        when (st.effect) {
+            NotchOverlay.Effect.NONE -> {}
+            NotchOverlay.Effect.NORMAL -> { exitView(); composer.closeSpotlight() }
+            NotchOverlay.Effect.SWITCH -> { exitView(); composer.closeSpotlight(); go(navNow().switchTab(st.mode)) }
+            // the regular Chat: nothing left over it (a bot's thread, the Apps page, a view, Spotlight)
+            NotchOverlay.Effect.CHAT -> { exitView(); composer.closeSpotlight(); botThread = null; appsOpen = false; go(navNow().switchTab(st.mode)) }
+            NotchOverlay.Effect.SETTINGS -> settingsPage = ""
+        }
+    }
     fun backToChat() {
+        // 2026-11-19 (owner, round 2): Back with the notch open, from any mode, closes it and goes to the regular Chat
+        if (notchOpen && settingsPage == null) { notchStep(NotchOverlay.back(true, navNow().tab)); return }
         // Team is the root. Back closes what is over the current tab (a page, a sheet, Spotlight, a view); with
         // nothing over it, a project chat goes to its project, Projects to its list, and Chat / Life / Desk to Team.
         // Inside Settings, the phone's Back steps back like the top-bar arrow (page → You page), then closes Settings.
@@ -1115,20 +1130,22 @@ fun ChatScreen() {
         // P1-SH-01: the notch, centred in the ARGUS top bar and drawn over the page so its pill drops over it. A tap outside
         // or Back closes the pill; pulling on past it opens Voice (the call screen).
         if (!landRail && showing != "design" && !(ChatExpand.on && chatBody)) {
-            // 2026-11-19 (owner): open = the page softly blurred (or scrimmed) with the glance layer on it; Back or the edge
-            // swipe = back to the normal page of this mode, like tapping the mode you're in (NotchOverlay)
+            // 2026-11-19 (owner): open = the page softly blurred (or scrimmed) with the glance layer on it. Round 2: Back or the
+            // edge swipe from any mode, and the glance page's X, close it and go to the regular Chat; its badge opens Settings
+            // (NotchOverlay). Tapping the mode you're in still goes back to that mode's normal page.
             val modeNow = if (ChatNav.isMode(nav.tab)) nav.tab else ChatNav.CHAT
             if (notchOpen) {
-                NotchBackdrop(notchHaze, onClose = { notchOpen = NotchOverlay.outside(modeNow).open })
-                BackHandler { notchOpen = false; exitView(); composer.closeSpotlight() }
+                NotchBackdrop(notchHaze, onClose = { notchOpen = NotchOverlay.outside(modeNow).open },
+                    onExit = { notchStep(NotchOverlay.close()) }, onMe = { notchStep(NotchOverlay.me(modeNow)) },
+                    initial = com.blaze.assistant.ui.space.SpaceTabs.initial(me?.name ?: Settings.userName, me?.email))
+                BackHandler { notchStep(NotchOverlay.back(true, modeNow)) }
             }
             Box(Modifier.fillMaxWidth().statusBarsPadding().padding(top = ((com.blaze.assistant.ui.argus.kit.ShellSpec.TOP_BAR_DP - com.blaze.assistant.ui.argus.kit.KitSpec.TARGET) / 2).dp),
                 contentAlignment = Alignment.TopCenter) {
                 com.blaze.assistant.ui.argus.kit.NotchSwitcher(mode = modeNow, open = notchOpen,
                     onOpen = { notchOpen = it; if (it) newOpen = false },
                     // another mode switches as before; the mode you're in closes the pill and goes back to its normal page
-                    onMode = { m -> val st = NotchOverlay.tap(modeNow, m); exitView(); composer.closeSpotlight()
-                        if (st.effect == NotchOverlay.Effect.SWITCH) go(navNow().switchTab(st.mode)) },
+                    onMode = { m -> notchStep(NotchOverlay.tap(modeNow, m)) },
                     onVoice = { startCall() })
             }
         }

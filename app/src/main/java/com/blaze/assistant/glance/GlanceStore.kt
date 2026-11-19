@@ -29,8 +29,6 @@ object GlanceStore {
         if (loaded) return
         loaded = true
         _prefs.value = try { Glance.Prefs.from(Settings.str(KEY, "")) } catch (_: Throwable) { Glance.Prefs() }
-        // pinned Stage cards stay on the shelf past its cap (read from memory once loaded; StageStore reads Settings before)
-        StageStore.shelfKeep = { _prefs.value.pins.filter { it.startsWith(Glance.STAGE) }.toSet() }
     }
 
     private fun save(p: Glance.Prefs) { _prefs.value = p; try { Settings.setStr(KEY, p.toJson().toString()) } catch (_: Throwable) { } }
@@ -67,14 +65,21 @@ object GlanceStore {
     fun inputs(ctx: Context, now: Long = System.currentTimeMillis()): Glance.Inputs {
         init(ctx)
         val h24 = try { android.text.format.DateFormat.is24HourFormat(ctx) } catch (_: Throwable) { true }
-        return Glance.Inputs(now, ZoneId.systemDefault(), next(now), task(), StageStore.shelf.value, h24)
+        return Glance.Inputs(now, ZoneId.systemDefault(), next(now), task(), StageStore.shelfSource, h24)
     }
 
-    fun items(ctx: Context, now: Long = System.currentTimeMillis()): List<Glance.Item> = Glance.select(inputs(ctx, now), _prefs.value)
+    /**
+     * Owner, round 2: the layer is endless and read a window at a time ([Glance.window]): the UI asks for the next
+     * [Glance.PAGE] as the list scrolls near its end, so the shelf is never loaded whole. [total] = how many there are.
+     */
+    fun window(ctx: Context, offset: Int, limit: Int, now: Long = System.currentTimeMillis()): List<Glance.Item> =
+        Glance.window(inputs(ctx, now), _prefs.value, offset, limit)
+
+    fun total(ctx: Context, now: Long = System.currentTimeMillis()): Int = Glance.total(inputs(ctx, now), _prefs.value)
 
     /** One action from the layer's buttons or the tool; the answer is the tool's text. */
-    fun apply(ctx: Context, op: Glance.Op, id: String): String {
-        val o = Glance.act(op, id, inputs(ctx), _prefs.value)
+    fun apply(ctx: Context, op: Glance.Op, id: String, offset: Int = 0, limit: Int = Glance.LIST_DEFAULT): String {
+        val o = Glance.act(op, id, inputs(ctx), _prefs.value, offset, limit)
         if (o.changed) save(o.prefs)
         o.dropShelf?.let { StageStore.shelfDrop(it) }
         val back = o.restore?.let { StageStore.restore(ctx, it) }
@@ -85,6 +90,7 @@ object GlanceStore {
     suspend fun run(ctx: Context, args: JSONObject): String {
         val (parsed, err) = GlanceTool.parse(args)
         val (op, id) = parsed ?: return err
-        return withContext(Dispatchers.Main) { apply(ctx, op, id) }
+        val (offset, limit) = GlanceTool.paging(args)
+        return withContext(Dispatchers.Main) { apply(ctx, op, id, offset, limit) }
     }
 }

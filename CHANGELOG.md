@@ -7,6 +7,7 @@
 - **Argus reaches it:** one `glance` tool (list, pin, unpin, remove, restore) in the Stage tool group, sent while the Stage or its shelf has cards.
 - **docs/argus-reach.md:** audit of where Argus doesn't reach yet and the plan for surface specialists.
 - Tests: NotchOverlayTest 6, StageShelfTest 5, GlanceTest 9 (JVM, kotlinc); not run: Gradle, Android compile of ChatScreen, Compose rendering, a phone.
+- **Round 2 (owner, 19 Nov):** the glance page is endless: every card taken off the Stage is kept (no 6-card cap, no one-music-card rule) in its own `stage_shelf.db`, shown newest first in a lazily scrolling list read 20 at a time, clock pinned at the top; the `glance` tool's `list` pages (offset / limit, 8 by default). The page has the top bar's round X (closes to Chat) and the user badge (opens Settings). Back or the edge swipe while the overlay is open now goes to the regular Chat from any mode (Team, Life, Desk, Chat). docs/argus-reach.md: on-demand tool groups first (browser first), specialists only for long jobs (plan only). Tests: NotchOverlayTest 7, StageShelfTest 5, GlanceTest 11, GlanceShelfTest 4 + Stage regression 37 = 64/64 (JVM, kotlinc); not run: Gradle, ChatScreen / StageStore compile, Compose backend compile, a phone.
 
 ## Unreleased: language wheel, heads-ups pause, faster intro, forms for planning
 

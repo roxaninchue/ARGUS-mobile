@@ -7,7 +7,7 @@ import org.json.JSONObject
  * 2026-11-19 (owner spec, feat/notch-glance): the Stage's shelf. A card that leaves the Stage (closed by the user or
  * ARGUS, pushed out by the widget cap, cleared by a layout or Reset) is kept here, newest first, so the notch's glance
  * layer can show it and put it back. Only the card's description is kept (kind, props, title); nothing keeps running.
- * Pure (StageShelfTest); StageStore records into it and saves it.
+ * Owner, round 2: no cap; every card is kept (glance/GlanceShelf.kt) and read a page at a time. StageShelfTest.
  */
 data class ShelfCard(val id: String, val kind: StageKind, val props: Map<String, String> = emptyMap(), val title: String, val at: Long) {
     fun toJson(): JSONObject = JSONObject().put("id", id).put("kind", kind.id).put("title", title).put("at", at)
@@ -26,15 +26,13 @@ data class ShelfCard(val id: String, val kind: StageKind, val props: Map<String,
 }
 
 object StageShelf {
-    /** Cards kept (pinned ones are kept on top of this). */
-    const val CAP = 6
     /** Props too big to be worth keeping (a quiz's questions are kept; a browser card needs only its url). */
     private const val MAX_PROP = 4000
-    /** Kinds there is only ever one of: a newer one replaces the older on the shelf. */
-    private val single = setOf(StageKind.MUSIC, StageKind.VIDEO, StageKind.BROWSER)
 
     /** The shelf id the glance layer and the tool use. */
     fun glanceId(card: ShelfCard): String = "stage:" + card.id
+
+    fun bare(id: String): String = id.removePrefix("stage:")
 
     /** A card's title as people would name it: its own title, else what it plays / shows, else its kind. */
     fun title(item: StageItem): String {
@@ -44,29 +42,23 @@ object StageShelf {
         return (if (own.isEmpty()) item.kind.label else own).take(60)
     }
 
-    /**
-     * Cards that just left the Stage go on top. A card already there moves to the top; for music / video / browser the
-     * older card of that kind goes. Over [cap], the oldest unpinned card leaves ([keep] = pinned glance ids).
-     */
-    fun took(shelf: List<ShelfCard>, gone: List<StageItem>, now: Long, keep: Set<String> = emptySet(), cap: Int = CAP): List<ShelfCard> {
-        if (gone.isEmpty()) return shelf
-        var out = shelf
-        for (item in gone) {
-            val card = ShelfCard(item.id, item.kind, item.props.filterValues { it.length <= MAX_PROP }, title(item), now)
-            out = listOf(card) + out.filter { it.id != item.id && !(item.kind in single && it.kind == item.kind && glanceId(it) !in keep) }
-        }
-        return trim(out, keep, cap)
-    }
+    /** What is kept of a card that left the Stage. */
+    fun card(item: StageItem, now: Long): ShelfCard = ShelfCard(item.id, item.kind, item.props.filterValues { it.length <= MAX_PROP }, title(item), now)
 
-    fun trim(shelf: List<ShelfCard>, keep: Set<String>, cap: Int = CAP): List<ShelfCard> {
-        var free = cap
-        return shelf.filter { c -> if (glanceId(c) in keep) true else if (free > 0) { free--; true } else false }
+    /**
+     * Cards that just left the Stage go on top, newest first. Owner, round 2: no cap, every card is kept as it comes;
+     * only the same card (same id) closed again moves to the top instead of showing twice.
+     */
+    fun took(shelf: List<ShelfCard>, gone: List<StageItem>, now: Long): List<ShelfCard> {
+        var out = shelf
+        for (item in gone) out = listOf(card(item, now)) + out.filter { it.id != item.id }
+        return out
     }
 
     /** Take a card off the shelf (removed, or put back on the Stage). */
     fun drop(shelf: List<ShelfCard>, id: String): List<ShelfCard> {
-        val bare = id.removePrefix("stage:")
-        return shelf.filter { it.id != bare }
+        val b = bare(id)
+        return shelf.filter { it.id != b }
     }
 
     fun encode(shelf: List<ShelfCard>): String = JSONArray(shelf.map { it.toJson() }).toString()
