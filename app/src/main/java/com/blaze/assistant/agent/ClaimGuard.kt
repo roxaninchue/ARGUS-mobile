@@ -37,7 +37,7 @@ object ClaimGuard {
         "projects" to """projects?""",
         "memory" to """memory|memories""",
         "browser" to """browser|tabs?""",
-        // 0.46.0 Blaze Stage: "I've started a 30-minute timer", "the music player is on your screen".
+        // 0.46.0 Argus Stage: "I've started a 30-minute timer", "the music player is on your screen".
         "stage" to """stage|timers?|pomodoros?|countdowns?|mini ?players?""",
     )
 

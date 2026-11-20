@@ -6,7 +6,7 @@ import com.blaze.assistant.BrandName
  * v0.26.2 Hark-style orchestration: `delegate` hands out specialist tasks without blocking the turn. Each task
  * becomes a background agent running as that specialist (BgAgents, its AgentCard with Steer / Stop / Open), the
  * chat stays usable, and each result posts into the chat as soon as it lands (its card moves to the bottom and
- * the main Blaze writes a short follow-up from it).
+ * the main Argus writes a short follow-up from it).
  *
  * This file is the pure part (DispatchTest): which queued agent may start ([pick]), which briefs are
  * duplicates ([plan]), the one-line scope note, the browser lease, and the platform message a result wakes
@@ -139,7 +139,7 @@ object Dispatch {
     // ---------------- browser lease ----------------
 
     /**
-     * Blaze's background browser has one current tab, so two agents clicking in it at once would trip over each
+     * Argus's background browser has one current tab, so two agents clicking in it at once would trip over each
      * other. The first agent that uses a browser_ tool holds it until it finishes; others are told to use
      * web_search / fetch_page meanwhile. The main chat is never blocked.
      */
@@ -157,6 +157,6 @@ object Dispatch {
     }
 
     val browser = Lease()
-    /** 0.45.19: Blaze Phone has one screen too; the first agent to use a phone_ tool holds it. */
+    /** 0.45.19: Argus Phone has one screen too; the first agent to use a phone_ tool holds it. */
     val phone = Lease()
 }

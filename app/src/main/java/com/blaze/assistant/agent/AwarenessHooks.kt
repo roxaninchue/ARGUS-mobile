@@ -15,10 +15,10 @@ import androidx.media3.common.Player
 
 /**
  * v0.37.0: the Android side of [Awareness]. Installed once from BlazeApp:
- *  - the Blaze screen in front (activity callbacks) and the view open over the chat (Views.showing, Design's title);
+ *  - the Argus screen in front (activity callbacks) and the view open over the chat (Views.showing, Design's title);
  *  - other apps' media (Spotify, YouTube, podcasts…) from their media sessions, read through the notification
- *    listener Blaze already has (no new permission; nothing when notification access is off);
- *  - Blaze Music and Blaze Video report their own player ([music], [video], [videoClosed]).
+ *    listener Argus already has (no new permission; nothing when notification access is off);
+ *  - Argus Music and Argus Video report their own player ([music], [video], [videoClosed]).
  * All readers are cheap and never throw.
  */
 object AwarenessHooks {
@@ -63,7 +63,7 @@ object AwarenessHooks {
         return listOf(Awareness.Now("view", "Open", title ?: name, if (title != null) "the Design view" else "${BrandName.NAME}"))
     }
 
-    /** Other apps' media sessions (Blaze's own are reported by the players themselves). */
+    /** Other apps' media sessions (Argus's own are reported by the players themselves). */
     private fun phoneMedia(ctx: Context): List<Awareness.Now> {
         if (com.blaze.assistant.notify.NotificationBrain.instance == null) return emptyList()
         val msm = ctx.getSystemService(MediaSessionManager::class.java) ?: return emptyList()
@@ -91,9 +91,9 @@ object AwarenessHooks {
             if (artist.isNotBlank()) "by $artist" else "", pos, if (dur > 0) dur else -1, playing, at)
     }
 
-    // ---------------- Blaze's own players (called on the player's thread) ----------------
+    // ---------------- Argus's own players (called on the player's thread) ----------------
 
-    /** Blaze Music's player changed (song, play / pause, seek). [songChanged] logs the new song as played. */
+    /** Argus Music's player changed (song, play / pause, seek). [songChanged] logs the new song as played. */
     fun music(p: Player, songChanged: Boolean = false) {
         try {
             val item = p.currentMediaItem
@@ -110,7 +110,7 @@ object AwarenessHooks {
 
     fun musicStopped() = Awareness.clear("music")
 
-    /** Blaze Video's player: the video loaded, played, paused or moved. */
+    /** Argus Video's player: the video loaded, played, paused or moved. */
     fun video(p: Player, t: com.blaze.assistant.mediaapps.Track?) {
         try {
             if (t == null) { Awareness.clear("video"); return }

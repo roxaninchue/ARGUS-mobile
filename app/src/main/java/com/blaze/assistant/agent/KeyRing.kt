@@ -20,7 +20,7 @@ object KeyRing {
     private fun saveExtras(pid: String, l: List<String>) {
         if (l.distinct() == extras(pid)) return
         setExtrasSynced(pid, l)
-        com.blaze.assistant.connect.KeySync.localChange(pid)   // follows the Blaze account to the PC
+        com.blaze.assistant.connect.KeySync.localChange(pid)   // follows the Argus account to the PC
     }
 
     /** Replaces the extras without a new change stamp (used by key sync). */

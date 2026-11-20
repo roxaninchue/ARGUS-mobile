@@ -14,9 +14,9 @@ object ChipGate {
     data class Caps(
         /** Device calendar readable (READ_CALENDAR granted) or Google Calendar connected. */
         val calendar: Boolean = true,
-        /** Weather tool usable (signed in to Blaze Cloud, or the Home weather card has a reading). */
+        /** Weather tool usable (signed in to Argus Cloud, or the Home weather card has a reading). */
         val weather: Boolean = true,
-        /** Something to play or replay (Blaze Music queue / library / last list, or Spotify connected). */
+        /** Something to play or replay (Argus Music queue / library / last list, or Spotify connected). */
         val music: Boolean = true,
         val sms: Boolean = true,
         val calls: Boolean = true,

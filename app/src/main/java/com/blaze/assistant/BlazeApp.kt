@@ -13,10 +13,10 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.CrashLog.shieldMainThread()
         // Lazy start: Agent.Session's verification and opening blaze.db run on background threads meanwhile (StartWarm,
         // Mind.openLater); work the first frame doesn't need waits for it (StartLater, run on the main thread after the
-        // first frame, or after StartLater.FALLBACK_MS when Blaze starts without a screen). Goal: onCreate < 200 ms.
+        // first frame, or after StartLater.FALLBACK_MS when Argus starts without a screen). Goal: onCreate < 200 ms.
         com.blaze.assistant.device.StartWarm.begin(this)
         com.blaze.assistant.device.StartLater.armFallback()
-        // 0.45.19 fix 7: one Back rule for every Blaze window (Back returns to the chat).
+        // 0.45.19 fix 7: one Back rule for every Argus window (Back returns to the chat).
         try { com.blaze.assistant.ui.BackRule.install(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: BackRule", e) }
         com.blaze.assistant.device.StartGuard.begin(this)   // 0.45.16: crash-loop detection (safe start)
         com.blaze.assistant.device.MainWatch.start()        // 0.45.16: ANR / stall log with the main thread's stack
@@ -81,7 +81,7 @@ class BlazeApp : Application() {
         try { com.blaze.assistant.agent.TapLoop.Plans.init(java.io.File(filesDir, "plan_memory.json")) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: TapLoop.Plans.", e) }
         val tAgent = android.os.SystemClock.elapsedRealtime()
         com.blaze.assistant.device.StartGuard.step("Agent.init") { Agent.init(this) }
-        // 0.46.0 Blaze Stage: the saved layout and timers (re-arms running timers' alarms).
+        // 0.46.0 Argus Stage: the saved layout and timers (re-arms running timers' alarms).
         try { com.blaze.assistant.stage.StageStore.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: StageStore.init", e) }
         try { com.blaze.assistant.movies.Movies.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: Movies.init", e) }
         val agentMs = android.os.SystemClock.elapsedRealtime() - tAgent
@@ -105,7 +105,7 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartGuard.step("Settings.tellIfSecretsDropped") { Settings.tellIfSecretsDropped() }
         com.blaze.assistant.device.StartGuard.step("voice.Voice.init") { com.blaze.assistant.voice.Voice.init(this) }
         // Wake word starts from the screen (MainActivity/assistant) and at boot: starting a
-        // microphone service while Blaze is in the background makes Android 12+ kill the app.
+        // microphone service while Argus is in the background makes Android 12+ kill the app.
         com.blaze.assistant.device.StartGuard.step("terminal.Terminal.init") { com.blaze.assistant.terminal.Terminal.init(this) }
         // 0.46.6: low-RAM phones keep a smaller picture cache (provider engines run one at a time everywhere)
         try { com.blaze.assistant.movies.ProviderSandbox.Gate.configure(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: Gate.configure", e) }
@@ -130,7 +130,7 @@ class BlazeApp : Application() {
         // commands) downloads by itself about 30 s after the first frame (setup/SetupRunner.later). Never in safe start.
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("setup.SetupRunner.later") { com.blaze.assistant.setup.SetupRunner.later(this) }
         com.blaze.assistant.device.StartGuard.step("agent.SkillLibrary.init") { com.blaze.assistant.agent.SkillLibrary.init(this) }
-        // BlazeRouter: start when it's the brain or set to start with Blaze (after Terminal/Linux are ready).
+        // BlazeRouter: start when it's the brain or set to start with Argus (after Terminal/Linux are ready).
         if (!com.blaze.assistant.device.StartGuard.safeStart && (com.blaze.assistant.agent.BlazeRouter.autostart || Settings.providerId == com.blaze.assistant.agent.BlazeRouter.ID)) {
             val app = this
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
@@ -144,12 +144,12 @@ class BlazeApp : Application() {
         // v0.38.0 Jarvis mode: questions, screen glances, camera looks, its own routines (per level).
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("proactive.Jarvis.start") { com.blaze.assistant.proactive.FollowUps.init(this); com.blaze.assistant.proactive.Jarvis.start(this) }
         com.blaze.assistant.device.StartLater.add("ui.Overlay.watchTasks") { com.blaze.assistant.ui.Overlay.watchTasks(this) }
-        // 0.50.0: edge particles while Blaze controls the screen (suspends while idle)
+        // 0.50.0: edge particles while Argus controls the screen (suspends while idle)
         com.blaze.assistant.device.StartLater.add("ui.ScreenGlow.watch") { com.blaze.assistant.ui.ScreenGlow.watch(this) }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("link.DesktopLink.start") { com.blaze.assistant.link.DesktopLink.start() }
         if (!com.blaze.assistant.device.StartGuard.safeStart && Settings.bool("dash_auto", false)) com.blaze.assistant.device.StartLater.add("Dashboard.start") { com.blaze.assistant.dashboard.Dashboard.start(this) }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("Overlay.showOrb") { if (Settings.orbPinned && android.provider.Settings.canDrawOverlays(this)) com.blaze.assistant.ui.Overlay.showOrb(this) }
-        // v0.28.4 blaze-docs: index Blaze's own docs (+ the real tool list) into blaze.db when the build changed. Off the main
+        // v0.28.4 blaze-docs: index Argus's own docs (+ the real tool list) into blaze.db when the build changed. Off the main
         // thread and a few seconds after start so it never slows opening the app; a no-op when nothing changed.
         // v0.45.0 (#14): how long start took on the main thread (and Agent.init's share), in the speed log; very slow starts in the crash log.
         val startMs = android.os.SystemClock.elapsedRealtime() - t0

@@ -12,7 +12,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /**
- * Long-chat engine (v0.15.0), a port of Blaze Desktop's internal/longchat: Blaze never re-reads
+ * Long-chat engine (v0.15.0), a port of Argus Desktop's internal/longchat: Argus never re-reads
  * the whole chat.
  *
  *  - Rolling summary: when the un-summarised part of a chat is over [budget] (12k tokens on free
@@ -48,7 +48,7 @@ object LongChat {
     val keepWhole = setOf("use_skill", "skill_file", "read_artifact", "read_turn", "search_chat", "update_brief", "ask_user")
 
     /**
-     * 0.45.29: true when [name]'s result is never set aside. Browser pages (browser_* and the Blaze Phone browser's phone_*)
+     * 0.45.29: true when [name]'s result is never set aside. Browser pages (browser_* and the Argus Phone browser's phone_*)
      * were cut to their first 40 and last 20 lines, so the model never saw most of a page; their readers now fit a budget
      * themselves (BrowserRead.BUDGET) and stay whole, here and in Cloud runs (which read the same history).
      */

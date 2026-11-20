@@ -52,7 +52,7 @@ object MindReview {
 
     /** One memory call on the cheapest free model; null when nothing answered. */
     suspend fun cheap(req: JSONArray): String? {
-        // v0.25.0: through Blaze Cloud like everything else (quick task).
+        // v0.25.0: through Argus Cloud like everything else (quick task).
         val r = try { LlmClient.complete(req, null, null, null, LlmClient.Lane.BACKGROUND) }
             catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null }
         return r?.optString("content")?.takeIf { it.isNotBlank() }
@@ -108,7 +108,7 @@ object MindReview {
         else -> ""
     }
 
-    /** The worker's pass: skipped while Blaze is busy, off, or ran less than [THROTTLE_MS] ago. */
+    /** The worker's pass: skipped while Argus is busy, off, or ran less than [THROTTLE_MS] ago. */
     suspend fun idlePass(): Int {
         val d = Mind.db() ?: return 0
         if (!enabled || Agent.busyChats.value.isNotEmpty()) return 0

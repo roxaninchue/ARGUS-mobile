@@ -4,7 +4,7 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 
 /**
- * v0.28.2: when Blaze's confirm card may be skipped, as one pure decision (unit-tested in ConfirmGateTest).
+ * v0.28.2: when Argus's confirm card may be skipped, as one pure decision (unit-tested in ConfirmGateTest).
  *
  *  - Outbound actions in the user's name (texts, calls, messages in other apps, email, posts, payments,
  *    deleting files / data, installing apps, changing phone settings) pass `always = true`: the card shows
@@ -51,7 +51,7 @@ object ConfirmGate {
 
     private val web = setOf("browser_open", "browser_read", "browser_click", "browser_scroll", "browser_back", "browser_tabs",
         "browser_find", "browser_wait", "browser_select", "browser_key",   // 0.45.29
-        // 0.45.19 Blaze Phone: its pages are outside content too.
+        // 0.45.19 Argus Phone: its pages are outside content too.
         "phone_open", "phone_read", "phone_act", "phone_screenshot", "phone_wait", "phone_handoff")
     private val fetched = setOf("fetch_page", "http_request", "download_file")
     private val notifications = setOf("recent_notifications", "notif_read", "notif_conversations")

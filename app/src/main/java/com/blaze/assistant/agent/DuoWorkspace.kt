@@ -16,9 +16,9 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 /**
- * v0.33.0 Duo Workspaces: Blaze and Halo run a long project over days (a business plan, an app, a thesis). Each
+ * v0.33.0 Duo Workspaces: Argus and Halo run a long project over days (a business plan, an app, a thesis). Each
  * workspace has a goal, a shared folder (~/workspaces/<slug>, reachable by the file and terminal tools), a progress
- * board (todo / doing / done, each card owned by Blaze, Halo or you) and a running log. An optional daily standup runs
+ * board (todo / doing / done, each card owned by Argus, Halo or you) and a running log. An optional daily standup runs
  * at the time you pick: the duo reports what moved, what's next and what's blocked, does the next card, and posts a
  * short note. Pure board ops in [Board] (DuoWorkspaceTest).
  */

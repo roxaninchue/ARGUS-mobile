@@ -26,8 +26,8 @@ import kotlin.coroutines.CoroutineContext
  * hidden chat (a normal Session, so it gets the same tools, modes and repairs), takes a slot
  * (1 at a time, 2 on phones with 6 GB+ RAM), and waits in a queue otherwise. Its card in the
  * chat shows live progress with Steer and Stop. When it finishes, its result wakes the chat that
- * started it: the main Blaze reads it and tells the user. Agents are saved in filesDir and pick up
- * where they were after Blaze restarts.
+ * started it: the main Argus reads it and tells the user. Agents are saved in filesDir and pick up
+ * where they were after Argus restarts.
  */
 object BgAgents {
     data class Bg(
@@ -75,7 +75,7 @@ object BgAgents {
         // 0.52.1 crash audit: the file can be ~1 MB (40 results); read it off the main thread (init runs in Application.onCreate).
         scope.launch {
             val list = withContext(io) { load() }
-            // Blaze was closed mid-run: those go back in the queue and continue where they were.
+            // Argus was closed mid-run: those go back in the queue and continue where they were.
             synchronized(this@BgAgents) {
                 val restored = list.map { if (it.status == RUNNING) it.copy(status = QUEUED, resume = true) else it }
                 val fresh = _all.value.filter { n -> restored.none { it.id == n.id } }   // started before the read finished
@@ -210,7 +210,7 @@ object BgAgents {
         update(bg.id) { it.copy(resume = false, waiting = false, followUp = "") }
         // v0.26.2: a custom specialist without a playbook gets one written (validated) before its first run.
         spec(bg)?.let { sp -> if (sp.custom && sp.playbook.isBlank()) { update(bg.id, persist = false) { it.copy(last = "Writing its field playbook") }; Agent.ensurePlaybook(sp) } }
-        // 0.52.1 (ProgressGate): milestones this agent has already reported to the main Blaze.
+        // 0.52.1 (ProgressGate): milestones this agent has already reported to the main Argus.
         var fired = ProgressGate.reached(bg.steps)
         suspend fun runAndWait(t: String) {
             withContext(Dispatchers.Main) { s.send(t) }
@@ -326,7 +326,7 @@ object BgAgents {
 
     fun runningCount() = _all.value.count { it.status == RUNNING }
 
-    /** What the main Blaze reads when an agent finishes (desktop ResultMessage). */
+    /** What the main Argus reads when an agent finishes (desktop ResultMessage). */
     fun resultMessage(bg: Bg): String = if (bg.specialist.isNotBlank())
         Dispatch.resultMessage(bg.id, spec(bg)?.name ?: bg.specialist, bg.title, bg.status, bg.steps, bg.seconds, bg.result,
             _all.value.count { it.live && it.parent == bg.parent && it.id != bg.id })

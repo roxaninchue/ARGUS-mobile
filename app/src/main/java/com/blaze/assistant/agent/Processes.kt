@@ -21,7 +21,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Process registry: everything Blaze creates that keeps living after the chat (alarms, timers,
+ * Process registry: everything Argus creates that keeps living after the chat (alarms, timers,
  * routines, triggers, calendar events, background jobs) gets a short unique ID like R4 or A12.
  *
  * The model works by ID only. `processes` returns one short line per item (ID, kind, title, when),
@@ -87,7 +87,7 @@ object Processes {
         return (prefix[kind] ?: "X") + n
     }
 
-    /** Record something Blaze created. Returns its ID. */
+    /** Record something Argus created. Returns its ID. */
     @Synchronized fun register(kind: String, title: String, ref: String, due: Long = 0, props: JSONObject = JSONObject(), id: String? = null): String {
         if (!ok()) return ""
         val pid = id ?: nextId(kind)
@@ -184,7 +184,7 @@ object Processes {
         return null
     }
 
-    /** v0.45.13: the phone's next Clock alarm when Blaze tracks none at that time (only the next one is visible to apps). */
+    /** v0.45.13: the phone's next Clock alarm when Argus tracks none at that time (only the next one is visible to apps). */
     @Volatile var nextSystemAlarm: () -> Long? = { null }
 
     private fun untrackedLine(kind: String, tracked: List<P>): String? {
@@ -205,7 +205,7 @@ object Processes {
         sync()
         val id0 = idRaw.trim().removePrefix("#")
         val id = if (id0.startsWith("clock@", true)) "clock@" + id0.substringAfter('@') else id0.uppercase()
-        // v0.45.13: a Clock alarm Blaze no longer tracks (0.45.9 dropped A2 after an unconfirmed delete; the system's
+        // v0.45.13: a Clock alarm Argus no longer tracks (0.45.9 dropped A2 after an unconfirmed delete; the system's
         // next alarm) can still be switched off / deleted by its label "(Blaze A2)" or its time ("clock@18:15").
         val p = _all.value.firstOrNull { it.id == id } ?: untracked(id, action) ?: return "No process $id. Call processes to see the IDs."
         return when (action) {

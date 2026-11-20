@@ -16,11 +16,11 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * v0.33.0 Agent Marketplace: skill packs made by other Blaze users. Browse = GitHub repositories tagged with the topic
- * `blaze-skill` (anyone can publish one; newest/most-starred first). Every install is reviewed first: Blaze fetches the
+ * v0.33.0 Agent Marketplace: skill packs made by other Argus users. Browse = GitHub repositories tagged with the topic
+ * `blaze-skill` (anyone can publish one; newest/most-starred first). Every install is reviewed first: Argus fetches the
  * SKILL.md, scans it for red flags (asks for PINs or passwords, sends money, ignores the user's approvals, hides what it
  * does, pipes scripts from the internet) and shows a confirm card with the verdict. Packs are sandboxed by design: a skill
- * is instructions only, and every tool it leads to still goes through Blaze's normal confirmations. Share = your own
+ * is instructions only, and every tool it leads to still goes through Argus's normal confirmations. Share = your own
  * skill zipped to Download/Blaze/<name>.blazepack.zip, ready to send or push to GitHub with the topic. Pure scan in [review]
  * (MarketplaceTest).
  */

@@ -117,14 +117,14 @@ object LlmClient {
 
     /**
      * v0.25.0: one path for every lane (chat, the assist panel, Magic Hand, background, vision, code, agent):
-     * the Blaze gateway with a task hint. Network trouble, busy models and model-gone / refused-model errors are
+     * the Argus gateway with a task hint. Network trouble, busy models and model-gone / refused-model errors are
      * retried quietly with backoff (the gateway re-routes to its task lineup); a request that outgrew the model
      * is trimmed once. The user's old provider / model / key prefs are ignored (kept on disk, never used or sent).
      */
     private suspend fun completeRaw(messages: JSONArray, tools: JSONArray?, onText: ((String) -> Unit)?,
                          onThink: ((String) -> Unit)?, lane: Lane): JSONObject {
         val token = Settings.gatewayToken()
-        // Brains (BrainRace.order): the gateway's Nous reserve and Blaze Cloud. Owner 16 Nov 2026: the on-device backup brain
+        // Brains (BrainRace.order): the gateway's Nous reserve and Argus Cloud. Owner 16 Nov 2026: the on-device backup brain
         // was removed, so signed out there is nothing to ask.
         if (token.isBlank()) throw LlmException(Cloud.SIGNED_OUT, 401)
         val t = Target(Providers.GATEWAY, Providers.GATEWAY_BASE, token, Cloud.MODEL)
@@ -181,7 +181,7 @@ object LlmClient {
                     val v = withContext(st.element()) { when (a.step) {
                         // Nous (the gateway's reserve, free models only)
                         BackupRoute.Step.RESERVE -> viaGatewayWith(BackupRoute.reserveHeader(BackupRoute.Step.RESERVE), gText, gThink).also { lastRoute = "Nous reserve" }
-                        // Blaze Cloud; its own reserve is asked separately, so the gateway skips it
+                        // Argus Cloud; its own reserve is asked separately, so the gateway skips it
                         // 0.46.5: inside the race a busy / CPU-killed / 5xx Cloud fails at once (no backoff tries) so the race moves on
                         BackupRoute.Step.CLOUD -> withContext(Cloud.FastFail) { viaGatewayWith("skip", gText, gThink) }
                     } }
@@ -235,7 +235,7 @@ object LlmClient {
     /** 0.46.3: told when another brain took over a call ("Switched to backup"); the agent shows it as a quiet status. */
     @Volatile var switchListener: ((String) -> Unit)? = null
 
-    /** Thrown inside [watchFirstChunk] when Blaze Cloud showed no sign of life in time (the backup takes over). */
+    /** Thrown inside [watchFirstChunk] when Argus Cloud showed no sign of life in time (the backup takes over). */
     class TooSlow(ms: Long) : LlmException("${BrandName.NAME} Cloud too slow (no first chunk in ${ms / 1000}s)", 0)
 
     // 0.46.4: watchFirstChunk (never called in 0.46.3, so no gateway call had a first-token cap) is replaced by HedgeRace.
@@ -397,7 +397,7 @@ object LlmClient {
             heavyTurn, tools != null && tools.length() > 0, avoid)?.let { conn.setRequestProperty(TurnModel.PREFER_HEADER, TurnModel.safe(it)) } }
         // v0.45.8 (Site): the reply-language picker as a header (BCP-47); none for Auto.
         if (t.pid == Providers.GATEWAY) ReplyLanguage.header(ReplyLanguage.current())?.let { (k, v) -> conn.setRequestProperty(k, v) }
-        // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" on Blaze Cloud (the reserve is asked on its own), "only" for the reserve.
+        // v0.45.26: where the gateway's Nous reserve goes (BackupRoute): "skip" on Argus Cloud (the reserve is asked on its own), "only" for the reserve.
         if (t.pid == Providers.GATEWAY && reserve.isNotBlank()) conn.setRequestProperty("X-Blaze-Reserve", reserve)
 
         val body = JSONObject().apply {

@@ -25,7 +25,7 @@ android {
     }
     // 0.45.15 (key rotation, user-approved 22 Oct 08:32): no signing key or password lives in this repo. Gradle signs with the
     // SDK's own debug key (fine for local runs and CI test builds); a release APK is re-signed outside the repo with the
-    // private Blaze release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
+    // private Argus release key and a v3 lineage from the old (burned, public) key, so existing installs still update.
     buildTypes {
         // Release = what you install: R8-optimised, not debuggable (Compose runs far smoother).
         release {
@@ -79,7 +79,7 @@ android {
 }
 
 // ---------------------------------------------------------------- v0.28.4 blaze-docs
-// Blaze's knowledge about itself, generated from this repo at build time into assets/blaze-docs/ (README, CHANGELOG split
+// Argus's knowledge about itself, generated from this repo at build time into assets/blaze-docs/ (README, CHANGELOG split
 // per version, STATUS, docs/, the hand-written app/blaze-docs/about.md with the build's version, commit and SDK levels, and
 // a manifest). On the first launch after an update the app chunks it into blaze.db (blaze_docs + blaze_docs_fts) and the
 // model looks it up with blaze_docs_search / blaze_docs_read; none of it goes into the prompt. Secrets, account IDs and
@@ -213,7 +213,7 @@ dependencies {
     val bom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(bom)
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0") // QR scan for Blaze Desktop pairing
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0") // QR scan for Argus Desktop pairing
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.webkit:webkit:1.11.0")   // browser VPN proxy, private-tab profiles, location-mask scripts
     implementation("androidx.fragment:fragment-ktx:1.8.3")
@@ -223,7 +223,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("com.github.termux.termux-app:terminal-view:v0.118.0")
-    implementation("org.tukaani:xz:1.10")   // v0.29.2 .tar.xz rootfs for Ubuntu/Debian/Arch/Fedora   // v0.29.2 Blaze Terminal (pulls terminal-emulator + libtermux.so)
+    implementation("org.tukaani:xz:1.10")   // v0.29.2 .tar.xz rootfs for Ubuntu/Debian/Arch/Fedora   // v0.29.2 Argus Terminal (pulls terminal-emulator + libtermux.so)
     implementation("androidx.compose.material:material-icons-core")
     implementation("dev.chrisbanes.haze:haze:1.0.2")   // P0-SH-01: ARGUS chrome / sheet glass (Apache-2.0); pulls compose ui/foundation 1.7.5
     implementation("androidx.compose.material:material-icons-extended")   // v0.24.6: rounded icon buttons (browser, pointer menu, overlay)
@@ -233,7 +233,7 @@ dependencies {
     // v0.26.3 one memory store: blaze.db (Desktop / CLI schema v1, FTS5) on a bundled modern SQLite, the same on every Android.
     implementation("androidx.sqlite:sqlite-bundled:2.5.2")
     implementation("com.google.mlkit:text-recognition:16.0.1")
-    // v0.28.x Blaze Camera: CameraX (works with no camera app, on low-end phones), ML Kit barcode scanning (bundled model,
+    // v0.28.x Argus Camera: CameraX (works with no camera app, on low-end phones), ML Kit barcode scanning (bundled model,
     // offline), and Google's document scanner (Play services; used only when present, else a framed photo).
     val camerax = "1.3.4"
     implementation("androidx.camera:camera-core:$camerax")
@@ -248,7 +248,7 @@ dependencies {
     // The sherpa-onnx runtime itself is NOT a dependency: its Kotlin API is vendored (com.k2fsa.sherpa.onnx) and the
     // native library is downloaded on demand, so the APK only grows by a few hundred KB.
     implementation("org.apache.commons:commons-compress:1.21")
-    // v0.30.1 Blaze Music / Blaze Video: media3 (ExoPlayer, MediaSession, PlayerView), Apache-2.0.
+    // v0.30.1 Argus Music / Argus Video: media3 (ExoPlayer, MediaSession, PlayerView), Apache-2.0.
     val media3 = "1.4.1"
     implementation("androidx.media3:media3-exoplayer:$media3")
     implementation("androidx.media3:media3-session:$media3")

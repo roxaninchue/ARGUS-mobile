@@ -16,7 +16,7 @@ data class Provider(
 object Providers {
     const val CUSTOM = "custom"
     const val AUTO = "auto"
-    /** v0.24.6: Blaze Gateway, one endpoint holding Blaze's own free-tier keys; models are managed on its dashboard. */
+    /** v0.24.6: Argus Gateway, one endpoint holding Argus's own free-tier keys; models are managed on its dashboard. */
     const val GATEWAY = "gateway"
     /** v0.25.0: the gateway's own name (the old blaze-gateway.blaze-app.workers.dev address still answers too). */
     const val GATEWAY_BASE = "https://ai.blaze-app.workers.dev/v1/"
@@ -28,7 +28,7 @@ object Providers {
         Provider(AUTO, "Auto (free routing)", "", "", "", "", ""),
         // Runs on this phone (agent/BlazeRouter.kt); its key is set when it starts.
         Provider("blazerouter", "BlazeRouter (on this phone)", "http://127.0.0.1:20128/v1/", "auto/best-free", "set automatically", "", ""),
-        // Signs in with your Blaze account (no key to paste); until you sign in, Auto (free) answers instead.
+        // Signs in with your Argus account (no key to paste); until you sign in, Auto (free) answers instead.
         Provider(GATEWAY, "${BrandName.NAME} Gateway", GATEWAY_BASE, "blaze-auto", "your ${BrandName.NAME} account", "", ""),
         Provider("gemini", "Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai/",
             "gemini-3.8-flash", "AIza…", "https://aistudio.google.com/apikey",
@@ -71,6 +71,6 @@ object Providers {
         "mistral" to "mistral-small-latest",
     )
 
-    /** The key Blaze would use for [pid]. (GitHub Models was retired on 30 Jul 2026, so no GitHub fallback.) */
+    /** The key Argus would use for [pid]. (GitHub Models was retired on 30 Jul 2026, so no GitHub fallback.) */
     fun keyOf(pid: String): String = KeyRing.active(pid, Settings.modelFor(pid))
 }

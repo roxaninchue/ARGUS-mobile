@@ -5,7 +5,7 @@ import org.json.JSONObject
 /**
  * The orient loop for phone control (v0.20.0): context → orientation → next action → orientation.
  *
- * Before Blaze acts on the screen it knows where it is: a compact summary of the accessibility
+ * Before Argus acts on the screen it knows where it is: a compact summary of the accessibility
  * tree (the foreground app plus the handful of fields and buttons that matter), never a full dump
  * every step. After each action the agent already re-reads the screen as a diff (Agent.screenAfter),
  * which is the second orientation that verifies the result before the next step.
@@ -22,7 +22,7 @@ object Orient {
     val moving = setOf("open_app", "open_url", "search_in_app", "browser_show")
 
     enum class Decision {
-        /** Fine: Blaze knows where it is (or the action doesn't depend on the current screen). */
+        /** Fine: Argus knows where it is (or the action doesn't depend on the current screen). */
         GO,
         /** Act, but glance first and hand the model a compact "you were here" line with the result. */
         GLANCE,
@@ -30,7 +30,7 @@ object Orient {
         LOOK_FIRST,
     }
 
-    /** What Blaze knows about the screen during one turn. */
+    /** What Argus knows about the screen during one turn. */
     class State {
         /** Package of the app on screen at the last look this turn ("" = haven't looked yet). */
         @Volatile var pkg: String = ""
@@ -51,7 +51,7 @@ object Orient {
 
     /**
      * Decide what to do before running [name]. [nowPkg] is the app in front right now ("" if unknown).
-     * A numbered action on a screen Blaze hasn't looked at (or after the app changed under it) is
+     * A numbered action on a screen Argus hasn't looked at (or after the app changed under it) is
      * bounced once with the fresh screen; a second bounce in the same turn just glances and goes, so
      * the guard can never loop.
      */

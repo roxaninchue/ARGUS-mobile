@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 /**
  * Plain-English line for a tool call ("Searching the web for “cheap flights”"), shown instead of
- * tool names while Blaze works. Same phrases as Blaze Desktop's friendly.go, plus phone tools.
+ * tool names while Argus works. Same phrases as Argus Desktop's friendly.go, plus phone tools.
  */
 object Friendly {
     private val plainRe = Regex("^[A-Za-z][A-Za-z0-9 ,.'()]*$")
@@ -173,7 +173,7 @@ object Friendly {
         return if (t.length > max) t.take(max - 1).trimEnd() + "…" else t
     }
 
-    /** What Blaze is doing while the model reads the result of [lastTool] (null = the user's message). */
+    /** What Argus is doing while the model reads the result of [lastTool] (null = the user's message). */
     fun between(lastTool: String?): String = when {
         lastTool == null -> "Reading your message"
         lastTool == "web_search" -> "Going through the search results"

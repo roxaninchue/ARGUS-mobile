@@ -41,7 +41,7 @@ object CommandPolicy {
     /** v0.45.6: music_ops actions that run with no card in Normal mode (play, pause, next…: local, undoable). */
     val IN_APP_SAFE = setOf("play", "pause", "resume", "next", "previous", "prev", "stop", "now", "skip")
 
-    /** Paths inside the workspace (besides relative paths and ~): Blaze's home, the Linux /root, /tmp. */
+    /** Paths inside the workspace (besides relative paths and ~): Argus's home, the Linux /root, /tmp. */
     val DEFAULT_ROOTS = listOf("/root", "/tmp", "/home")
 
     private val readOnly = setOf("ls", "ll", "la", "dir", "cat", "head", "tail", "less", "more", "wc", "pwd", "echo", "printf", "grep", "egrep", "fgrep",
@@ -146,7 +146,7 @@ object CommandPolicy {
         val paths = pathWords(w)
         val outside = paths.any { !inside(it, roots) }
         when {
-            // v0.45.6: Blaze Music's transport typed as a command ("music_ops play") is a safe local action in Normal mode.
+            // v0.45.6: Argus Music's transport typed as a command ("music_ops play") is a safe local action in Normal mode.
             cmd == "music_ops" && sub.lowercase() in IN_APP_SAFE -> return lvl
             cmd in superUser -> return Level.RISKY
             diskTools.matches(cmd) -> return Level.RISKY

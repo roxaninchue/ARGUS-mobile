@@ -8,16 +8,16 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * v0.37.0 Awareness: Blaze knows what's going on in Blaze and on the phone right now, and what just happened. "Skip
+ * v0.37.0 Awareness: Argus knows what's going on in Argus and on the phone right now, and what just happened. "Skip
  * this song", "what was the movie I was just watching", "turn this up", "what's on my screen" work without asking.
  *
- *  - [Now]: live things, one per source key (the song in Blaze Music, the video in Blaze Video, another app's media
- *    session, the Blaze screen or view in front, the design open). Features call [set] /
+ *  - [Now]: live things, one per source key (the song in Argus Music, the video in Argus Video, another app's media
+ *    session, the Argus screen or view in front, the design open). Features call [set] /
  *    [clear] from their own callbacks; a playing item's position is worked out at read time, so nothing has to tick.
  *  - [Event]: what just happened ("watched Dune, stopped at 41:02 of 2:35:12"), newest first, kept 3 days on disk
- *    (filesDir/awareness.json) so "the movie I was just watching" still works after Blaze restarts.
+ *    (filesDir/awareness.json) so "the movie I was just watching" still works after Argus restarts.
  *  - [promptBlock]: a compact WHAT'S GOING ON line in every prompt's changing tail (never the cached prefix).
- *  - [TOOL] blaze_now: the full report: everything live, the last 30 events and every Blaze feature with what it's for
+ *  - [TOOL] blaze_now: the full report: everything live, the last 30 events and every Argus feature with what it's for
  *    and the tool that drives it.
  * The formatting is pure (AwarenessTest); Android readers (media sessions) plug in through [readers].
  */
@@ -70,7 +70,7 @@ object Awareness {
     fun nows(): List<Now> {
         val extra = readers.flatMap { r -> try { r() } catch (_: Throwable) { emptyList() } }
         val mine = live.values.toList()
-        // Another app's session for something Blaze already shows (Blaze Music's own session) is dropped.
+        // Another app's session for something Argus already shows (Argus Music's own session) is dropped.
         return mine + extra.filter { x -> mine.none { it.title.equals(x.title, true) } }
     }
 
@@ -153,7 +153,7 @@ object Awareness {
 
     fun summaryBlock(now: Long = System.currentTimeMillis()): String = try { summary(nows(), recent(), now) } catch (_: Throwable) { "" }
 
-    /** Every Blaze feature: what it is, and how Blaze drives it. [views] come from the Views list (name, id, description). */
+    /** Every Argus feature: what it is, and how Argus drives it. [views] come from the Views list (name, id, description). */
     fun features(views: List<Triple<String, String, String>>, commands: String = ""): String = buildString {
         append("## ${BrandName.NAME} apps\n")
         append("- Chat: talking to ${BrandName.NAME} (this). Projects and Home (widgets) are its other tabs.\n")

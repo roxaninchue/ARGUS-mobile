@@ -1,15 +1,15 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.27.x: Blaze answers like it has hands.
+ * v0.27.x: Argus answers like it has hands.
  *
  * Joey asked how to get a lightweight TTS model and got a walkthrough that ended "would you like me to walk you
  * through…?" instead of "Want me to install it for you?". When the user asks how to get, install, set up, enable,
- * open or download something Blaze can do itself, the reply leads with that and ends with ONE concrete offer to do
+ * open or download something Argus can do itself, the reply leads with that and ends with ONE concrete offer to do
  * it, with the action as the first follow-up chip ([turnHint]). A clear command is simply done.
  *
  * Joey's constraint: no generic "want me to help?" tails. An offer only when there's a concrete, directly related
- * action Blaze can take next. Facts, explanations, greetings and finished tasks end without a question ([RULE]).
+ * action Argus can take next. Facts, explanations, greetings and finished tasks end without a question ([RULE]).
  * Pure Kotlin, unit-tested in IntentHonestyTest.
  */
 object AnswerStyle {
@@ -52,10 +52,10 @@ object AnswerStyle {
         "open" to Regex("""\b(open|launch)\b""", ic),
     )
 
-    // Things that aren't phone actions Blaze can take for the user ("how do I get a job", "how can I get fit").
+    // Things that aren't phone actions Argus can take for the user ("how do I get a job", "how can I get fit").
     private val notDoable = Regex("""\b(job|visa|passport|girlfriend|boyfriend|fit|rich|money|loan|degree|promotion|better at|over it|to sleep|pregnant|citizenship|license|licence)\b""", ic)
 
-    /** The action Blaze could offer for a how-to-get request ("install", "turn on"…), or null (facts, chat, commands). */
+    /** The action Argus could offer for a how-to-get request ("install", "turn on"…), or null (facts, chat, commands). */
     fun offerVerb(userText: String): String? {
         val t = userText.trim()
         if (t.isEmpty() || t.startsWith("/") || t.length > 300) return null

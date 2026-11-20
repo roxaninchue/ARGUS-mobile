@@ -4,9 +4,9 @@ package com.blaze.assistant.agent
 import com.blaze.assistant.BrandName
 /**
  * 0.45.20 (feature batch item 9, the duo rule of 2026-10-21): @all no longer gets two full answers at once ("both
- * yapping"). Blaze is the doer and answers first (the work, the tools when the turn needs them). Halo then sees Blaze's
- * answer and either adds what Blaze missed or got wrong in a sentence or two, or stays quiet. A Halo line that repeats
- * Blaze is dropped ([haloLine]). Pure; DuoAllTest.
+ * yapping"). Argus is the doer and answers first (the work, the tools when the turn needs them). Halo then sees Argus's
+ * answer and either adds what Argus missed or got wrong in a sentence or two, or stays quiet. A Halo line that repeats
+ * Argus is dropped ([haloLine]). Pure; DuoAllTest.
  */
 object DuoAll {
     /** Halo's quiet tag: nothing worth adding. */
@@ -14,7 +14,7 @@ object DuoAll {
     /** Halo's add-on is short: at most this many sentences and characters. */
     const val HALO_SENTENCES = 2
     const val HALO_CHARS = 280
-    /** Word overlap with Blaze's answer at or above this = a repeat (dropped). */
+    /** Word overlap with Argus's answer at or above this = a repeat (dropped). */
     const val SAME = 0.6
 
     fun blazeSystem(base: String): String = base +
@@ -35,14 +35,14 @@ object DuoAll {
 
     private fun bag(t: String): Set<String> = words.findAll(t.lowercase()).map { it.value }.filter { it.length > 2 }.toSet()
 
-    /** Share of Halo's words that Blaze's answer already has (0..1). */
+    /** Share of Halo's words that Argus's answer already has (0..1). */
     fun overlap(halo: String, blaze: String): Double {
         val h = bag(halo); if (h.isEmpty()) return 1.0
         val b = bag(blaze)
         return h.count { it in b }.toDouble() / h.size
     }
 
-    /** What Halo's raw reply shows: "" for quiet, empty, or a repeat of Blaze; else at most two sentences / 280 chars. */
+    /** What Halo's raw reply shows: "" for quiet, empty, or a repeat of Argus; else at most two sentences / 280 chars. */
     fun haloLine(raw: String, blazeAnswer: String): String {
         if (raw.contains(QUIET, ignoreCase = true)) return ""
         var t = tag.replace(raw, "").trim()

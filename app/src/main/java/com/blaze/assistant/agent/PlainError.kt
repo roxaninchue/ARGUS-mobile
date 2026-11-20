@@ -32,7 +32,7 @@ object PlainError {
             code == 429 || "quota" in low || "rate limit" in low || "resource_exhausted" in low ->
                 Cloud.BUSY
             code == 401 || code == 403 || "api key" in low && "invalid" in low -> Cloud.EXPIRED
-            // v0.25.0: never "that model is gone, open Settings": Blaze Cloud already retried other models quietly.
+            // v0.25.0: never "that model is gone, open Settings": Argus Cloud already retried other models quietly.
             code == 404 || "not found" in low -> Cloud.BUSY
             code != null && code in 500..599 || "overloaded" in low || "unavailable" in low -> "$who is having trouble on its side right now. Tap Retry in a moment."
             "timeout" in low || "timed out" in low -> "$who took too long to answer. Tap Retry."

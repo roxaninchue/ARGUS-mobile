@@ -8,14 +8,14 @@ import kotlinx.coroutines.delay
 /**
  * 0.45.20 (mobile item 15, user-approved review fix "ask for Accessibility only when a task first needs it, not in
  * setup"): setup no longer asks for phone control. The first time a task needs it, an in-chat card says why ("Turn on
- * phone control?"), the task waits while the user flips Blaze's switch (Blaze comes back to the front by itself), and the
+ * phone control?"), the task waits while the user flips Argus's switch (Argus comes back to the front by itself), and the
  * same tool call goes on. "Not now", or no switch within [WAIT_MS], ends the step with an honest result and nothing
  * is tapped or read. Texts, contacts, calendar, mic and camera already ask in-line through Android's own prompt.
  *
  * The decision and the wait are pure ([await] takes its probes): PermissionGateTest drives them without a phone.
  */
 object PermissionGate {
-    /** Tools that act on or read another app's screen: they need phone control (Blaze's accessibility service). */
+    /** Tools that act on or read another app's screen: they need phone control (Argus's accessibility service). */
     val SCREEN_TOOLS: Set<String> = Orient.acting + Orient.looking + setOf("long_press", "swipe")
 
     const val WAIT_MS = 180_000L
@@ -41,7 +41,7 @@ object PermissionGate {
     const val NO_SETTINGS = "Not done: Android wouldn't open Accessibility settings from here, so phone control is still off and nothing was tapped or read. " +
         "Tell the user in one plain line to open Settings › Accessibility › Installed apps › ${BrandName.NAME} and turn it on, then do the task with your browser or other tools if they can."
 
-    /** Ask only when the tool needs it, the switch is off, and the user hasn't turned phone control off in Blaze. */
+    /** Ask only when the tool needs it, the switch is off, and the user hasn't turned phone control off in Argus. */
     fun shouldAsk(tool: String, serviceOn: Boolean, phoneControlAllowed: Boolean): Boolean =
         tool in SCREEN_TOOLS && !serviceOn && phoneControlAllowed
 

@@ -6,8 +6,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.25.0 "Blaze Cloud": every model call goes through the Blaze gateway (one OpenAI-compatible endpoint,
- * signed in with the Blaze account). The gateway holds the provider keys and picks the model per task, so
+ * v0.25.0 "Blaze Cloud": every model call goes through the Argus gateway (one OpenAI-compatible endpoint,
+ * signed in with the Argus account). The gateway holds the provider keys and picks the model per task, so
  * the phone never chooses a model and never uses a key of its own. This object is the pure part (tested):
  * which task hint a request carries, which failures are worth a quiet retry, how long to wait, and the one
  * short line a person sees when every retry failed.

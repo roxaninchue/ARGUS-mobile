@@ -13,10 +13,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * BlazeRouter on the phone: Blaze Desktop's router (Go port of OmniRoute, MIT) shipped as
+ * BlazeRouter on the phone: Argus Desktop's router (Go port of OmniRoute, MIT) shipped as
  * libblazerouter.so and run as a local server on 127.0.0.1:20128 with its dashboard.
  *
- * Where it runs ([runner] pref "router_runner"): "alpine" = inside Blaze's Alpine Linux (proot job),
+ * Where it runs ([runner] pref "router_runner"): "alpine" = inside Argus's Alpine Linux (proot job),
  * "termux" = in the Termux app, "direct" = a plain child process. "auto" tries Alpine, then Termux,
  * then direct. Its data lives in ~/.blaze (filesDir/home/.blaze), the same layout as Desktop/CLI;
  * the phone's model keys are handed over at start (BLAZE_KEYS) so every preset can use them.
@@ -169,7 +169,7 @@ object BlazeRouter {
         else -> if (healthy()) "Running in ${label(state.value.where.ifBlank { "direct" })} on $BASE (runner setting: $runner)." else "Not running (runner setting: $runner). ${state.value.note}"
     }
 
-    /** Opens the dashboard (already signed in) in Blaze's own browser. */
+    /** Opens the dashboard (already signed in) in Argus's own browser. */
     suspend fun openDashboard(ctx: Context) {
         val u = state.value.dashboard.ifBlank { "$BASE/dashboard/" }
         try { com.blaze.assistant.browser.BrowserEngine.open(ctx.applicationContext, u, true) } catch (_: Exception) { }

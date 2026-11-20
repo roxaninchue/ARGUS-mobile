@@ -1,6 +1,6 @@
 package com.blaze.assistant.agent
 
-/** Low-data mode (v0.16.0): bytes Blaze's own process sent and received, for "0.42 MB" under an answer. */
+/** Low-data mode (v0.16.0): bytes Argus's own process sent and received, for "0.42 MB" under an answer. */
 object DataMeter {
     fun used(): Long = try {
         val uid = android.os.Process.myUid()

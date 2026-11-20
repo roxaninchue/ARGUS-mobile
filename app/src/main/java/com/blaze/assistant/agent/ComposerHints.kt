@@ -9,7 +9,7 @@ import java.util.Calendar
  *
  * Built only from what is already on the phone: connected accounts, launchable apps, memories, reminders,
  * calendar events and project names. No network or model call, nothing leaves the device, and it is only ever
- * shown as placeholder text in Blaze's own composer. Generic fallbacks fill the list; at most [MAX] hints.
+ * shown as placeholder text in Argus's own composer. Generic fallbacks fill the list; at most [MAX] hints.
  * Pure Kotlin (no Android), unit-tested in ComposerHintsTest; `ui/ComposerHintsSource` gathers the inputs.
  */
 object ComposerHints {

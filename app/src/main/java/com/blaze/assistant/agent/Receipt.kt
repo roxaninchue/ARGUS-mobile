@@ -5,7 +5,7 @@ import org.json.JSONObject
 
 /**
  * v0.45.0 (#36 + "What I did") action receipts. Non-technical users can't tell "said it did" from "did it", and Simple
- * mode hides the step card, so every turn keeps a log of what Blaze actually did: each tool call with a short, safe
+ * mode hides the step card, so every turn keeps a log of what Argus actually did: each tool call with a short, safe
  * summary of its arguments, its result's first line, its verified status (ToolVerify) and the evidence (what was read
  * back). The log is stored with the reply ([ChatMessage.receipt], JSON) and opens from the reply as "What I did".
  *

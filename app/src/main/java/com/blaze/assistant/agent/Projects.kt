@@ -11,7 +11,7 @@ import org.json.JSONObject
  * a project only lists their ids, so deleting a project never deletes a chat.
  */
 data class Project(val id: String, val name: String, val instructions: String = "", val chats: List<String> = emptyList(), val updated: Long = 0L,
-                   /** Pinned brief (v0.15.0): purpose, rules, key files, in progress. Capped at [Projects.BRIEF_TOKENS] (v0.28.5); Blaze edits it with update_brief. */
+                   /** Pinned brief (v0.15.0): purpose, rules, key files, in progress. Capped at [Projects.BRIEF_TOKENS] (v0.28.5); Argus edits it with update_brief. */
                    val brief: String = "",
                    /** v0.28.5: older notes (earlier briefs, the full text of a brief that was trimmed to fit). Searchable with project_docs_search, never pinned. */
                    val notes: List<ProjectNote> = emptyList())
@@ -135,7 +135,7 @@ object Projects {
     fun setBrief(id: String, text: String) = save(_all.value.map { if (it.id == id) it.copy(brief = cutTokens(text, BRIEF_TOKENS), updated = System.currentTimeMillis()) else it })
 
     /**
-     * update_brief (Blaze's brief-updater): the new brief is squeezed and, if still over the cap, trimmed to its top part
+     * update_brief (Argus's brief-updater): the new brief is squeezed and, if still over the cap, trimmed to its top part
      * with the whole text kept as a note; the brief it replaces is kept as a note too. Returns the reply for the model.
      */
     fun updateBrief(id: String, text: String, now: Long = System.currentTimeMillis()): String {

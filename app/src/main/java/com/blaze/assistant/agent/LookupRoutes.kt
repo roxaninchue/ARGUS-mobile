@@ -3,7 +3,7 @@ package com.blaze.assistant.agent
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 0.46.3: the lookup lane's real network (keyless search + page reads) and model (Blaze routing, the fast lane). */
+/** 0.46.3: the lookup lane's real network (keyless search + page reads) and model (Argus routing, the fast lane). */
 object LookupRoutes {
     val net = object : LookupLane.Net {
         override suspend fun search(q: String): List<LookupLane.Hit> = LookupLane.hitsOf(Web.search(q, 6))
@@ -16,7 +16,7 @@ object LookupRoutes {
     }
 
     /**
-     * The summarize step: Blaze's own routing (the on-phone brain, then the Nous reserve, then Blaze Cloud; never NVIDIA or
+     * The summarize step: Argus's own routing (the on-phone brain, then the Nous reserve, then Argus Cloud; never NVIDIA or
      * System One), asked as a lite turn on the STEPS lane so the gateway picks its fastest capable model.
      */
     val brain = object : LookupLane.Brain {

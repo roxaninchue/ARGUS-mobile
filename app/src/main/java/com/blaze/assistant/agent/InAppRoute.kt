@@ -2,11 +2,11 @@ package com.blaze.assistant.agent
 
 /**
  * v0.45.6 (phone 21:27): "play music" went to the model, which ran `music_ops play` as a shell command (approval card),
- * then fell back to screen control and opened BlazeFX. Requests Blaze can do itself are now routed in-app FIRST, before
+ * then fell back to screen control and opened BlazeFX. Requests Argus can do itself are now routed in-app FIRST, before
  * the model and long before screen control:
- *  - Blaze Music transport ("play music", "pause the music", "next song", "previous track", "what's playing") ->
+ *  - Argus Music transport ("play music", "pause the music", "next song", "previous track", "what's playing") ->
  *    music_ops (no approval: safe local actions);
- *  - Blaze's own screens ("open Blaze Music", "open projects", "show my gallery") -> open_view.
+ *  - Argus's own screens ("open Blaze Music", "open projects", "show my gallery") -> open_view.
  * [toolFor] does the same for a shell line that names an in-app tool ("music_ops play"), so it runs as that tool.
  * Anything that names another app or service (Spotify, YouTube…) is left to the normal turn. Pure; InAppRouteTest.
  */

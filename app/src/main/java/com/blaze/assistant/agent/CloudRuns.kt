@@ -382,7 +382,7 @@ object CloudRuns {
         fun send(method: String, path: String, body: String?, headers: Map<String, String>): Response
     }
 
-    /** The real gateway: HTTPS with the Blaze sign-in. */
+    /** The real gateway: HTTPS with the Argus sign-in. */
     class GatewayHttp(private val base: String = Providers.GATEWAY_BASE, private val token: () -> String = { Settings.gatewayToken() }) : Http {
         override fun send(method: String, path: String, body: String?, headers: Map<String, String>): Response {
             val c = com.blaze.assistant.connect.UrlSafety.open(base.trimEnd('/') + path)
@@ -778,7 +778,7 @@ object CloudRuns {
                     forget(id, true); t.runId = null
                     // 0.46.3: a run that failed for a reason another brain can fix (every model busy, no reply, too slow, a 5xx)
                     // never reaches the person: this step and the rest of the turn go on the phone's own loop, which retries
-                    // Blaze Cloud, then the backup brain, then the reserve, with the same context (Failover).
+                    // Argus Cloud, then the backup brain, then the reserve, with the same context (Failover).
                     if (handOff(code)) throw Fallback("failed $code: handed to the local loop")
                     val known = failure(code)
                     // Contract §3: a busy / quota failure says it in the gateway's honest words, with what to do next.
@@ -872,7 +872,7 @@ object CloudRuns {
             null
         } catch (e: LlmClient.LlmException) {
             if (!handOff(e)) throw e
-            // 0.46.3: busy / 5xx / timeout / network on the run: the local loop (Blaze Cloud retry, backup, reserve) takes it
+            // 0.46.3: busy / 5xx / timeout / network on the run: the local loop (Argus Cloud retry, backup, reserve) takes it
             t.off = true
             LlmClient.lastCloudError = "cloud run: ${e.message.orEmpty().take(200)} (handed to the local loop)"
             null

@@ -5,9 +5,9 @@ import android.content.Intent
 
 /**
  * v0.45.0: MainActivity is exported (launcher, assistant, share sheet), so any installed app can start it with any
- * extras. The internal entry points (listen now, start a Blaze call, open a chat, open the secure form) are honoured
- * only when the intent carries this app's private key, which only Blaze's own notifications, tile, shortcut, overlay
- * and wake word add. The key lives in Blaze's private prefs (other apps can't read it) and survives restarts, so
+ * extras. The internal entry points (listen now, start an Argus call, open a chat, open the secure form) are honoured
+ * only when the intent carries this app's private key, which only Argus's own notifications, tile, shortcut, overlay
+ * and wake word add. The key lives in Argus's private prefs (other apps can't read it) and survives restarts, so
  * notifications posted before a restart still work.
  */
 object IntentKey {
@@ -22,7 +22,7 @@ object IntentKey {
         }.also { cached = it }
     }
 
-    /** Marks [i] as coming from Blaze itself. */
+    /** Marks [i] as coming from Argus itself. */
     fun sign(ctx: Context, i: Intent): Intent = i.putExtra(EXTRA, key(ctx))
 
     fun trusted(ctx: Context, i: Intent): Boolean = Policy.keyOk(i.getStringExtra(EXTRA), key(ctx))

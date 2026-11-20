@@ -49,7 +49,7 @@ object GoalPin {
             (if (g.constraints.isNotEmpty()) " Constraints the user set: " + g.constraints.joinToString(" | ") { "\u201c$it\u201d" } + "." else "")
     }
 
-    /** User request texts in [history] (plain strings, newest last, "[m7] " ids taken off; Blaze's own bracketed notes skipped). */
+    /** User request texts in [history] (plain strings, newest last, "[m7] " ids taken off; Argus's own bracketed notes skipped). */
     fun userTexts(history: JSONArray, max: Int = 4): List<String> {
         val out = ArrayList<String>()
         var i = history.length() - 1
@@ -61,7 +61,7 @@ object GoalPin {
                     is String -> c
                     is JSONArray -> (0 until c.length()).mapNotNull { c.optJSONObject(it) }.filter { it.optString("type") == "text" }.joinToString(" ") { it.optString("text") }
                     else -> ""
-                }.trim().let { FollowUpBind.untag(it) }   // 0.45.29: "[m7] " ids were making every main-chat message look like a Blaze note
+                }.trim().let { FollowUpBind.untag(it) }   // 0.45.29: "[m7] " ids were making every main-chat message look like an Argus note
                 if (t.isNotEmpty() && !t.startsWith("[")) out.add(0, t)
             }
             i--

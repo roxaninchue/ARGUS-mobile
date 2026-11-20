@@ -7,7 +7,7 @@ import org.json.JSONObject
 
 /**
  * v0.26.2 root-cause fix for the "Done." replies (Jack, 2026-10-14: "what sound profile is my phone set to?" →
- * "Done.", reasoning pane "The user asks:", work card "1 step"). The path: Blaze Cloud's free upstream streamed
+ * "Done.", reasoning pane "The user asks:", work card "1 step"). The path: Argus Cloud's free upstream streamed
  * only reasoning and then ended the stream; LlmClient.readStream returned it as a normal message with empty
  * content and no tool calls; the agent loop took that as the final answer; addReply turned the empty text into
  * "Done.".

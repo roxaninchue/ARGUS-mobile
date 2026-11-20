@@ -10,16 +10,16 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * One mind (v0.18.0), mirroring Blaze Desktop's internal/mind (docs/plans/plan-one-mind.md in Blaze-dekstop).
+ * One mind (v0.18.0), mirroring Argus Desktop's internal/mind (docs/plans/plan-one-mind.md in Blaze-dekstop).
  *
  *  - One continuous conversation ([MAIN]); projects keep their own threads.
  *  - journal: every turn of every conversation (old chats imported once, idempotently), with FTS, queued for review.
- *  - memories: the source of truth for what Blaze knows (profile, preference, person, project, decision, fact), with FTS.
+ *  - memories: the source of truth for what Argus knows (profile, preference, person, project, decision, fact), with FTS.
  *    [save] dedupes: same kind + subject and word overlap >= 0.5 rewrites the line (newest wins), identical text is a no-op.
  *  - The prompt carries only [MIND_RULE], the pinned core and the subject index ([promptBlock]); everything else is looked up.
  *  - Context ladder ([rung]): recent turns, then the rolling summary, then lookup (core + index + last [LOOKUP_TAIL] messages).
  *
- * Storage (v0.26.3): filesDir/blaze.db, the same SQLite file format as Blaze Desktop and Blaze CLI (schema v1, FTS5) on a
+ * Storage (v0.26.3): filesDir/blaze.db, the same SQLite file format as Argus Desktop and Blaze CLI (schema v1, FTS5) on a
  * bundled modern SQLite ([MindStore], store/BlazeDb.kt). The old databases/mind.db (Android's SQLite, FTS4, [Db]) is
  * backed up and copied over once, kept as it was, and used again only if blaze.db can't be opened.
  * The pure parts (dedupe, core, index, ladder, extraction parsing) are unit-tested on the JVM.
@@ -647,7 +647,7 @@ object Mind {
      * Opens the mind. v0.26.3: blaze.db (filesDir) on the bundled SQLite is the store. The first launch after the
      * update finds the old databases/mind.db: the app keeps working on it while a background thread backs it up
      * (filesDir/backup/mind-<time>.db) and copies it into blaze.db ([MindStore.importFrom]); then blaze.db takes
-     * over. mind.db is never deleted. If blaze.db can't open (or was written by a newer Blaze), mind.db stays the
+     * over. mind.db is never deleted. If blaze.db can't open (or was written by a newer Argus), mind.db stays the
      * store and [notice] says why in one line.
      */
     fun init(ctx: Context) {

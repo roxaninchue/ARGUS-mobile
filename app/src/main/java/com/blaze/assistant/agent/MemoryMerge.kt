@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * 0.45.24 memory tidy-up. Seen on a phone: Blaze kept "Likes jazz", "Likes jazz music" and "Enjoys jazz, mostly
+ * 0.45.24 memory tidy-up. Seen on a phone: Argus kept "Likes jazz", "Likes jazz music" and "Enjoys jazz, mostly
  * live" as three lines, and some lines ran to several paragraphs.
  *
  *  - A normal save keeps at most [Mind.TEXT_MAX] characters, cut on a word / letter boundary ([cap]).

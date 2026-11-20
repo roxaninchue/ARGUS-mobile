@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.45.7 Settings › Language: which language Blaze replies in.
+ * v0.45.7 Settings › Language: which language Argus replies in.
  *
  * Auto (the default) matches the user's latest message. A picked language adds one stable line to the SECOND system
  * message (the app context); the shared persona (first message) stays byte-identical. The line only changes when the

@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * 0.45.24: the chips under a reply are quick replies the user would tap next (an answer to a question Blaze just asked,
+ * 0.45.24: the chips under a reply are quick replies the user would tap next (an answer to a question Argus just asked,
  * or the logical next action), never a mirror of what the user just said. Seen on a phone: "plan a trip to Livingstone"
  * came back with "Plan a trip to Livingstone" / "Plan my Livingstone trip" as chips.
  *

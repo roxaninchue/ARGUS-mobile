@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Now every model call goes through [HedgeRace] with deadlines by [Kind], brains in [order]:
  *  - CHAT (no tools, and every Halo side reply): hedged after 3 s, first visible token within 8 s or the next brain,
  *    thinking never counts and is not shown. (0.46.4–0.46.5 also put short tool turns here, fastest brain first.)
- *  - TASK / CODING: Blaze Cloud then Nous, first token 20 s (thinking may stretch it to
+ *  - TASK / CODING: Argus Cloud then Nous, first token 20 s (thinking may stretch it to
  *    45 s), hedged after 6 s.
  *  - Every kind: 30 s without any chunk once answering → next brain, with the same messages.
  * 0.46.6 brain routing fix (handoff 27 Oct):
@@ -91,7 +91,7 @@ object BrainRace {
     @Suppress("UNUSED_PARAMETER")
     fun order(kind: Kind, signedIn: Boolean, ttft: (BackupRoute.Step) -> Long? = { null },
               reliability: (BackupRoute.Step) -> Double? = { null }): List<BackupRoute.Step> = buildList {
-        // 0.52.1 (gw061): on tool turns Blaze Cloud goes before the Nous reserve (the reserve is the same gateway with the
+        // 0.52.1 (gw061): on tool turns Argus Cloud goes before the Nous reserve (the reserve is the same gateway with the
         // same body on the slowest path, 60 s per attempt); plain chat keeps Nous → Cloud.
         if (signedIn) { if (kind == Kind.CHAT) { add(BackupRoute.Step.RESERVE); add(BackupRoute.Step.CLOUD) } else { add(BackupRoute.Step.CLOUD); add(BackupRoute.Step.RESERVE) } }
     }
@@ -130,7 +130,7 @@ object BrainRace {
      */
     fun cloudRunFor(lite: Boolean, longWork: Boolean): Boolean = !lite && longWork
 
-    /** Halo's side reply: if no word arrived by then, Halo says where Blaze is (from the app's own state, no model). */
+    /** Halo's side reply: if no word arrived by then, Halo says where Argus is (from the app's own state, no model). */
     const val HALO_HOLD_MS = 2_000L
     fun haloHolding(task: String, now: String): String = buildString {
         append("${BrandName.NAME} is still on ")
@@ -141,9 +141,9 @@ object BrainRace {
     }
 
     /**
-     * Halo's side reply, independent of Blaze's turn: [call] streams the model's words through its show function; if none
+     * Halo's side reply, independent of Argus's turn: [call] streams the model's words through its show function; if none
      * came within [holdMs], [holding] (if not blank) is shown at once. When the model fails after the holding line was shown,
-     * the holding line is Halo's reply (never an error while Blaze is simply busy). Cancellation passes through.
+     * the holding line is Halo's reply (never an error while Argus is simply busy). Cancellation passes through.
      */
     suspend fun haloReply(holdMs: Long, holding: () -> String, show: (String) -> Unit, call: suspend (show: (String) -> Unit) -> String): String = coroutineScope {
         val spoke = AtomicBoolean(false)

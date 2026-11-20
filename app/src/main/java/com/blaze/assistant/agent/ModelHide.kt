@@ -3,7 +3,7 @@ package com.blaze.assistant.agent
 
 import com.blaze.assistant.BrandName
 /**
- * 0.45.19 chat fixes (user rule for every client): never show which model or provider replied. Blaze is Blaze and Halo is
+ * 0.45.19 chat fixes (user rule for every client): never show which model or provider replied. Argus is Argus and Halo is
  * Halo. No model or provider ids in chat footers, the "What happened" sheet, settings, errors or fallback notices.
  * The details stay available to developers only behind [DevFlags.modelInfo] (off by default, debug builds only).
  *

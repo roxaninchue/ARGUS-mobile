@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent
 
 /**
- * Core skills (v0.24.3). Six bundled skills that shape every turn: how Blaze talks (blaze-voice), how it works
+ * Core skills (v0.24.3). Six bundled skills that shape every turn: how Argus talks (blaze-voice), how it works
  * (blaze-task-workflow), how it codes (blaze-coding-workflow), where output goes (blaze-views), how it uses specialists (blaze-specialists) and how it keeps
  * reusable workflows (blaze-workflow-builder).
  *

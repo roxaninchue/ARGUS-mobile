@@ -21,7 +21,7 @@ import java.security.SecureRandom
 
 /**
  * "Give Blaze a brain" without hunting for keys:
- *  - OpenRouter: one-tap sign-in (OAuth PKCE). OpenRouter mints a key for the user and Blaze keeps it.
+ *  - OpenRouter: one-tap sign-in (OAuth PKCE). OpenRouter mints a key for the user and Argus keeps it.
  *  - Google Gemini: opens the free key page; when the user copies the key and comes back, the
  *    key catcher spots it on the clipboard and saves it (nothing to paste).
  *  - Anything else keeps working keyless in the meantime.
@@ -108,7 +108,7 @@ object Brains {
     )
 
     /**
-     * Key catcher: when Blaze comes to the front and the clipboard holds exactly one free-provider
+     * Key catcher: when Argus comes to the front and the clipboard holds exactly one free-provider
      * key (and nothing else), it's saved for that provider. Returns a message to show, or null.
      */
     fun clipText(ctx: Context): String = try {
@@ -123,7 +123,7 @@ object Brains {
 
     /**
      * "I copied it" button / coming back from Google: reads the clipboard (allowed, the user just
-     * tapped or Blaze has focus), recognises the key, checks it with the provider if the format is
+     * tapped or Argus has focus), recognises the key, checks it with the provider if the format is
      * unfamiliar, and saves it. Runs network checks, so call off the main thread.
      */
     suspend fun takeFromClipboard(ctx: Context, userTapped: Boolean): String? = withContext(Dispatchers.IO) {

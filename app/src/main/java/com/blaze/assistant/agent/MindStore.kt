@@ -5,7 +5,7 @@ import com.blaze.assistant.store.Sql
 import org.json.JSONArray
 
 /**
- * v0.26.3 one memory store: the mind lives in blaze.db, the same file format as Blaze Desktop and Blaze CLI
+ * v0.26.3 one memory store: the mind lives in blaze.db, the same file format as Argus Desktop and Blaze CLI
  * (internal/store schema v1, FTS5). Memories are rows of the shared `memories` table (text, norm, category = kind,
  * created / updated in unix seconds, uses, last_used, pinned), so a blaze.db from the phone opens in Desktop or the
  * CLI and theirs open here.

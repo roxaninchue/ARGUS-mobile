@@ -10,7 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Long-term facts Blaze keeps about the user, across chats.
+ * Long-term facts Argus keeps about the user, across chats.
  *
  * Since v0.18.0 (one mind) the memories table (blaze.db since v0.26.3, mind.db before) is the source of truth and this object is a view of it:
  * the Memory screen, remember / recall_memory / forget and the learning review all go through [Mind]. The old

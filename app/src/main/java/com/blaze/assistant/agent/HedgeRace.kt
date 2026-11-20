@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * 0.46.5 fix (Rocky, 26 Oct 21:00, on 0.46.4: a task turn ended in "Blaze Cloud is busy right now" after ~3 min while the
  * on-phone brain and Nous were working, only slowly): in 0.46.4 the first-token deadline DROPPED (cancelled) a slow brain,
- * so the slow-but-working brains were killed one by one and the turn fell through to Blaze Cloud, which was failing.
+ * so the slow-but-working brains were killed one by one and the turn fell through to Argus Cloud, which was failing.
  * Now a deadline never cancels a brain that may still answer:
  *  - [Limits.hedgeMs] / [Limits.firstMs]: nobody has shown output yet → the NEXT brain is started in parallel (the earlier
  *    ones keep running). Every started brain races until one shows real output (reply text or a tool call); only then

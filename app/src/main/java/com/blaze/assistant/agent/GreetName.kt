@@ -10,6 +10,6 @@ object GreetName {
         return ok(setName) ?: ok(accountName)?.substringBefore(' ')
     }
 
-    /** The prompt rule: greet by that name or by none (the maker named in Blaze's own docs is not the user). */
+    /** The prompt rule: greet by that name or by none (the maker named in Argus's own docs is not the user). */
     const val RULE = "\nNAMES: call the user only by the name given above as the user's name; with none given, use no name. Names in ${BrandName.NAME}'s own docs (its maker, testers) are not the user's."
 }

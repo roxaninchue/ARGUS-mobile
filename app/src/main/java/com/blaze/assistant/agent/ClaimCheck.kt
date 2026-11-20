@@ -39,9 +39,9 @@ object ClaimCheck {
         r("""\b(start|launch|run|running|boot|linux|server|serve)\b"""))
 
     /**
-     * 0.45.19 Blaze Phone, no false done: "booked", "your table is confirmed", "order placed", "paid" need the newest
-     * Blaze Phone page to have been read back as VERIFIED (a confirmation number / text on the page). Only checked on
-     * turns that used Blaze Phone.
+     * 0.45.19 Argus Phone, no false done: "booked", "your table is confirmed", "order placed", "paid" need the newest
+     * Argus Phone page to have been read back as VERIFIED (a confirmation number / text on the page). Only checked on
+     * turns that used Argus Phone.
      */
     val BOOKED = ActionProof.Action("booked", "book or order that",
         r("""(?:^\s*(?:done[,!.:]?\s*|all set[,!.]?\s*)?|\b(?:i|i've|i have|i just|i've just|we've)\s+(?:also\s+|now\s+|just\s+|successfully\s+)?)(?:booked|reserved|ordered|purchased|paid|placed (?:the|your|an?) order|confirmed (?:the|your) (?:booking|reservation|order|table|appointment))\b|""" +
@@ -64,7 +64,7 @@ object ClaimCheck {
         var rewrote: ActionProof.Action? = null
         for (a in ACTIONS) {
             if (!ActionProof.asked(userText, a, intentTools)) continue
-            // 0.45.29: on a bare "yes" turn a booking claim is checked even when Blaze Phone never ran.
+            // 0.45.29: on a bare "yes" turn a booking claim is checked even when Argus Phone never ran.
             if (a.id == "booked" && done.none { it.name in a.tools } && !FollowUpBind.isShortYes(userText)) continue
             // 0.45.29: a bare "Done." needs any tool that was verified this turn.
             if (a.id == "done") {

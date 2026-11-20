@@ -18,7 +18,7 @@ import com.blaze.assistant.BrandName
  * Also here, pure (ActCheckTest):
  *  - [GoalCheck]: opening an app (or a Settings page) is step one, never the goal. A final "done" for a multi-step ask
  *    whose only verified results are opens is caught and the flow continues (one nudge), then said honestly.
- *  - [TimeEcho]: a reply about an alarm / timer / reminder Blaze set this turn says the time that was really set.
+ *  - [TimeEcho]: a reply about an alarm / timer / reminder Argus set this turn says the time that was really set.
  *  - [PhoneCases]: the strict case set (each with its proof tools and verifier) used by the in-app self-test runner
  *    (PhoneQa) and the model-side replay.
  */
@@ -177,7 +177,7 @@ object ToggleReply {
 
 /**
  * v0.45.13 (phone 17:12): the chat said a time that wasn't the one set. A reply that names an alarm / timer / reminder
- * Blaze set THIS turn must say the time that was really set ([actual], "18:15"). Pure.
+ * Argus set THIS turn must say the time that was really set ([actual], "18:15"). Pure.
  */
 object TimeEcho {
     private val timeRe = Regex("(?i)\\b([01]?\\d|2[0-3])[:.]([0-5]\\d)(?:\\s*([ap])\\.?m\\.?)?\\b")

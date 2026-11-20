@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.45.19: a final reply that asks the user to type a login into the chat while a page is open in Blaze's browser.
+ * 0.45.19: a final reply that asks the user to type a login into the chat while a page is open in Argus's browser.
  * Seen in the live gateway replay: glm-4.5-flash "Could you please provide your username and password?" and
  * kilo-auto/free after the form "drop your username and password here". Credentials never go through the chat: the
  * agent shows the secure form (browser_secure_input) instead, once per turn, inside the existing per-site limits
@@ -52,7 +52,7 @@ object CredAsk {
 
     /**
      * The browser_secure_input call to run instead of showing [reply], or null to show it. [host] = the page open in
-     * Blaze's browser ("" = none); [asks] = secure forms already asked on that host this session (99 after a cancel);
+     * Argus's browser ("" = none); [asks] = secure forms already asked on that host this session (99 after a cancel);
      * [guarded] = this turn already swapped one reply; [known] = the tools this request may call.
      */
     fun decide(reply: String, host: String, asks: Int, guarded: Boolean, known: Collection<String>, userText: String = ""): JSONObject? {

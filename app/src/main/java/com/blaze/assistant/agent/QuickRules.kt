@@ -100,7 +100,7 @@ object QuickRules {
             "previous", "previous song", "previous track", "last song", "go back a song" -> return "media_control" to JSONObject().put("action", "previous")
         }
 
-        // Blaze's own settings: "open your voice settings", "blaze brain settings", "voice settings again".
+        // Argus's own settings: "open your voice settings", "blaze brain settings", "voice settings again".
         Regex("""^(?:(?:please |can you |could you )?(?:open|show|go to|take me to|bring up)?\s*)?(?:the |my )?(your |(?:argus|blaze)'?s? )?([a-z &]{2,20}?) (?:settings|setting|page)(?: again| please)?$""").matchEntire(t)?.let { m ->
             val own = m.groupValues[1].isNotBlank()
             val what = m.groupValues[2].trim()

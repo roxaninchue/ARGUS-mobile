@@ -1,10 +1,10 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.45.13: finds one of Blaze's alarms in a Clock app's alarm list, from a snapshot of the accessibility tree. Pure,
+ * v0.45.13: finds one of Argus's alarms in a Clock app's alarm list, from a snapshot of the accessibility tree. Pure,
  * so AlarmRowsTest covers Samsung Clock, Google Clock and AOSP DeskClock shapes without a phone.
  *
- * Blaze's alarms carry their registry id in the label ("Demo app alarm (Blaze A2)"), so the row is found by
+ * Argus's alarms carry their registry id in the label ("Demo app alarm (Blaze A2)"), so the row is found by
  * "Blaze A2" (word-bounded: A2 never matches A21). When a clock truncates or hides the label, the time ("18:15",
  * "6:15") finds it, but only when exactly one row shows that time. The row is the smallest ancestor of the label that
  * holds exactly one switch; its switch is the alarm's on/off state.

@@ -10,7 +10,7 @@ import kotlin.math.roundToInt
 
 /**
  * v0.35.0 Design studio, Page mode: a page (post, story, slide, icon, app screen, poster) as a list of
- * positioned elements the user can select, move, resize and recolour by hand, and Blaze can edit by id.
+ * positioned elements the user can select, move, resize and recolour by hand, and Argus can edit by id.
  *
  * A page is saved like every other design (~/designs/<slug>/index.html, versions, undo): a plain HTML
  * document with absolutely placed elements (so the browser, Desktop and export read it as is) that
@@ -328,7 +328,7 @@ object DesignPage {
         return sb.toString()
     }
 
-    // ---------------- edits by id (Blaze) ----------------
+    // ---------------- edits by id (Argus) ----------------
 
     /** Adds or changes elements by id (only the keys given change) and removes ids; returns the doc and a summary. */
     fun merge(d: Doc, set: JSONArray?, remove: Collection<String>): Pair<Doc, String> {

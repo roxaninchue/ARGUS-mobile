@@ -1,9 +1,9 @@
 package com.blaze.assistant.agent
 
 /**
- * v0.44.0 model routing: turns that DO things go to the strongest lineup Blaze Cloud has, plain chat stays fast.
+ * v0.44.0 model routing: turns that DO things go to the strongest lineup Argus Cloud has, plain chat stays fast.
  *
- * The phone never names a model: Blaze Cloud (gateway 0.6.0) offers task lineups (`blaze_task` chat / quick / code /
+ * The phone never names a model: Argus Cloud (gateway 0.6.0) offers task lineups (`blaze_task` chat / quick / code /
  * vision / long / agent, each an ordered list of free models set in its admin) and takes `blaze_avoid`, a list of
  * "provider/model" routes to try last. So routing here is: which lineup, and which weak routes go to the back.
  *
@@ -23,7 +23,7 @@ object ModelRoute {
 
     /**
      * Routes that are fine for a quick reply but weak at multi-step tool use (seen writing calls as text, or losing
-     * the thread). On an action turn they are sent as blaze_avoid, so Blaze Cloud tries them only after the rest.
+     * the thread). On an action turn they are sent as blaze_avoid, so Argus Cloud tries them only after the rest.
      * The gateway keeps at most 8 avoid entries; the ones a failed try just named come first ([avoid]).
      */
     val WEAK_FOR_TOOLS = listOf(

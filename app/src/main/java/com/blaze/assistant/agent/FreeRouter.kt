@@ -117,7 +117,7 @@ object FreeRouter {
         val e = entries()
         return e.map { it.first }.distinct().map { pid ->
             val listed = ProviderCatalog.listing(pid)?.models.orEmpty()
-            // "openrouter/free" hands each turn to a random free model and tiny coding models can't run Blaze:
+            // "openrouter/free" hands each turn to a random free model and tiny coding models can't run Argus:
             // the catalogue orders OpenRouter's free models instead (they stay in the list, further down).
             val pinned = e.filter { it.first == pid }.map { it.second }
                 .filter { it.isNotBlank() && !(pid == "openrouter" && (it == "openrouter/free" || weak.containsMatchIn(it))) }

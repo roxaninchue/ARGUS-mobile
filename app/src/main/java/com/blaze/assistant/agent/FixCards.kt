@@ -5,7 +5,7 @@ import com.blaze.assistant.BrandName
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * v0.39.0 Errors as fixes: when a tool result says an access Blaze needs is off, the chat shows a one-button card
+ * v0.39.0 Errors as fixes: when a tool result says an access Argus needs is off, the chat shows a one-button card
  * ("Turn it on") that opens the right system screen, instead of an error. The matching is pure (FixCardsTest);
  * the card and the intent live in ui/SimpleCards.
  */

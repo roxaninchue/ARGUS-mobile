@@ -7,7 +7,7 @@ import com.blaze.assistant.BrandName
  *
  * For each request, which surface should do the work:
  *  - [Exec.TERMINAL]: the task is easy as a command — web lookups (curl / http_request / fetch_page), file work, sums and
- *    conversions, git, package / version lookups, API calls, text processing, downloads, network checks, hashes. Blaze uses
+ *    conversions, git, package / version lookups, API calls, text processing, downloads, network checks, hashes. Argus uses
  *    run_shell / run_code / http_request / fetch_page instead of opening apps, tapping or driving the browser.
  *  - [Exec.HTTP]: the same kind of task on a phone where the terminal should not be started (low-RAM: the low-RAM rule wins;
  *    or Linux not installed and the task needs more than BusyBox): the built-in HTTP tools (web_search, fetch_page,
@@ -34,7 +34,7 @@ object ExecRoute {
     private val terminal = r("""\b(?:search(?: the web| online| for)?|look up|lookup|google|latest (?:version|release)|what version|which version|release notes|changelog|download|curl|wget|http request|api|endpoint|json|xml|csv|yaml|fetch (?:the |this )?(?:page|url|site)|scrape|git|clone|commit|repo(?:sitory)?|pip|npm|cargo|gradle|maven|apk add|package|dependency|library version|calculate|compute|convert|how many (?:days|hours|minutes|bytes)|percentage|hash|sha256|md5|base64|encode|decode|regex|grep|sed|awk|sort|count (?:the )?(?:words|lines)|word count|unzip|zip|extract (?:the )?(?:zip|archive|tar)|rename (?:the )?files?|move (?:the )?files?|copy (?:the )?files?|find (?:the )?files?|delete (?:the )?files?|file size|disk (?:space|usage)|storage used|ping|traceroute|dns|ip address|my ip|is \S+ (?:up|down)|network speed|speed test|port|ssl cert|certificate|whois|timestamp|epoch|unix time|python|script|run (?:this |the )?(?:code|command)|terminal|shell|linux)\b""")
 
     /**
-     * The surface for [text]. [terminalReady]: Blaze Terminal can run it (BusyBox shell is built in; Alpine for curl,
+     * The surface for [text]. [terminalReady]: Argus Terminal can run it (BusyBox shell is built in; Alpine for curl,
      * Python, git). [lowRam]: the low-RAM rule (no Linux start on low-RAM phones) — the HTTP tools are used instead.
      */
     fun route(text: String, terminalReady: Boolean = true, lowRam: Boolean = false): Exec {
