@@ -36,6 +36,27 @@ class AgentKeeper : Service() {
         private const val ACT_STOP = "com.blaze.assistant.agent.STOP_RUN"
         private const val EXTRA_ID = "run_id"
 
+        private const val CH_END = "blaze_agent_results"
+
+        /**
+         * A run ended: say so in a notification of its own (done, partly done or stopped, with which parts didn't finish),
+         * unless you're looking at Argus right now or you stopped it yourself.
+         */
+        fun ended(ctx: Context, bg: BgAgents.Bg) {
+            val t = AgentNote.ended(bg) ?: return
+            try {
+                if (com.blaze.assistant.notify.Notifier.isVisible()) return
+                val nm = ctx.getSystemService(NotificationManager::class.java)
+                if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel(CH_END, "Background run results", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                    description = "When research, a build or an agent finishes or stops, and why" })
+                val n = NotificationCompat.Builder(ctx, CH_END).setSmallIcon(R.drawable.ic_stat_blaze)
+                    .setContentTitle(t.title).setContentText(t.body).setStyle(NotificationCompat.BigTextStyle().bigText(t.body))
+                    .setAutoCancel(true).setCategory(NotificationCompat.CATEGORY_STATUS)
+                    .setContentIntent(com.blaze.assistant.notify.Notifier.openChat(bg.parent)).build()
+                nm.notify(8000 + (bg.id.filter { it.isDigit() }.toIntOrNull() ?: 0) % 900, n)
+            } catch (_: Throwable) { }
+        }
+
         fun start(ctx: Context) {
             val i = Intent(ctx, AgentKeeper::class.java)
             // Android 12+ refuses a foreground start from the background (e.g. a run resumed at boot); the run still goes on.

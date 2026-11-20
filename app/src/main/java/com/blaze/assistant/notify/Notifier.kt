@@ -152,6 +152,9 @@ object Notifier {
     fun update(pct: Int?, label: String = "") { stUpdatePct = pct; stUpdateLabel = label; refresh() }
 
     /** The app came to the front (true) or went to the background (false). */
+    /** 0.54.1: true while Argus is on screen (AgentKeeper skips its end notification then). */
+    fun isVisible(): Boolean = appVisible
+
     fun visible(v: Boolean) { appVisible = v; if (v) clearThread(); refresh() }
 
     /** Stop: cancels agent work and any update download, then clears the line. */

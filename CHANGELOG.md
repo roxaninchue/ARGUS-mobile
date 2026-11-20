@@ -4,8 +4,9 @@
 - **AgentKeeper** (`agent/AgentKeeper.kt`, new dataSync foreground service, like terminal/JobKeeper): starts when a run claims a slot, holds the process while any background agent or blueprint run is queued or running, and stops itself when none is left.
 - **The notification is specific** (`agent/AgentNote.kt`, pure): title names the run ("Deep research: How Anthropic was created"); body says "Part 6 of 14 · Searching: the 2021 OpenAI split" for a blueprint (parts finished of the parts in its plan; the plan can grow when a fixer is added), "Step 23 · Reading kayak.com" for an agent with no plan (no made-up total), "Waiting for you: open Argus and answer its card" when it needs a tap, and "Queued: starts when a slot frees (n running)". Real progress bar for blueprints, elapsed-time chronometer, Stop (cancels that run) and tap to open its chat. Several runs: "3 runs: 2 working, 1 queued" with one line each. Channel "Background runs", low importance, silent.
 - **Parts count**: `OrchestraRuns.run` reports done/total after every node event; `BgAgents.Bg` gains `done` / `total` (saved).
-- `Notifier.openChat` is now internal so the keeper can reuse it.
-- Tests: AgentNoteTest (4, new). Not built (no build until Finn says build).
+- **An end notification, too** (Finn, 00:27: "got no notification that it failed"): when a run ends while Argus isn't on screen, "Done · Deep research: …" ("All 14 parts in 6m 12s. Tap to open the result."), "Partly done · …" or "Stopped · …" ("Couldn't finish: Write the document, Export. Ran 6m 12s, 12 of 14 parts done. Tap to see what it found."), on its own channel "Background run results". None when you stopped it yourself.
+- `Notifier.openChat` is now internal so the keeper can reuse it; `Notifier.isVisible()`.
+- Tests: AgentNoteTest (7, new). Not built (no build until Finn says build).
 
 ## Unreleased: crash log always writes the crash line
 

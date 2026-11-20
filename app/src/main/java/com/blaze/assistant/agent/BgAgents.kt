@@ -163,7 +163,9 @@ object BgAgents {
     /** Queue a new agent. Returns it; it starts as soon as a slot is free. [specialist] = run it as that specialist. */
     /** P1-TM-05: told when an agent ends (done, failed or cancelled); the jobs queue listens. Never throws into BgAgents. */
     @Volatile var onEnd: ((Bg) -> Unit)? = null
-    private fun ended(id: String) { val bg = get(id) ?: return; try { onEnd?.invoke(bg) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BgAgents: onEnd", e) } }
+    private fun ended(id: String) { val bg = get(id) ?: return
+        if (::app.isInitialized) AgentKeeper.ended(app, bg)   // 0.54.1: a notification says it ended, and how
+        try { onEnd?.invoke(bg) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BgAgents: onEnd", e) } }
 
     /** True while agent [id] is queued or running (a resumed one counts). */
     fun alive(id: String): Boolean = get(id)?.live == true

@@ -35,4 +35,21 @@ class AgentNoteTest {
         assertEquals(2, t.lines.size)
         assertTrue(t.lines[1].contains("Queued: starts when a slot frees (1 running)"))
     }
+
+    @Test fun stoppedSaysWhichPartsDidNotFinish() {
+        val bg = bp(12, 14).copy(status = BgAgents.FAILED, ended = 1 + 372_000,
+            result = "The blueprint run didn't produce a result.\n\nNot finished: Write the document, Export")
+        val t = AgentNote.ended(bg)!!
+        assertEquals("Stopped \u00b7 Deep research: How Anthropic was created", t.title)
+        assertEquals("Couldn't finish: Write the document, Export. Ran 6m 12s, 12 of 14 parts done. Tap to see what it found.", t.body)
+    }
+
+    @Test fun doneSaysHowLong() {
+        val t = AgentNote.ended(bp(14, 14).copy(status = BgAgents.DONE, ended = 1 + 48_000, result = "**Report**"))!!
+        assertEquals("All 14 parts in 48s. Tap to open the result.", t.body)
+    }
+
+    @Test fun cancelledByYouHasNoNotification() {
+        assertEquals(null, AgentNote.ended(bp(3, 14).copy(status = BgAgents.CANCELLED)))
+    }
 }
