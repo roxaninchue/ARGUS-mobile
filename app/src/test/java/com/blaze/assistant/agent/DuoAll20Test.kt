@@ -53,7 +53,8 @@ class DuoAll20Test {
 
     @Test fun voice_ruleAndHooksAreWired() = five {
         val src = listOf(File("src/main/java/com/blaze/assistant/agent/Agent.kt"), File("app/src/main/java/com/blaze/assistant/agent/Agent.kt")).first { it.exists() }.readText()
-        assertTrue(src.contains("s(\"voice\", VoiceFiller.RULE)"))
+        // Round 5 (shelf cost 1/4): the voice rule moved to the TURN tier so switching voice/typing keeps the cached prefix.
+        assertTrue(src.contains("turn(\"voice\", VoiceFiller.RULE)"))
         assertTrue(src.contains("VoiceFiller.spoken(last.text"))
         assertTrue(src.contains("VoiceFiller.onlyFiller(part)"))
     }
