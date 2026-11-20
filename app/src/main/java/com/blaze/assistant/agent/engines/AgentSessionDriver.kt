@@ -12,10 +12,17 @@ import kotlinx.coroutines.withContext
  * rules live in LocalEngine / TeamHooks. Not used by any screen yet (P1-TM-02).
  */
 object AgentSessionDriver : LocalEngine.Driver {
+    /**
+     * Bot chat redesign: files the user attached in a bot's thread ride its next turn. The screen stages them for the
+     * bot's chat ([BotFiles.stage]) and then sends through BotThreads, so the turn keeps the bot's binding.
+     */
+    val files = BotFiles<com.blaze.assistant.agent.Attachment>()
+
     override suspend fun run(threadId: String, text: String, byVoice: Boolean, untrusted: String?) {
         val s = Agent.teamSession(threadId)
         if (s.busy) s.job?.join()
-        withContext(Dispatchers.Main) { s.send(text, byVoice = byVoice, untrusted = untrusted) }
+        val attached = if (untrusted == null) files.take(threadId) else emptyList()   // the user's own message only
+        withContext(Dispatchers.Main) { s.send(text, byVoice = byVoice, attachments = attached, untrusted = untrusted) }
         s.job?.join()
     }
 
@@ -30,4 +37,15 @@ object AgentSessionDriver : LocalEngine.Driver {
 
     /** The engine every LOCAL bot runs on. */
     val engine: LocalEngine by lazy { LocalEngine(this, groupOf = { ToolRouter.groupOf(it) }) }
+}
+
+/**
+ * Bot chat redesign: attachments waiting for one chat's next user turn. Per chat, so a file staged in one bot's thread
+ * never rides another bot's or the main chat's turn. Pure (BotChatTest).
+ */
+class BotFiles<T> {
+    private val staged = java.util.concurrent.ConcurrentHashMap<String, List<T>>()
+    fun stage(chatId: String, files: List<T>) { if (files.isEmpty()) staged.remove(chatId) else staged[chatId] = files }
+    fun take(chatId: String): List<T> = staged.remove(chatId).orEmpty()
+    fun waiting(chatId: String): Int = staged[chatId]?.size ?: 0
 }
