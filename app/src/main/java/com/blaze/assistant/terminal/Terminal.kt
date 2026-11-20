@@ -33,7 +33,7 @@ object Terminal {
     fun hasBusybox() = ::app.isInitialized && busybox().exists()
 
     fun init(ctx: Context) {
-        app = ctx.applicationContext; Linux.init(ctx); LinuxReadyRunner.init(ctx)
+        app = ctx.applicationContext; Linux.init(ctx); LinuxReadyRunner.init(ctx); TermCheckpoints.init(ctx)
         // 0.53.7: kept servers (Servers) come back after the app was killed; off the main thread, after start-up settles.
         try { Servers.init(ctx) } catch (_: Throwable) { }
         if (Servers.has()) scope.launch { kotlinx.coroutines.delay(4000); try { Servers.resume() } catch (_: Throwable) { } }

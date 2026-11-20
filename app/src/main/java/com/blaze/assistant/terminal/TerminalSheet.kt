@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Palette
@@ -110,6 +111,7 @@ object TermSheet {
         "linux" -> Icons.Rounded.Terminal
         "install" -> Icons.Rounded.Download
         "theme" -> Icons.Rounded.Palette
+        "checkpoints" -> Icons.Rounded.History
         else -> Icons.Rounded.Add
     }
 }
