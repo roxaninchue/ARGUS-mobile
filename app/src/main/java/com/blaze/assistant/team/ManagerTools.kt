@@ -243,11 +243,15 @@ class ManagerTools(
         "portfolio" to str("What it owns: accounts, projects, clients"), "instructions" to str("How it should work (its instructions)"),
         "face" to str("Look: Orbit, Tilt, Steep, Pure, Twin or Polar"), "color" to str("Colour: #rrggbb or violet, green, amber, red, cyan, indigo, blue, silver"),
         "reports_to" to str("Bot it reports to (default: ${BotRules.MANAGER_NAME})"), "effort" to str("low, medium, high or xhigh"),
-        "mode" to str("personal or teammate"))
+        "mode" to str("personal or teammate"),
+        // Owner 2026-11-20: ARGUS picks each agent's tools, capped (AgentKit)
+        "tools" to str("Tool groups it needs, comma-separated, at most ${AgentKit.MAX_GROUPS}: " +
+            AgentKit.GROUPS.entries.joinToString("; ") { "${it.key} (${it.value})" } + ". Memory and jobs come with every agent."),
+        "terminal" to linkedMapOf<String, Any?>("type" to "boolean", "description" to "true for a terminal agent: owns long jobs (builds, installs, scripts) in the Linux sandbox and acts there on its own"))
 
     fun defs(): List<String> = listOf(
         fn("agents_list", "List every bot on the team (the roster): name, id, role, who it reports to, open jobs.", linkedMapOf(), emptyList()),
-        fn("agent_create", "Create a new bot. It reports to you unless you say otherwise.", fields(), listOf("name")),
+        fn("agent_create", "Create a new agent for work that will come back. Pick only the tool groups it needs (tools, at most ${AgentKit.MAX_GROUPS}). It reports to you unless you say otherwise; agents reporting to another agent form its team.", fields(), listOf("name")),
         fn("agent_update", "Change a bot: name, role, email, portfolio, instructions, look, reports-to, effort or mode. ${BotRules.MANAGER_NAME} itself is locked.",
             linkedMapOf<String, Map<String, Any?>>("agent" to str("Bot name or id")).apply { putAll(fields()) }, listOf("agent")),
         fn("agent_delete", "Delete a bot. The first call only asks the user to confirm; call again with confirm: true after they say yes in their next message. ${BotRules.MANAGER_NAME} can never be deleted.",
@@ -310,6 +314,15 @@ class ManagerTools(
         s("color")?.let { x = x.copy(color = BotDraft.colorOf(it) ?: return x to "Error: \"$it\" isn't a colour; use #rrggbb or a swatch name.") }
         s("effort")?.let { x = x.copy(effort = BotDraft.effortOf(it) ?: return x to "Error: effort is low, medium, high or xhigh.") }
         s("mode")?.let { x = x.copy(mode = BotDraft.modeOf(it) ?: return x to "Error: mode is personal or teammate.") }
+        val term = a["terminal"] == true || s("terminal")?.lowercase() == "true"
+        if (a["tools"] != null || term) {
+            val picked = AgentKit.groups(a["tools"])
+            if (a["tools"] != null && picked.isEmpty() && !term) return x to "Error: pick tool groups from: ${AgentKit.GROUPS.keys.joinToString(", ")}."
+            x = x.copy(toolGroups = AgentKit.toolSet(picked, term))
+            if (term && x.instructions.isBlank()) x = x.copy(instructions = AgentKit.terminalSoul())
+            else if (term && !x.instructions.contains("terminal agent")) x = x.copy(instructions = AgentKit.terminalSoul() + "\n\n" + x.instructions)
+            if (term && x.label.isBlank()) x = x.copy(label = "Terminal")
+        }
         (s("reports_to") ?: s("lead"))?.let { w ->
             val lead = if (isManagerWord(w)) BotRules.MANAGER_ID else bot(w)?.id ?: return x to "Error: there's no bot called \"$w\" on the team."
             if (lead == selfId) return x to "Error: a bot can't report to itself."
@@ -330,7 +343,9 @@ class ManagerTools(
                 "Created ${r.bot.name} (id ${r.bot.id}), reports to $lead" +
                     (if (r.bot.engine.model.effort != "medium") ", effort ${r.bot.engine.model.effort}" else "") +
                     (if (r.bot.mode == "teammate") ", teammate" else "") +
-                    (if (d.instructions.isNotBlank()) ", with instructions" else "") + "."
+                    (if (d.instructions.isNotBlank()) ", with instructions" else "") +
+                    ", tools: ${r.bot.toolGroups.sorted().joinToString(", ")}" +
+                    (AgentKit.dropped(a["tools"]).takeIf { it.isNotEmpty() }?.let { " (left out: ${it.joinToString(", ")}; at most ${AgentKit.MAX_GROUPS} known groups)" } ?: "") + "."
             }
         }
     }
