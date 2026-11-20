@@ -1,6 +1,6 @@
-# Blaze tiered memory (0.49.0)
+# Argus tiered memory (0.49.0)
 
-Blaze keeps three tiers of memory so a turn never has to send everything, and a small free route
+Argus keeps three tiers of memory so a turn never has to send everything, and a small free route
 (Groq 8B at 6–8k tokens a minute) still fits, while nothing the user said or shared is lost.
 
 ```
@@ -85,7 +85,7 @@ apps) and `docs/<id>.txt` (the original text, verbatim).
 - **Threads**: every cache call runs on `Dispatchers.IO`; the history is edited back on the loop's thread.
 
 ## 0.51.0: BlazeQuery documents
-BlazeQuery (docs/BLAZEQUERY.md) stores what it fetches in this same cache: one document per topic (kind `blazequery`, in the
+BlazeQuery (docs/ARGUSQUERY.md) stores what it fetches in this same cache: one document per topic (kind `blazequery`, in the
 chat that asked) plus a `bq` row in cache.db (topic key, doc id, expiry, the judged evidence as JSON). Topics expire after
 1 h (news) / 3 h (versions) / 6 h; storing a topic again replaces its document. The prompt gets only the compact evidence
 pack; cache_search / cache_read reach the full text.

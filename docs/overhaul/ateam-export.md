@@ -1,5 +1,7 @@
 # A-team → ARGUS: export format and backup mapping (P0-MG-01)
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Status: **v1, 2026-11-12, for owner review.** Code: `team/ATeamExport.kt` (detect, validate, the pure mapping helpers).
 > Fixtures: `app/src/test/resources/ateam/` (Demo team). Test: `ATeamExportTest` (JVM, 6/6). Importers: P1-MG-01
 > (backup: bots + jobs + nickname/theme), P3-MG-01 (v1: memory, profile, routines), P8-MG-01 (A-team "Move to ARGUS").

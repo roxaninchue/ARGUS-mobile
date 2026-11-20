@@ -1,5 +1,7 @@
 # P0 execution plan — Groundwork (0.52.4)
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Working plan for the P0 session that started 2026-11-11 22:25 CAT. Source of truth for scope stays `06-team-plan.md` §6.1 and `P0-HANDOFF.md`; this file says **how** each ticket is being done, in what order, and what "verified" means without a Gradle build. Updated as tickets land.
 
 ## Owner answers received this session (2026-11-11, Finn)

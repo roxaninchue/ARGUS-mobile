@@ -1,4 +1,4 @@
-# Blaze glass design system (v0.31.0, phase 1)
+# Argus glass design system (v0.31.0, phase 1)
 
 Greyscale frosted glass on a near-black ground, taken from the app icon: translucent white fill (6–14 % alpha),
 a 1 dp rim bright at the top-left (white 30 % → 5 %), a faint specular sheen in the top-left corner, a soft shadow.
@@ -55,7 +55,7 @@ Blur note: Compose can't blur what is *behind* a layer, only a layer's own conte
 everything snaps / fades only when the phone's animator scale is 0.
 
 ## Chat (phase 1)
-* Borderless thread: Blaze's text full width on the ground; your text right-aligned, medium weight, 78 % ink. No bubbles.
+* Borderless thread: Argus's text full width on the ground; your text right-aligned, medium weight, 78 % ink. No bubbles.
 * Composer: glass pill. Work / confirm / question / secure-form cards: glass.
 * Streaming: `LlmClient.readStream` emits ~every 16 ms → `StreamGate` (agent) applies the newest snapshot at most once
   per frame on Main → `Session.msgs` / `Agent.messages` + `Agent.streamingId` → `MessageList` → `AnswerBody(live)`.

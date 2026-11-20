@@ -1,5 +1,7 @@
 # P0 Handoff — ARGUS unified app (Groundwork, 0.52.4)
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 You are picking up Phase 0 of the ARGUS overhaul. The planning is finished; no code has been written yet. Your job is to lay the foundation: tickets 1–9 below. Ticket 10 (the release) waits until the owner says "build".
 
 ## 1. What this project is

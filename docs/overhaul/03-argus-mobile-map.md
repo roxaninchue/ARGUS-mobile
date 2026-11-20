@@ -1,5 +1,7 @@
 # 03 · Argus-mobile inventory, architecture & merge map
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Slice 3 of the ARGUS overhaul (see `overhaul.md`). Author: Specialist 3 (Hark), 2026-11-11.
 > Source read: `argus-mobile@main` as pulled for the overhaul (versionName **0.52.3**, versionCode **190**, plus three
 > unreleased rounds on top: always-Autopilot, one look from `ui/space/`, icons everywhere). A-team and Bot HQ were

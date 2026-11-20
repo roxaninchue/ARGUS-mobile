@@ -1,4 +1,4 @@
-# Building Blaze locally (no GitHub Actions)
+# Building Argus locally (no GitHub Actions)
 
 Written 2026-11-01 for the 0.49.0 build, when the GitHub mirror was unavailable. The build agent's sandbox is
 **Linux aarch64** (2 CPUs, ~7 GB RAM, no `/dev/kvm`), which shapes every step below.
@@ -55,7 +55,7 @@ keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 -storepass testonl
 java -jar $BT/lib/apksigner.jar sign --ks /tmp/test.p12 --ks-pass pass:testonly --out work/out/blaze-<ver>-<tag>-<sha8>-test-signed.apk /tmp/aligned.apk
 ```
 
-A phone with the real (production-signed) Blaze must uninstall it before installing a test-signed APK.
+A phone with the real (production-signed) Argus must uninstall it before installing a test-signed APK.
 
 ## Robolectric native graphics on aarch64 (screenshot tests)
 

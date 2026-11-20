@@ -1,5 +1,7 @@
 # Blaze 0.52.1 handoff (branch `feat/blaze-0.52`) — IN PROGRESS
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 0.52.1 = versionCode 188 (from 0.52.0 / 187). Session started 2026-11-03 23:27 CAT. Pushed in chunks with `work/push052.sh "<msg>"`
 (GitLab commits API; plain `git push` over HTTPS does not work here). GitLab CI runs unit-tests / shots / release-apk on this branch.
 

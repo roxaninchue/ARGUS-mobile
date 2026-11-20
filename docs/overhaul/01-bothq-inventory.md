@@ -1,5 +1,7 @@
 # 01 · Bot HQ feature inventory + port notes
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Slice 1 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 1. Status: **complete, first full pass** (2026-11-11).
 > Source read in full: `github.com/nickvasilescu/bot-hq` @HEAD (MIT; 193 files, ~15.9k lines excluding assets): README, docs/, server/src/**, server/box/**, web/src/**, scripts/, tests/.
 > Cross-checked against `argus-mobile@main` (Kotlin/Compose, `app/src/main/java/com/blaze/assistant/…`, plus `gateway/`) and `a-team@main` (`app/www/*.js`, `app/src/ai/argus/agents/*.java`, `api/`).

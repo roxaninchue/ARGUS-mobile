@@ -1,5 +1,7 @@
 # 06 · Integrated team plan — ARGUS overhaul
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Slice 6 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 6 (integration lead / engineering program manager). 2026-11-11.
 > Inputs, all read in full: [`01-bothq-inventory.md`](01-bothq-inventory.md) (BH-01…BH-89), [`02-ateam-inventory.md`](02-ateam-inventory.md) (AT #1…#72 + design language L), [`03-argus-mobile-map.md`](03-argus-mobile-map.md) (inventory a.1–a.9, merge map c.1 #1–25, constraints d.1), [`04-design-ia.md`](04-design-ia.md) (design system, Team/Chat/Life/Desk IA, ~150-row feature → location table, 13 screen specs), [`05-agent-ecosystem.md`](05-agent-ecosystem.md) (agent model, routing, 14 domain agents, memory scopes, engines, API v2, safety, proactivity, data models, E0–E8).
 > Status: **v1 complete**. Nothing here is built; owner rules hold throughout: commit straight to `main`, every commit title ends with `[skip ci]`, **no build until the owner says build**.

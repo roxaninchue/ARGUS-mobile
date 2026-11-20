@@ -1,5 +1,7 @@
 # 02 · A-team feature inventory + port notes
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Slice 2 of the ARGUS overhaul. **Status: complete (first full pass, 2026-11-11).**
 > Source: `gitlab.com/blazeinchue/a-team` `main` @ `7c4b459a` (v2.18, versionCode 25), read from a local snapshot
 > (`README.md`, `HANDOFF*.md`, `docs/HANDOFF-v2.15.md`, every `app/www/*.js`, `app/www/app.css`, `index.html`,

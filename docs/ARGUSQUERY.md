@@ -34,7 +34,7 @@ Pure rules, microseconds, no keyword trigger for *answering* from the web (0.50 
 | Need | When | What happens |
 |---|---|---|
 | NONE | small talk, `/commands`, weather (get_weather has it), phone actions ("set an alarm", "open WhatsApp"), writing jobs ("write a poem") | nothing fetched, nothing injected |
-| LOCAL | about Blaze, its / commands, this conversation or the user's own data (`SearchRoute.isLocal`) | the best BM25 hits in this chat's cached documents, ≤ 200 tokens; never the web |
+| LOCAL | about Argus, its / commands, this conversation or the user's own data (`SearchRoute.isLocal`) | the best BM25 hits in this chat's cached documents, ≤ 200 tokens; never the web |
 | CODE | an error message / stack trace, a code fence, a CLI tool with flags, APIs, libraries, versions, Android/Linux commands | priority trigger; registries + official docs preferred; command verification |
 | EXTERNAL | a question about the world (facts, how-to, news, prices, releases) | evidence pack |
 

@@ -1,5 +1,7 @@
 # 04 · Design system + information architecture
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 > Slice 4 of the ARGUS overhaul (see `overhaul.md`). Owner: Specialist 4 (product design / IA).
 > Target: the one ARGUS Android app (`argus-mobile`, Kotlin + Compose) that holds every feature of Argus-mobile (AM), A-team (AT) and Bot HQ (BH).
 > **Base look: A-team** (v2.16+ "chat-first + liquid glass", `a-team/app/www/app.css`). Sources read for this doc are listed in §0.

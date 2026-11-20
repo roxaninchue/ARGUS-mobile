@@ -1,4 +1,4 @@
-# Blaze Store catalog: schema v1
+# Argus Store catalog: schema v1
 
 Served at **https://blazeinchue.pages.dev/store/catalog.json** (Blaze Site hosts it; seed copy in `store/catalog.json`,
 bundled into the app as `app/src/main/assets/store/catalog.json` for first run / offline).

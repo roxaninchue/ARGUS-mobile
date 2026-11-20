@@ -1,5 +1,7 @@
 # The 33 ideas: verdicts (v0.33.1)
 
+> Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
+
 Each idea was checked against the v0.33.0 code. **Built** = in v0.33.1. **Already there** = Blaze does this (or most of it) today. **Not now / No** = why, and what would change the answer.
 
 | # | Idea | Verdict | Why / where |
