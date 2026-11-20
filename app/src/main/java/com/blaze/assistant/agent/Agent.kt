@@ -1992,6 +1992,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
 
         fun replace(id: Long, role: Role, text: String) {
+            if (TeamHooks.isBound(this.id)) TeamHooks.revise(this.id, role.name, SecretVault.scrub(text))   // bot-chat fix: a streamed reply's growth reaches its row
             // v0.45.0 (#10): a streamed frame replaces the newest message: one array copy, not a mapped copy of every message.
             val cur0 = msgs
             val last = cur0.lastIndex
@@ -2039,6 +2040,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val media2 = if (isLast) media else emptyList()
                 val rc2 = if (isLast) receipt else ""
                 val tr2 = if (isLast) how else ""
+                if (TeamHooks.isBound(this.id)) TeamHooks.reply(this.id, SecretVault.scrub(text), streamed = isFirst && liveId >= 0)   // bot-chat fix: the full final reply
                 if (isFirst && liveId >= 0) msgs = msgs.map {
                     if (it.id == liveId) it.copy(role = Role.BLAZE, text = text, thinking = th, followups = fu2, meta = meta2, media = media2, thinkMs = ms, replyTo = part.refs, speaker = speakerOf(voice), receipt = rc2, trace = tr2, sources = src2) else it }
                 else {

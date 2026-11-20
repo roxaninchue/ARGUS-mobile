@@ -140,39 +140,98 @@ object ToolSubset {
  * P0-AG-01: the loop's [TeamHooks.Event]s → Bot HQ rows. One counter gives both seq (at creation) and updatedSeq (at
  * every change), so a reader asking "since N" gets new and changed rows. A tool call is one row that changes from
  * running to done / refused / interrupted. Kinds: USER/BLAZE bubbles → message, STEP → event, ERROR → notice.
+ *
+ * Bot-chat fix 2026-11-20 (Vega's "Hey…" saved as "Hey"): the loop opens a streamed reply with its first token and
+ * grows it in place, so a reply bubble is one row that changes too. [TeamHooks.Event.Revise] frames rewrite the open
+ * reply row (passed on at most every [REVISE_MS], so team.db isn't written per frame; the newest one always lands
+ * before anything else and at the end), and [TeamHooks.Event.Reply] writes its final text. A streamed bubble the
+ * loop dropped and started again (a retry) keeps its row; one that turned into narration becomes a step.
  */
 class RowMapper(private val botId: String, private val generation: Int, firstSeq: Long, private val clock: () -> Long) {
     private var counter = firstSeq - 1
     private val open = LinkedHashMap<String, Pair<Row, MutableMap<String, Any?>>>()   // callId → (row, body)
+    /** The reply bubble the stream opened and no final [TeamHooks.Event.Reply] closed yet; [streamed] once a frame grew it. */
+    private class Live(var row: Row, var streamed: Boolean, var pending: Row? = null, var sentAt: Long)
+    private var live: Live? = null
     @Volatile var lastReply = ""; private set
     @Volatile var endReason: String? = null; private set
 
-    @Synchronized fun map(e: TeamHooks.Event): List<Row> = when (e) {
-        is TeamHooks.Event.Message -> listOf(when (e.role) {
-            "USER" -> row("message", linkedMapOf("from" to "user", "text" to e.text))
-            "BLAZE" -> { lastReply = e.text; row("message", linkedMapOf("from" to botId, "text" to e.text)) }
-            "ERROR" -> row("notice", linkedMapOf("level" to "error", "text" to e.text))
-            else -> row("event", linkedMapOf("type" to "step", "text" to e.text))
-        })
-        is TeamHooks.Event.ToolCall -> {
-            val body = linkedMapOf<String, Any?>("callId" to e.callId, "name" to e.name, "args" to e.args, "state" to "running")
-            val r = row("tool-call", body)
-            open[e.callId] = r to body
-            listOf(r)
-        }
-        is TeamHooks.Event.ToolResult -> {
-            val state = if (e.refused) "refused" else "done"
-            val o = open.remove(e.callId)
-            if (o == null) listOf(row("tool-call", linkedMapOf("callId" to e.callId, "name" to e.name, "state" to state, "output" to e.output)))
-            else listOf(update(o, state, e.output))
-        }
-        is TeamHooks.Event.End -> {
-            endReason = e.reason
-            val closed = open.values.map { update(it, "interrupted", null) }
-            open.clear()
-            closed
+    @Synchronized fun map(e: TeamHooks.Event): List<Row> {
+        if (e is TeamHooks.Event.Revise) return revise(e)
+        val flushed = if (e is TeamHooks.Event.Reply) { live?.pending = null; emptyList() } else flush()   // the final text supersedes a held frame
+        return flushed + when (e) {
+            is TeamHooks.Event.Message -> listOf(when (e.role) {
+                "USER" -> { live = null; row("message", linkedMapOf("from" to "user", "text" to e.text)) }
+                "BLAZE" -> reopen(e.text)
+                "ERROR" -> row("notice", linkedMapOf("level" to "error", "text" to e.text))
+                else -> row("event", linkedMapOf("type" to "step", "text" to e.text))
+            })
+            is TeamHooks.Event.Reply -> listOf(reply(e))
+            is TeamHooks.Event.ToolCall -> {
+                val body = linkedMapOf<String, Any?>("callId" to e.callId, "name" to e.name, "args" to e.args, "state" to "running")
+                val r = row("tool-call", body)
+                open[e.callId] = r to body
+                listOf(r)
+            }
+            is TeamHooks.Event.ToolResult -> {
+                val state = if (e.refused) "refused" else "done"
+                val o = open.remove(e.callId)
+                if (o == null) listOf(row("tool-call", linkedMapOf("callId" to e.callId, "name" to e.name, "state" to state, "output" to e.output)))
+                else listOf(update(o, state, e.output))
+            }
+            is TeamHooks.Event.End -> {
+                endReason = e.reason
+                val closed = open.values.map { update(it, "interrupted", null) }
+                open.clear(); live = null
+                closed
+            }
+            is TeamHooks.Event.Revise -> emptyList()   // handled above
         }
     }
+
+    /** A BLAZE bubble: a new row, or (a stream the loop dropped and opened again) the open streamed reply's row. */
+    private fun reopen(text: String): Row {
+        lastReply = text
+        val l = live
+        if (l != null && l.streamed) { val r = message(l.row, text); l.row = r; l.streamed = false; l.sentAt = clock(); return r }
+        val r = row("message", linkedMapOf("from" to botId, "text" to text))
+        live = Live(r, streamed = false, sentAt = clock())
+        return r
+    }
+
+    private fun revise(e: TeamHooks.Event.Revise): List<Row> {
+        val l = live ?: return emptyList()
+        if (e.role == "STEP") {   // the streamed text became narration before a tool call
+            live = null
+            return listOf(l.row.copy(updatedSeq = ++counter, kind = "event", body = TeamJson.write(linkedMapOf("type" to "step", "text" to e.text))))
+        }
+        if (e.role != "BLAZE") return emptyList()
+        lastReply = e.text
+        l.streamed = true
+        val r = message(l.row, e.text)
+        l.row = r
+        val now = clock()
+        if (now - l.sentAt < REVISE_MS) { l.pending = r; return emptyList() }
+        l.pending = null; l.sentAt = now
+        return listOf(r)
+    }
+
+    private fun reply(e: TeamHooks.Event.Reply): Row {
+        lastReply = e.text
+        val l = live
+        live = null
+        return if (l != null && (e.streamed || l.streamed)) message(l.row, e.text)
+        else row("message", linkedMapOf("from" to botId, "text" to e.text))
+    }
+
+    /** The newest throttled frame, before anything else lands. */
+    private fun flush(): List<Row> {
+        val p = live?.pending ?: return emptyList()
+        live?.pending = null
+        return listOf(p)
+    }
+
+    private fun message(r: Row, text: String) = r.copy(updatedSeq = ++counter, kind = "message", body = TeamJson.write(linkedMapOf("from" to botId, "text" to text)))
 
     private fun row(kind: String, body: Map<String, Any?>): Row {
         val s = ++counter
@@ -187,6 +246,9 @@ class RowMapper(private val botId: String, private val generation: Int, firstSeq
     }
 
     companion object {
+        /** How often a streamed reply's growing row is passed on (team.db and the live thread); the final text always is. */
+        const val REVISE_MS = 400L
+
         /**
          * The live line for an event, or null. P1-SH-04: on its way to a screen, so it is shown-safe: a step's text only
          * when [com.blaze.assistant.agent.StepPill.clean] passes it (no raw tool, model or provider names, code or

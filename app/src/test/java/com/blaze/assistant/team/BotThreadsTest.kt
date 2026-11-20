@@ -21,6 +21,7 @@ import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -220,5 +221,30 @@ class BotThreadsTest {
         assertEquals(listOf("abc123"), a.list().map { it.id })
         assertNull("bot chats and private chats are never served", a.read("team-tempo-g0")); assertNull(a.read("private-1"))
         assertNull(a.current())
+    }
+
+    /** Bot-chat fix 2026-11-20: Vega wrote "Hey..." in full and team.db kept "Hey"; the whole streamed reply is the one stored. */
+    @Test fun aStreamedReplyIsStoredWhole() {
+        engines["tempo"] = local(FakeLlm.Reply.Stream(listOf("Hey", "...", " ready", " for", " leg", " day?")))
+        val ev = turn("tempo", "hi")
+        assertEquals(listOf("hi", "Hey... ready for leg day?"), texts("tempo"))
+        assertEquals("Hey... ready for leg day?", (ev.last() as TurnEvent.Done).reply)
+        assertEquals("Hey... ready for leg day?", threads.thread("tempo")!!.preview)
+        assertEquals("one reply counts once", 1, threads.thread("tempo")!!.unread)
+    }
+
+    /** Bot chat redesign: two bots' threads and the user's own chats never mix. */
+    @Test fun threadsStaySeparateFromEachOtherAndFromTheMainChat() {
+        chats["main"] = """{"updated":1,"messages":[{"role":"USER","text":"my own chat"}]}"""; current = "main"
+        val other = team.roster().first { it.id != BotRules.MANAGER_ID && it.id != "tempo" }.id
+        engines["tempo"] = local(FakeLlm.Reply.Stream(listOf("Leg", " day.")))
+        engines[other] = local(say("Inbox zero."))
+        turn("tempo", "gym?"); turn(other, "mail?")
+        assertEquals(listOf("gym?", "Leg day."), texts("tempo"))
+        assertEquals(listOf("mail?", "Inbox zero."), texts(other))
+        assertNotEquals(threads.thread("tempo")!!.chatId, threads.thread(other)!!.chatId)
+        assertEquals(listOf("my own chat"), threads.rows(BotRules.MANAGER_ID).map { RowBodies.read(it.body)["text"] })   // ARGUS' thread is the user's chat, untouched
+        assertTrue(argus.list().none { BotThreads.isTeamChat(it.id) })
+        assertEquals(listOf("main"), BotThreads.userChats(listOf("main", threads.thread("tempo")!!.chatId!!).map { ChatMeta(it, "", 0, false, "") }).map { it.id })
     }
 }

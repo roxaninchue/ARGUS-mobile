@@ -29,7 +29,11 @@ class LocalEngineTest {
 
     /** The fake LLM client: one scripted reply per step; it records what each request carried. */
     class FakeLlm(vararg replies: Reply) {
-        sealed class Reply { data class Say(val text: String) : Reply(); data class Call(val tool: String, val args: String = "{}") : Reply() }
+        sealed class Reply {
+            data class Say(val text: String) : Reply(); data class Call(val tool: String, val args: String = "{}") : Reply()
+            /** Bot-chat fix: a streamed reply, as Agent.kt shows it: add() with the first token, replace() per frame, then addReply(). */
+            data class Stream(val tokens: List<String>) : Reply()
+        }
         private val script = replies.toMutableList()
         val systems = mutableListOf<List<String>>()
         val toolLists = mutableListOf<List<String>>()
@@ -52,6 +56,13 @@ class LocalEngineTest {
                     val tools = allTools.filter { it == "load_tools" || TeamHooks.allows(threadId, it) }   // TeamTools.keep
                     when (val r = llm.complete(system, tools)) {
                         is FakeLlm.Reply.Say -> { TeamHooks.message(threadId, "BLAZE", r.text); break }
+                        is FakeLlm.Reply.Stream -> {
+                            val frames = r.tokens.runningReduce { a, b -> a + b }
+                            TeamHooks.message(threadId, "BLAZE", frames.first())                    // Session.add(BLAZE, first token)
+                            frames.drop(1).forEach { TeamHooks.revise(threadId, "BLAZE", it) }     // Session.replace per frame
+                            TeamHooks.reply(threadId, frames.last(), streamed = true)              // Session.addReply(liveId, …)
+                            break
+                        }
                         is FakeLlm.Reply.Call -> {
                             TeamHooks.message(threadId, "STEP", "Working on ${r.tool}")
                             val out = TeamHooks.refuse(threadId, r.tool) ?: run {             // runTool
@@ -189,6 +200,64 @@ class LocalEngineTest {
         assertFalse(e.isRunning("t6"))
         val caps = e.capabilities()
         assertEquals(EngineKind.LOCAL, caps.kind); assertTrue(caps.localTools); assertEquals(EngineKind.LOCAL, e.kind)
+    }
+
+    // ---------------- bot-chat fix 2026-11-20: the full streamed reply is the one saved ----------------
+
+    /** Latest revision of every row, by seq (what team.db keeps: newer updatedSeq wins). */
+    private fun latest(rows: List<Row>) = rows.groupBy { it.seq }.mapValues { (_, v) -> v.maxBy { it.updatedSeq } }.toSortedMap().values.toList()
+
+    @Test fun aStreamOfTokensPersistsTheJoinedText() = runBlocking {
+        val toks = listOf("Hey", "...", " I'm", " Vega", ", your", " fitness", " coach.")
+        val stored = mutableListOf<Row>()
+        val ev = engine(FakeLoop(FakeLlm(FakeLlm.Reply.Stream(toks)), all)).turn(bot(), TurnInput("s1", "bot:ledger", "hi", firstSeq = 1)) { stored += it }.toList()
+        val saved = latest(stored)
+        assertEquals(listOf("message", "message"), saved.map { it.kind })
+        assertEquals("Hey... I'm Vega, your fitness coach.", body(saved[1])["text"])        // not "Hey"
+        assertEquals("ledger", body(saved[1])["from"])
+        assertEquals("Hey... I'm Vega, your fitness coach.", (ev.last() as TurnEvent.Done).reply)
+        assertEquals("one reply bubble is one row", 2, stored.map { it.seq }.distinct().size)
+    }
+
+    @Test fun framesAreThrottledButTheFinalTextAlwaysLands() = runBlocking {
+        var t = 0L
+        val e = LocalEngine(FakeLoop(FakeLlm(FakeLlm.Reply.Stream(List(50) { "x" })), all), groupOf = { groups[it] }, soul = { null }, clock = { t })
+        val stored = mutableListOf<Row>()
+        e.turn(bot(), TurnInput("s2", "bot:ledger", "go")) { stored += it }.toList()   // the clock never moves: every frame is held
+        val reply = stored.filter { body(it)["from"] == "ledger" }
+        assertEquals("first token + final only, not 50 writes", 2, reply.size)
+        assertEquals("x".repeat(50), body(reply.maxBy { it.updatedSeq })["text"])
+    }
+
+    @Test fun aHeldFrameIsWrittenBeforeTheNextRowAndOnlyNewerRevisionsWin() {
+        var t = 0L
+        val m = RowMapper("vega", 0, 1, { t })
+        val out = mutableListOf<Row>()
+        out += m.map(TeamHooks.Event.Message("BLAZE", "Hey"))
+        t = 100; out += m.map(TeamHooks.Event.Revise("BLAZE", "Hey..."))                 // held (inside REVISE_MS)
+        assertEquals(1, out.size)
+        t = 900; out += m.map(TeamHooks.Event.Revise("BLAZE", "Hey... let me"))         // passed on
+        t = 950; out += m.map(TeamHooks.Event.Revise("BLAZE", "Hey... let me look"))    // held
+        out += m.map(TeamHooks.Event.ToolCall("c1", "web_search", "{}"))                 // flushes the held frame first
+        assertEquals(listOf("Hey", "Hey... let me", "Hey... let me look"), out.filter { it.kind == "message" }.map { body(it)["text"] })
+        assertEquals(out.map { it.updatedSeq }.sorted(), out.map { it.updatedSeq })
+        assertEquals("Hey... let me look", m.lastReply)
+    }
+
+    @Test fun aStreamThatBecameNarrationIsAStepAndARetriedStreamKeepsOneRow() {
+        val m = RowMapper("vega", 0, 1, { 0L })
+        val a = m.map(TeamHooks.Event.Message("BLAZE", "Let")) + m.map(TeamHooks.Event.Revise("STEP", "Let me check your plan"))
+        assertEquals("event", a.last().kind); assertEquals(a.first().seq, a.last().seq)
+        assertEquals("Let me check your plan", body(a.last())["text"])
+        // a stream the loop dropped and opened again (retry): the new bubble rewrites the same row
+        val b = m.map(TeamHooks.Event.Message("BLAZE", "Hey")) + m.map(TeamHooks.Event.Revise("BLAZE", "Hey th")) +
+            m.map(TeamHooks.Event.Message("BLAZE", "Hello")) + m.map(TeamHooks.Event.Reply("Hello there.", streamed = true))
+        assertEquals(1, b.map { it.seq }.distinct().size)
+        assertEquals("Hello there.", body(b.maxBy { it.updatedSeq })["text"])
+        // a plain bubble after it is its own row; a non-streamed reply is a new row (it used to be lost)
+        val c = m.map(TeamHooks.Event.Message("BLAZE", "Saved.")) + m.map(TeamHooks.Event.Reply("Anything else?", streamed = false))
+        assertEquals(2, c.map { it.seq }.distinct().size)
+        assertTrue(c.all { it.seq > b.first().seq })
     }
 
     /** Owner rule: Agent.kt grows by at most 20 lines for the seam (5,807 lines before P0-AG-01). */

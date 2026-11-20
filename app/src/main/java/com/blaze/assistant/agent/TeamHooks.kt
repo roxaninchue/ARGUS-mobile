@@ -22,6 +22,17 @@ object TeamHooks {
     sealed class Event {
         /** A chat bubble: [role] is the loop's Role name (USER, BLAZE, STEP, ERROR). */
         data class Message(val role: String, val text: String) : Event()
+        /**
+         * Bot-chat fix 2026-11-20: a streamed frame rewrote the newest bubble (Session.replace). The loop adds a streamed
+         * reply with its first token ([Message]) and grows it in place, so without this a bot's row kept only "Hey".
+         * [role] STEP = the streamed text turned into narration.
+         */
+        data class Revise(val role: String, val text: String) : Event()
+        /**
+         * The reply's final text (Session.addReply), one per bubble. [streamed] = it finishes the bubble the stream
+         * opened (replaces its row); false = a new bubble.
+         */
+        data class Reply(val text: String, val streamed: Boolean) : Event()
         data class ToolCall(val callId: String, val name: String, val args: String) : Event()
         data class ToolResult(val callId: String, val name: String, val output: String, val refused: Boolean = false) : Event()
         /** The turn ended; [reason] is the loop's TurnEnd.Reason name (DONE, STOPPED, …). */
@@ -82,6 +93,12 @@ object TeamHooks {
         if (role == "USER") onUserMessage?.let { f -> safe { f(chatId, binding(chatId)?.botId) } }
         if (text.isNotBlank()) emit(chatId, Event.Message(role, text))
     }
+
+    /** Bot-chat fix: a streamed frame grew the newest bubble ([Event.Revise]). Cheap when unbound: one empty-map check. */
+    fun revise(chatId: String, role: String, text: String) { if (text.isNotBlank()) emit(chatId, Event.Revise(role, text)) }
+
+    /** Bot-chat fix: a reply bubble's final text ([Event.Reply]); [streamed] = it closes the bubble the stream opened. */
+    fun reply(chatId: String, text: String, streamed: Boolean) { if (text.isNotBlank()) emit(chatId, Event.Reply(text, streamed)) }
 
     /** A tool call starts; its [result] pairs with the oldest open call of the same tool (parallel calls stay paired). */
     fun call(chatId: String, tool: String, args: String) {
