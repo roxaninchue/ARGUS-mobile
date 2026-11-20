@@ -85,6 +85,7 @@ fun TeamMode(
     var confirmDelete by remember { mutableStateOf<Bot?>(null) }
     var chip by remember { mutableStateOf(TeamModel.ALL) }
     val view by TeamView.view.collectAsState()
+    var openTeams by remember { mutableStateOf(setOf<String>()) }
     fun avatar(id: String, name: String, size: Float): @Composable () -> Unit = {
         if (id == BotRules.MANAGER_ID) ManagerOrb(size.dp, contentDescription = null)
         else BotOrb(state.faces[id]?.let { OrbFace.of(it) } ?: OrbFace.forName(name), state.colors[id] ?: 0xFFCBD5E1L, size.dp)
@@ -135,13 +136,15 @@ fun TeamMode(
             val byId = state.rows.associateBy { it.id }
             val g = com.blaze.assistant.team.AgentKit.teams(bots.values.sortedBy { it.createdAt })
             for (t in g.teams) {
+                val all = TeamCards.members(t)
+                val isOpen = t.lead.id in openTeams
                 item(key = "team-" + t.lead.id) {
-                    Text(tr("{0}'s team \u00b7 {1}", t.lead.name, t.members.size + if (t.lead.kind == BotKind.ROOM) 0 else 1),
-                        style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 2.dp))
+                    TeamCard(t, working = all.any { byId[it.id]?.status == "Working" }, open = isOpen,
+                        onToggle = { openTeams = if (isOpen) openTeams - t.lead.id else openTeams + t.lead.id }, avatar = ::avatar)
                 }
-                val rows = (if (t.lead.kind == BotKind.ROOM) emptyList() else listOf(t.lead)) + t.members
-                items(rows.mapNotNull { byId[it.id] }, key = { "t-" + t.lead.id + "-" + it.id }) { r ->
-                    Box(Modifier.padding(start = if (r.id == t.lead.id) 0.dp else 16.dp)) {
+                // opened: every member, the ones past the card's three faces included
+                if (isOpen) items(all.mapNotNull { byId[it.id] }, key = { "t-" + t.lead.id + "-" + it.id }) { r ->
+                    Box(Modifier.padding(start = 16.dp)) {
                         BotChatRow(r, { nav.openBot(r.id) }, onLongClick = { longPress(r.id) }, avatar = avatar(r.id, r.name, OrbSize.MD))
                     }
                 }
