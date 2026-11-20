@@ -1235,7 +1235,9 @@ fun ChatScreen() {
                 com.blaze.assistant.setup.SetupRunner.start(ctx); com.blaze.assistant.setup.FirstRun.welcome(ctx)
             }
             val advance: () -> Unit = {
-                val nx = com.blaze.assistant.ui.space.SpaceOnboarding.next(step, signedIn)
+                // Owner 2026-11-20: signed in, the agent's Linux is picked before the chat (when this phone can run one)
+                val distros = try { com.blaze.assistant.terminal.Linux.supported() && com.blaze.assistant.terminal.Distros.installable().isNotEmpty() } catch (_: Throwable) { false }
+                val nx = com.blaze.assistant.ui.space.SpaceOnboarding.next(step, signedIn, distros)
                 if (com.blaze.assistant.ui.space.SpaceOnboarding.introSeen(step, nx)) Settings.setBool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, true)
                 if (nx != null) obStep = nx.name else finish()
             }

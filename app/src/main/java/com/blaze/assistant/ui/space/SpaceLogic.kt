@@ -359,8 +359,11 @@ object SpaceSettings {
  * No permission screens: every permission is asked when a task needs it, or from the checklist.
  */
 object SpaceOnboarding {
-    /** Owner 2026-11-18: the clip, then the language, then the sign-in. */
-    enum class Step { INTRO, LANGUAGE, SIGN_IN }
+    /**
+     * Owner 2026-11-18: the clip, then the language, then the sign-in. Owner 2026-11-20: once signed in, the agent's Linux
+     * ([Step.DISTRO], a wheel like the language) before the chat, where the introduction then arrives line by line.
+     */
+    enum class Step { INTRO, LANGUAGE, SIGN_IN, DISTRO }
 
     const val TAGLINE = "Intelligence beyond the interface"
     const val PREF_ONBOARDED = "onboarded"
@@ -370,14 +373,18 @@ object SpaceOnboarding {
     /** Where onboarding starts: the clip, or the sign-in when the clip and the language were already shown. */
     fun first(introSeen: Boolean = false): Step = if (introSeen) Step.SIGN_IN else Step.INTRO
 
-    /** The step after [step]; null = onboarding is over (into the app). */
-    fun next(step: Step, signedIn: Boolean): Step? = when (step) {
+    /**
+     * The step after [step]; null = onboarding is over (into the app). [distros]: this phone can run a Linux, so the
+     * distro step comes after sign-in (false on a CPU no Linux is built for: straight into the app).
+     */
+    fun next(step: Step, signedIn: Boolean, distros: Boolean = true): Step? = when (step) {
         Step.INTRO -> Step.LANGUAGE
-        Step.LANGUAGE -> if (signedIn) null else Step.SIGN_IN
-        Step.SIGN_IN -> if (signedIn) null else Step.SIGN_IN   // account lock: no way past it signed out
+        Step.LANGUAGE -> if (!signedIn) Step.SIGN_IN else if (distros) Step.DISTRO else null
+        Step.SIGN_IN -> if (!signedIn) Step.SIGN_IN else if (distros) Step.DISTRO else null   // account lock: no way past it signed out
+        Step.DISTRO -> null
     }
 
-    /** Back: the sign-in returns to the language; the clip is never replayed, and Back on the language does nothing. */
+    /** Back: the sign-in returns to the language; the clip is never replayed, Back on the language does nothing, and the distro step never goes back to sign-in (already signed in). */
     fun back(step: Step): Step? = if (step == Step.SIGN_IN) Step.LANGUAGE else null
 
     /** Signed in on the sign-in step (here or on the lock screen): onboarding moves on by itself. */
@@ -397,6 +404,33 @@ object SpaceOnboarding {
 
     /** The setup screen (now only opened from Life's "Finishing setup" card). */
     fun setupButton(complete: Boolean): String = if (complete) "Start using ${BrandName.UPPER}" else "Continue \u00b7 finishes in the background"
+}
+
+/**
+ * Owner 2026-11-20: the distro step. Every Linux this phone can run, in [com.blaze.assistant.terminal.TermLogic.DISTROS]
+ * order, as a wheel; Debian is starred as the recommended one and sits in the frame first. The pick is saved as
+ * [com.blaze.assistant.terminal.TermLogic.PREF_AGENT_DISTRO]; setup installs it in the background and the agent works in it.
+ */
+object DistroPick {
+    const val RECOMMENDED = "debian"
+    const val TITLE = "Pick your agent's playground"
+    const val SUBTITLE = "The Linux {0} works in: it runs code, builds apps and installs tools here. You can add others later in the Terminal."
+
+    /** The wheel's rows (ids), in list order. */
+    fun rows(installable: List<String>): List<String> = installable
+
+    /** The row in the frame at first: the saved pick, else Debian, else the first. */
+    fun start(rows: List<String>, saved: String?): Int =
+        rows.indexOf(saved).takeIf { it >= 0 } ?: rows.indexOf(RECOMMENDED).takeIf { it >= 0 } ?: 0
+
+    fun starred(id: String): Boolean = id == RECOMMENDED
+
+    /** The line under the wheel for the row in the frame: "Debian 12 · about 43 MB · recommended". */
+    fun detail(name: String, version: String, sizeMb: Int?, recommended: Boolean): String = buildString {
+        append(name); if (version.isNotBlank()) append(' ').append(version)
+        if (sizeMb != null && sizeMb > 0) append(" \u00b7 about ").append(sizeMb).append(" MB")
+        if (recommended) append(" \u00b7 recommended")
+    }
 }
 
 /**
@@ -564,6 +598,11 @@ object SpaceTags {
     const val LANGUAGE_FRAME = "space_language_frame"
     const val LANGUAGE_WHEEL = "space_language_wheel"
     const val LANGUAGE_NEXT = "space_language_next"
+    /** Owner 2026-11-20: the distro wheel after sign-in, its frame, the logo bubble at the left and the round continue button. */
+    const val DISTRO_FRAME = "space_distro_frame"
+    const val DISTRO_WHEEL = "space_distro_wheel"
+    const val DISTRO_LOGO = "space_distro_logo"
+    const val DISTRO_NEXT = "space_distro_next"
     const val SETUP = "space_setup"
     const val SETUP_PROGRESS = "space_setup_progress"
     const val SETUP_ROW_PREFIX = "space_setup_row_"
@@ -579,7 +618,7 @@ object SpaceTags {
 
     val FIXED = listOf(ROOT, BACKDROP, TOP_BAR, LEFT_BUTTON, PILL, AVATAR, HOME, HERO, ANSWER, PROJECTS_CARD, SUGGESTIONS, NEW_CHAT,
         SETUP_CARD, SIGN_IN, COMPOSER, COMPOSER_FIELD, COMPOSER_PLUS, COMPOSER_MIC, COMPOSER_SEND, SPOTLIGHT, SPOTLIGHT_FIELD, SCRIM,
-        PROFILE, PROFILE_SEARCH, ONBOARDING, ONBOARDING_LOGO, ONBOARDING_START, ONBOARDING_INTRO, LANGUAGE_FRAME, LANGUAGE_WHEEL, LANGUAGE_NEXT, SETUP, SETUP_PROGRESS, SETUP_CONTINUE,
+        PROFILE, PROFILE_SEARCH, ONBOARDING, ONBOARDING_LOGO, ONBOARDING_START, ONBOARDING_INTRO, LANGUAGE_FRAME, LANGUAGE_WHEEL, LANGUAGE_NEXT, DISTRO_FRAME, DISTRO_WHEEL, DISTRO_LOGO, DISTRO_NEXT, SETUP, SETUP_PROGRESS, SETUP_CONTINUE,
         PROJECTS, PROJECT_NEW)
 }
 

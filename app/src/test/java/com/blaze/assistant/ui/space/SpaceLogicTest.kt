@@ -250,18 +250,39 @@ class SpaceLogicTest {
         assertFalse("ai" in SpaceSettings.TREE); assertFalse("backup_brain" in SpaceSettings.TREE)
     }
 
+    @Test fun signedInPicksTheAgentsLinuxBeforeTheChat() {
+        // owner 2026-11-20: after sign-in, the distro wheel; then the chat
+        assertEquals(S.DISTRO, SpaceOnboarding.next(S.SIGN_IN, signedIn = true))
+        assertEquals(S.DISTRO, SpaceOnboarding.next(S.LANGUAGE, signedIn = true))
+        assertEquals("still signed out: no distro step", S.SIGN_IN, SpaceOnboarding.next(S.SIGN_IN, signedIn = false))
+        assertNull(SpaceOnboarding.next(S.DISTRO, signedIn = true))
+        assertNull("never back to sign-in", SpaceOnboarding.back(S.DISTRO))
+        assertFalse(SpaceOnboarding.autoNext(S.DISTRO, signedIn = true))
+        assertFalse(SpaceOnboarding.introSeen(S.DISTRO, null))
+        val rows = listOf("alpine", "ubuntu", "debian", "archlinux", "fedora", "manjaro")
+        assertEquals("Debian sits in the frame first", 2, DistroPick.start(rows, ""))
+        assertEquals("a saved pick wins", 1, DistroPick.start(rows, "ubuntu"))
+        assertEquals("a pick this phone can't run falls back to Debian", 2, DistroPick.start(rows, "gentoo"))
+        assertEquals(0, DistroPick.start(listOf("alpine"), ""))
+        assertTrue(DistroPick.starred("debian")); assertFalse(DistroPick.starred("ubuntu"))
+        assertEquals("Debian 12 \u00b7 about 43 MB \u00b7 recommended", DistroPick.detail("Debian", "12", 43, true))
+        assertEquals("Alpine Linux \u00b7 about 4 MB", DistroPick.detail("Alpine Linux", "", 4, false))
+        assertEquals("Fedora", DistroPick.detail("Fedora", "", null, false))
+        assertTrue(SpaceTags.DISTRO_NEXT in SpaceTags.FIXED && SpaceTags.DISTRO_LOGO in SpaceTags.FIXED)
+    }
+
     @Test fun onboardingIsTheClipThenLanguageThenSignIn() {
         // owner 2026-11-18: the cinematic clip replaces the welcome; the setup screen left the flow (downloads run in the background)
-        assertEquals(listOf(S.INTRO, S.LANGUAGE, S.SIGN_IN), S.values().toList())
+        assertEquals(listOf(S.INTRO, S.LANGUAGE, S.SIGN_IN, S.DISTRO), S.values().toList())
         assertEquals(S.INTRO, SpaceOnboarding.first())
         assertEquals(S.INTRO, SpaceOnboarding.first(introSeen = false))
         assertEquals("the clip and the language were shown before the lock screen", S.SIGN_IN, SpaceOnboarding.first(introSeen = true))
         assertEquals(S.LANGUAGE, SpaceOnboarding.next(S.INTRO, signedIn = false))
         assertEquals(S.LANGUAGE, SpaceOnboarding.next(S.INTRO, signedIn = true))
         assertEquals(S.SIGN_IN, SpaceOnboarding.next(S.LANGUAGE, signedIn = false))
-        assertNull("signed in already: the language is the last step", SpaceOnboarding.next(S.LANGUAGE, signedIn = true))
+        assertNull("signed in already, no Linux here: the language is the last step", SpaceOnboarding.next(S.LANGUAGE, signedIn = true, distros = false))
         assertEquals("account lock: no way past sign-in signed out", S.SIGN_IN, SpaceOnboarding.next(S.SIGN_IN, signedIn = false))
-        assertNull(SpaceOnboarding.next(S.SIGN_IN, signedIn = true))
+        assertNull(SpaceOnboarding.next(S.SIGN_IN, signedIn = true, distros = false))
         // Back: sign-in returns to the language; the clip never replays and Back on the language does nothing
         assertEquals(S.LANGUAGE, SpaceOnboarding.back(S.SIGN_IN))
         assertNull(SpaceOnboarding.back(S.LANGUAGE)); assertNull(SpaceOnboarding.back(S.INTRO))

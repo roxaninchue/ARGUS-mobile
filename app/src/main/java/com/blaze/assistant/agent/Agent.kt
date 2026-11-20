@@ -1079,7 +1079,29 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val text = if (write == null) null else try { kotlinx.coroutines.withTimeoutOrNull(com.blaze.assistant.setup.FirstRunIntro.TIMEOUT_MS) { write() } }
             catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce", e); null }
         try { beforePost() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: introduce beforePost", e) }
-        val c = cur; c.add(Role.BLAZE, com.blaze.assistant.setup.FirstRunIntro.pick(text, fallback)); c.persist(); refreshChats()
+        // Owner 2026-11-20: a moment of thinking, then the introduction arrives sentence by sentence (FirstRunIntro.cuts)
+        val intro = com.blaze.assistant.setup.FirstRunIntro.pick(text, fallback)
+        val c = cur
+        val motion = try { com.blaze.assistant.ui.MotionTokens.enabled } catch (_: Throwable) { true }
+        if (!motion) { c.add(Role.BLAZE, intro); c.persist(); refreshChats(); return@launch }
+        val cuts = com.blaze.assistant.setup.FirstRunIntro.cuts(intro)
+        val think = c.mood == Mood.IDLE   // never over a turn the user already started
+        try {
+            if (think) c.mood = Mood.THINKING
+            kotlinx.coroutines.delay(com.blaze.assistant.setup.FirstRunIntro.THINK_MS)
+        } finally { if (think && c.mood == Mood.THINKING) c.mood = Mood.IDLE }
+        var id = -1L; var from = 0
+        try {
+            for (end in cuts) {
+                val shown = intro.substring(0, end).trimEnd()
+                if (id < 0) id = c.add(Role.BLAZE, shown) else c.replace(id, Role.BLAZE, shown)
+                kotlinx.coroutines.delay(com.blaze.assistant.setup.FirstRunIntro.pause(intro.substring(from, end)))
+                from = end
+            }
+        } finally {
+            if (id < 0) c.add(Role.BLAZE, intro) else c.replace(id, Role.BLAZE, intro)
+            c.persist(); refreshChats()
+        }
     } }
 
     /** Messages of any chat (for the dashboard). */

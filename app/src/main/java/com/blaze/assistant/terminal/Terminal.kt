@@ -288,7 +288,7 @@ object Terminal {
      * another installed Linux. Wave B-4: the old desktop Linux choice (pref linux_desktop_distro) belonged to the removed Linux desktop page
      * and is ignored now.
      */
-    fun defaultDistro(): String = try { TermLogic.defaultDistro(Distros.installedIds()) } catch (_: Throwable) { "alpine" }
+    fun defaultDistro(): String = try { TermLogic.defaultDistro(Distros.installedIds(), Distros.chosen()) } catch (_: Throwable) { "alpine" }
 
     /** The package manager hint for [distro] ("apt install <package>"). */
     fun installHint(distro: String): String = TermLogic.installHint(distro)

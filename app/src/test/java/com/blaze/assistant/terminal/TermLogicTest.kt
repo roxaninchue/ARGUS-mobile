@@ -56,4 +56,17 @@ class TermLogicTest {
         assertEquals(TermLogic.MAX_FONT, TermLogic.zoom(60, 2f)); assertEquals(TermLogic.MIN_FONT, TermLogic.zoom(15, 0.2f))
         assertTrue(TermLogic.welcome(TermLogic.ALPINE).contains("apk add <package>"))
     }
+
+    @Test fun thePickedLinuxIsTheAgentsOnceInstalled() {
+        // owner 2026-11-20: the onboarding distro step
+        assertEquals("debian", TermLogic.defaultDistro(setOf("debian"), "debian"))
+        assertEquals("debian", TermLogic.defaultDistro(setOf("alpine", "debian"), "debian"))
+        assertEquals("not installed yet: as before", "alpine", TermLogic.defaultDistro(setOf("alpine"), "debian"))
+        assertEquals("alpine", TermLogic.defaultDistro(emptySet(), "debian"))
+        assertEquals("ubuntu", TermLogic.defaultDistro(setOf("ubuntu"), ""))
+        assertEquals("debian", TermLogic.setupDistro("debian", listOf("alpine", "debian")))
+        assertEquals("not built for this CPU", "alpine", TermLogic.setupDistro("fedora", listOf("alpine", "debian")))
+        assertEquals("alpine", TermLogic.setupDistro("", listOf("alpine", "debian")))
+        for (d in TermLogic.DISTROS) assertTrue("${d.id} has a logo", DistroLogos.of(d.id) != null)
+    }
 }

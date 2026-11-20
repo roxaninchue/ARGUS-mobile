@@ -51,6 +51,27 @@ object FirstRunIntro {
         "I've put a **${SetupChecklist.TITLE}** checklist at the top of Life. Each step takes a tap or two and lets me do more for you. " +
         "What would you like to start with?"
 
+    /**
+     * Owner 2026-11-20: the introduction never pops in whole (it would look pre-baked). [THINK_MS] of the thinking indicator,
+     * then it arrives sentence by sentence: [cuts] are where each beat ends (the text up to there is shown), and [pause] is how
+     * long a beat stays before the next one joins it, longer for a longer sentence.
+     */
+    const val THINK_MS = 1_200L
+
+    /** End offsets of each beat in [text]: after every sentence (. ! ? or a line break), the last one at the end. */
+    fun cuts(text: String): List<Int> {
+        val out = mutableListOf<Int>(); var last = 0
+        for (m in Regex("""[.!?:](?=\s)|\n\n""").findAll(text)) {
+            val end = m.range.last + 1
+            if (text.substring(last, end).isNotBlank()) { out += end; last = end }
+        }
+        if (text.substring(last).isNotBlank() || (out.isEmpty() && text.isNotEmpty())) out += text.length
+        return out
+    }
+
+    /** How long the beat [chunk] stays alone before the next joins: a reading pace, 450 ms to 1.8 s. */
+    fun pause(chunk: String): Long = (300L + 22L * chunk.trim().length).coerceIn(450L, 1_800L)
+
     /** The model's introduction when it wrote one, else [fallback]. */
     fun pick(written: String?, fallback: String): String = written?.trim()?.takeIf { it.isNotEmpty() } ?: fallback
 }

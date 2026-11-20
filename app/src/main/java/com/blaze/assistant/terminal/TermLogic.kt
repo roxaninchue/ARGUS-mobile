@@ -44,6 +44,17 @@ object TermLogic {
     fun defaultDistro(installed: Set<String>): String =
         if ("alpine" in installed || installed.isEmpty()) "alpine" else DISTROS.map { it.id }.firstOrNull { it in installed } ?: "alpine"
 
+    /** Owner 2026-11-20: the Linux picked on the onboarding distro step (an id from [DISTROS]); blank = none picked. */
+    const val PREF_AGENT_DISTRO = "agent_distro"
+
+    /** With a pick: the picked Linux once it is installed, else as [defaultDistro]. */
+    fun defaultDistro(installed: Set<String>, chosen: String?): String =
+        if (!chosen.isNullOrBlank() && chosen in installed) chosen else defaultDistro(installed)
+
+    /** The Linux setup installs: the pick when this phone can run it, else Alpine. */
+    fun setupDistro(chosen: String?, installable: List<String>): String =
+        if (!chosen.isNullOrBlank() && chosen in installable) chosen else "alpine"
+
     val DISTROS: List<Distro> = listOf(
         Distro("alpine", "Alpine Linux", "", mapOf("aarch64" to 4, "arm" to 4), emptyMap(),
             listOf("Search:  apk search <query>", "Install: apk add <package>", "Upgrade: apk update && apk upgrade")),

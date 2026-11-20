@@ -62,7 +62,7 @@ object SetupGate {
     /** What's already there on this phone. A step that can't apply here (Linux on an unsupported CPU) counts as done. */
     fun probe(ctx: Context): Map<String, Boolean> = mapOf(
         "notifications" to (Build.VERSION.SDK_INT < 33 || granted(ctx, Manifest.permission.POST_NOTIFICATIONS)),
-        "linux" to try { com.blaze.assistant.terminal.Linux.installed() || !com.blaze.assistant.terminal.Linux.supported() } catch (_: Throwable) { true },
+        "linux" to try { com.blaze.assistant.terminal.Distros.installed(com.blaze.assistant.terminal.Distros.setupId()) || !com.blaze.assistant.terminal.Linux.supported() } catch (_: Throwable) { true },
         "accessibility" to try { com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx) } catch (_: Throwable) { false },
         "mic" to granted(ctx, Manifest.permission.RECORD_AUDIO),
         "overlay" to android.provider.Settings.canDrawOverlays(ctx),
