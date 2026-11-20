@@ -15,7 +15,7 @@ import org.json.JSONObject
  * results are added when the screen alone can't answer.
  */
 object PageAsk {
-    /** What Blaze could read from the open page. */
+    /** What Argus could read from the open page. */
     data class Capture(val title: String, val url: String, val text: String, val labels: List<String> = emptyList(),
                        val images: Int = 0, val alts: List<String> = emptyList(), val password: Boolean = false) {
         companion object { val NONE = Capture("", "", "") }

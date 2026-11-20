@@ -182,7 +182,7 @@ object ToolTruth {
                 TurnContext.scheduleFollowUp(u, assistantTexts.lastOrNull().orEmpty()) && calOffer.containsMatchIn(assistantTexts.lastOrNull().orEmpty()))) return "calendar_events"
         if ("create_routine" in toolNames && remindAsk.containsMatchIn(u)) return "create_routine"
         if ("list_routines" in toolNames && remindList.containsMatchIn(u)) return "list_routines"
-        // 0.45.19 Blaze Phone: "book a table at X", "log into Y", "sign up for Z", "order … from shop.com" start on Blaze Phone.
+        // 0.45.19 Argus Phone: "book a table at X", "log into Y", "sign up for Z", "order … from shop.com" start on Argus Phone.
         if ("phone_open" in toolNames && com.blaze.assistant.browser.phone.PhonePolicy.phoneAsk(u)) return "phone_open"
         if (memRecall.containsMatchIn(u)) return listOf("memory_search", "recall_memory").firstOrNull { it in toolNames }
         if (memSave.containsMatchIn(u) && MemoryGate.allows(u)) return listOf("memory_save", "remember").firstOrNull { it in toolNames }
@@ -342,7 +342,7 @@ object ToolTruth {
             addAll(follow(user).values)
             // the first-step choice too on a later step, so the flow's own tool never drops mid-turn
             choiceFor(user, emptyList(), names)?.let { add(it) }
-            // 0.45.19: a Blaze Phone flow keeps all its tools (open → read → act → verify) once it started or was asked for.
+            // 0.45.19: an Argus Phone flow keeps all its tools (open → read → act → verify) once it started or was asked for.
             if (used.any { it in com.blaze.assistant.browser.phone.PhonePolicy.TOOLS } || com.blaze.assistant.browser.phone.PhonePolicy.phoneAsk(user))
                 addAll(com.blaze.assistant.browser.phone.PhonePolicy.TOOLS)
         }

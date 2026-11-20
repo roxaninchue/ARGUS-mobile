@@ -11,9 +11,9 @@ import java.io.File
 
 /**
  * v0.45.9: the phone side of [SaveFile]. API 29+: MediaStore.Downloads into Download/Blaze (no permission needed). 0.53.2: a
- * file Blaze already saved under the same name is replaced in place (an edit, "polish it"), not saved again as "name (1)";
+ * file Argus already saved under the same name is replaced in place (an edit, "polish it"), not saved again as "name (1)";
  * if it can't be replaced, Android renames on the clash and the name read back is the one reported. Below 29, or if MediaStore refuses: the file goes to
- * Blaze's cache and the share / save sheet opens (the user picks Files / Drive), and the result says so.
+ * Argus's cache and the share / save sheet opens (the user picks Files / Drive), and the result says so.
  */
 object SaveFileAndroid {
     const val FOLDER = "Blaze"

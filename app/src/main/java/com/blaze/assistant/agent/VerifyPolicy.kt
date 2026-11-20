@@ -32,7 +32,7 @@ object VerifyPolicy {
     fun strict(): Boolean = try { Settings.bool(PREF_STRICT, false) } catch (_: Throwable) { false }
 
     enum class Mode {
-        /** Nothing outside Blaze to read back: the result's own words decide (no wait). */
+        /** Nothing outside Argus to read back: the result's own words decide (no wait). */
         WORDS,
         /** Wait for the local check (old path; risky actions; strict mode). */
         BLOCKING,

@@ -26,13 +26,13 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 0.45.19 Blaze App Store: the on-phone side. Catalog from Site (ETag, cache, bundled seed), search, installed/updates,
+ * 0.45.19 Argus App Store: the on-phone side. Catalog from Site (ETag, cache, bundled seed), search, installed/updates,
  * and one job per app through [InstallPipeline]. Free, no ads, no gates (user policy, 2026-10-23); every listing carries
  * [StorePolicy.NOTICE], its license and its source repo.
  *
  * Install destination (user decision 2026-10-23 10:29, A): the user's own phone through Android's PackageInstaller
  * ([StoreInstaller]); the user confirms every install in Android's dialog and uninstalls from Android's settings.
- * Blaze Phone's sandbox stays parked; the release page is a fallback link only.
+ * Argus Phone's sandbox stays parked; the release page is a fallback link only.
  */
 object AppStore {
     data class Job(val appId: String, val step: StoreStep, val message: String, val done: Long = 0, val total: Long = 0, val update: Boolean = false)
@@ -155,7 +155,7 @@ object AppStore {
 
     private fun scanInstalledAfter(a: StoreApp) { scanInstalled(); _updates.update { it - a.id } }
 
-    /** Which catalog apps are on this phone (package visibility: Blaze's manifest queries launcher apps). */
+    /** Which catalog apps are on this phone (package visibility: Argus's manifest queries launcher apps). */
     fun scanInstalled() {
         if (!ready) return
         val pm = app.packageManager

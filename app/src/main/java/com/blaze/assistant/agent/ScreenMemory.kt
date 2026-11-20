@@ -18,7 +18,7 @@ import java.util.Locale
 /**
  * Opt-in screen memory: when you switch apps, keeps a short text snapshot of what was on screen,
  * only on this phone (filesDir/screen_memory.json, last 300). Screens with password fields are skipped.
- * Blaze can search it ("what was that address I saw in Chrome?").
+ * Argus can search it ("what was that address I saw in Chrome?").
  */
 object ScreenMemory {
     private const val MAX = 300

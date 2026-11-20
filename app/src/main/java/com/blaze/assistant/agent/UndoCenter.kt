@@ -3,7 +3,7 @@ package com.blaze.assistant.agent
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * v0.39.0 Undo bar: when Blaze finishes an undoable action on its own (Autopilot), the chat shows "<what> · You have
+ * v0.39.0 Undo bar: when Argus finishes an undoable action on its own (Autopilot), the chat shows "<what> · You have
  * 10 seconds to undo" with an Undo button. Only actions with a real way back register one ([undoFor]); everything
  * else just gets its plain line. Pure parts: [secondsLeft], [label], [undoable] (UndoCenterTest).
  */

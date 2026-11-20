@@ -9,7 +9,7 @@ import java.io.File
  * (v0.30.4 trace: 18 steps, 4 min 25 s, ≈ 7 s a step) to a plan the phone runs itself. Pure (TapLoopTest).
  *
  *  - [failed]: whether a screen tool's result means the step did not happen (for the plan recorder).
- *  - [wantOf] / [needsTap]: `want:"on"|"off"` on a tap: Blaze reads the switch and only taps when it isn't already
+ *  - [wantOf] / [needsTap]: `want:"on"|"off"` on a tap: Argus reads the switch and only taps when it isn't already
  *    that way, so a replayed or batched plan can never flip a setting back.
  *  - [settleAfter] / [waitMs]: run_plan waits for the NEXT step's target to show (LabelMatch on the new screen)
  *    instead of a fixed settle cap; apps that never go quiet (animations, video) no longer cost 1.2 s a step.

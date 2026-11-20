@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
  * In-chat secure forms for the background browser (v0.20.0).
  *
  * When a page needs something only the user has (email, phone, username + password, an API key,
- * a one-time code), Blaze shows a form card in the chat. The values go straight from the card into
+ * a one-time code), Argus shows a form card in the chat. The values go straight from the card into
  * the page. The model never sees them: it only ever handles placeholders like `{{secret:password}}`,
  * which the browser swaps for the real value at the moment it types. Values can be saved to the
  * vault (Android Keystore encrypted, per site) so the next sign-in needs no card.
@@ -82,7 +82,7 @@ object SecureInput {
     fun hasPlaceholder(s: String) = token.containsMatchIn(s)
     fun names(s: String): List<String> = token.findAll(s).map { it.groupValues[1] }.toList()
 
-    /** Values given in this run, by name. Memory only; gone when Blaze restarts. */
+    /** Values given in this run, by name. Memory only; gone when Argus restarts. */
     private val slots = ConcurrentHashMap<String, String>()
     /** Every value given this run (any site), so tool output can be scrubbed. */
     private val seen = java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
@@ -142,7 +142,7 @@ object SecureInput {
 
 /**
  * Sites that won't take a password (GitHub's "This account does not support password sign-in",
- * passkey-only, Google-only accounts). Spotted in page text so Blaze offers the ways that work
+ * passkey-only, Google-only accounts). Spotted in page text so Argus offers the ways that work
  * instead of looping on the password form.
  */
 object SignInHints {
@@ -170,7 +170,7 @@ object SignInHints {
 }
 
 /**
- * Blaze's vault for website sign-ins: `filesDir/vault.json`, one entry per site and field, each value
+ * Argus's vault for website sign-ins: `filesDir/vault.json`, one entry per site and field, each value
  * encrypted with the Android Keystore key (Secrets). Excluded from cloud backup (the key can't leave
  * the phone anyway). Values are only ever handed to the browser, never to the model.
  */

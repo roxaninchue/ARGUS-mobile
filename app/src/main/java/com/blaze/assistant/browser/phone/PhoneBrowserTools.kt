@@ -6,11 +6,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.45.19 Blaze Phone browser: the agent's tools. Blaze uses its own phone the way an agent uses a computer for the
+ * 0.45.19 Argus Phone browser: the agent's tools. Argus uses its own phone the way an agent uses a computer for the
  * user: browsing, logging in, booking, with a live view in the chat and Take control / Hand back.
  *
  *  - Anything that pays, books, sends, submits or deletes asks first (the confirm card, ConfirmGate always = true).
- *  - Card numbers are never typed by Blaze: the user takes control for them.
+ *  - Card numbers are never typed by Argus: the user takes control for them.
  *  - Done means verified: every page read carries a VERIFIED / NOT VERIFIED line ([PhonePolicy.verify]); the tool text
  *    tells the agent never to say booked / confirmed without it.
  *
@@ -102,7 +102,7 @@ object PhoneBrowserTools {
     private const val NO_PAGE = "${BrandName.NAME} Phone has no page open. Use phone_open first."
 
     suspend fun run(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, confirm: suspend (String, String, String) -> Boolean): String {
-        // 0.45.19-speed: timings for phone_status (the user's approval time on a confirm card isn't Blaze's).
+        // 0.45.19-speed: timings for phone_status (the user's approval time on a confirm card isn't Argus's).
         val t0 = d.now()
         var waited = 0L
         val timedConfirm: suspend (String, String, String) -> Boolean = { t, de, ac -> val c0 = d.now(); try { confirm(t, de, ac) } finally { waited += d.now() - c0 } }
@@ -138,7 +138,7 @@ object PhoneBrowserTools {
         }
     } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { "${BrandName.NAME} Phone error: ${com.blaze.assistant.browser.SecureInput.scrub(e.message.orEmpty().take(200))}" }
 
-    /** What Blaze Phone has and hasn't completed, from the page as it is now. Never claims more than the page shows. */
+    /** What Argus Phone has and hasn't completed, from the page as it is now. Never claims more than the page shows. */
     suspend fun progress(d: PhoneDriver): String {
         if (!d.hasPage()) return "Nothing open on ${BrandName.NAME} Phone: nothing booked, ordered or paid."
         val s = try { d.snapshot() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null }

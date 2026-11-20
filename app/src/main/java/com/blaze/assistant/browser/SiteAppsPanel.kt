@@ -49,7 +49,7 @@ import kotlinx.coroutines.withContext
 
 /*
  * 2026-11-18: Install app adds the site to ARGUS's Apps page (Life › Apps); "Also add to Home screen" pins it as well.
- * v0.33.2 Blaze browser › "Add to Home screen / Install app" (the site's real icon, its name, then a pinned launcher
+ * v0.33.2 Argus browser › "Add to Home screen / Install app" (the site's real icon, its name, then a pinned launcher
  * icon that opens it as its own app) and › "Installed apps" (open or uninstall).
  */
 

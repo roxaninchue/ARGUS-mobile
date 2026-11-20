@@ -6,7 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Specialists: focused sub-agents Blaze can hand a piece of work to. Each has its own prompt and
+ * Specialists: focused sub-agents Argus can hand a piece of work to. Each has its own prompt and
  * only the tools it needs, so it stays on task, uses fewer tokens, and several can run at once.
  */
 object Specialists {
@@ -95,7 +95,7 @@ object Specialists {
     data class Made(val ok: Boolean, val spec: Spec?, val message: String)
 
     /**
-     * Checks and builds a specialist Blaze wants to create. The playbook must pass [Playbooks.validate] (against
+     * Checks and builds a specialist Argus wants to create. The playbook must pass [Playbooks.validate] (against
      * the field = name + prompt, and every other playbook so it isn't a copy); on failure the model is told exactly
      * what to fix, up to [Playbooks.MAX_TRIES] tries ([attempt] is 1-based). Ids of built-ins and of the user's
      * own specialists are never overwritten; a Blaze-made one with the same id is updated. Pure.

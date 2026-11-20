@@ -7,7 +7,7 @@ import android.os.Build
 import android.service.quicksettings.TileService
 import com.blaze.assistant.MainActivity
 
-/** Quick Settings tile: one tap opens Blaze listening. */
+/** Quick Settings tile: one tap opens Argus listening. */
 class BlazeTile : TileService() {
     @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {

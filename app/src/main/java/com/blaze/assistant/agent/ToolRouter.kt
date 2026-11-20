@@ -28,7 +28,7 @@ object ToolRouter {
         "call_control",
         // Background agents: always on hand so long work can be handed off from any request.
         "start_agent", "list_agents", "check_agent", "message_agent", "cancel_agent",
-        // 0.46.0 Blaze Stage: stage_show is always on hand, so a timer / music / quiz card is preferred over opening a view.
+        // 0.46.0 Argus Stage: stage_show is always on hand, so a timer / music / quiz card is preferred over opening a view.
         "stage_show",
         // 0.46.6 Secure form: never ask for a key, password, card or code in chat.
         "request_secret",
@@ -85,7 +85,7 @@ object ToolRouter {
             r("""\b(alarm|timer|volume|mute|loud|wifi|wi-fi|bluetooth|torch|flash|brightness|dnd|disturb|airplane|battery|setting|pause|play|next|skip|music|song|clipboard|copy|paste|notif\w*|share|ringer|silent|vibrate|rotat\w*|hotspot|nfc|location|split|power|screenshot|lock|usage|uninstall|camera|qr|photo|installed|apps?|secure folder|private space|phone model|android version|where am i|near me|nearby|gps|my location|address)\b"""),
             { it in setOf("set_alarm", "set_timer", "set_volume", "toggle_setting", "device_setting", "battery_level", "media_control", "get_location") || it in com.blaze.assistant.phone.AndroidControl.names }),
         Group("schedule", "calendar, routines, triggers (when X do Y)",
-            // v0.45.9: plurals and "what's on" questions too ("View your upcoming meetings" got no calendar tool and Blaze said it couldn't see the calendar).
+            // v0.45.9: plurals and "what's on" questions too ("View your upcoming meetings" got no calendar tool and Argus said it couldn't see the calendar).
             r("""\b(calendars?|events?|meetings?|schedules?|remind|reminders?|alarms?|agenda|appointments?|classes|class|lectures?|upcoming|every|daily|tomorrow|tonight|morning|routines?|when|whenever|anything on|what'?s on|whats on|what is on|on for today|what do i have|do i have anything|am i (?:busy|free))\b"""),
             { it in setOf("calendar_events", "add_calendar_event", "gcal_events", "gcal_create", "create_routine", "list_routines", "delete_routine", "schedule_command",
                 "create_trigger", "list_triggers", "delete_trigger", "move_event", "delete_event") }),
@@ -124,7 +124,7 @@ object ToolRouter {
         Group("home", "the Home board: add, change, remove and list widgets (weather, news, creators, sports scores, prices, calendar, routines, deadlines, GitHub, most-used apps, custom cards); to-do lists in Life (life_todo: add, tick off, list)",
             r("""\b(widgets?|home ?board|home tab|on (?:my )?home|board|dashboard|track(?:ing)?|follow(?:ing)?|keep an eye|scores?|fixtures|new videos|uploads|crypto|bitcoin|exchange rate|stock price)\b"""),
             { it.startsWith("home_widget_") || it == com.blaze.assistant.home.LifeTodo.TOOL }),
-        // 0.46.0 Blaze Stage: change, move, close and arrange cards and the chat / top bar / reply bar on the chat Stage.
+        // 0.46.0 Argus Stage: change, move, close and arrange cards and the chat / top bar / reply bar on the chat Stage.
         Group("stage", "the chat Stage: update / move / close cards (timer, music, video, quiz, flashcards, plan), hide or dock the chat, top bar, reply bar, layouts",
             r("""\b(stage|hero|widgets?|mini ?player|timer|pomodoro|countdown|stopwatch|focus (?:mode|session|timer)|study (?:for )?\d+|\d+ ?(?:min|mins|minutes|hours?) (?:of )?(?:study|focus|work)|pause (?:it|the timer|the music)|make (?:it|the \w+) (?:big|bigger|small|smaller)|hide (?:the )?(?:chat|top bar|reply bar)|show (?:the )?(?:chat|top bar)|reset (?:the )?layout|move (?:the )?\w+ (?:to|up|down))\b"""),
             { it.startsWith("stage_") }),

@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * The browser's VPN. Your WireGuard configs (one per country) run through wgproxy, a user-space
- * WireGuard tunnel shipped as libwgproxy.so, which serves an HTTP proxy on 127.0.0.1. Only Blaze's
+ * WireGuard tunnel shipped as libwgproxy.so, which serves an HTTP proxy on 127.0.0.1. Only Argus's
  * browser WebViews use it (ProxyController), so chats with your model don't go through the VPN and
  * Android shows no VPN prompt.
  *
@@ -93,7 +93,7 @@ object BrowserVpn {
     val free = Location(FREE_ID, WarpFree.NAME, null, "")
     val isFree: Boolean get() = selected == FREE_ID
 
-    /** What one tap on the switch connects to: the last pick, else the first imported config, else Blaze Free. */
+    /** What one tap on the switch connects to: the last pick, else the first imported config, else Argus Free. */
     fun defaultId(): String = current()?.id ?: locations.firstOrNull()?.id ?: FREE_ID
 
     /** The country pages should see: the tunnel's real exit, else the location's country. Null with the VPN off. */
@@ -170,7 +170,7 @@ object BrowserVpn {
         locations.removeAll { it.id == id }; save()
     }
 
-    /** Find a location by country name/code or location name; "free"/"warp"/blank mean Blaze Free when nothing else fits. */
+    /** Find a location by country name/code or location name; "free"/"warp"/blank mean Argus Free when nothing else fits. */
     fun find(q: String): Location? {
         val t = q.trim()
         if (t.isEmpty() || Regex("(?i)^((?:argus|blaze) ?free|free|warp|cloudflare|any|auto|default|on)$").matches(t) || t.contains("warp", true))
@@ -242,7 +242,7 @@ object BrowserVpn {
 
     private class FreeFailed(msg: String) : Exception(msg)
 
-    /** Blaze Free: register once (or reuse), then try each WARP endpoint/port until the trace says warp=on. */
+    /** Argus Free: register once (or reuse), then try each WARP endpoint/port until the trace says warp=on. */
     private suspend fun connectFree(g: Int): WarpFree.Trace {
         var fresh = false
         var acct: WarpFree.Account = loadFree() ?: run {

@@ -18,7 +18,7 @@ import org.json.JSONObject
 object ToolLeak {
     data class Leak(val name: String, val args: JSONObject, val raw: String)
 
-    /** The Blaze agent repo, for `github_open` with no usable repo (or a misspelt Blaze one). */
+    /** The Argus agent repo, for `github_open` with no usable repo (or a misspelt Argus one). */
     const val BLAZE_REPO_URL = "https://gitlab.com/blazeinchue/Blaze-agent"
 
     /** Asked once per turn when a leak can't be turned into a real call. */
@@ -149,7 +149,7 @@ object ToolLeak {
     private fun call(i: Int, name: String, args: JSONObject): JSONObject =
         JSONObject().put("id", "leak_$i").put("type", "function").put("function", JSONObject().put("name", name).put("arguments", args.toString()))
 
-    /** The Blaze repos by squashed name (any case, dashes or none, "desktop" misspelt the repo's way too). v0.28.4. */
+    /** The Argus repos by squashed name (any case, dashes or none, "desktop" misspelt the repo's way too). v0.28.4. */
     val BLAZE_REPOS = mapOf(
         "blazeagent" to BLAZE_REPO_URL,
         "blazeandroid" to BLAZE_REPO_URL,
@@ -158,7 +158,7 @@ object ToolLeak {
         "blazecli" to "https://gitlab.com/blazeinchue/Blaze-cli",
     )
 
-    /** A guessed owner for Blaze's repos (any "blazeinchue" spelling in any case, "blaze-inchue", "blaze", "blazeapp"). */
+    /** A guessed owner for Argus's repos (any "blazeinchue" spelling in any case, "blaze-inchue", "blaze", "blazeapp"). */
     fun blazeOwner(owner: String): Boolean {
         val k = key(owner)
         return k.startsWith("blazeinc") || k.startsWith("blazinchue") || k == "blaze" || k == "blazeapp" || k == "blazehq"
@@ -170,7 +170,7 @@ object ToolLeak {
         val repo = args.optString("repo").ifBlank { args.optString("repository").ifBlank { args.optString("name") } }.trim().trim('/')
             .removePrefix("https://").removePrefix("http://").removePrefix("www.").removePrefix("github.com/").removeSuffix(".git")
         if (repo.isBlank()) return BLAZE_REPO_URL
-        // Any owner (or none) with a Blaze repo name: "Blazeinchue/Blaze-Agent", "blaze-agent", "BLAZE-DESKTOP".
+        // Any owner (or none) with an Argus repo name: "Blazeinchue/Blaze-Agent", "blaze-agent", "BLAZE-DESKTOP".
         BLAZE_REPOS[key(repo.substringAfterLast('/'))]?.let { return it }
         return if (Regex("""^[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+$""").matches(repo)) "https://github.com/$repo" else BLAZE_REPO_URL
     }
@@ -178,8 +178,8 @@ object ToolLeak {
     private val ghUrl = Regex("""^(?:https?://)?(?:www\.)?github\.com/([^/?#\s]+)/([^/?#\s]+)(.*)$""", RegexOption.IGNORE_CASE)
 
     /**
-     * v0.28.4 (Blazeinchue's screenshot: Blaze opened github.com/Blazeinchue/Blaze-Agent, said it doesn't exist and sent him to
-     * a stranger's profile): a github.com URL to a Blaze repo under a guessed owner or the wrong case becomes the real
+     * v0.28.4 (Blazeinchue's screenshot: Argus opened github.com/Blazeinchue/Blaze-Agent, said it doesn't exist and sent him to
+     * a stranger's profile): a github.com URL to an Argus repo under a guessed owner or the wrong case becomes the real
      * one, keeping the rest of the path (/releases, /tree/apk …). Other URLs are returned unchanged.
      */
     fun fixBlazeUrl(url: String): String {

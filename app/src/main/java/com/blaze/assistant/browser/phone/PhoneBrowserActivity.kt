@@ -68,10 +68,10 @@ import com.blaze.assistant.ui.StatusPill
 import com.blaze.assistant.ui.Type
 
 /**
- * 0.45.19 Blaze Phone full screen. Watching: Blaze's screen, live, with the step it's on and "Take control". In control:
- * the real page (the same WebView, moved here, fully interactive with the keyboard), a clear "Blaze paused, you're in
+ * 0.45.19 Argus Phone full screen. Watching: Argus's screen, live, with the step it's on and "Take control". In control:
+ * the real page (the same WebView, moved here, fully interactive with the keyboard), a clear "Argus paused, you're in
  * control" bar and only "Hand back" (fix 6: the old Done button is gone; closing the screen hands back too). Back goes to the chat
- * (fix 7, BackRule: handing back first when the user has control). Leaving Blaze while Blaze works turns this screen
+ * (fix 7, BackRule: handing back first when the user has control). Leaving Argus while Argus works turns this screen
  * into picture-in-picture showing only the live view (fix 4).
  */
 class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
@@ -90,7 +90,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
         super.onCreate(savedInstanceState)
         if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         PhoneBrowser.init(this)
-        // Opened by the user with nothing running: their own Blaze Phone session, in control from the start.
+        // Opened by the user with nothing running: their own Argus Phone session, in control from the start.
         if (!PhoneBrowser.hasPage()) { PhoneBrowser.openForUser(this); take() }
         else if (intent?.getBooleanExtra(EXTRA_CONTROL, false) == true) take()
         else if (PhoneBrowser.live.value.mode == PhonePolicy.Mode.USER) take()   // re-host the WebView in this window
@@ -116,7 +116,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
         }
     }
 
-    /** Hand back: Blaze resumes (an agent was waiting) and the screen keeps watching; with nobody waiting it closes. */
+    /** Hand back: Argus resumes (an agent was waiting) and the screen keeps watching; with nobody waiting it closes. */
     private fun handBack() {
         val agentWaiting = PhoneBrowser.live.value.agentWaiting
         control.value = false

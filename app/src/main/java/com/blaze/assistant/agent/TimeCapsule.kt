@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit
 
 /**
  * v0.33.0 Time Capsule: "write a letter to me for next year", "remind future me why I started this". A sealed note
- * (optionally with a snapshot of what Blaze knows about your goals right now) that stays locked, unreadable even by
- * Blaze's tools, until its date; then it opens as a notification and lands in the chat. Pure date maths in [openAt]
+ * (optionally with a snapshot of what Argus knows about your goals right now) that stays locked, unreadable even by
+ * Argus's tools, until its date; then it opens as a notification and lands in the chat. Pure date maths in [openAt]
  * (TimeCapsuleTest).
  */
 object TimeCapsule {

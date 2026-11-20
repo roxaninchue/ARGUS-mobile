@@ -160,7 +160,7 @@ private data class Pin(val label: String, val url: String, val app: SiteApp? = n
 
 /**
  * The Sky new-tab page (unification 8/9: on the shell's space view): wordmark, time and date, the search pill (with voice), pinned sites and installed site
- * apps, "pick up where you left off" (recent tabs and Blaze's task) and two chips (trackers, live tabs).
+ * apps, "pick up where you left off" (recent tabs and Argus's task) and two chips (trackers, live tabs).
  */
 @Composable
 internal fun SkyStartPage(tick: Int, bottomSpace: Dp, open: (String) -> Unit, onSearch: () -> Unit, onVoice: () -> Unit) {
@@ -287,7 +287,7 @@ private fun age(ms: Long, now: Long): String {
 }
 
 /**
- * Sky tabs: a frosted sheet with Open / Private / Blaze, tabs split into AWAKE (a live page in memory) and SLEEPING (a
+ * Sky tabs: a frosted sheet with Open / Private / Argus, tabs split into AWAKE (a live page in memory) and SLEEPING (a
  * record only), favicon rows with close, and New tab / Private / Search at the bottom. The picture grid stays one tap away.
  */
 @Composable

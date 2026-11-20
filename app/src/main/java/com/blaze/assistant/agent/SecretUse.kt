@@ -172,7 +172,7 @@ object SecretUse {
     }
 
     /**
-     * For Blaze's browser: the value of `{{secret:name}}` / `{{secret:name.field}}` when [host] is one the secret was saved
+     * For Argus's browser: the value of `{{secret:name}}` / `{{secret:name.field}}` when [host] is one the secret was saved
      * for (cards included: that is how a card reaches its payment page). Null when unknown or not allowed.
      */
     fun forBrowser(name: String, host: String): String? {

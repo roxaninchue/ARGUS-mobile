@@ -7,7 +7,7 @@ import android.content.Intent
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Tools that let Blaze browse in its own browser, in the background, without touching the screen. */
+/** Tools that let Argus browse in its own browser, in the background, without touching the screen. */
 object BrowserTools {
     val names = setOf("browser_open", "browser_read", "browser_click", "browser_type", "browser_scroll", "browser_back", "browser_tabs", "browser_show", "browser_vpn", SECURE,
         // 0.45.29: choose in dropdowns, press keys, wait for something, find words on the page.
@@ -105,10 +105,10 @@ object BrowserTools {
     }
 
     private suspend fun runStep(ctx: Context, name: String, a: JSONObject): String = try {
-        // v0.30.5: Home's live preview window shows the page while Blaze works in it.
+        // v0.30.5: Home's live preview window shows the page while Argus works in it.
         if (name != "browser_vpn" && name != "browser_tabs") BrowserLive.mark(describe(name, a))
         when (name) {
-            // v0.28.4: a guessed Blaze repo URL (wrong owner / case) opens the real repo.
+            // v0.28.4: a guessed Argus repo URL (wrong owner / case) opens the real repo.
             // v0.33.3: a Play Store page for an installed app launches the app (never "Install" for something installed).
             "browser_open" -> com.blaze.assistant.phone.AppFinder.playId(a.optString("url"))?.takeIf { com.blaze.assistant.phone.InstalledApps.launch(ctx, it) }
                 ?.let { "That app ($it) is installed on this phone, so I opened it instead of its Play Store page. Never offer to install it." } ?: BrowserEngine.open(ctx, com.blaze.assistant.agent.ToolLeak.fixBlazeUrl(a.optString("url")), a.optBoolean("new_tab", false), a.optBoolean("private", false)).also { if (a.optBoolean("show")) show(ctx) }
@@ -166,7 +166,7 @@ object BrowserTools {
 }
 
 /**
- * v0.30.5: what Blaze is doing in its background browser, for the Home tab's live preview window. Set on each browser
+ * v0.30.5: what Argus is doing in its background browser, for the Home tab's live preview window. Set on each browser
  * tool call; the preview shows while a chat is working and a browser step happened in the last [WINDOW_MS].
  */
 object BrowserLive {

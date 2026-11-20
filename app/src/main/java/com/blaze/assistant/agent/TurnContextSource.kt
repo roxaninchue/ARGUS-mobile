@@ -12,7 +12,7 @@ import java.time.ZonedDateTime
 
 /**
  * v0.45.9: gathers [TurnContext.Inputs] on the phone. Everything is local and cached: the Home weather card's last
- * result (no network call here, ever), Blaze reminders / routines, the Clock alarms Blaze set plus the phone's next
+ * result (no network call here, ever), Argus reminders / routines, the Clock alarms Argus set plus the phone's next
  * system alarm, calendar instances for the asked dates (only when READ_CALENDAR is already granted; skipped silently
  * otherwise), live follow-ups and an interrupted task. [block] reads the cache first; [warm] builds it on a background
  * thread (app open, typing) so the send path normally just picks it up. Every source is optional: a failure leaves it out.

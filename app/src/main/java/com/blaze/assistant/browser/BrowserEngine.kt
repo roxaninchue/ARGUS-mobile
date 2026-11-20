@@ -49,12 +49,12 @@ import java.io.File
 import kotlin.coroutines.resume
 
 /**
- * Blaze's own browser. Tabs are WebViews that live here, not in the screen, so Blaze can open,
+ * Argus's own browser. Tabs are WebViews that live here, not in the screen, so Argus can open,
  * read, click and type on pages in the background, and the Browser screen just shows the current tab.
  */
 object BrowserEngine {
     /**
-     * v0.45.25 RAM diet: a tab is a small record; its WebView ([live]) exists only while the tab is on screen or Blaze
+     * v0.45.25 RAM diet: a tab is a small record; its WebView ([live]) exists only while the tab is on screen or Argus
      * is using it. [web] gives the WebView, bringing a sleeping tab back (its back/forward state restored) on first use,
      * so every caller works as before. Code that only looks (lists, grids, settings changes) uses [live].
      */
@@ -76,7 +76,7 @@ object BrowserEngine {
         internal var maskJs: String? = null
         var url by mutableStateOf("")
         var progress by mutableIntStateOf(100)
-        /** v0.45.25 Sky: trackers refused on this tab, when it was last on screen, and whether Blaze has driven it. */
+        /** v0.45.25 Sky: trackers refused on this tab, when it was last on screen, and whether Argus has driven it. */
         var blocked by mutableIntStateOf(0)
         var lastSeen by mutableStateOf(System.currentTimeMillis())
         var agentUsed by mutableStateOf(false)
@@ -89,7 +89,7 @@ object BrowserEngine {
         var canBack by mutableStateOf(false)
         var canForward by mutableStateOf(false)
         @Volatile var loaded: CompletableDeferred<Unit> = CompletableDeferred(Unit)
-        /** A JS alert/confirm the page showed while nobody was looking (answered for it, told to Blaze on the next read). */
+        /** A JS alert/confirm the page showed while nobody was looking (answered for it, told to Argus on the next read). */
         @Volatile var lastDialog: String? = null
         /** v0.29.7: a tab restored after a restart that hasn't loaded yet (loads when it's shown). */
         internal var pending: TabStore.Snap? = null
@@ -108,7 +108,7 @@ object BrowserEngine {
     val tabs = mutableStateListOf<Tab>()
     private var currentIndex by mutableIntStateOf(0)
     /**
-     * The tab on screen. A sleeping tab wakes when the screen (or Blaze) first uses its WebView; the tab you left
+     * The tab on screen. A sleeping tab wakes when the screen (or Argus) first uses its WebView; the tab you left
      * gets a grid picture now and goes to sleep a moment later (v0.45.25).
      */
     var current: Int
@@ -138,7 +138,7 @@ object BrowserEngine {
         BrowserVpn.onMaskChanged = { remask() }
         BrowserVpn.init(app)
         TrackerBlock.init(app)
-        main.post { clearPrivateData() }   // leftovers if Blaze was killed with private tabs open
+        main.post { clearPrivateData() }   // leftovers if Argus was killed with private tabs open
         io.execute { TabStore.clearStateFiles(); clearThumbFiles() }   // last run's sleeping-tab files (ordered before any new one)
         restoreTabs()
         // v0.45.25: Android's memory warnings put every tab nobody is looking at to sleep.
@@ -153,7 +153,7 @@ object BrowserEngine {
     @Volatile private var agentAt = 0L
     private val dietTask = Runnable { diet(pressed = false) }
 
-    /** The Browser screen came up or went away. Hidden: the visible tab is paused, and sleeps once Blaze is idle. */
+    /** The Browser screen came up or went away. Hidden: the visible tab is paused, and sleeps once Argus is idle. */
     fun setUiVisible(on: Boolean) {
         uiVisible = on
         if (!::app.isInitialized) return
@@ -161,12 +161,12 @@ object BrowserEngine {
         else {
             tab()?.live?.takeIf { !agentRecent(TabDiet.AGENT_KEEP_PRESSED_MS) }?.onPause()
             scheduleDiet()
-            // When Blaze drove a tab and stops, it sleeps after the keep window (checked again then).
+            // When Argus drove a tab and stops, it sleeps after the keep window (checked again then).
             main.postDelayed(dietTask, TabDiet.AGENT_KEEP_MS + 1_000)
         }
     }
 
-    /** Blaze is using [t] (a tool call): keep it awake and its renderer important. */
+    /** Argus is using [t] (a tool call): keep it awake and its renderer important. */
     private fun markAgent(t: Tab) {
         agentTabId = t.id; agentAt = System.currentTimeMillis(); t.agentUsed = true
         t.live?.let { w ->
@@ -176,7 +176,7 @@ object BrowserEngine {
         main.removeCallbacks(dietTask); main.postDelayed(dietTask, TabDiet.AGENT_KEEP_MS + 1_000)
     }
 
-    /** The tab Blaze drove in the last [ms] (the Sky "Blaze reading in background" chip), else null. */
+    /** The tab Argus drove in the last [ms] (the Sky "Blaze reading in background" chip), else null. */
     fun agentTab(ms: Long = BrowserLive.WINDOW_MS): Tab? = tabs.firstOrNull { it.id == agentTabId }?.takeIf { agentRecent(ms) }
     /** How many tabs hold a WebView right now. */
     fun liveCount(): Int = tabs.count { it.live != null }
@@ -201,7 +201,7 @@ object BrowserEngine {
         var slept = 0
         awake.forEach { t ->
             if (t.id in keep) {
-                // Not on screen and not driven by Blaze lately: the renderer may be reclaimed first (the page reloads if so).
+                // Not on screen and not driven by Argus lately: the renderer may be reclaimed first (the page reloads if so).
                 if (t.id !in attached && !agentRecent(TabDiet.AGENT_KEEP_PRESSED_MS)) try { t.live?.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, true) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: setRendererPriorityPolicy", e) }
             } else { hibernate(t); slept++ }
         }
@@ -547,7 +547,7 @@ object BrowserEngine {
             if (isPrivate) cacheMode = WebSettings.LOAD_NO_CACHE
         }
         // v0.45.25: no offscreen pre-raster (the default, made explicit) and a renderer Android may reclaim first while the
-        // tab isn't on screen; Blaze's own tab is raised to IMPORTANT while it drives it (markAgent).
+        // tab isn't on screen; Argus's own tab is raised to IMPORTANT while it drives it (markAgent).
         if (WebViewFeature.isFeatureSupported(WebViewFeature.OFF_SCREEN_PRERASTER)) try { androidx.webkit.WebSettingsCompat.setOffscreenPreRaster(w.settings, false) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: setOffscreenPreRaster", e) }
         try { w.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: setRendererPriorityPolicy", e) }
         CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
@@ -555,7 +555,7 @@ object BrowserEngine {
         var captureLate = false   // set below: inject the sign-in watcher after each load (old WebView)
         w.webViewClient = object : WebViewClient() {
             // v0.20.0: a dead page renderer (Android reclaims it on a 3 GB phone, or it crashes) used to take the
-            // whole app down with it, and Samsung then switches Blaze's phone control off. Reopen the tab instead.
+            // whole app down with it, and Samsung then switches Argus's phone control off. Reopen the tab instead.
             override fun onRenderProcessGone(v: WebView, d: android.webkit.RenderProcessGoneDetail): Boolean {
                 val crashed = try { d.didCrash() } catch (_: Throwable) { false }
                 com.blaze.assistant.device.CrashLog.write("Browser renderer ${if (crashed) "crashed" else "was closed by Android"} on ${t.url.take(80)}; tab reopened")
@@ -622,7 +622,7 @@ object BrowserEngine {
         }
         w.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(v: WebView, p: Int) { if (v === t.live) TabDiet.progressStep(p).let { if (it != t.progress) t.progress = it } }
-            // In the background there's no Activity to show a page's dialog: answer it here and tell Blaze.
+            // In the background there's no Activity to show a page's dialog: answer it here and tell Argus.
             override fun onJsAlert(v: WebView, url: String?, message: String?, r: android.webkit.JsResult): Boolean {
                 if (visible(t)) return false
                 t.lastDialog = "alert: " + message.orEmpty().take(300); r.confirm(); return true
@@ -876,7 +876,7 @@ object BrowserEngine {
 
     private fun toast(s: String) = main.post { Toast.makeText(app, s, Toast.LENGTH_SHORT).show() }
 
-    // ---------- what Blaze uses ----------
+    // ---------- what Argus uses ----------
     private suspend fun js(t: Tab, code: String): Any? = withContext(Dispatchers.Main) {
         markAgent(t)
         suspendCancellableCoroutine { cont ->
@@ -980,7 +980,7 @@ object BrowserEngine {
     private fun itemLines(r: JSONObject): List<String> = r.optJSONArray("items")?.let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it)?.let(BrowserRead::item) } } ?: emptyList()
     private fun textOf(r: JSONObject): String = r.optString("on") + "\n" + r.optString("below")
 
-    /** Things Blaze should know about the page: a dialog it answered, a renderer restart, a site that refuses passwords. */
+    /** Things Argus should know about the page: a dialog it answered, a renderer restart, a site that refuses passwords. */
     private fun notes(t: Tab, r: JSONObject?): String? {
         val out = ArrayList<String>()
         lastCrash?.let { out += it; lastCrash = null }
@@ -1177,7 +1177,7 @@ object BrowserData {
 
     private fun save(ctx: Context) { try { file(ctx).writeText(data(ctx).toString()) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("BrowserEngine: filectx.writeTextdatactx.toString", e) } }
 
-    // 0.45.19-speed: Blaze Phone's site resolver reads history off the main thread while the browser writes it; one lock.
+    // 0.45.19-speed: Argus Phone's site resolver reads history off the main thread while the browser writes it; one lock.
     @Synchronized private fun list(ctx: Context, k: String): List<Entry> {
         val a = data(ctx).optJSONArray(k) ?: JSONArray()
         return (0 until a.length()).map { a.getJSONObject(it) }.map { Entry(it.optString("t"), it.optString("u"), it.optLong("at")) }

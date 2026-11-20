@@ -15,7 +15,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Ack-and-background (HQ 22 Oct 20:35): an acknowledged task keeps going when you leave Blaze, and is never lost silently.
+ * Ack-and-background (HQ 22 Oct 20:35): an acknowledged task keeps going when you leave Argus, and is never lost silently.
  *
  *  - [Ledger]: every acknowledged task is written down (synchronously, so a kill can't lose it) and crossed off when its
  *    turn ends. A task still on the ledger after a restart either got its Cloud-run reply (picked up by
@@ -31,7 +31,7 @@ object TaskKeeper {
 
     data class Task(val chat: String, val user: Long, val said: String, val at: Long)
 
-    /** The honest line for a task that stopped when Blaze was closed (no reply came back for it). */
+    /** The honest line for a task that stopped when Argus was closed (no reply came back for it). */
     fun stoppedLine(said: String): String {
         val s = said.trim().replace(Regex("\\s+"), " ").let { if (it.length > 60) it.take(57).trimEnd() + "\u2026" else it }
         return "I was working on \u201c$s\u201d when ${BrandName.NAME} closed, so it stopped before I could confirm it. Send it again and I'll finish it."

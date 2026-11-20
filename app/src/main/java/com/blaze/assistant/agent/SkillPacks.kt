@@ -50,7 +50,7 @@ object SkillPacks {
 
     /**
      * System prompt block. With a handful of skills, names and one-line descriptions; with more,
-     * the ones that match this request in full plus the rest by name only (like Blaze Desktop).
+     * the ones that match this request in full plus the rest by name only (like Argus Desktop).
      * Skills switched off in Settings are left out.
      * v0.26.2: no longer sent each turn (SkillMatch.lookupBlock replaces it); kept for /skills-style listings.
      */

@@ -13,13 +13,13 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * Blaze's knowledge of its own setup: what's installed, granted, connected or missing, and how
+ * Argus's knowledge of its own setup: what's installed, granted, connected or missing, and how
  * to fix each one (open the exact system screen, or install it itself).
  */
 object SelfSetup {
     data class Item(val id: String, val name: String, val ok: Boolean, val why: String, val fix: String, val essential: Boolean = false)
 
-    /** Asks the open Blaze screen to show a settings page (ChatScreen listens). */
+    /** Asks the open Argus screen to show a settings page (ChatScreen listens). */
     val openPage = MutableStateFlow<String?>(null)
 
     private fun perm(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
@@ -70,7 +70,7 @@ object SelfSetup {
         if (missing.isEmpty()) "" else "\nYour own setup is missing: ${missing.joinToString { it.name }}. If something the user asks needs one of these, say so and offer to set it up (blaze_self setup_check / open / install)."
     } catch (_: Exception) { "" }
 
-    /** Opens the system or Blaze screen that fixes [target]. */
+    /** Opens the system or Argus screen that fixes [target]. */
     fun open(ctx: Context, target: String): String {
         val pkg = Uri.parse("package:" + ctx.packageName)
         val i: Intent? = when (target.lowercase().removePrefix("settings ").trim()) {
@@ -86,7 +86,7 @@ object SelfSetup {
         if (i != null) return try {
             com.blaze.assistant.device.ActivityStart.start(ctx, i); "Opened the ${target.replace('_', ' ')} screen. Tell the user what to switch on there."
         } catch (e: Exception) { "Couldn't open it: ${e.message}" }
-        // Otherwise a page inside Blaze's own settings.
+        // Otherwise a page inside Argus's own settings.
         val page = settingsPageFor(target)
         openPage.value = page
         ctx.startActivity(Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))

@@ -28,7 +28,7 @@ object TaskMemoryStore {
         val f = File(ctx.applicationContext.filesDir, FILE); file = f
         scope.launch {
             val list = try { if (f.exists()) TaskMemory.decode(f.readText()) else emptyList() } catch (_: Throwable) { emptyList() }
-            // Blaze closed mid-task: an ACTIVE task is now STOPPED (it can be continued), never silently "running".
+            // Argus closed mid-task: an ACTIVE task is now STOPPED (it can be continued), never silently "running".
             val fixed = list.map { if (it.state == TaskMemory.State.ACTIVE) it.copy(state = TaskMemory.State.STOPPED) else it }
             val newer = recs.toList()
             recs.clear(); recs.addAll((fixed + newer).distinctBy { it.id }.takeLast(TaskMemory.KEEP))

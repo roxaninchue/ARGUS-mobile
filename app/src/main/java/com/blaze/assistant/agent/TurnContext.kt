@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * v0.45.9: the real context Blaze and Halo get every turn, so they can be proactive instead of a "How can I assist you
+ * v0.45.9: the real context Argus and Halo get every turn, so they can be proactive instead of a "How can I assist you
  * today?" chatbot. One compact block (≤ [MAX] chars) at the END of the app's second system message (after the shared
  * persona, which stays byte-identical first). Format agreed with Blaze Site (persona.json v1.0.1 `context_block`):
  *

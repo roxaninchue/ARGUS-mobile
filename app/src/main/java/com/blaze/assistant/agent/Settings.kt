@@ -32,7 +32,7 @@ object Settings {
         }
         // v0.9.1: secrets restored from another phone (Android backup / device transfer) were encrypted with
         // that phone's Keystore key, which never leaves it. They can't be read here, so drop them, and drop
-        // their key-sync stamps too so the Blaze account's copy wins instead of being overwritten with nothing.
+        // their key-sync stamps too so the Argus account's copy wins instead of being overwritten with nothing.
         dropUnreadableSecrets()
         // v0.9.1: key_rest was wrongly treated as a secret and encrypted at start; it's only resting marks.
         if (Secrets.isEncrypted(s("key_rest", "") ?: "")) prefs.edit().remove("key_rest").apply()
@@ -81,7 +81,7 @@ object Settings {
     }
 
     /**
-     * v0.25.0: there is one brain, Blaze Cloud (the gateway): it holds the provider keys and picks the model for
+     * v0.25.0: there is one brain, Argus Cloud (the gateway): it holds the provider keys and picks the model for
      * every message. The old saved provider / model / key prefs stay on disk untouched (backward compatible) but
      * are never read for routing, and setting them does nothing.
      */
@@ -92,7 +92,7 @@ object Settings {
     /** The provider an older version saved (diagnostics only; ignored for routing). */
     val savedProviderId: String get() = s("provider", null) ?: ""
 
-    /** The Blaze account session token the gateway takes as its API key ("" when signed out). */
+    /** The Argus account session token the gateway takes as its API key ("" when signed out). */
     fun gatewayToken(): String = try { com.blaze.assistant.connect.BlazeAccount.sessionToken() } catch (_: Throwable) { "" }
 
     val provider: Provider get() = Providers.byId(providerId)
@@ -102,9 +102,9 @@ object Settings {
         val t = v.trim()
         if (t == keyFor(pid)) return
         prefs.edit().putString("key_$pid", Secrets.encrypt(t)).remove("secrets_dropped").apply()
-        com.blaze.assistant.connect.KeySync.localChange(pid)   // follows the Blaze account to the PC
+        com.blaze.assistant.connect.KeySync.localChange(pid)   // follows the Argus account to the PC
     }
-    /** Writes a key that came from the Blaze account (no new change stamp, no sync back). */
+    /** Writes a key that came from the Argus account (no new change stamp, no sync back). */
     fun setKeyForSynced(pid: String, v: String) {
         val t = v.trim()
         if (t.isEmpty()) prefs.edit().remove("key_$pid").apply()
@@ -208,7 +208,7 @@ object Settings {
     var learnApproval: Boolean
         get() = b("learn_approval", false)
         set(v) = prefs.edit().putBoolean("learn_approval", v).apply()
-    /** Opt-in: keep recent on-screen text on the phone so Blaze can recall it. */
+    /** Opt-in: keep recent on-screen text on the phone so Argus can recall it. */
     var screenMemory: Boolean
         get() = b("screen_memory", false)
         set(v) = prefs.edit().putBoolean("screen_memory", v).apply()
@@ -221,7 +221,7 @@ object Settings {
         get() = s("custom_base", "") ?: ""
         set(v) = prefs.edit().putString("custom_base", v.trim()).apply()
 
-    /** True when Blaze can answer: a key is set, or Auto (free) is picked. */
+    /** True when Argus can answer: a key is set, or Auto (free) is picked. */
     val ready: Boolean get() = gatewayToken().isNotBlank()
 
     val baseUrl: String
@@ -241,7 +241,7 @@ object Settings {
     /**
      * Low-data mode (student pack, v0.16.0): text models get the turn (photos are described to text once by a
      * vision model instead of being re-sent every step), screenshots are skipped for the text screen readout,
-     * the instant picture shortcut is off, and each answer shows the MB Blaze used.
+     * the instant picture shortcut is off, and each answer shows the MB Argus used.
      */
     var lowData: Boolean
         get() = b("low_data", false)
@@ -312,7 +312,7 @@ object Settings {
         return n
     }
 
-    /** Slim live task card over other apps while Blaze works. */
+    /** Slim live task card over other apps while Argus works. */
     var taskCard: Boolean
         get() = b("task_card", true)
         set(v) = prefs.edit().putBoolean("task_card", v).apply()
@@ -407,7 +407,7 @@ object Settings {
         set(v) = prefs.edit().putString("user_name", v.trim()).apply()
 
     /**
-     * v0.45.9: the name Blaze may greet the user by: the one they typed (Settings › Your name), else the signed-in Blaze
+     * v0.45.9: the name Argus may greet the user by: the one they typed (Settings › Your name), else the signed-in Argus
      * account's first name, else none. Never any other name the prompt mentions (0.45.8: "Hey Blazeinchue" with no name set).
      */
     fun greetName(): String? = GreetName.pick(userName, try { com.blaze.assistant.connect.BlazeAccount.user()?.name } catch (_: Throwable) { null })

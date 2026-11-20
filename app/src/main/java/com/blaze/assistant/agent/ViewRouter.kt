@@ -3,7 +3,7 @@ package com.blaze.assistant.agent
 
 import com.blaze.assistant.BrandName
 /**
- * Views first (v0.23.0). Blazeinchue's rule: Blaze always uses its views. Output that fits a view (a deck of
+ * Views first (v0.23.0). Blazeinchue's rule: Argus always uses its views. Output that fits a view (a deck of
  * flashcards, a page, a reminder, a picture, a memory…) is made THERE, the view is opened or linked,
  * and the chat gets a short answer, never the whole thing dumped as text.
  *
@@ -34,7 +34,7 @@ object ViewRouter {
     private fun r(p: String) = Regex(p, RegexOption.IGNORE_CASE)
 
     /** In priority order: the first that matches is the required view. */
-    /** 0.46.0 Blaze Stage cue: a timer / study or focus time / pomodoro, or "let's play some music" (done in place on the chat). */
+    /** 0.46.0 Argus Stage cue: a timer / study or focus time / pomodoro, or "let's play some music" (done in place on the chat). */
     const val STAGE_CUE = """\b(pomodoro|countdown|stopwatch|study timer|focus (?:session|timer|mode)|""" +
         """\d+(?:\.\d+)?\s*-?\s*(?:min|mins|minute|minutes|hr|hrs|hour|hours)\b.{0,24}\b(?:timer|study|studying|focus|work|session|revision|reading)|""" +
         """timer (?:for|of) (?:\d|an? |half)|""" +

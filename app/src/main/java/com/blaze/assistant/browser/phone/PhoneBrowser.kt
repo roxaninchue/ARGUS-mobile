@@ -45,13 +45,13 @@ import com.blaze.assistant.browser.phone.PhoneDriver.FocusInfo
 import com.blaze.assistant.browser.phone.PhoneDriver.Target
 
 /**
- * 0.45.19 Blaze Phone browser: the engine. One Blaze-owned WebView on Blaze's own off-screen display ([PhoneSurface]),
+ * 0.45.19 Argus Phone browser: the engine. One Blaze-owned WebView on Argus's own off-screen display ([PhoneSurface]),
  * in a WebView profile per site ([PhonePolicy.sessionFor]) so sign-ins persist across runs and never mix with the
  * user's own browser or its private tabs. Input is real: MotionEvents and KeyEvents dispatched to the WebView (the page
  * sees trusted events); page scripts only read, or act as a fallback when a touch can't land.
  *
  * The user can watch ([live]), take control (the real WebView moves to [PhoneBrowserActivity], interactive) and hand
- * back (Blaze resumes with a fresh read). Everything is released after [PhonePolicy.IDLE_MS] without use, or when the
+ * back (Argus resumes with a fresh read). Everything is released after [PhonePolicy.IDLE_MS] without use, or when the
  * user finishes a session they opened themselves.
  */
 object PhoneBrowser {
@@ -116,13 +116,13 @@ object PhoneBrowser {
 
     private fun prefs() = app.getSharedPreferences("blaze_phone", Context.MODE_PRIVATE)
     fun sites(): List<String> = if (!::app.isInitialized) emptyList() else PhonePolicy.Sites.decode(prefs().getString("sites", null))
-    /** Blaze Phone's own visits: the "sites you used before" the resolver prefers. Cleared with Clear Blaze Phone data. */
+    /** Argus Phone's own visits: the "sites you used before" the resolver prefers. Cleared with Clear Argus Phone data. */
     private fun rememberVisit(url: String, title: String) {
         if (!::app.isInitialized || !url.startsWith("http")) return
         try { prefs().edit().putString("visits", SiteResolver.addVisit(prefs().getString("visits", null), url, title, System.currentTimeMillis())).apply() } catch (_: Throwable) { }
     }
 
-    /** Everything the resolver may treat as "used before": Blaze Phone visits, Blaze's browser history, saved logins. */
+    /** Everything the resolver may treat as "used before": Argus Phone visits, Argus's browser history, saved logins. */
     fun visits(ctx: Context): List<SiteResolver.Visit> {
         init(ctx)
         val own = try { SiteResolver.decodeVisits(prefs().getString("visits", null)) } catch (_: Throwable) { emptyList() }
@@ -143,7 +143,7 @@ object PhoneBrowser {
     // read-modify-write could drop "You're in control" (or a step) under a frame that landed in between.
     private fun set(f: (Live) -> Live) { _live.update(f) }
 
-    /** The chat (and background agent, if any) whose turn drives Blaze Phone now (picture-in-picture Stop cancels it). */
+    /** The chat (and background agent, if any) whose turn drives Argus Phone now (picture-in-picture Stop cancels it). */
     @Volatile var ownerChat: String? = null
         private set
     @Volatile var ownerAgent: String? = null
@@ -151,7 +151,7 @@ object PhoneBrowser {
     fun own(chat: String, agent: String?) { ownerChat = chat; ownerAgent = agent }
 
     /**
-     * Stop from the picture-in-picture window (or anywhere): cancels the turn that drives Blaze Phone (its background
+     * Stop from the picture-in-picture window (or anywhere): cancels the turn that drives Argus Phone (its background
      * agent when it is one), ends any wait for Hand back, and says so on the tile. The page stays for the user.
      * [stopChat] / [cancelAgent] are Agent.stopChat / BgAgents.cancel (passed in so this stays testable). True when a
      * running turn was stopped.
@@ -171,7 +171,7 @@ object PhoneBrowser {
     private fun touch() { lastActive = System.currentTimeMillis(); surface?.actedAt = lastActive; scheduleIdle() }
 
     // ------------------------------------------------------------------ lifecycle
-    /** Makes (or reuses) the WebView for [url]'s site on Blaze's screen. Main thread. */
+    /** Makes (or reuses) the WebView for [url]'s site on Argus's screen. Main thread. */
     @SuppressLint("SetJavaScriptEnabled")
     private fun ensure(url: String): WebView {
         val multi = multiProfile
@@ -191,7 +191,7 @@ object PhoneBrowser {
             javaScriptEnabled = true; domStorageEnabled = true; databaseEnabled = true
             loadWithOverviewMode = true; useWideViewPort = true
             builtInZoomControls = true; displayZoomControls = false
-            mediaPlaybackRequiresUserGesture = true   // Blaze Phone browses, it doesn't play media
+            mediaPlaybackRequiresUserGesture = true   // Argus Phone browses, it doesn't play media
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false; allowContentAccess = false
             setSupportMultipleWindows(false)
@@ -327,7 +327,7 @@ object PhoneBrowser {
     private class Client : WebViewClient() {
         override fun shouldOverrideUrlLoading(v: WebView, r: WebResourceRequest): Boolean {
             val s = r.url?.scheme?.lowercase().orEmpty()
-            // Blaze Phone stays in the page: no intent://, market:, tel: or other apps opened from here.
+            // Argus Phone stays in the page: no intent://, market:, tel: or other apps opened from here.
             return s != "http" && s != "https" && s != "about" && s != "data" && s != "blob"
         }
         override fun onPageStarted(v: WebView, url: String?, favicon: Bitmap?) {
@@ -388,7 +388,7 @@ object PhoneBrowser {
         }
     }
 
-    /** While the user drives, Blaze waits for Hand back (up to [ms]); true when it may act. */
+    /** While the user drives, Argus waits for Hand back (up to [ms]); true when it may act. */
     private suspend fun waitForUser(ms: Long = 10 * 60_000L): Boolean {
         if (_live.value.mode != PhonePolicy.Mode.USER && _live.value.mode != PhonePolicy.Mode.WAITING) return true
         val d = handBack?.takeIf { it.isActive } ?: CompletableDeferred<Unit>().also { handBack = it }
@@ -467,7 +467,7 @@ object PhoneBrowser {
         return PhonePolicy.render(s) + if (notes.isEmpty()) "" else "\n\n" + notes.joinToString("\n")
     }
 
-    /** JPEG data URL of Blaze's screen, or null (no display on this phone). */
+    /** JPEG data URL of Argus's screen, or null (no display on this phone). */
     suspend fun screenshot(): String? {
         val sf = surface ?: return null
         touch()
@@ -558,8 +558,8 @@ object PhoneBrowser {
 
     // ------------------------------------------------------------------ hand-off
     /**
-     * Blaze asks the user to take control (captcha, 2FA, a card form, their own password). Waits for Hand back (up to
-     * [ms]); then Blaze continues with a fresh read. [notify]: post the "Action required" notification.
+     * Argus asks the user to take control (captcha, 2FA, a card form, their own password). Waits for Hand back (up to
+     * [ms]); then Argus continues with a fresh read. [notify]: post the "Action required" notification.
      */
     suspend fun handoff(reason: String, ms: Long = 10 * 60_000L, notify: (String, String) -> Unit): String {
         if (web == null) return "${BrandName.NAME} Phone has no page open."
@@ -573,7 +573,7 @@ object PhoneBrowser {
         return "The user handed back. Fresh read:\n" + readText()
     }
 
-    /** "Take control": the real WebView goes to the full-screen activity; Blaze pauses. Main thread. */
+    /** "Take control": the real WebView goes to the full-screen activity; Argus pauses. Main thread. */
     fun takeControl(activityCtx: Context): WebView? {
         val w = web ?: return null
         wrap?.baseContext = activityCtx   // dialogs and pickers show in the activity
@@ -583,8 +583,8 @@ object PhoneBrowser {
     }
 
     /**
-     * "Hand back" (an agent is waiting) or "Done" (the user browsed on their own): the WebView goes back to Blaze's
-     * screen, Blaze resumes; with nobody waiting the session is saved and everything released. Main thread.
+     * "Hand back" (an agent is waiting) or "Done" (the user browsed on their own): the WebView goes back to Argus's
+     * screen, Argus resumes; with nobody waiting the session is saved and everything released. Main thread.
      */
     fun handBackNow() {
         wrap?.baseContext = app
@@ -599,7 +599,7 @@ object PhoneBrowser {
         waiting.complete(Unit)
     }
 
-    /** The user opened Blaze Phone themselves (nothing running): make sure a page is up. Main thread. */
+    /** The user opened Argus Phone themselves (nothing running): make sure a page is up. Main thread. */
     fun openForUser(ctx: Context, url: String = "https://www.google.com/") {
         init(ctx)
         if (web == null) { ensure(url).loadUrl(url); touch() }
@@ -617,7 +617,7 @@ object PhoneBrowser {
         w.loadUrl(url); touch()
     }
 
-    /** A Blaze Phone screen is going away: the WebView's context (dialogs, pickers) goes back to the app. Main thread. */
+    /** An Argus Phone screen is going away: the WebView's context (dialogs, pickers) goes back to the app. Main thread. */
     fun forget(activity: Context) { if (wrap?.baseContext === activity) wrap?.baseContext = app }
 
     /** The WebView the user drives (after [takeControl]), for the activity to host. */
@@ -645,7 +645,7 @@ object PhoneBrowser {
         return "RAM: app heap ${heap} MB, native ${native} MB, ${BrandName.NAME} Phone screen buffers ${sfc} MB."
     }
 
-    /** Settings › Blaze Phone › Sign out: forgets one site's cookies and storage. Main thread. */
+    /** Settings › Argus Phone › Sign out: forgets one site's cookies and storage. Main thread. */
     fun signOut(site: String): Boolean {
         if (!::app.isInitialized) return false
         if (session?.site == site) release()
@@ -660,7 +660,7 @@ object PhoneBrowser {
         return ok
     }
 
-    /** Settings › Blaze Phone › Clear Blaze Phone data: every Blaze Phone session. Main thread. */
+    /** Settings › Argus Phone › Clear Argus Phone data: every Argus Phone session. Main thread. */
     fun clearAll(): Int {
         if (!::app.isInitialized) return 0
         release()
@@ -699,7 +699,7 @@ object PhoneBrowser {
     fun site(): String = session?.site.orEmpty()
     suspend fun mayAct(): Boolean = waitForUser()
 
-    /** The real [PhoneDriver]: this engine. [notify] posts "Action required" for a hand-off when Blaze isn't on screen. */
+    /** The real [PhoneDriver]: this engine. [notify] posts "Action required" for a hand-off when Argus isn't on screen. */
     class Driver(private val ctx: Context, private val notify: (String, String) -> Unit) : PhoneDriver {
         init { PhoneBrowser.init(ctx) }
         override fun hasPage() = PhoneBrowser.hasPage()

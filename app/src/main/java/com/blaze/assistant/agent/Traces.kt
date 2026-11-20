@@ -5,7 +5,7 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * Every planned step Blaze runs (app, step, success, time) goes to filesDir/traces.jsonl, kept
+ * Every planned step Argus runs (app, step, success, time) goes to filesDir/traces.jsonl, kept
  * under ~2 MB. It never leaves the phone; it's the training data for a future on-device policy.
  */
 object Traces {

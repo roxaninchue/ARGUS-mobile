@@ -1,7 +1,7 @@
 package com.blaze.assistant.agent.query
 
 /**
- * 0.51.0 BlazeQuery: which sources Blaze trusts for facts it injects into a prompt.
+ * 0.51.0 BlazeQuery: which sources Argus trusts for facts it injects into a prompt.
  *
  * Every url gets a trust score in 0..1 ([trust]); 0 = blocked, never fetched, never injected. The policy is a fixed list
  * (no network, no model), so it is fast enough for the hot path and identical on every phone. Pure (SourcePolicyTest).

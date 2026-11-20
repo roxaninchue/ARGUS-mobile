@@ -7,14 +7,14 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * Blaze knows itself: what it is, which apps make up Blaze, where its files live, what is set up
+ * Argus knows itself: what it is, which apps make up Argus, where its files live, what is set up
  * and what isn't. A short ABOUT YOU block rides in every prompt; about_blaze returns the full,
- * live report (every nook and cranny) so Blaze never asks the user what Blaze is.
+ * live report (every nook and cranny) so Argus never asks the user what Argus is.
  */
 object SelfKnowledge {
     const val TOOL = "about_blaze"
 
-    /** Facts about the Blaze family that never change at runtime. */
+    /** Facts about the Argus family that never change at runtime. */
     const val FAMILY = "${BrandName.NAME} is an AI assistant made by Blazeinchue. It comes as three apps that share one ${BrandName.NAME} account: " +
         "${BrandName.NAME} for Android (you, this app), ${BrandName.NAME} Desktop (Windows/macOS/Linux) and ${BrandName.NAME} CLI (terminal). " +
         "The ${BrandName.NAME} account (Settings › ${BrandName.NAME} account; sign in with Google, GitHub or email) syncs model keys, MCP servers and your own skills between them. " +

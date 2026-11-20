@@ -5,7 +5,7 @@ import com.blaze.assistant.BrandName
 /**
  * v0.43.0 Bank mode, pure part (BankModeTest). Banking apps refuse to run, or blank their screens, when they see an
  * accessibility service from an app outside the store, apps drawing over other apps, the screen being read, and
- * similar. Bank mode makes Blaze step back while a bank app is used: its phone-control service turns itself off, the
+ * similar. Bank mode makes Argus step back while a bank app is used: its phone-control service turns itself off, the
  * floating orb and other overlays go away, screen glances and camera looks stop and notification reading pauses.
  * Turning it off puts back exactly what was on before.
  *
@@ -37,7 +37,7 @@ object BankApps {
     /** Things that look like money but aren't (games, the Play Store, display settings…). */
     private val notBank = Regex("(?i)\\b(game|games|piggy|play store|display|replay|payload|bankroll|blood bank|food bank|power ?bank|sound ?bank|word ?bank|question bank)\\b|^com\\.android\\.vending$|^com\\.google\\.android\\.gms$|^com\\.android\\.(settings|systemui)$")
 
-    /** Blaze itself, the launcher's own apps and system bits are never treated as banks. */
+    /** Argus itself, the launcher's own apps and system bits are never treated as banks. */
     fun looksLikeBank(pkg: String, label: String = "", self: String = "com.blaze.assistant"): Boolean {
         val p = pkg.trim(); if (p.isEmpty() || p == self || p.startsWith("$self.")) return false
         if (p in KNOWN) return true
@@ -62,7 +62,7 @@ object BankApps {
 }
 
 object BankModeLogic {
-    /** What Blaze had on before Bank mode, so turning it off puts back exactly that. */
+    /** What Argus had on before Bank mode, so turning it off puts back exactly that. */
     data class Saved(
         val accessibility: Boolean = false,
         val orb: Boolean = false,
@@ -155,7 +155,7 @@ object BankModeLogic {
         else -> RestoreAsk("Bank mode is off", RESTORE_ASK)
     }
 
-    /** The line on Bank mode's card when Blaze stopped asking. */
+    /** The line on Bank mode's card when Argus stopped asking. */
     const val RESTORE_STOPPED = "${BrandName.NAME} stopped reminding you to turn phone control back on after Bank mode. Turn it on in ${BrandName.NAME}'s settings whenever you want ${BrandName.NAME} to use the phone again."
     const val ADB_GRANT = "adb shell pm grant com.blaze.assistant android.permission.WRITE_SECURE_SETTINGS"
     const val ADB_LINE = "Optional: with this one-time computer command, ${BrandName.NAME} switches phone control back on by itself after Bank mode:"

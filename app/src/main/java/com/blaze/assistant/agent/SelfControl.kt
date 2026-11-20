@@ -13,12 +13,12 @@ import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 /**
- * Blaze knowing and steering itself: "shut down", "stop", "be quiet", "hide the orb"… are handled
+ * Argus knowing and steering itself: "shut down", "stop", "be quiet", "hide the orb"… are handled
  * on-device before anything else (so they never get misread as a phone command), and the model
  * gets a blaze_self tool for the rest (switch model, change a setting, read its own crash log).
  */
 object SelfControl {
-    /** The open Blaze screen, so "close" can actually close it. */
+    /** The open Argus screen, so "close" can actually close it. */
     @Volatile var activity: WeakReference<android.app.Activity>? = null
     private val main = Handler(Looper.getMainLooper())
 
@@ -113,7 +113,7 @@ object SelfControl {
         "token_ledger" -> TokenLedger.report() + "\n" + ToolCache.stats() + "\n" + LearnedRoutes.stats()
         "tool_stats" -> ToolStats.report() + (LlmClient.lastHealed.takeIf { it.isNotBlank() }?.let { "\n\nLast self-healed error: ${it.take(200)}" } ?: "")
         "crash_log" -> com.blaze.assistant.device.CrashLog.read().takeLast(3000).ifBlank { "No errors logged." }
-        // v0.25.0: no model choice any more; Blaze Cloud picks per message.
+        // v0.25.0: no model choice any more; Argus Cloud picks per message.
         "set_model" -> "${BrandName.NAME} picks the best free model for every message by itself. There's nothing to choose."
         "set_persona" -> {
             val id = args.optString("persona")

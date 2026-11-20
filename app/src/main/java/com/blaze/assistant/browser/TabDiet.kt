@@ -3,12 +3,12 @@ package com.blaze.assistant.browser
 /**
  * v0.45.25 RAM diet (pure, TabDietTest): which tabs keep a live WebView, how big a tab-grid picture is, and how
  * often the load feed may touch the UI. Every other tab is a record (url, title, back/forward state on disk,
- * a tiny picture on disk) and gets its WebView back, state restored, the moment it is shown or Blaze uses it.
+ * a tiny picture on disk) and gets its WebView back, state restored, the moment it is shown or Argus uses it.
  */
 object TabDiet {
-    /** A tab Blaze drove keeps its page this long while the browser is hidden (a secure-input wait, a slow site). */
+    /** A tab Argus drove keeps its page this long while the browser is hidden (a secure-input wait, a slow site). */
     const val AGENT_KEEP_MS = 10 * 60_000L
-    /** On a memory warning the tab Blaze drove is only kept if it acted this recently. */
+    /** On a memory warning the tab Argus drove is only kept if it acted this recently. */
     const val AGENT_KEEP_PRESSED_MS = 30_000L
     /** A tab you left is put to sleep this long after you switch away (quick back-and-forth stays instant). */
     const val SLEEP_DELAY_MS = 3_000L

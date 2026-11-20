@@ -16,7 +16,7 @@ import android.widget.Toast
 import org.json.JSONObject
 
 /**
- * v0.24.6: the summonable Blaze pointer for web pages (the in-app browser and web-based views).
+ * v0.24.6: the summonable Argus pointer for web pages (the in-app browser and web-based views).
  * Pure parts (tested in PagePointerTest): what kind of element the tip is on, which actions fit it, where the
  * action menu goes so it never leaves the screen, and which media URLs can be downloaded.
  */
@@ -36,7 +36,7 @@ object PagePointer {
         }
     }
 
-    /** Element type → the actions in its menu, in order. Every element ends with Ask Blaze. */
+    /** Element type → the actions in its menu, in order. Every element ends with Ask Argus. */
     fun actionsFor(kind: Kind): List<Action> = when (kind) {
         Kind.VIDEO -> listOf(Action.DOWNLOAD, Action.COPY_LINK, Action.PIP, Action.ASK)
         Kind.AUDIO -> listOf(Action.DOWNLOAD, Action.COPY_LINK, Action.ASK)
@@ -109,7 +109,7 @@ object PagePointer {
 
     /**
      * Null when [url] is a plain file the page exposes that DownloadManager can fetch; else the reason it can't.
-     * Streams (blob:, MediaSource, HLS / DASH manifests) and anything protected are refused: Blaze never works
+     * Streams (blob:, MediaSource, HLS / DASH manifests) and anything protected are refused: Argus never works
      * around DRM or a site's streaming protection.
      */
     fun cantDownload(url: String): String? {
@@ -174,7 +174,7 @@ l:(r.left-ox)*s*d,t:(r.top-oy)*s*d,w:r.width*s*d,h:r.height*s*d,sel:sel};
 var x=(vv?vv.offsetLeft:0)+px/(d*s),y=(vv?vv.offsetTop:0)+py/(d*s);var all=document.elementsFromPoint(x,y);
 for(var i=0;i<all.length;i++){if(all[i].tagName=='VIDEO'){var v=all[i];v.scrollIntoView({block:'center'});v.play();return true;}}}catch(e){}return false;})($px,$py)"""
 
-    /** The prompt for a text action or Ask Blaze. */
+    /** The prompt for a text action or Ask Argus. */
     fun prompt(a: Action, h: Hit, pageTitle: String, pageUrl: String): String {
         val where = "on the page \u201c${pageTitle.take(80)}\u201d ($pageUrl)"
         return when (a) {

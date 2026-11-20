@@ -5,7 +5,7 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * v0.29.7: normal tabs survive closing the browser and Android killing Blaze. Each tab's URL, title, place in
+ * v0.29.7: normal tabs survive closing the browser and Android killing Argus. Each tab's URL, title, place in
  * the order and its WebView back/forward state (WebView.saveState, kept as base64 when it's small enough) go to
  * `filesDir/browser_tabs.json`, plus which tab was active. Private tabs are never written.
  * The JSON codec is pure so it's tested on the JVM; the WebView parts live in [BrowserEngine].

@@ -98,7 +98,7 @@ import com.blaze.assistant.ui.space.SpaceTypeScale
 /** The Browser screen: shows BrowserEngine's current tab with an address bar, tabs, bookmarks, history and downloads. */
 class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled {
     /**
-     * v0.45.25 Back (edge swipe on gesture navigation, or the back button): BackRule sees it first, as for every Blaze
+     * v0.45.25 Back (edge swipe on gesture navigation, or the back button): BackRule sees it first, as for every Argus
      * screen. While the browser has something of its own to undo (fullscreen video, an open sheet, the pointer, the Ask
      * sheet, or a page to go back to) Back stays here and the screen's BackHandler handles it; otherwise it goes to the chat.
      */
@@ -200,7 +200,7 @@ class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assi
 
     override fun onResume() { super.onResume(); BrowserEngine.attach(this); BrowserEngine.tab()?.live?.onResume(); hideNav() }
     override fun onPause() { BrowserEngine.attach(null); BrowserEngine.saveTabsNow(); super.onPause() }
-    // v0.45.25: the engine knows when the screen is up, so hidden tabs (and, once Blaze is idle, the visible one) can sleep.
+    // v0.45.25: the engine knows when the screen is up, so hidden tabs (and, once Argus is idle, the visible one) can sleep.
     override fun onStart() { super.onStart(); BrowserEngine.setUiVisible(true) }
     override fun onStop() { BrowserEngine.saveTabsNow(); TrackerBlock.flush(); BrowserEngine.setUiVisible(false); super.onStop() }
 
@@ -241,7 +241,7 @@ object BrowserUi {
 private enum class Panel { NONE, TABS, GRID, LAUNCHER, SITE, FIND, BOOKMARKS, HISTORY, PRIVACY, PASSWORDS, SAVED_PAGES, INSTALL_SITE, SITE_APPS }
 
 /**
- * The Browser (v0.24.6 look): rounded dark Blaze theme with a pill address bar, rounded tab chips, round icon
+ * The Browser (v0.24.6 look): rounded dark Argus theme with a pill address bar, rounded tab chips, round icon
  * buttons and a brand-coloured progress shimmer. The mascot button summons the page pointer (long-press too);
  * the sparkle button opens "Ask Blaze about this page".
  */
@@ -445,7 +445,7 @@ internal fun BrowserScreen(onClose: () -> Unit, onImport: () -> Unit, onPopOut: 
         }
 
         // v0.33.3 floating bar, v0.34.1 docking (drag the grip to any edge; remembered), v0.45.25 Sky look: one frosted pill
-        // (lock · address · VPN · tabs · Blaze) with small chips beside it (back / forward / reload / home, Blaze's status).
+        // (lock · address · VPN · tabs · Argus) with small chips beside it (back / forward / reload / home, Argus's status).
         val sheetOpen = panel == Panel.TABS || panel == Panel.LAUNCHER || panel == Panel.SITE
         val showBar = !sheetOpen && (barShown || panel != Panel.NONE || pointer || blank)
         val hide by androidx.compose.animation.core.animateFloatAsState(if (showBar) 0f else 1f, androidx.compose.animation.core.tween(220), label = "bar")
@@ -628,7 +628,7 @@ private fun TopProgress(tab: BrowserEngine.Tab, modifier: Modifier) {
     if (p in 0..99) ThinProgress(p, modifier)
 }
 
-/** "Blaze reading in background · Watch": shows while Blaze drives a tab; Watch brings that tab on screen. */
+/** "Blaze reading in background · Watch": shows while Argus drives a tab; Watch brings that tab on screen. */
 @Composable
 private fun BlazeStatusChip(tab: BrowserEngine.Tab?, modifier: Modifier) {
     val step by BrowserLive.step.collectAsState()

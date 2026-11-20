@@ -5,7 +5,7 @@ import com.blaze.assistant.BrandName
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 0.46.6 Secure form: the one rule every Blaze and Halo prompt carries. */
+/** 0.46.6 Secure form: the one rule every Argus and Halo prompt carries. */
 object SecretRules {
     const val TOOL = "request_secret"
     const val PROMPT = "SECRETS: never ask the user to type, paste or send a password, API key, token, card number, CVC, PIN or one-time code in the chat, " +
@@ -18,7 +18,7 @@ object SecretRules {
 /**
  * 0.46.6: a final reply that asks the user to send a key, token, password, card or code in the chat ("Yes, send them over,
  * one message each", seen on 0.46.3 for Cloudflare and GitLab tokens) is replaced by the Secure Form card(s): one
- * request_secret call per service it asked about. CredAsk still handles sign-ins on a page open in Blaze's browser.
+ * request_secret call per service it asked about. CredAsk still handles sign-ins on a page open in Argus's browser.
  * Pure Kotlin (SecretGuardsTest).
  */
 object SecretAsk {

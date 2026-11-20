@@ -106,7 +106,7 @@ object SecretDesk {
     }
 
     /**
-     * The request_secret tool. [step] adds a chat step line; [away] tells the user when Blaze isn't on screen.
+     * The request_secret tool. [step] adds a chat step line; [away] tells the user when Argus isn't on screen.
      * Returns the model's result (handles only).
      */
     suspend fun run(args: JSONObject, step: (String) -> Unit = {}, away: (String) -> Unit = {}, context: String = ""): String {

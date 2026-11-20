@@ -3,7 +3,7 @@ package com.blaze.assistant.agent
 import kotlin.math.ln
 
 /**
- * v0.26.2 skills and tools by lookup. A small full-text index ranked exactly like Blaze Desktop's store
+ * v0.26.2 skills and tools by lookup. A small full-text index ranked exactly like Argus Desktop's store
  * (internal/store: FTS5 bm25 over name / description / when-to-use, weights 10 / 5 / 1; tools 10 / 3 / 2 over
  * name / description / group), so each turn's prompt carries only the 2-3 best skills with a short description
  * instead of every skill name. It lives in memory and is rebuilt whenever the skill set changes (install,

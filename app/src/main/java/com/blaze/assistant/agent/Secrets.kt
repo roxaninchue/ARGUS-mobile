@@ -18,7 +18,7 @@ object Secrets {
     private const val ALIAS = "blaze_secrets"
     private const val PREFIX = "enc1:"
 
-    /** True when this phone already has Blaze's Keystore key. False on a fresh install or a restore onto a new phone. */
+    /** True when this phone already has Argus's Keystore key. False on a fresh install or a restore onto a new phone. */
     fun hasKey(): Boolean = try {
         KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.containsAlias(ALIAS)
     } catch (_: Exception) { true }   // can't tell: assume yes, so nothing is dropped by mistake

@@ -37,7 +37,7 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
 
     override suspend fun clockAlarmOn(pid: String, hhmm: String): Boolean? = try {
         val r = com.blaze.assistant.phone.ClockUi.read(ctx, pid, hhmm)
-        // Back to Blaze after looking (the alarm was set with the Clock UI skipped).
+        // Back to Argus after looking (the alarm was set with the Clock UI skipped).
         try { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
         r?.first
     } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { null }

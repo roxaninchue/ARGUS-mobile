@@ -56,7 +56,7 @@ object SharedPersona {
         }
     }
 
-    /** True when the shared persona leads the prompt: the default Blaze personality (a picked one keeps its own words). */
+    /** True when the shared persona leads the prompt: the default Argus personality (a picked one keeps its own words). */
     fun applies(personaId: String): Boolean = personaId == "blaze"
 
     /** The second system message's opening: the user's first name and the local time in natural words. */

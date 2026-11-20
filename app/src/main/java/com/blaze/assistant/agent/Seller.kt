@@ -5,7 +5,7 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * Marketer & seller pack (v0.17.0): the brand kit (same fields as Blaze Desktop's studio Brand, kept
+ * Marketer & seller pack (v0.17.0): the brand kit (same fields as Argus Desktop's studio Brand, kept
  * in ~/.blaze/brand.json so skills, the terminal and Desktop's format line up) and the weekly store
  * digest, a Schedule job that runs the weekly-digest skill.
  */

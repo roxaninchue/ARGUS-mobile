@@ -36,7 +36,7 @@ import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.Type
 import kotlin.math.abs
 
-/** Colours for the two sides of the grid: normal tabs follow Blaze's theme, private tabs are always dark, like Chrome's Incognito. */
+/** Colours for the two sides of the grid: normal tabs follow Argus's theme, private tabs are always dark, like Chrome's Incognito. */
 private data class GridColors(val bg: Color, val card: Color, val ink: Color, val sub: Color, val accent: Color, val bar: Color)
 
 /**

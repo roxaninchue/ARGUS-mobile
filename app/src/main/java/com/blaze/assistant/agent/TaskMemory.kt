@@ -6,14 +6,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.52.1 (owner: "biggest thing is memory of tasks and old context"). A durable record of each task Blaze works on:
- * the goal, where it stands, which surface it used (Browser / Blaze Phone / screen / terminal), the sign-ins done for it,
+ * 0.52.1 (owner: "biggest thing is memory of tasks and old context"). A durable record of each task Argus works on:
+ * the goal, where it stands, which surface it used (Browser / Argus Phone / screen / terminal), the sign-ins done for it,
  * what it found, and the next step. Saved with the app (TaskMemoryStore), so it survives turns and restarts.
  *
  * When the user refers back vaguely ("I signed you in", "retry it", "continue", "check now", "same as before but for
  * Lusaka", "that one"), [resolve] picks the task they mean and [block] puts it into the system prompt, so the model
  * continues THAT task on THAT surface instead of starting over (the owner had to sign in twice because the next turn
- * opened Blaze Phone after the sign-in happened in the Browser). [surfaceGuard] keeps a task on its surface.
+ * opened Argus Phone after the sign-in happened in the Browser). [surfaceGuard] keeps a task on its surface.
  *
  * Pure (org.json only): TaskMemoryTest, VaguePromptTest (40+ elliptical follow-ups against prior-conversation fixtures).
  */

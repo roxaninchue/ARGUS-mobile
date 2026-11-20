@@ -5,11 +5,11 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * v0.29.7 Blaze Browser saved passwords: what you typed into a site's own sign-in form, saved when you tap
+ * v0.29.7 Argus Browser saved passwords: what you typed into a site's own sign-in form, saved when you tap
  * "Save" on the prompt. One entry per site (registrable domain, [SiteDomain]) and username; several accounts
- * per site. `filesDir/browser_logins.json`, every password sealed with Blaze's Android Keystore key
+ * per site. `filesDir/browser_logins.json`, every password sealed with Argus's Android Keystore key
  * ([com.blaze.assistant.agent.Secrets], AES-256-GCM, key never leaves the phone). Never written from private tabs.
- * Separate from [Vault] (values Blaze's secure chat form collected for the agent), which keeps its own page.
+ * Separate from [Vault] (values Argus's secure chat form collected for the agent), which keeps its own page.
  */
 object BrowserLogins {
     data class Login(val id: String, val site: String, val host: String, val user: String, val sealed: String,
@@ -114,8 +114,8 @@ object BrowserLogins {
 
     /**
      * Watches sign-in forms on the page: when one is sent (submit, Enter in a password field, or a sign-in button)
-     * it posts {t:"submit", u, p} to Blaze; when a visible password field appears it posts {t:"form"} once, so the
-     * browser can offer saved accounts. Fields Blaze's agent filled (data-bz-secret) are ignored: those are in the vault.
+     * it posts {t:"submit", u, p} to Argus; when a visible password field appears it posts {t:"form"} once, so the
+     * browser can offer saved accounts. Fields Argus's agent filled (data-bz-secret) are ignored: those are in the vault.
      * Two-step sign-ins (username page, then password page) keep the username in sessionStorage (same origin only).
      */
     const val CAPTURE_JS = """(function(){

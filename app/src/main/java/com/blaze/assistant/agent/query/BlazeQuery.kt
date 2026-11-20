@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * 0.51.0 BlazeQuery — "involuntary omniscience". Runs AUTOMATICALLY the moment the user sends a message (not a tool the
  * model may or may not call), in parallel with prompt assembly, and puts a compact, judged evidence pack into the prompt
- * through the tiered-memory cache tier. See docs/BLAZEQUERY.md.
+ * through the tiered-memory cache tier. See docs/ARGUSQUERY.md.
  *
  * Hot path ([hot], hard budget [HOT_MS]):
  *   need detection (no model) → LOCAL: the chat's own cache only · NONE: nothing ·

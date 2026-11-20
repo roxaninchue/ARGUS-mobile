@@ -51,13 +51,13 @@ fun PrivacySheet(onImport: () -> Unit, onPrivateTab: () -> Unit) {
                     P("VPN", c.ink, 15)
                     P(BrowserVpn.statusLine(), if (st == BrowserVpn.Status.FAILED) Color(0xFFD93025) else if (st == BrowserVpn.Status.ON) c.accent else c.sub, 12)
                 }
-                // v0.25.3: one tap works with nothing imported (Blaze Free).
+                // v0.25.3: one tap works with nothing imported (Argus Free).
                 Switch(checked = BrowserVpn.on, onCheckedChange = { v ->
                     if (v) BrowserVpn.connect(BrowserVpn.defaultId()) else BrowserVpn.disconnect()
                 }, colors = SwitchDefaults.colors(checkedTrackColor = c.accent))
             }
 
-            // Blaze Free: always there, free, no setup.
+            // Argus Free: always there, free, no setup.
             Label("Location", modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp))
             val freeSel = BrowserVpn.isFree && BrowserVpn.on
             Row(Modifier.fillMaxWidth().background(if (freeSel) c.faint else c.paper).hairlineTop(c.hair)

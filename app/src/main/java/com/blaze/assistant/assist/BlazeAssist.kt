@@ -22,8 +22,8 @@ import com.blaze.assistant.ui.composeView
 import com.blaze.assistant.voice.Voice
 
 /**
- * Lets Blaze be picked as the phone's Digital assistant app (instead of Gemini etc).
- * Long-press power / home, or the corner swipe, then opens Blaze listening.
+ * Lets Argus be picked as the phone's Digital assistant app (instead of Gemini etc).
+ * Long-press power / home, or the corner swipe, then opens Argus listening.
  */
 class BlazeInteractionService : VoiceInteractionService() {
     companion object {
@@ -32,7 +32,7 @@ class BlazeInteractionService : VoiceInteractionService() {
         /** Called by the wake-word listener. True when the session could be shown. */
         fun showFromWake(): Boolean = showPanel(listen = true)
 
-        /** Show Blaze's panel over the current app. False when Blaze isn't the active assistant. */
+        /** Show Argus's panel over the current app. False when Argus isn't the active assistant. */
         fun showPanel(listen: Boolean): Boolean {
             val s = instance ?: return false
             return try { s.showSession(Bundle().apply { putBoolean("listen", listen) }, 0); true }
@@ -67,7 +67,7 @@ class BlazeSessionService : VoiceInteractionSessionService() {
 
 /**
  * What appears when you long-press home/power (or say "Hey Blaze"): an orb and a compact
- * chat over the app you're in, instead of jumping to Blaze's full screen.
+ * chat over the app you're in, instead of jumping to Argus's full screen.
  */
 class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
     private val owner = OverlayOwner()
@@ -114,7 +114,7 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
 
     override fun onDestroy() { owner.destroy(); super.onDestroy() }
 
-    // v0.33.0 Screen Doctor: the screen's text and a screenshot, only when the user summons Blaze over an app.
+    // v0.33.0 Screen Doctor: the screen's text and a screenshot, only when the user summons Argus over an app.
     override fun onHandleAssist(state: AssistState) {
         if (com.blaze.assistant.connect.AccountGate.locked()) return   // account lock: the screen isn't read
         try { ScreenDoctor.clear(); ScreenDoctor.onStructure(state.assistStructure) } catch (_: Throwable) { }
@@ -136,7 +136,7 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
     }
 }
 
-/** Android requires an assistant to name a recognizer; Blaze uses the phone's own. Account lock: it refuses too. */
+/** Android requires an assistant to name a recognizer; Argus uses the phone's own. Account lock: it refuses too. */
 class BlazeRecognitionService : RecognitionService() {
     override fun onStartListening(intent: Intent?, cb: Callback?) {
         if (com.blaze.assistant.connect.AccountGate.locked()) { com.blaze.assistant.connect.AccountGate.notice(this); cb?.error(android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS); return }

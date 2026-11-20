@@ -7,7 +7,7 @@ import org.json.JSONObject
 
 /**
  * v0.44.0 fewer tools per turn. ToolRouter already sends the groups a request needs, but its always-on core had grown
- * to ~50 tools (background agents, long-chat lookups, Blaze's own docs and settings, skills, projects…), so a plain
+ * to ~50 tools (background agents, long-chat lookups, Argus's own docs and settings, skills, projects…), so a plain
  * "open WhatsApp" still carried every one of their schemas. Smaller models pick worse from a long list, and every
  * schema is input tokens on every step.
  *

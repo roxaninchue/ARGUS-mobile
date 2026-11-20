@@ -2,7 +2,7 @@ package com.blaze.assistant.agent
 
 /**
  * v0.39.0 Simple chat home, pure part (SimpleHomeTest): the greeting by time of day, two time-aware starter chips,
- * reply chips under a question from Blaze (Yes / No / Later / Do it for me), and the @blaze / @halo / @all tag.
+ * reply chips under a question from Argus (Yes / No / Later / Do it for me), and the @blaze / @halo / @all tag.
  */
 object SimpleHome {
     data class Chip(val label: String, val prompt: String, val icon: String = "")
@@ -50,7 +50,7 @@ object SimpleHome {
     }
 
     /**
-     * Chips for a reply from Blaze: a yes/no question gets Yes / No / Later, plus "Do it for me" when it's about doing
+     * Chips for a reply from Argus: a yes/no question gets Yes / No / Later, plus "Do it for me" when it's about doing
      * something. Open questions ("What time?") and anything that isn't a question get none.
      */
     fun replyChips(reply: String): List<Chip> {
@@ -73,7 +73,7 @@ object SimpleHome {
     /** An approval card for a message reads as a draft ("Draft · not sent yet" with a Send button). */
     fun isDraft(title: String, action: String): Boolean = messageVerb.containsMatchIn(title) || action.trim().equals("send", true)
 
-    /** "Sees: Finance team on WhatsApp" / "Sees: WhatsApp" ("" when Blaze can't see the screen). */
+    /** "Sees: Finance team on WhatsApp" / "Sees: WhatsApp" ("" when Argus can't see the screen). */
     fun seesLine(appLabel: String, screenTitle: String = ""): String = when {
         appLabel.isBlank() -> ""
         screenTitle.isNotBlank() && !screenTitle.equals(appLabel, true) -> "Sees: ${screenTitle.take(40)} on $appLabel"
@@ -82,17 +82,17 @@ object SimpleHome {
 
     // ---------------- @blaze / @halo / @all ----------------
 
-    /** v0.45.28: the arc offers Blaze and Halo; Halo x Blaze ("all") is picked automatically per message, see [tagged]. */
+    /** v0.45.28: the arc offers Argus and Halo; Halo x Argus ("all") is picked automatically per message, see [tagged]. */
     val TALK_TO = listOf("blaze", "halo")
     private val anyTag = Regex("(?i)(^|\\s)@(all|both|everyone|duo|(?:argus|blaze)|halo)\\b")
 
     /**
      * The message as sent. A message that already names someone (@blaze / @halo / @all) and commands are left alone.
-     * v0.45.28, Halo x Blaze is automatic instead of a third choice on the arc:
+     * v0.45.28, Halo x Argus is automatic instead of a third choice on the arc:
      *  - a message that asks for both of them ("what do you both think", "Blaze and Halo, …") gets "@all";
      *  - a creative, multi-phase job ([Duo.isTeamTask]) goes untagged, so the two team up on it (Duo TEAM) whoever is picked;
-     *  - otherwise Halo gets "@halo" and Blaze needs no tag.
-     * An old saved "all" pick counts as Blaze (the automatic rules above still bring Halo in when it fits).
+     *  - otherwise Halo gets "@halo" and Argus needs no tag.
+     * An old saved "all" pick counts as Argus (the automatic rules above still bring Halo in when it fits).
      */
     fun tagged(text: String, who: String): String {
         val t = text.trim()

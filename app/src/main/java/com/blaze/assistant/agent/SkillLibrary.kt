@@ -6,12 +6,12 @@ import java.io.File
 import java.security.MessageDigest
 
 /**
- * The bundled skill library, ported from Blaze Desktop v0.7.0 / CLI v0.5.0: the skills that make
+ * The bundled skill library, ported from Argus Desktop v0.7.0 / CLI v0.5.0: the skills that make
  * sense on a phone ship in assets/skills (SKILL.md + index.json with version and sha256) and are
  * seeded into ~/skills on start.
  *
  * Seeding is version-aware and never overwrites your work: a bundled skill is written when it's
- * missing, upgraded only when its SKILL.md still matches what Blaze last wrote (you haven't edited
+ * missing, upgraded only when its SKILL.md still matches what Argus last wrote (you haven't edited
  * it) and the shipped version is newer, and never brought back after you delete it (Restore does).
  * The manifest is ~/skills/.bundled.json. Skills can be switched off without deleting them.
  */
@@ -42,7 +42,7 @@ object SkillLibrary {
 
     private fun asset(name: String) = app.assets.open("skills/$name/SKILL.md").bufferedReader().use { it.readText() }
 
-    /** name → {version, sha, deleted} as last written by Blaze. */
+    /** name → {version, sha, deleted} as last written by Argus. */
     private fun manifest(): JSONObject = try { JSONObject(manifestFile().readText()) } catch (_: Exception) { JSONObject() }
     private fun saveManifest(m: JSONObject) { runCatching { manifestFile().writeText(m.toString(1)) } }
 

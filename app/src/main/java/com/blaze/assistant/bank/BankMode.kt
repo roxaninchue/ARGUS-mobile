@@ -31,13 +31,13 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /**
- * v0.43.0 Bank mode on the phone: runs [BankModeLogic]'s actions. On: Blaze's accessibility service switches itself
+ * v0.43.0 Bank mode on the phone: runs [BankModeLogic]'s actions. On: Argus's accessibility service switches itself
  * off ([android.accessibilityservice.AccessibilityService.disableSelf]), the floating orb, Magic Hand and the pointer
  * go away, notification reading pauses, Jarvis stops glancing at the screen or through the camera, and a plain
  * notification says so with "Turn Blaze back on". Off: what was on comes back; phone control comes back by itself when
- * Blaze holds WRITE_SECURE_SETTINGS (adb grant), otherwise the user is sent straight to Blaze's switch.
+ * Argus holds WRITE_SECURE_SETTINGS (adb grant), otherwise the user is sent straight to Argus's switch.
  *
- * Blaze has no VPN service and doesn't record the screen (its own browser's VPN is a proxy inside Blaze only, and
+ * Argus has no VPN service and doesn't record the screen (its own browser's VPN is a proxy inside Argus only, and
  * screen glances go through the accessibility service), so there is nothing else for a bank to see.
  */
 object BankMode {
@@ -56,7 +56,7 @@ object BankMode {
     val state: StateFlow<BankModeLogic.State> = _state
     @Volatile private var app: Context? = null
 
-    /** True while Blaze is stepping back. Overlays, glances and the agent's screen tools check this. */
+    /** True while Argus is stepping back. Overlays, glances and the agent's screen tools check this. */
     val active: Boolean get() = _state.value.on
 
     fun init(ctx: Context) {
@@ -202,7 +202,7 @@ object BankMode {
 
     fun canRestoreA11y(ctx: Context): Boolean = ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == PackageManager.PERMISSION_GRANTED
 
-    /** Puts Blaze's service back in Android's list, other services untouched. Needs WRITE_SECURE_SETTINGS. */
+    /** Puts Argus's service back in Android's list, other services untouched. Needs WRITE_SECURE_SETTINGS. */
     private fun restoreA11y(ctx: Context): Boolean {
         if (!canRestoreA11y(ctx)) return false
         return try {
@@ -224,7 +224,7 @@ object BankMode {
     fun resetRestoreReminders() { Settings.setInt(PREF_IGNORED, 0); Settings.setBool(PREF_ASKED, false) }
     fun a11yBack() { if (Settings.bool(PREF_ASKED, false) || restoreIgnored() != 0) { Settings.setBool(PREF_ASKED, false); Settings.setInt(PREF_IGNORED, 0) } }
 
-    /** Without the permission: one tap straight to Blaze's switch. */
+    /** Without the permission: one tap straight to Argus's switch. */
     private fun askRestore(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
         channel(nm)
@@ -246,7 +246,7 @@ object BankMode {
             nm.createNotificationChannel(NotificationChannel(CHANNEL, "Bank mode", NotificationManager.IMPORTANCE_LOW))
     }
 
-    // ---------- saved state (survives Blaze restarting while a bank app is open) ----------
+    // ---------- saved state (survives Argus restarting while a bank app is open) ----------
     private fun save(s: BankModeLogic.State) = try {
         Settings.setStr(PREF_STATE, JSONObject().put("on", s.on).put("auto", s.auto).put("pkg", s.bankPkg).put("left", s.leftAt)
             .put("a11y", s.saved.accessibility).put("orb", s.saved.orb).put("notif", s.saved.notifications)
@@ -277,7 +277,7 @@ object BankMode {
 }
 
 /**
- * Keeps Bank mode's notification up and, with usage access, notices when the user leaves the bank app (Blaze's
+ * Keeps Bank mode's notification up and, with usage access, notices when the user leaves the bank app (Argus's
  * accessibility service is off by then, so it can't tell).
  */
 class BankModeService : Service() {
