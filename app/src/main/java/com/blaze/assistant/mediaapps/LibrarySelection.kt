@@ -47,7 +47,7 @@ object LibrarySelection {
     /** Picked tracks, in the order they are shown. */
     fun picked(sel: Set<String>, tracks: List<Track>): List<Track> = tracks.filter { it.key in sel }
 
-    /** Only Blaze's own downloads are deleted from the phone; Gallery files are the Gallery's to delete. */
+    /** Only Argus's own downloads are deleted from the phone; Gallery files are the Gallery's to delete. */
     fun deletable(picked: List<Track>): List<Track> = picked.filter { it.source == "download" }
 
     /** The delete confirmation: title and body for what was picked. */

@@ -136,8 +136,8 @@ import kotlinx.coroutines.withContext
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 
 /**
- * v0.30.1 Blaze Music: its own full-screen app inside Blaze (like Blaze Browser and Terminal), with the
- * Library | Store pill. Playback runs in [MusicService] (keeps playing with Blaze closed); this screen is a
+ * v0.30.1 Argus Music: its own full-screen app inside Argus (like Argus Browser and Terminal), with the
+ * Library | Store pill. Playback runs in [MusicService] (keeps playing with Argus closed); this screen is a
  * MediaController onto it. v0.34.1: Player and Library are one tab: the full now-playing opens as a sheet over the
  * Library (tab "player" = the sheet is open) and swipes down into the mini-player; playback never stops for it.
  */
@@ -351,7 +351,7 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     }
 }
 
-/** The account badge's sheet: who's signed in to Blaze, and the Music settings that matter. */
+/** The account badge's sheet: who's signed in to Argus, and the Music settings that matter. */
 @Composable
 private fun AccountDialog(onDismiss: () -> Unit) {
     val c = LocalBlaze.current
@@ -1047,7 +1047,7 @@ private fun KaraokeView(lines: List<LyricLine>, pos: Long) {
     }
 }
 
-/** For you: Blaze DJ, daily mixes, smart playlists, Wrapped, playlist import and the tag fixer. */
+/** For you: Argus DJ, daily mixes, smart playlists, Wrapped, playlist import and the tag fixer. */
 @Composable
 private fun ForYou(songs: List<Track>, liked: List<String>, playList: (List<Track>, Int, Boolean) -> Unit) {
     val c = LocalBlaze.current

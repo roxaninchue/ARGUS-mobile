@@ -10,11 +10,11 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * v0.30.x Blaze Camera Pro: the pure maths behind zoom presets, the half-circle zoom dial (protractor), digital zoom
+ * v0.30.x Argus Camera Pro: the pure maths behind zoom presets, the half-circle zoom dial (protractor), digital zoom
  * past the lens's hardware maximum, tap-to-focus coordinates, exposure and the self-timer (CameraZoomTest).
  *
  * One number drives everything: the **total** zoom ratio the user sees ("3.4x"). It is split into what the camera
- * does in hardware ([Split.hw], CameraControl.setZoomRatio, at most the lens's maxZoomRatio) and what Blaze does
+ * does in hardware ([Split.hw], CameraControl.setZoomRatio, at most the lens's maxZoomRatio) and what Argus does
  * on top ([Split.digital]): the preview is scaled by that factor and the saved photo is centre-cropped by the same
  * factor and upscaled with a light unsharp mask ([Sharpen]). Pinch and the dial only ever change the total, so they
  * flow across the hardware / digital boundary with no jump.

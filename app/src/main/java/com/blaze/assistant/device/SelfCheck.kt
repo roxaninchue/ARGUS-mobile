@@ -13,7 +13,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** One button that tests every part of Blaze and says what's broken and why. */
+/** One button that tests every part of Argus and says what's broken and why. */
 object SelfCheck {
     data class Item(val name: String, val ok: Boolean, val detail: String, val fix: String = "")
 

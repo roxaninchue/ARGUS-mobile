@@ -7,7 +7,7 @@ import com.blaze.assistant.browser.phone.PhoneDriver.Target
 import org.json.JSONObject
 
 /**
- * 0.45.19 Blaze Phone browser: how a page is read and acted on (reads, locating elements, taps, typing, waits), as pure
+ * 0.45.19 Argus Phone browser: how a page is read and acted on (reads, locating elements, taps, typing, waits), as pure
  * Kotlin over a [PageHost]. [PhoneBrowser] runs it on the real WebView; the perf harness (PhonePerfTest) runs the same
  * code on a simulated page with a virtual clock.
  *

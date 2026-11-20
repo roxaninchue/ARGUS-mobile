@@ -69,7 +69,7 @@ object HomeBoard {
     }
     /** Index into the swatch list (solid / gradient colour). */
     var bgColor: Int get() = Settings.str("home_bg_color", "0").toIntOrNull() ?: 0; set(v) = Settings.setStr("home_bg_color", v.toString())
-    /** Accent theme name ("" = Blaze's own). */
+    /** Accent theme name ("" = Argus's own). */
     var accent: String get() = Settings.str("home_accent", ""); set(v) = Settings.setStr("home_accent", v)
     var lastRefresh: Long get() = Settings.str("home_last_refresh", "0").toLongOrNull() ?: 0L; set(v) = Settings.setStr("home_last_refresh", v.toString())
     /** Stacks the user removed widgets from (suggestions skip them). */
@@ -240,7 +240,7 @@ object HomeBoard {
 
     /**
      * First open of Home after the interest picker: widgets for the chosen interests, saved as a memory too. Skip seeds
-     * from what Blaze remembers when it is confident, else 3–4 generic starters.
+     * from what Argus remembers when it is confident, else 3–4 generic starters.
      */
     fun finishOnboarding(chosen: Set<String>, subs: Set<String>, typed: String, skipped: Boolean) {
         onboarded = true

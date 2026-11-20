@@ -4,7 +4,7 @@ import java.io.File
 import java.io.IOException
 
 /**
- * Wave B 1+2: pure rules for Blaze's private media storage and Export (unit-tested in WaveB2StorageTest).
+ * Wave B 1+2: pure rules for Argus's private media storage and Export (unit-tested in WaveB2StorageTest).
  */
 object MediaStorePolicy {
     const val ROOT = "media"

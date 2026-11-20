@@ -6,7 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.29.0: the tools Blaze uses to control the Home board: home_widget_add / _update / _remove / _list. Pure over a
+ * v0.29.0: the tools Argus uses to control the Home board: home_widget_add / _update / _remove / _list. Pure over a
  * [HomeStore] (tested with sqlite-jdbc in HomeToolsTest); [onChange] tells the app to redraw and fetch.
  */
 object HomeTools {

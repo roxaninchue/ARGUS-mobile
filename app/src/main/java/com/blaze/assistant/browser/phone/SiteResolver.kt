@@ -10,8 +10,8 @@ import org.json.JSONObject
  * 0.45.19-speed (user rule 8: "users never memorise URLs"): turns what the user calls a site ("the booking site",
  * "herokuapp login page", "my bank", "the-internet login") into the right page.
  *
- *  1. Sites the user used before win: Blaze Phone's own visits, Blaze's browser history and saved logins. "my bank",
- *     "the booking site" (a kind of site, no name) are answered from history only; with nothing there, Blaze asks
+ *  1. Sites the user used before win: Argus Phone's own visits, Argus's browser history and saved logins. "my bank",
+ *     "the booking site" (a kind of site, no name) are answered from history only; with nothing there, Argus asks
  *     which one instead of guessing.
  *  2. Otherwise a web search: ads and look-alike / SEO-spam results are dropped ("github-login.net",
  *     "loginguide-hub.com", "wikiHow: how to log in"), the official domain (a host label equal to the name) wins.
@@ -165,7 +165,7 @@ object SiteResolver {
         (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { Visit(it.optString("u"), it.optString("t"), it.optInt("n", 1), it.optLong("at")) }.filter { it.url.startsWith("http") }
     } catch (_: Exception) { emptyList() }
 
-    /** Records a Blaze Phone visit (newest first, one entry per URL, at most [max]). */
+    /** Records an Argus Phone visit (newest first, one entry per URL, at most [max]). */
     fun addVisit(json: String?, url: String, title: String, now: Long, max: Int = 150): String {
         if (!url.startsWith("http")) return json ?: "[]"
         val u = url.substringBefore('#').take(300)

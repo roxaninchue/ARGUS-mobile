@@ -7,20 +7,20 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.45.19 Blaze Phone browser (features item 13; user 23 Oct 08:34: "Blaze uses its own phone the way an agent uses a
+ * 0.45.19 Argus Phone browser (features item 13; user 23 Oct 08:34: "Argus uses its own phone the way an agent uses a
  * computer for the user, mainly browsing, logging in and booking, with a live view in chat and Take control / hand back;
- * no gaming, no banking"). Every decision the Blaze Phone browser makes, as pure Kotlin (PhoneBrowserTest,
+ * no gaming, no banking"). Every decision the Argus Phone browser makes, as pure Kotlin (PhoneBrowserTest,
  * PhoneToolsRoutingTest): sessions per site, the low-RAM config, frame throttling, idle release, the DOM snapshot with
  * masked secrets, the no-false-done verifier, which actions need the confirm card, and which asks route to phone tools.
  */
 object PhonePolicy {
 
     // ------------------------------------------------------------------ modes
-    /** OFF: nothing alive. AGENT: Blaze drives. WAITING: Blaze asked the user to take control. USER: the user drives. */
+    /** OFF: nothing alive. AGENT: Argus drives. WAITING: Argus asked the user to take control. USER: the user drives. */
     enum class Mode { OFF, AGENT, WAITING, USER }
 
     // ------------------------------------------------------------------ sessions
-    /** Blaze Phone's own WebView profiles (androidx.webkit MULTI_PROFILE): one per site, apart from the user's browser. */
+    /** Argus Phone's own WebView profiles (androidx.webkit MULTI_PROFILE): one per site, apart from the user's browser. */
     const val PROFILE_PREFIX = "blaze-phone-"
     /** Pages with no site (about:blank, data:) share this one. */
     const val SHARED_PROFILE = "blaze-phone"
@@ -28,7 +28,7 @@ object PhonePolicy {
     /**
      * Where a page's cookies and storage live. [profile] null = the WebView's default profile (phones whose WebView has no
      * multi-profile support: shared with the user's normal browser tabs, kept on disk across runs, never with private
-     * tabs' wiped data). [isolated] says whether it is Blaze Phone's own.
+     * tabs' wiped data). [isolated] says whether it is Argus Phone's own.
      */
     data class Session(val site: String, val profile: String?, val isolated: Boolean)
 
@@ -57,7 +57,7 @@ object PhonePolicy {
         return next.profile != current.profile
     }
 
-    /** The sites Blaze Phone keeps sessions for ("Sign out of site" lists these). Stored as a JSON array. */
+    /** The sites Argus Phone keeps sessions for ("Sign out of site" lists these). Stored as a JSON array. */
     object Sites {
         fun decode(s: String?): List<String> = try {
             val a = JSONArray(s ?: "[]"); (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() }.distinct()
@@ -111,7 +111,7 @@ object PhonePolicy {
     // ------------------------------------------------------------------ idle release
     const val IDLE_MS = 5 * 60_000L
 
-    /** Free the WebView, the display and its buffers? Never while the user drives or Blaze waits on them. */
+    /** Free the WebView, the display and its buffers? Never while the user drives or Argus waits on them. */
     fun shouldRelease(mode: Mode, lastActiveAt: Long, now: Long, idleMs: Long = IDLE_MS): Boolean = when (mode) {
         Mode.OFF -> false
         Mode.USER, Mode.WAITING -> false
@@ -266,7 +266,7 @@ object PhonePolicy {
     private val ask = Regex("""(?i)\b(?:(?:book|reserve)\s+(?:me\s+)?(?:a|an|the|my|two|\d+)?\s*(?:table|room|hotel|flight|ticket|tickets|seat|seats|slot|stay|ride|car|class|session|spot|reservation|appointment)\b.{0,80}?$siteCue|(?:log|sign)\s*(?:me\s+)?(?:in|on)(?:to)?\s+(?:to\s+)?(?:my\s+)?\S+|sign\s+(?:me\s+)?up\s+(?:for|on|at)\s+\S+|(?:order|buy|purchase)\s+.{1,60}?\s+(?:on|from)\s+\S+\.(?:com|org|net|io|co|zm|app|shop|store)\b|fill\s+(?:out|in)\s+(?:the|a|this|that)\s+form\s+(?:on|at)\s+\S+|(?:check\s*out|checkout)\s+(?:on|at)\s+\S+|(?:use|on)\s+(?:your|(?:argus|blaze)'?s?)\s+(?:own\s+)?phone\b|(?:argus|blaze) phone\b)""")
     private val notPhone = Regex("""(?i)\b(bank|banking|mobile money|momo|wire|transfer money|send money|crypto|wallet|game|gaming|play (?:a )?game|calendar|(?:argus|blaze) account|wi-?fi|router|hotspot|the linux|linux desktop|my computer|my pc)\b""")
 
-    /** "book a table at X", "log into Y", "sign up for Z", "order … from shop.com": a job for the Blaze Phone browser. */
+    /** "book a table at X", "log into Y", "sign up for Z", "order … from shop.com": a job for the Argus Phone browser. */
     fun phoneAsk(text: String): Boolean {
         val u = text.trim().replace('\u2019', '\'')
         return ask.containsMatchIn(u) && !notPhone.containsMatchIn(u)

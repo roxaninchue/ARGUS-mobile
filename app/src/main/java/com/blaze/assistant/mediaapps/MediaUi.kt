@@ -134,7 +134,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.VpnKey
 
 /**
- * v0.30.1: pieces shared by Blaze Music and Blaze Video: the Library | Store pill (the same look as the
+ * v0.30.1: pieces shared by Argus Music and Argus Video: the Library | Store pill (the same look as the
  * Chat | Projects | Home pill), cover art, rows, and the Store (search any StoreSource as a plain thumbnail grid with
  * licences, preview, quality choice, download queue). Never a web view. v0.34.1: the player is no longer a tab; it opens
  * as a sheet over the Library ([PlayerSheet]) and collapses into a mini-player ([MiniBar]).
@@ -639,7 +639,7 @@ fun JamendoSetup(text: String, onSaved: () -> Unit) {
         MText(text, 12.5.sp, c.sub, maxLines = 5)
         Spacer(Modifier.height(10.dp))
         // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
-        // Blaze can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
+        // Argus can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PillButton("Ask ${BrandName.NAME} to set it up", primary = true, icon = Icons.Rounded.AutoAwesome) {
                 com.blaze.assistant.agent.Agent.send("Set up the Jamendo Store in ${BrandName.NAME} Music for me: get a free Jamendo API client_id on " +
@@ -678,7 +678,7 @@ object StoragePermission {
     /** 0.45.20 (item 15): the notification prompt, just in time (a download starting), set by the screen that can ask. */
     var notifAsker: (() -> Unit)? = null
     fun askNotifications() { notifAsker?.invoke() }
-    /** Android 9 and older: shared Music/Movies/Downloads need the storage permission (Blaze's own storage doesn't). */
+    /** Android 9 and older: shared Music/Movies/Downloads need the storage permission (Argus's own storage doesn't). */
     fun needsForExport(ctx: Context): Boolean = Build.VERSION.SDK_INT < 29 &&
         androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != android.content.pm.PackageManager.PERMISSION_GRANTED
 }

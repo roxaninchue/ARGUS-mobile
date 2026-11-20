@@ -13,7 +13,7 @@ import java.io.RandomAccessFile
  * (when each started on the clock, where it sits in the file, how loud the room was). Silence costs nothing.
  *
  * After Stop, [LifeLogWorker] transcribes the file with Vosk, tells voices apart with Vosk's speaker model
- * ([Diarize]), and Blaze and Halo review it into memories ([LifeReview]). The audio is deleted after the review
+ * ([Diarize]), and Argus and Halo review it into memories ([LifeReview]). The audio is deleted after the review
  * unless "Keep recordings" is on.
  *
  * Layout: filesDir/lifelog/<id>/audio.pcm, index.json, state.json ("recording" | "queued" | "done" | "failed").

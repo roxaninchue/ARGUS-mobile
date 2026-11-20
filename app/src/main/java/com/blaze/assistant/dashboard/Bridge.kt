@@ -17,9 +17,9 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
- * v0.33.0 Desktop Bridge: the dashboard grows into Blaze on a big screen. Besides chats (which can still drive the
- * phone), a laptop on the same Wi-Fi gets the phone's clipboard both ways, Blaze's files (Gallery: pictures, music,
- * videos, documents Blaze made) to download, and uploads straight into the phone's Download/Blaze folder. Open it by
+ * v0.33.0 Desktop Bridge: the dashboard grows into Argus on a big screen. Besides chats (which can still drive the
+ * phone), a laptop on the same Wi-Fi gets the phone's clipboard both ways, Argus's files (Gallery: pictures, music,
+ * videos, documents Argus made) to download, and uploads straight into the phone's Download/Blaze folder. Open it by
  * scanning the QR code in Settings › Dashboard with a laptop/tablet camera, or typing the short link. Every call needs
  * the secret token. Pure path checks in [safeName] / [allowed] (BridgeTest).
  */
@@ -72,7 +72,7 @@ object Bridge {
         "jpg", "jpeg" -> "image/jpeg"; "png" -> "image/png"; "webp" -> "image/webp"; "gif" -> "image/gif"; "mp3" -> "audio/mpeg"; "m4a" -> "audio/mp4"
         "wav" -> "audio/wav"; "mp4" -> "video/mp4"; "webm" -> "video/webm"; "pdf" -> "application/pdf"; "txt", "md" -> "text/plain; charset=utf-8"; else -> "application/octet-stream" }
 
-    /** QR code bitmap for the link (zxing, already bundled for Blaze Desktop pairing). */
+    /** QR code bitmap for the link (zxing, already bundled for Argus Desktop pairing). */
     fun qr(text: String, size: Int = 640): Bitmap? = try { com.journeyapps.barcodescanner.BarcodeEncoder().encodeBitmap(text, com.google.zxing.BarcodeFormat.QR_CODE, size, size) } catch (_: Throwable) { null }
 
     const val CARDS = """<div class="card"><div class="lab" style="margin-bottom:6px">Clipboard</div>

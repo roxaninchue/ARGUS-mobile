@@ -26,7 +26,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Model API keys follow the Blaze account: Blaze Desktop, Blaze CLI and this app merge the
+ * Model API keys follow the Argus account: Argus Desktop, Blaze CLI and this app merge the
  * same encrypted copy through blaze-auth (GET/POST /v1/keys). Same wire format and merge rules
  * as internal/keystore/sync.go in Blaze-dekstop and Blaze-cli; change them together.
  *
@@ -48,7 +48,7 @@ object KeySync {
     /** Pseudo-provider for the MCP server list (see the header). */
     const val MCP = "mcp"
     /**
-     * v0.25.0: Blaze Cloud holds the model keys, so the phone no longer uploads or downloads provider keys: only the
+     * v0.25.0: Argus Cloud holds the model keys, so the phone no longer uploads or downloads provider keys: only the
      * MCP server list syncs. Provider entries already on the account pass through untouched (Desktop still reads them),
      * and the old key prefs on this phone stay as they were, unused.
      */

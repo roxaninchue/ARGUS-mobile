@@ -3,10 +3,10 @@ package com.blaze.assistant.browser.phone
 import org.json.JSONObject
 
 /**
- * 0.45.19 Blaze Phone browser: the page scripts (run with evaluateJavascript). Element ids are stable for a page's
+ * 0.45.19 Argus Phone browser: the page scripts (run with evaluateJavascript). Element ids are stable for a page's
  * life: each element keeps its `data-bzp` id across reads. Positions come back in the WebView's own pixels (CSS px ×
  * pinch scale × devicePixelRatio, minus the visual viewport's offset), so a MotionEvent lands on the element.
- * Secret values (passwords, codes, card fields, values Blaze typed from the vault) never leave the page: "(filled, hidden)".
+ * Secret values (passwords, codes, card fields, values Argus typed from the vault) never leave the page: "(filled, hidden)".
  */
 object PhoneScripts {
     private const val COMMON = """
@@ -102,7 +102,7 @@ object PhoneScripts {
       if(secret) e.setAttribute('data-bz-secret','1');
       e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return 'ok';})(${JSONObject.quote(id)}, ${JSONObject.quote(value)}, $secret, $clear)"""
 
-    /** Marks a field Blaze filled from the vault so reads never show it. */
+    /** Marks a field Argus filled from the vault so reads never show it. */
     fun markSecret(id: String): String = """/*bz:mark*/(function(id){var e=document.querySelector('[data-bzp="'+id+'"]');if(e)e.setAttribute('data-bz-secret','1');return 'ok';})(${JSONObject.quote(id)})"""
 
     /** The field's current value length (what typing landed), -1 when it's gone. */

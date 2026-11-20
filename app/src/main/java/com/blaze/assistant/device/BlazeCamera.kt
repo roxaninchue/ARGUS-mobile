@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 
-/** Opening Blaze Camera and handing its result to the right place ([CameraModes.route]). */
+/** Opening Argus Camera and handing its result to the right place ([CameraModes.route]). */
 object BlazeCamera {
     const val EXTRA_ORIGIN = "blaze_camera_origin"
     const val EXTRA_CHAT = "blaze_camera_chat"
@@ -39,7 +39,7 @@ object BlazeCamera {
             .putExtra(EXTRA_CHAT, chatId)
             .putExtra(EXTRA_PROMPT, prompt)
 
-    /** Opens Blaze Camera. False (with the reason logged) when this phone has no camera or Android refused. */
+    /** Opens Argus Camera. False (with the reason logged) when this phone has no camera or Android refused. */
     fun open(ctx: Context, mode: Mode?, origin: Origin, chatId: String? = null, prompt: String? = null): Boolean {
         if (!CameraSupport.hasCamera(ctx)) { CameraSupport.log("${BrandName.NAME} Camera: no camera on this device (FEATURE_CAMERA_ANY)"); return false }
         return try {

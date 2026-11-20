@@ -25,13 +25,13 @@ import java.util.Locale
 import java.util.TimeZone
 
 /**
- * Accounts Blaze can use on your behalf. Three sign-in styles:
+ * Accounts Argus can use on your behalf. Three sign-in styles:
  *  LOOPBACK – OAuth 2.0 + PKCE in the browser, redirect caught on http://127.0.0.1:43117/callback (Google, Spotify)
  *  DEVICE   – GitHub device flow: type a short code on github.com
  *  TOKEN    – paste an access token (Notion internal integration, Slack app token)
  * One-click (v1.16): when blaze-auth has the provider switched on, Connect needs no developer app:
  * the Worker holds the client secret and hands tokens back through a PKCE-bound one-time code
- * (BlazeAccount.connectTokens), like Blaze Desktop. Your own client id still works and wins when set.
+ * (BlazeAccount.connectTokens), like Argus Desktop. Your own client id still works and wins when set.
  * Manual setup (own client id / pasted token) was removed from the app; old connections still refresh.
  * Tokens are stored Keystore-encrypted.
  */
@@ -99,7 +99,7 @@ object Connectors {
     private fun b64(b: ByteArray) = Base64.encodeToString(b, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
 
     /**
-     * Connect is OAuth through blaze-auth only, like Blaze Desktop (v1.16): no developer apps or
+     * Connect is OAuth through blaze-auth only, like Argus Desktop (v1.16): no developer apps or
      * pasted tokens. Accounts connected the old way keep working until you disconnect them.
      */
     fun available(id: String) = BlazeAccount.oneClick(id)
@@ -129,7 +129,7 @@ object Connectors {
 
     private suspend fun oneClick(ctx: Context, c: Connector): String = try {
         status(c.id, "Waiting for you to sign in in the browser…")
-        // GitHub "workflow" lets Blaze push the Actions file of an app it builds (android-app-builder);
+        // GitHub "workflow" lets Argus push the Actions file of an app it builds (android-app-builder);
         // only Workers from 0.8.0 accept it, so older ones keep getting the old scopes.
         val scopes = if (c.kind == Kind.TOKEN) "" else if (c.id == "github" && BlazeAccount.workerAtLeast("0.8.0")) c.scopes + " workflow" else scopesFor(c)
         val t = BlazeAccount.connectTokens(ctx, c.id, scopes)
@@ -346,7 +346,7 @@ object Connectors {
         } catch (e: Exception) { "Error: ${e.message}" }
     }
 
-    /** Used by the process registry to delete a Google Calendar event Blaze created. */
+    /** Used by the process registry to delete a Google Calendar event Argus created. */
     suspend fun gcalDelete(eventId: String): String = withContext(Dispatchers.IO) {
         val tok = access("google") ?: return@withContext "Couldn't delete: Google isn't connected."
         try {

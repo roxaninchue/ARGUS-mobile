@@ -5,9 +5,9 @@ import android.content.Context
 import android.content.Intent
 
 /**
- * 0.49.0 (RC5 a): starts a screen (system settings, another app) from a tool. The open Blaze Activity is used when there is
+ * 0.49.0 (RC5 a): starts a screen (system settings, another app) from a tool. The open Argus Activity is used when there is
  * one: an Activity context needs no FLAG_ACTIVITY_NEW_TASK and is never caught by Android 10+'s background-start limits, so
- * "open accessibility settings" from the chat over Home really opens it. Without a visible Blaze screen it falls back to
+ * "open accessibility settings" from the chat over Home really opens it. Without a visible Argus screen it falls back to
  * [ctx] with NEW_TASK (the old path). Throws what startActivity throws, so callers can try the next intent. ActivityStartTest.
  */
 object ActivityStart {

@@ -15,8 +15,8 @@ import java.net.URLEncoder
 import java.util.Calendar
 
 /**
- * v0.34.0 Blaze Music, the Android side of the extras: the tag fixer (clean titles / artists, real covers from the
- * iTunes Search API), playlist import (a YouTube or Spotify playlist link → a Blaze playlist that fills as the songs
+ * v0.34.0 Argus Music, the Android side of the extras: the tag fixer (clean titles / artists, real covers from the
+ * iTunes Search API), playlist import (a YouTube or Spotify playlist link → an Argus playlist that fills as the songs
  * download) and Wrapped for a period.
  */
 object MusicExtras {
@@ -34,7 +34,7 @@ object MusicExtras {
     data class FixResult(val renamed: Int, val covers: Int, val checked: Int)
 
     /**
-     * Tag fixer over the songs Blaze downloaded: "Artist - Title (Official Video)" style titles are split and cleaned,
+     * Tag fixer over the songs Argus downloaded: "Artist - Title (Official Video)" style titles are split and cleaned,
      * and songs whose cover is only a video frame get the album cover from the iTunes Search API (600 px).
      */
     suspend fun fixTags(ctx: Context, keys: List<String>? = null, onProgress: (Int, Int) -> Unit = { _, _ -> }): FixResult = withContext(Dispatchers.IO) {
@@ -62,7 +62,7 @@ object MusicExtras {
 
     /**
      * Playlist import: a YouTube playlist (all its videos, by id) or a Spotify playlist / album (each "Artist - Title"
-     * found on YouTube, clear matches only). Every song is queued for download and a Blaze playlist is created that
+     * found on YouTube, clear matches only). Every song is queued for download and an Argus playlist is created that
      * fills as they land. Returns a sentence for the screen / the agent.
      */
     suspend fun importPlaylist(ctx: Context, link: String, max: Int = 100): String = withContext(Dispatchers.IO) {

@@ -19,7 +19,7 @@ import java.net.URL
  * GitHub tools behind the android-app-builder skill: make the repo, watch the Actions build
  * (with the compiler errors when it fails) and install the APK the build released. The phone
  * can't run Android's build tools, so GitHub Actions builds every push (see the skill's
- * template workflow), and Blaze reads the result back here.
+ * template workflow), and Argus reads the result back here.
  */
 object GitHubApps {
     private const val API = "https://api.github.com"

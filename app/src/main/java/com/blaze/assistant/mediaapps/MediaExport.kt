@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Wave B 2: Export out of Blaze's private storage, per item or in bulk: to the shared Music/Movies or Downloads
+ * Wave B 2: Export out of Argus's private storage, per item or in bulk: to the shared Music/Movies or Downloads
  * folders, to a folder the user picks (SAF), or through the system share sheet. Rules in [MediaStorePolicy].
  * Wave B3's multi-select bar uses [shareIntent] / [exportAll]; per-item menus and the bulk Export menu use [ExportActions].
  */
@@ -33,7 +33,7 @@ object MediaExport {
     private fun fileOf(t: Track): File? = Uri.parse(t.uri).takeIf { it.scheme == "file" }?.path?.let { File(it) }?.takeIf { it.isFile }
     private fun nameOf(t: Track): String = fileOf(t)?.name ?: DlLogic.fileName(t.title, if (t.kind == "video") "mp4" else "m4a")
 
-    /** A uri another app may read: private files go through Blaze's FileProvider; MediaStore uris are already shareable. */
+    /** A uri another app may read: private files go through Argus's FileProvider; MediaStore uris are already shareable. */
     fun shareUri(ctx: Context, t: Track): Uri = fileOf(t)?.let { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", it) } ?: Uri.parse(t.uri)
 
     fun share(ctx: Context, tracks: List<Track>) {
@@ -49,7 +49,7 @@ object MediaExport {
     }
 
     // ---- wave B3 multi-select helpers (selection bar Share / Export to folder) ----
-    /** A content:// uri other apps can read: MediaStore uris as they are, Blaze's own files through its FileProvider. */
+    /** A content:// uri other apps can read: MediaStore uris as they are, Argus's own files through its FileProvider. */
     fun readable(ctx: Context, uri: String): Uri? = try {
         val u = Uri.parse(uri)
         val path = u.path

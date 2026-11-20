@@ -6,7 +6,7 @@ package com.blaze.assistant.device
  * was StatFs(/data): its total is the /data partition only (118 GB; the system partitions are left out) and its
  * availableBytes is only the blocks an ordinary app may allocate right now, without the space Android frees on demand
  * (clearable app caches) or the filesystem's reserved blocks. Settings uses StorageStatsManager (total rounded to the
- * advertised size, free including what it can clear), so Blaze does too now, with StatFs only as the fallback.
+ * advertised size, free including what it can clear), so Argus does too now, with StatFs only as the fallback.
  * All in decimal GB (10^9 bytes), as Samsung shows them. Pure (StorageMathTest).
  */
 object StorageMath {

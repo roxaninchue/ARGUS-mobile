@@ -11,7 +11,7 @@ import java.security.MessageDigest
  * reads one as JSON, and stores a copy from another phone. Chats and designs are files, so their adapters are plain
  * JVM code (SyncAdaptersTest); memory and settings live in blaze.db and prefs and are wired up in [CloudSync].
  *
- * What never syncs: the Blaze session, connector tokens and API keys (every "conn_tok_" / key pref), the PC pairing,
+ * What never syncs: the Argus session, connector tokens and API keys (every "conn_tok_" / key pref), the PC pairing,
  * permissions and other per-phone switches, private chats (never written to disk), and design version history.
  */
 object SyncKinds {
@@ -44,7 +44,7 @@ object SyncedSettings {
     val KEYS = setOf(
         // Simple / Advanced, navigation, Look & feel (not "look_photo": a path on this phone).
         "ui_mode", "nav_style", "look_bg", "look_accent", "look_music", "look_still", "theme_mode", "text_scale",
-        // How Blaze talks and shows its work.
+        // How Argus talks and shows its work.
         "persona", "persona_custom", "user_name", "show_reasoning", "show_steps", "show_route", "fold_answers", "followups",
         "stream", "task_card", "auto_titles", "auto_learn", "learn_approval", "long_chat",
         // Approvals and modes.

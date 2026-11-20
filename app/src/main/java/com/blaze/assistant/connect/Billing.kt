@@ -6,7 +6,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.45.3: Blaze Cloud paid plans and checkout (gateway billing API; yearly terms since gateway 0.6.2).
+ * v0.45.3: Argus Cloud paid plans and checkout (gateway billing API; yearly terms since gateway 0.6.2).
  *
  *  - GET /v1/billing/methods: plans (id, price_usd, price_usd_year), payment methods (details, ref_label, hint,
  *    amounts {plan: "ZMW 200"}, amounts_year {plan: "ZMW 2000"}), periods {month:{days:30}, year:{days:365}}.
@@ -103,7 +103,7 @@ object Billing {
         JSONObject(body).optJSONObject("error")?.optString("message")?.takeIf { it.isNotBlank() }
     } catch (_: Exception) { null } ?: if (code == 401) "Sign in to ${BrandName.NAME} first." else "The payment couldn't be sent ($code). Try again in a moment."
 
-    /** The gateway calls (signed in with the Blaze account token). */
+    /** The gateway calls (signed in with the Argus account token). */
     object Client {
         private fun call(method: String, path: String, body: String?): Pair<Int, String> {
             val c = UrlSafety.open(com.blaze.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/') + path)

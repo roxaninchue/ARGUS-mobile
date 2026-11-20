@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.random.Random
 
 /**
- * 0.46.4 Blaze DJ: picks and orders songs from the user's own library (plays, likes, recent plays, time of day and a
+ * 0.46.4 Argus DJ: picks and orders songs from the user's own library (plays, likes, recent plays, time of day and a
  * vibe), with short optional spoken intros through the phone's text-to-speech. Off on battery saver. Speech is plain:
  * the song and artist, no metaphor filler (0.46.2 Halo rule, checked by [DjSpeech.plain] and MusicRevampTest).
  */

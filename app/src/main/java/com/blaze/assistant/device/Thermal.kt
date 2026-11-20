@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /**
  * 0.46.4 (Rocky 19:37: "the phone runs really hot"). Thermal awareness: when Android says the phone is warm
- * (PowerManager thermal status MODERATE or worse, API 29+) or Battery Saver is on, Blaze does less:
+ * (PowerManager thermal status MODERATE or worse, API 29+) or Battery Saver is on, Argus does less:
  *  - no hedged second model request (one brain at a time, deadlines still apply),
  *  - animations (particles, edge dots, orb wobble, Halo glow) freeze to a still frame and glass blur is skipped,
  * [policy] is pure (ThermalTest); [hot] is the app-wide switch the UI and the brains read.

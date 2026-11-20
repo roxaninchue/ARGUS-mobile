@@ -3,7 +3,7 @@ package com.blaze.assistant.composer
 
 import com.blaze.assistant.BrandName
 /**
- * 0.47 Spotlight v2: Blaze's self-map. ONE list of every view, action, setting and model Blaze has. Spotlight searches
+ * 0.47 Spotlight v2: Argus's self-map. ONE list of every view, action, setting and model Argus has. Spotlight searches
  * it ([SpotlightSearch]) and the agent reads it ([describe], about_blaze section "map"), so the two never disagree.
  *
  * Views come from [com.blaze.assistant.ui.Views.all] (the same list open_view uses); actions, settings and models are
@@ -13,7 +13,7 @@ object SelfMap {
     enum class Kind { VIEW, ACTION, SETTING }
 
     /**
-     * One thing Blaze can open or do. [target]: the view id a VIEW / SETTING opens, the action id, or the model family id.
+     * One thing Argus can open or do. [target]: the view id a VIEW / SETTING opens, the action id, or the model family id.
      * [preview]: a VIEW that can also show inline inside Spotlight (stays on Home).
      */
     data class Entry(val id: String, val kind: Kind, val title: String, val subtitle: String, val target: String,

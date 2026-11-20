@@ -31,7 +31,7 @@ import java.io.File
 import kotlin.coroutines.resume
 
 /**
- * v0.33.0 Clip Studio: pick videos from the Library / Gallery and Blaze cuts a short vertical reel (default 30 s, 9:16
+ * v0.33.0 Clip Studio: pick videos from the Library / Gallery and Argus cuts a short vertical reel (default 30 s, 9:16
  * 720x1280) for WhatsApp Status or TikTok: the best-length slice of each clip in order, a caption on each (the duo
  * writes them), and an optional music bed from the Music library, mixed under the clips' own sound. Made on the phone
  * with Media3 Transformer; the reel lands in the Video library. Pure slicing in [plan] (ClipStudioTest).

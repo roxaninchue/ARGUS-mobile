@@ -4,7 +4,7 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import com.blaze.assistant.agent.Settings
 
-/** Two tiny cues: a rising blip when Blaze wakes, a soft double tick when a task is done. */
+/** Two tiny cues: a rising blip when Argus wakes, a soft double tick when a task is done. */
 object Sounds {
     private fun play(vararg tones: Pair<Int, Int>) {
         if (!Settings.bool("sounds", true)) return

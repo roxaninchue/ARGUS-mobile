@@ -31,9 +31,9 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Skill sync through the Blaze account (blaze-auth `/v1/skills`, Worker 0.8.0): the user's own
- * skills (learned by Blaze, written or installed by them; not the bundled library, which every
- * client ships in its own adapted form) follow the account to Blaze Desktop, the CLI and other phones.
+ * Skill sync through the Argus account (blaze-auth `/v1/skills`, Worker 0.8.0): the user's own
+ * skills (learned by Argus, written or installed by them; not the bundled library, which every
+ * client ships in its own adapted form) follow the account to Argus Desktop, the CLI and other phones.
  *
  *   blob = base64(nonce[12] || AES-256-GCM(gzip(json), aad "blaze-skills-v1"))
  *   json = {"v":1,"skills":{"<name>":{"t":<unix ms>,"files":{"SKILL.md":"…"}}}}

@@ -3,7 +3,7 @@ package com.blaze.assistant.mediaapps
 
 import com.blaze.assistant.BrandName
 /**
- * v0.45.6 (phone 21:27, "play music" asked for approval, then drove the screen into BlazeFX): Blaze Music's transport
+ * v0.45.6 (phone 21:27, "play music" asked for approval, then drove the screen into BlazeFX): Argus Music's transport
  * (play, pause, resume, next, previous, stop, now) as a pure decision, so chat, the music_ops tool and the in-app
  * fast path ([com.blaze.assistant.agent.InAppRoute]) all do the same safe local thing with no card and no screen control.
  *
@@ -20,7 +20,7 @@ object MusicCtl {
     sealed class Decision {
         /** Run [op] on the running player ("play", "pause", "next", "previous", "stop"). */
         data class Player(val op: String, val say: String) : Decision()
-        /** Start the service and resume the saved queue (it opens Blaze Music's player). */
+        /** Start the service and resume the saved queue (it opens Argus Music's player). */
         data class ResumeSaved(val say: String) : Decision()
         /** Nothing to act on: [say] is the honest answer or the question to the user. */
         data class Say(val say: String, val asks: Boolean = false) : Decision()

@@ -3,8 +3,8 @@ package com.blaze.assistant.device
 
 import com.blaze.assistant.BrandName
 /**
- * Blaze Camera's modes and where each capture goes (pure, CameraModesTest). All on-device: Photo, Ask (photo → chat
- * with a prompt ready), Text (ML Kit OCR, the Magic Hand recogniser), Translate (OCR, then Blaze translates it: ML Kit
+ * Argus Camera's modes and where each capture goes (pure, CameraModesTest). All on-device: Photo, Ask (photo → chat
+ * with a prompt ready), Text (ML Kit OCR, the Magic Hand recogniser), Translate (OCR, then Argus translates it: ML Kit
  * translation isn't bundled), Scan (ML Kit barcode scanning, bundled model), Document (ML Kit document scanner when
  * Google Play services has it, else a photo framed as a page).
  */
@@ -32,7 +32,7 @@ object CameraModes {
         else -> null
     }
 
-    /** Where Blaze Camera was opened from. */
+    /** Where Argus Camera was opened from. */
     enum class Origin {
         /** + → Camera fallback: one photo into the file the chat passed (old TakePicture contract). */
         CHAT_ATTACH,
@@ -51,7 +51,7 @@ object CameraModes {
     enum class Route {
         /** Give the file back to the caller (CHAT_ATTACH). */
         RETURN_FILE,
-        /** Send it into the chat that asked, as a new turn, so Blaze answers about it at once. */
+        /** Send it into the chat that asked, as a new turn, so Argus answers about it at once. */
         SEND_TURN,
         /** Put it in the chat's message box (photo attached, a prompt line ready) for the user to finish. */
         DRAFT,
@@ -68,7 +68,7 @@ object CameraModes {
             Mode.PHOTO -> if (origin == Origin.STANDALONE) Route.GALLERY else Route.DRAFT
             Mode.ASK, Mode.DOCUMENT -> Route.DRAFT
             Mode.TEXT, Mode.SCAN -> Route.CARD
-            // No on-device translator is bundled: Blaze translates the text it read.
+            // No on-device translator is bundled: Argus translates the text it read.
             Mode.TRANSLATE -> Route.SEND_TURN
         }
     }
@@ -83,7 +83,7 @@ object CameraModes {
         else -> parse(last) ?: if (origin == Origin.STANDALONE) Mode.PHOTO else Mode.ASK
     }
 
-    /** Remember the user's own choices only (a mode Blaze picked from a request isn't a preference). */
+    /** Remember the user's own choices only (a mode Argus picked from a request isn't a preference). */
     fun remembers(origin: Origin): Boolean = origin == Origin.CHAT_PLUS || origin == Origin.MAGIC_HAND || origin == Origin.STANDALONE
 
     /** Live analysis (no shutter) for these modes. */

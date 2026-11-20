@@ -4,26 +4,26 @@ import com.blaze.assistant.agent.ChatMessage
 import com.blaze.assistant.agent.Role
 
 /**
- * 0.47 chat over Home (pure; ChatOverlayLogicTest). Which messages the overlay shows, when Blaze's typing dots show,
+ * 0.47 chat over Home (pure; ChatOverlayLogicTest). Which messages the overlay shows, when Argus's typing dots show,
  * how fast a fresh reply types in, and the centred timestamp.
  */
 object ChatOverlayLogic {
     /** Messages shown when the chat is opened without sending (a little context). */
     const val CONTEXT = 4
 
-    /** The overlay's start: the id before the last [CONTEXT] user / Blaze messages (0 = from the start). */
+    /** The overlay's start: the id before the last [CONTEXT] user / Argus messages (0 = from the start). */
     fun since(all: List<ChatMessage>): Long {
         val talk = all.filter { it.role == Role.USER || it.role == Role.BLAZE }
         return if (talk.size <= CONTEXT) 0L else talk[talk.size - CONTEXT - 1].id
     }
 
-    /** User and Blaze lines (and errors) after [sinceId]; tool steps stay in the full chat. */
+    /** User and Argus lines (and errors) after [sinceId]; tool steps stay in the full chat. */
     fun visible(all: List<ChatMessage>, sinceId: Long): List<ChatMessage> =
         all.filter { it.id > sinceId && (it.role == Role.USER || it.role == Role.BLAZE || it.role == Role.ERROR) && (it.text.isNotBlank() || it.files.isNotEmpty() || it.media.isNotEmpty()) }
 
     /**
      * 0.49.0 (RC5 a): what the chat over Home lists. Tool steps are no longer hidden: the steps between a user line and
-     * Blaze's reply become one compact [Row.Steps] chip ("3 steps · Opening accessibility settings"), expandable.
+     * Argus's reply become one compact [Row.Steps] chip ("3 steps · Opening accessibility settings"), expandable.
      */
     sealed class Row {
         abstract val key: String
@@ -76,14 +76,14 @@ object ChatOverlayLogic {
         return lastStep?.let { com.blaze.assistant.agent.StepPill.clean(it) }?.takeIf { it.isNotBlank() }
     }
 
-    /** Follow-up chips show under Blaze's newest reply only, and only when it is idle. */
+    /** Follow-up chips show under Argus's newest reply only, and only when it is idle. */
     fun followupsFor(rows: List<Row>, busy: Boolean): Long? {
         if (busy) return null
         val last = (rows.lastOrNull() as? Row.Msg)?.m ?: return null
         return if (last.role == Role.BLAZE && last.followups.isNotEmpty()) last.id else null
     }
 
-    /** Typing dots: Blaze is working and hasn't started its answer to the newest user line. */
+    /** Typing dots: Argus is working and hasn't started its answer to the newest user line. */
     fun typing(shown: List<ChatMessage>, busy: Boolean): Boolean = busy && shown.lastOrNull()?.role == Role.USER
 
     /** Characters a fresh reply reveals per ~16 ms frame: steady for short replies, never slower than ~1.5 s overall. */

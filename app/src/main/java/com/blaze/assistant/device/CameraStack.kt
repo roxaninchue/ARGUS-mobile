@@ -16,7 +16,7 @@ import java.io.File
 import kotlin.coroutines.resume
 
 /**
- * v0.34.0 Blaze Camera Night and HDR shots on the phone: a short burst (Night: 4 frames, aligned, averaged and lifted)
+ * v0.34.0 Argus Camera Night and HDR shots on the phone: a short burst (Night: 4 frames, aligned, averaged and lifted)
  * or an exposure bracket (HDR: about −2 / 0 / +2 EV, fused), at up to 1600 px (1280 on low-RAM phones) so a Galaxy
  * low-end phone handles it. The pixel maths is in [CameraSmart]. Also the 4-corner document crop.
  */

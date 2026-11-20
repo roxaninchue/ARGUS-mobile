@@ -22,12 +22,12 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * Remote MCP servers (Model Context Protocol, JSON-RPC 2.0) over Streamable HTTP, or the older HTTP+SSE
  * transport. stdio servers need a PC, so they are listed but not run. Tools appear to the model as
- * mcp__<server>__<tool> and go through the same approval as Blaze Desktop: read-only tools run, others
+ * mcp__<server>__<tool> and go through the same approval as Argus Desktop: read-only tools run, others
  * show the confirm card (Action tools pass in Autopilot), destructive ones always ask, and each tool can
  * be set to Ask / Always / Off.
  *
  * The list is the mcp.json shape Blaze CLI and Desktop use ({"mcpServers": {...}}, see [McpConfig]),
- * stored encrypted (headers hold tokens) and synced through the Blaze account with the model keys
+ * stored encrypted (headers hold tokens) and synced through the Argus account with the model keys
  * (entry "mcp" in the /v1/keys blob, see [KeySync]).
  */
 object Mcp {
@@ -52,7 +52,7 @@ object Mcp {
         val saved = Settings.secret(PREF)
         var list = try { McpConfig.parse(saved) } catch (_: Exception) { emptyList() }
         if (saved.isBlank()) {
-            // Blaze for Android 1.7 – 0.8.0 kept servers in "mcp_servers" with a token per id.
+            // Argus for Android 1.7 – 0.8.0 kept servers in "mcp_servers" with a token per id.
             val legacy = Settings.str("mcp_servers", "")
             if (legacy.isNotBlank()) {
                 list = McpConfig.fromLegacy(legacy) { Settings.secret("mcp_tok_$it") }

@@ -133,7 +133,7 @@ object SpotlightSearch {
             .sortedByDescending { it.second }.take(LIBRARY_MAX)
             .map { (m, s) -> Row("lib:${app.lowercase()}:${m.key}", icon, "$app > Library > ${m.title}", m.artist.ifBlank { "In your library" }, act(m.key), s - 3) }.toList()
 
-    /** Never an empty list: Browse, Music, Video and Ask Blaze, always in this order at the end. */
+    /** Never an empty list: Browse, Music, Video and Ask Argus, always in this order at the end. */
     fun fallbacks(q: String): List<Row> {
         val shown = if (q.isBlank()) "anything" else "\u2018$q\u2019"
         return listOf(

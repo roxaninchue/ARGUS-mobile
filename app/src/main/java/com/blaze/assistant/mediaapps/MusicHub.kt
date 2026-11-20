@@ -32,7 +32,7 @@ object MusicNav {
     fun showNav(tab: String): Boolean = tab != "player"
     fun showMini(tab: String, hasItem: Boolean): Boolean = hasItem && tab != "player"
 
-    /** The close (X) in the top bar: always the Blaze chat, from every page (standing rule), never the previous page. */
+    /** The close (X) in the top bar: always the Argus chat, from every page (standing rule), never the previous page. */
     const val CLOSE_TARGET = "chat"
 }
 
@@ -156,7 +156,7 @@ object NowPlayingGestures {
 
 object LibraryView {
     val chips: List<Pair<String, String>> = listOf("playlists" to "Playlists", "artists" to "Artists", "albums" to "Albums", "songs" to "Songs", "downloaded" to "Downloaded")
-    /** Downloaded = songs saved on the phone by Blaze (Store downloads), not ones it only streams or found in the gallery. */
+    /** Downloaded = songs saved on the phone by Argus (Store downloads), not ones it only streams or found in the gallery. */
     fun downloaded(songs: List<Track>): List<Track> = songs.filter { it.source == "download" }
 }
 

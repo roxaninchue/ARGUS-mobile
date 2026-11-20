@@ -105,7 +105,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 0.46.2 Blaze Video › Movies: home rows per source, search across enabled sources (failed ones named), details with seasons /
+ * 0.46.2 Argus Video › Movies: home rows per source, search across enabled sources (failed ones named), details with seasons /
  * episodes, server and quality choice, watchlist, continue watching, downloads, the user's Jellyfin server, and the Providers
  * screen for sources the user adds. Compact and icon-only like the 0.46.1 Stage. The stateless parts are screenshot-tested.
  */
@@ -288,7 +288,7 @@ private fun DetailsTop(title: String, saved: Boolean, onBack: () -> Unit, onWatc
 }
 
 /**
- * 0.46.5 details, friendly for any source: the backdrop fading into the Blaze background, poster, title, year / runtime / rating
+ * 0.46.5 details, friendly for any source: the backdrop fading into the Argus background, poster, title, year / runtime / rating
  * chips, a 2-line synopsis (tap for more), a season picker, one big Play / Resume, a small quality / language chip (best quality
  * that fits by default, the choice is remembered), the episode list (number, title, thumbnail, progress), icon actions
  * (watchlist, download, share, subtitles), "More like this", and a Details expander that is the only place raw names show.
@@ -552,7 +552,7 @@ private fun StatusIcon(s: ProviderStore.Status) {
 @Composable
 internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String) -> Unit) {
     var url by remember { mutableStateOf("") }
-    // The field starts empty: the hint is Blaze's own example repo (what a link looks like), never a third-party one.
+    // The field starts empty: the hint is Argus's own example repo (what a link looks like), never a third-party one.
     BlazeDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. ${BrandName.NAME} finds the manifest.",
         confirm = "Add", onConfirm = { if (url.isNotBlank()) onAdd(url.trim()) }, dismiss = "Cancel", onDismiss = onCancel) {
         BlazeTextField(url, { url = it }, ProviderRepo.EXAMPLE, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))

@@ -118,7 +118,7 @@ object CrashLog {
     }
 
     /**
-     * Added to every background scope: a failure inside Blaze's own work is logged and shown as
+     * Added to every background scope: a failure inside Argus's own work is logged and shown as
      * an error in the chat instead of closing the app.
      */
     val guard = kotlinx.coroutines.CoroutineExceptionHandler { _, e ->

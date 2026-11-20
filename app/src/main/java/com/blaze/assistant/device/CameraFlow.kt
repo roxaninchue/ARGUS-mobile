@@ -10,7 +10,7 @@ import com.blaze.assistant.BrandName
  * (works with no camera app, in work profiles, on low-end phones) → the photo picker as the last resort.
  *
  * Why the permission step exists at all: zxing-android-embedded (the Desktop pairing QR scanner) declares
- * android.permission.CAMERA in its manifest, so it is in Blaze's merged manifest. Android then refuses
+ * android.permission.CAMERA in its manifest, so it is in Argus's merged manifest. Android then refuses
  * ACTION_IMAGE_CAPTURE with a SecurityException until the user grants CAMERA. That was the Galaxy A07 bug:
  * a fresh install had never granted it (the test phone had, via QR pairing), and the old code turned the
  * SecurityException into "No camera app found."
@@ -24,17 +24,17 @@ object CameraFlow {
         /** CAMERA is in the merged manifest (then Android enforces it for ACTION_IMAGE_CAPTURE too). */
         val permissionDeclared: Boolean,
         val permissionGranted: Boolean,
-        /** Blaze asked for CAMERA before (with no rationale now, that means "Don't ask again"). */
+        /** Argus asked for CAMERA before (with no rationale now, that means "Don't ask again"). */
         val askedBefore: Boolean = false,
         /** shouldShowRequestPermissionRationale(CAMERA). */
         val showRationale: Boolean = false,
         /** Some activity answers ACTION_IMAGE_CAPTURE (needs the <queries> entry on Android 11+). */
         val externalHandler: Boolean = true,
-        /** The camera app already failed on this phone once: go straight to Blaze's camera. */
+        /** The camera app already failed on this phone once: go straight to Argus's camera. */
         val preferInApp: Boolean = false,
         /** The camera app failed in this attempt. */
         val externalFailed: Boolean = false,
-        /** Blaze's own camera failed in this attempt. */
+        /** Argus's own camera failed in this attempt. */
         val inAppFailed: Boolean = false,
     )
 
@@ -46,7 +46,7 @@ object CameraFlow {
             else -> Step.REQUEST_PERMISSION
         }
         val externalOk = s.externalHandler && !s.externalFailed
-        // Blaze's camera needs CAMERA itself, so it only exists when the permission is declared (and, here, granted).
+        // Argus's camera needs CAMERA itself, so it only exists when the permission is declared (and, here, granted).
         val inAppOk = s.permissionDeclared && !s.inAppFailed
         return when {
             externalOk && !s.preferInApp -> Step.EXTERNAL
@@ -65,7 +65,7 @@ object CameraFlow {
      * How the camera app's answer reads. A new, empty file is handed over each time, so bytes in it mean a photo,
      * whatever result code came back (some camera apps answer RESULT_CANCELED after saving). "OK" with nothing
      * saved means the app ignored EXTRA_OUTPUT; bouncing straight back means it refused (policy, work profile,
-     * locked camera): both are BROKEN and fall through to Blaze's camera.
+     * locked camera): both are BROKEN and fall through to Argus's camera.
      */
     fun externalOutcome(resultOk: Boolean, savedBytes: Long, elapsedMs: Long): Outcome = when {
         savedBytes > 0 -> Outcome.PHOTO
@@ -90,7 +90,7 @@ object CameraFlow {
         }
     }
 
-    /** The message when Blaze's own camera can't start either (then the photo picker opens). */
+    /** The message when Argus's own camera can't start either (then the photo picker opens). */
     fun inAppFailNote(kind: String, message: String?): String {
         val m = message.orEmpty()
         return when {

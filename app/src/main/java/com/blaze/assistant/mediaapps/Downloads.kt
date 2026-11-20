@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * v0.30.1: the Store's download queue (wave B 18: several at once, see DlConcurrency; wave B 19: verified, see DlVerify). In order, run by a WorkManager worker in the foreground (progress
- * notification), so it keeps going with Blaze closed and comes back after the app is killed or the phone restarts.
+ * notification), so it keeps going with Argus closed and comes back after the app is killed or the phone restarts.
  * Each stream is fetched in 8 MB HTTP ranges into a .part file, so a dropped connection resumes where it stopped.
  * Expired or refused stream urls are fetched again from YouTube; network errors retry with backoff (2 s … 5 min, up to
  * 8 tries, reset whenever bytes arrive); no network = wait for it. Pause keeps the .part files; Cancel deletes them.

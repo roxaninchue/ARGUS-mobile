@@ -7,9 +7,9 @@ import org.json.JSONObject
  * (blaze-auth 0.9.5 accepts that exact redirect and advertises features.app_redirect in /v1/providers).
  *
  * Why: until 0.45.3 the app listened on 127.0.0.1 and redeemed the one-time code while the browser was still in front.
- * The browser showed "You're signed in", but the redeem ran with Blaze in the background and its outcome (an error, or
- * nothing at all when Android had frozen or closed Blaze) never reached the first-run screen. Now the browser opens the
- * app itself, and the redeem runs with Blaze in front, from the saved [Pending] if Android ended Blaze meanwhile.
+ * The browser showed "You're signed in", but the redeem ran with Argus in the background and its outcome (an error, or
+ * nothing at all when Android had frozen or closed Argus) never reached the first-run screen. Now the browser opens the
+ * app itself, and the redeem runs with Argus in front, from the saved [Pending] if Android ended Argus meanwhile.
  *
  * Pure (no Android types), so the whole flow is unit-tested: link parsing and the state check, the saved pending
  * sign-in, and what a redeem answer means (a session, the two-step code screen, or a plain error).
@@ -19,7 +19,7 @@ object AuthReturn {
     /** The server keeps its sign-in state 10 minutes; the app keeps its half as long. */
     const val TTL_MS = 600_000L
 
-    /** A browser sign-in waiting for blaze://auth/cb. Saved (encrypted) on disk so it survives Android ending Blaze. */
+    /** A browser sign-in waiting for blaze://auth/cb. Saved (encrypted) on disk so it survives Android ending Argus. */
     data class Pending(val state: String, val verifier: String, val provider: String, val flow: String, val at: Long) {
         fun json(): String = JSONObject().put("state", state).put("verifier", verifier).put("provider", provider)
             .put("flow", flow).put("at", at).toString()

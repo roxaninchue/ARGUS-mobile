@@ -7,16 +7,16 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * 0.45.29: BlazeOS (Blaze's own virtual phone, "Blaze Phone" to its users: the Home screen with Calendar / Ask Blaze /
+ * 0.45.29: BlazeOS (Argus's own virtual phone, "Blaze Phone" to its users: the Home screen with Calendar / Ask Argus /
  * music widgets, its app grid, dock, App Store and web / WebAssembly apps, added in v0.33.2) was removed. Home is the
- * Home board again for everyone; nothing in Blaze opens BlazeOS any more. BlazeOS was an activity inside Blaze, never
+ * Home board again for everyone; nothing in Argus opens BlazeOS any more. BlazeOS was an activity inside Argus, never
  * a system launcher (it had no HOME intent filter), so no phone is left without a home screen.
  *
  * This runs once after the update, in the background, and frees what BlazeOS left behind:
  *  - its saved settings ([LEGACY_PREFS]: the Classic-board switch, wallpaper, icon grid, dock, widgets, last app…);
  *  - its sandboxed disk (filesDir/[DISK]: installed BlazeOS apps, their data, its calendar and wallpaper photo);
  *  - its own WebView profile ([PROFILE]: the BlazeOS Browser's cookies and storage), when the phone's WebView has profiles.
- * Blaze's own browser, the Blaze Phone browser engine (browser/phone), site apps and the Blaze Store are not touched.
+ * Argus's own browser, the Argus Phone browser engine (browser/phone), site apps and the Argus Store are not touched.
  * Pure part: [LEGACY_PREFS] (BlazeOsRemovedTest).
  */
 object BlazeOsCleanup {

@@ -27,7 +27,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.unit.dp
 
 /**
- * Wave A item 26: Back out of Blaze Video / Blaze Music always lands on the agent chat.
+ * Wave A item 26: Back out of Argus Video / Argus Music always lands on the agent chat.
  * Both apps live in their own task, so a plain finish() used to drop the user on the launcher
  * or whatever task sat underneath. The player keeps going: Music in its service, a playing
  * video in picture-in-picture over the chat.

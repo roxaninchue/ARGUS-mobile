@@ -7,7 +7,7 @@ import kotlin.math.sqrt
 /**
  * v0.33.0: telling voices apart in a life log, on the phone. Vosk's speaker model gives each utterance an x-vector
  * (a voice fingerprint). Utterances long enough to trust are grouped by average-linkage clustering on cosine
- * similarity; short ones join the nearest group (or the previous speaker). Groups are matched against voices Blaze
+ * similarity; short ones join the nearest group (or the previous speaker). Groups are matched against voices Argus
  * already knows (named in earlier reviews), so "Mum" stays "Mum" across days. Pure (LifeLog2Test).
  */
 object Diarize {

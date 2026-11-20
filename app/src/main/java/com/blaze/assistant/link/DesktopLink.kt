@@ -30,13 +30,13 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.X509TrustManager
 
 /**
- * Pairing with Blaze Desktop (Windows, macOS, Linux).
+ * Pairing with Argus Desktop (Windows, macOS, Linux).
  *
- * Blaze Desktop › Phone shows a QR code: blaze://pair?h=<PC addresses>&p=<port>&fp=<cert SHA-256>&c=<one-time code>&n=<PC name>.
+ * Argus Desktop › Phone shows a QR code: blaze://pair?h=<PC addresses>&p=<port>&fp=<cert SHA-256>&c=<one-time code>&n=<PC name>.
  * We trade the code for a token over HTTPS, pinning the PC's certificate to the fingerprint from the QR code, so nothing
  * else on the Wi-Fi can pose as the PC. After that:
- *  - ask_pc: a Blaze turn runs on the PC (its files, code, programs); its approval requests show up here.
- *  - inbox: while Blaze runs, we long-poll the PC for phone_ask requests from Blaze Desktop and answer them in a chat.
+ *  - ask_pc: an Argus turn runs on the PC (its files, code, programs); its approval requests show up here.
+ *  - inbox: while Argus runs, we long-poll the PC for phone_ask requests from Argus Desktop and answer them in a chat.
  * Works on the same Wi-Fi, or anywhere when both devices are on Tailscale (the QR carries the PC's Tailscale address).
  */
 object DesktopLink {
@@ -123,7 +123,7 @@ object DesktopLink {
 
     // ---------- pairing ----------
 
-    /** Pair from the QR code / link Blaze Desktop shows. Returns a line for the user. */
+    /** Pair from the QR code / link Argus Desktop shows. Returns a line for the user. */
     suspend fun pair(link: String, deviceName: String): String = withContext(Dispatchers.IO) {
         val u = runCatching { Uri.parse(link.trim()) }.getOrNull()
         if (u == null || u.scheme != "blaze" || u.host != "pair") return@withContext "That's not a ${BrandName.NAME} Desktop pairing code. Open ${BrandName.NAME} Desktop › Phone › Show pairing QR code."
@@ -187,7 +187,7 @@ object DesktopLink {
 
     /**
      * Run [task] on the PC and wait for the answer. [onStep] gets the PC's progress lines.
-     * Approvals the PC needs are asked here with Blaze's normal confirm card.
+     * Approvals the PC needs are asked here with Argus's normal confirm card.
      */
     suspend fun askPc(task: String, fresh: Boolean, onStep: (String) -> Unit): String {
         if (!paired) return "No PC is paired. The user can pair one in Settings › ${BrandName.NAME} Desktop (scan the QR code from ${BrandName.NAME} Desktop › Phone)."
@@ -233,7 +233,7 @@ object DesktopLink {
 
     // ---------- PC → phone ----------
 
-    /** Start answering the PC's phone_ask requests (while Blaze is running). Safe to call again. */
+    /** Start answering the PC's phone_ask requests (while Argus is running). Safe to call again. */
     fun start() {
         _pairedFlow.value = paired
         if (inbox?.isActive == true || !paired || !Settings.bool("pc_inbox", true)) return

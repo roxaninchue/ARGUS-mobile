@@ -131,7 +131,7 @@ object DeviceStatus {
         return idCache
     }
 
-    /** One line for the system prompt so Blaze is aware without spending a tool call. */
+    /** One line for the system prompt so Argus is aware without spending a tool call. */
     fun promptLine(ctx: Context): String = try {
         val s = snap(ctx)
         val w = warnings(s)

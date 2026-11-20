@@ -35,7 +35,7 @@ import java.io.File
 
 /**
  * v0.33.0 Life Log 2, after Stop: transcribe the recorded session with Vosk (+ the speaker model for voices), split it
- * by voice ([Diarize]), let Blaze and Halo review it ([LifeReview]), save the memories and the labelled transcript,
+ * by voice ([Diarize]), let Argus and Halo review it ([LifeReview]), save the memories and the labelled transcript,
  * post the write-up to the chat, then delete the audio (unless "Keep recordings"). Runs in the foreground (dataSync)
  * with progress; sessions left half-done (phone restarted) are picked up by [resumePending].
  */
@@ -149,7 +149,7 @@ class LifeLogWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
         val conv = if (brainstorm) "brainstorm:$started" else "life_log:${LifeLogs.day(started)}"
         try { Mind.db()?.let { db -> transcript.chunked(3000).forEach { part -> MindLogs.append(db, conv, "heard", part, started / 1000, MindLogs.LIFE) } } } catch (_: Exception) { }
 
-        // 5. Blaze drafts, Halo reviews (per ~18k-char part for long days)
+        // 5. Argus drafts, Halo reviews (per ~18k-char part for long days)
         LifeAudio.setState(d, "reviewing")
         progress("${BrandName.NAME} is going over it\u2026", 0)
         val parts = splitLines(transcript, 18_000).take(6)

@@ -3,8 +3,8 @@ package com.blaze.assistant.link
 import org.json.JSONObject
 
 /**
- * Marketer pack (v0.17.0): WhatsApp replies drafted on Blaze Desktop and sent from the phone over
- * Blaze Link. The PC puts a structured request in the phone's inbox:
+ * Marketer pack (v0.17.0): WhatsApp replies drafted on Argus Desktop and sent from the phone over
+ * Argus Link. The PC puts a structured request in the phone's inbox:
  *
  *   {"id": "...", "kind": "message", "to": "Chanda (HomeGlow customer)", "text": "Hi Chanda, ...", "app": "whatsapp"}
  *

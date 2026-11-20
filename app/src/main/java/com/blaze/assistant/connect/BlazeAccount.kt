@@ -27,7 +27,7 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 
 /**
- * Blaze accounts, the same ones Blaze Desktop uses, through blaze-auth (the free Cloudflare
+ * Argus accounts, the same ones Argus Desktop uses, through blaze-auth (the free Cloudflare
  * Worker in the Blaze-dekstop repo, cloud/). Email + password, or Sign in with Google / GitHub
  * in the browser (PKCE, redirect caught on a random 127.0.0.1 port, one-time code redeemed with
  * our verifier). The session token is Keystore-encrypted ("conn_tok_" prefs are secrets); the
@@ -90,7 +90,7 @@ object BlazeAccount {
     /** Call once at app start: shows the cached user straight away, then checks the session and providers. */
     fun start() {
         val cached = Settings.str(USER).takeIf { it.isNotBlank() }?.let { runCatching { User.from(JSONObject(it)) }.getOrNull() }
-        // v0.45.4: Android ended Blaze while the browser sign-in was open: keep saying so until blaze://auth/cb lands.
+        // v0.45.4: Android ended Argus while the browser sign-in was open: keep saying so until blaze://auth/cb lands.
         val waiting = runCatching { AuthReturn.load(pendingStore, System.currentTimeMillis()) }.getOrNull()?.takeIf { it.flow == "login" && cached == null }
         _view.value = _view.value.copy(user = cached, pending = waiting?.provider.orEmpty())
         scope.launch { refreshProviders(true); checkSession(); KeySync.syncIfStale(); SkillSync.syncIfStale() }
@@ -573,7 +573,7 @@ object BlazeAccount {
             "</div></body>"
     }
 
-    /** Chrome / Samsung Internet open Blaze from this link (the running app, nothing in it). */
+    /** Chrome / Samsung Internet open Argus from this link (the running app, nothing in it). */
     internal const val OPEN_APP = "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.blaze.assistant;end"
 
     // ---------------- app redirect (v0.45.4): blaze://auth/cb ----------------
@@ -625,7 +625,7 @@ object BlazeAccount {
     }
 
     /**
-     * MainActivity hands every blaze://auth/cb link here. The sign-in still waiting takes it. If Android ended Blaze
+     * MainActivity hands every blaze://auth/cb link here. The sign-in still waiting takes it. If Android ended Argus
      * while the browser was open, the saved sign-in is finished from here (login only; a connector's caller is gone).
      */
     fun onAppRedirect(ctx: Context, link: String) {
@@ -673,7 +673,7 @@ object BlazeAccount {
         _view.value = _view.value.copy(message = "")
     }
 
-    /** Deletes the Blaze account. Connected accounts and keys on this phone stay. Returns "" or a plain sentence. */
+    /** Deletes the Argus account. Connected accounts and keys on this phone stay. Returns "" or a plain sentence. */
     suspend fun delete(): String = withContext(Dispatchers.IO) {
         val tok = Settings.secret(SESSION)
         if (tok.isNotBlank()) try {

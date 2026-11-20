@@ -174,7 +174,7 @@ class SyncEngine(
 
     /** A copy from the server (pulled, or the server's side of a push conflict). */
     private fun take(r: Remote) {
-        val a = byKind[r.kind] ?: return            // a kind this phone doesn't sync (switched off, or a newer Blaze's)
+        val a = byKind[r.kind] ?: return            // a kind this phone doesn't sync (switched off, or a newer Argus's)
         val st = state.get(r.kind, r.id)
         if (st != null && st.rev >= r.rev && !st.skipped) return   // already have it (our own push coming back)
         val remote = openRemote(r) ?: return

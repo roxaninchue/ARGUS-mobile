@@ -31,16 +31,16 @@ import java.util.concurrent.TimeUnit
 
 /**
  * v0.40.0 Cloud sync (Settings › Account › Cloud sync, `/sync`): optional, end-to-end encrypted live sync of chats,
- * memory, settings and designs between phones signed in to the same Blaze account. **Off by default.**
+ * memory, settings and designs between phones signed in to the same Argus account. **Off by default.**
  *
  *  - The user picks a sync passphrase. The key is derived from it on the phone ([SyncCrypto], PBKDF2 with the salt the
  *    gateway keeps) and stored Keystore-encrypted here ("conn_tok_" pref, so it never leaves the phone and a backup
  *    restored elsewhere can't read it). The passphrase itself is never stored or sent. A second phone checks the
  *    passphrase against the encrypted check blob before it syncs anything.
- *  - The Blaze Gateway (/v1/sync, gateway 0.4.0) keeps only ciphertext per item; [SyncEngine] does a round: pull,
- *    merge, push. Live: a push ~5 s after a local change, a round when Blaze comes to the front and every 60 s while
+ *  - The Argus Gateway (/v1/sync, gateway 0.4.0) keeps only ciphertext per item; [SyncEngine] does a round: pull,
+ *    merge, push. Live: a push ~5 s after a local change, a round when Argus comes to the front and every 60 s while
  *    it's open, and a WorkManager job every 15 min in the background (network required).
- *  - Never synced: the Blaze session, connector tokens, API keys, the PC pairing, permissions (see [SyncedSettings]).
+ *  - Never synced: the Argus session, connector tokens, API keys, the PC pairing, permissions (see [SyncedSettings]).
  */
 object CloudSync {
     private const val ON = "cloudsync_on"
@@ -143,7 +143,7 @@ object CloudSync {
 
     // ---------------- the gateway ----------------
 
-    /** Blaze Gateway root (the same Worker that answers chat; its /v1/sync routes). */
+    /** Argus Gateway root (the same Worker that answers chat; its /v1/sync routes). */
     fun base(): String = com.blaze.assistant.agent.Providers.GATEWAY_BASE.trimEnd('/').removeSuffix("/v1")
 
     class HttpError(val code: Int, val err: String) : Exception("http $code $err")
@@ -300,7 +300,7 @@ object CloudSync {
 
     fun syncSoon() { if (isOn()) scope.launch { runCatching { sync() } } }
 
-    /** MainActivity: a round when Blaze comes to the front, then one a minute while it stays there. */
+    /** MainActivity: a round when Argus comes to the front, then one a minute while it stays there. */
     fun foreground(front: Boolean) {
         try {
             loop?.cancel(); loop = null

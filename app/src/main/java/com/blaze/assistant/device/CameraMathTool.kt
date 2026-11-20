@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 agent tool `camera_math`: the pro-control maths behind Blaze Camera (exposure equivalents, EV, hand-held
+ * v0.34.0 agent tool `camera_math`: the pro-control maths behind Argus Camera (exposure equivalents, EV, hand-held
  * shutter, depth of field / hyperfocal, ND filters) and reading prices and sums out of text the camera read.
  */
 object CameraMathTool {

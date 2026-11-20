@@ -28,8 +28,8 @@ import java.net.ServerSocket
 import java.net.Socket
 
 /**
- * Blaze's local dashboard: a tiny web server on the phone (default 127.0.0.1:8787) with a page to
- * chat with Blaze and see analytics. "Share on Wi-Fi" lets a laptop on the same network open it,
+ * Argus's local dashboard: a tiny web server on the phone (default 127.0.0.1:8787) with a page to
+ * chat with Argus and see analytics. "Share on Wi-Fi" lets a laptop on the same network open it,
  * protected by a token in the link.
  */
 object Dashboard {

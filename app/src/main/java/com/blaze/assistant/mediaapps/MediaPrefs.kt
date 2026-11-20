@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 
 /**
- * v0.34.0: Blaze Music / Video settings (autoplay, smart downloads, data saver, equalizer, crossfade, sleep fade)
+ * v0.34.0: Argus Music / Video settings (autoplay, smart downloads, data saver, equalizer, crossfade, sleep fade)
  * and small per-video memories (where a series' intro ends, which downloads were watched to the end). One prefs file.
  */
 object MediaPrefs {
@@ -25,7 +25,7 @@ object MediaPrefs {
     const val EQ = "music_eq_preset"                 // preset name, "Flat" = off
     const val CROSSFADE = "music_crossfade_s"        // 0 = off
     const val SLEEP_FADE = "music_sleep_fade"        // default on
-    const val DJ = "music_dj"                        // Blaze DJ keeps the music going
+    const val DJ = "music_dj"                        // Argus DJ keeps the music going
     const val STRIP_GPS = "share_strip_location"     // default on
 
     fun autoplay(ctx: Context) = bool(ctx, AUTOPLAY, true)

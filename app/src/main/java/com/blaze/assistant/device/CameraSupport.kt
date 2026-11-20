@@ -43,12 +43,12 @@ object CameraSupport {
         get() = try { com.blaze.assistant.agent.Settings.bool(ASKED, false) } catch (_: Throwable) { false }
         set(v) { try { com.blaze.assistant.agent.Settings.setBool(ASKED, v) } catch (_: Throwable) { } }
 
-    /** Set after the phone's camera app failed once here: next time Blaze's own camera opens straight away. */
+    /** Set after the phone's camera app failed once here: next time Argus's own camera opens straight away. */
     var preferInApp: Boolean
         get() = try { com.blaze.assistant.agent.Settings.bool(IN_APP, false) } catch (_: Throwable) { false }
         set(v) { try { com.blaze.assistant.agent.Settings.setBool(IN_APP, v) } catch (_: Throwable) { } }
 
-    /** v0.30.x Blaze Camera Pro: the rule-of-thirds grid, remembered between sessions. */
+    /** v0.30.x Argus Camera Pro: the rule-of-thirds grid, remembered between sessions. */
     var grid: Boolean
         get() = try { com.blaze.assistant.agent.Settings.bool(GRID, false) } catch (_: Throwable) { false }
         set(v) { try { com.blaze.assistant.agent.Settings.setBool(GRID, v) } catch (_: Throwable) { } }
@@ -78,7 +78,7 @@ object CameraSupport {
         Intent(MediaStore.ACTION_IMAGE_CAPTURE).resolveActivity(ctx.packageManager) != null
     } catch (_: Exception) { true }
 
-    /** Logcat + Blaze's own diagnostics log (Settings → Device & diagnostics → crash report). */
+    /** Logcat + Argus's own diagnostics log (Settings → Device & diagnostics → crash report). */
     fun log(what: String, e: Throwable? = null) {
         val line = "CAMERA $what" + (e?.let { " · ${it.javaClass.name}: ${it.message}" } ?: "") + " · ${device()}"
         try { if (e != null) Log.w(TAG, line, e) else Log.i(TAG, line) } catch (_: Throwable) { }

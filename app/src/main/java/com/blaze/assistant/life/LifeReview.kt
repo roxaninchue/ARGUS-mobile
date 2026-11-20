@@ -9,7 +9,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * v0.33.0: Blaze and Halo go over a transcribed life log. Blaze (structured) drafts scenes, who each voice is, and
+ * v0.33.0: Argus and Halo go over a transcribed life log. Argus (structured) drafts scenes, who each voice is, and
  * the memories worth keeping; Halo (warm) reviews the draft against the transcript, fixes names and relationships,
  * adds how people felt, and returns the final version. Pure prompts / parsing / formatting (LifeLog2Test).
  */

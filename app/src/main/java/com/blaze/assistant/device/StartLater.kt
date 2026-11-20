@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Lazy start: work that start-up needs soon but the first frame does not. BlazeApp.onCreate queues it with [add]; it runs
- * on the main thread right after Blaze's first frame is drawn ([firstFrameDrawn], called by MainActivity), one job per
- * main-thread message so frames can be drawn in between, each timed like a start step (StartGuard). When Blaze starts
+ * on the main thread right after Argus's first frame is drawn ([firstFrameDrawn], called by MainActivity), one job per
+ * main-thread message so frames can be drawn in between, each timed like a start step (StartGuard). When Argus starts
  * without a screen (a notification, an alarm, a service) the queue runs [FALLBACK_MS] after onCreate instead.
  *
  * [firstFrame] / [onFirstFrame] are the generic hook for UI that is heavy to compose (Home cards and the like): show
@@ -25,7 +25,7 @@ object StartLater {
         private set
 
     private val _firstFrame = MutableStateFlow(false)
-    /** True once Blaze's first frame was drawn (or the fallback fired). */
+    /** True once Argus's first frame was drawn (or the fallback fired). */
     val firstFrame: StateFlow<Boolean> = _firstFrame
 
     /** How a job reaches the main thread (one message each). Tests replace it with a direct call. */

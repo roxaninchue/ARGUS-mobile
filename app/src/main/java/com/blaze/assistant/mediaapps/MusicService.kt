@@ -32,7 +32,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * v0.30.1 Blaze Music's player: media3 ExoPlayer in a MediaSessionService, so music keeps playing with Blaze closed,
+ * v0.30.1 Argus Music's player: media3 ExoPlayer in a MediaSessionService, so music keeps playing with Argus closed,
  * with the media notification and lock-screen / Bluetooth / headset controls. Audio focus is handled (a call or another
  * app's sound pauses or ducks it) and unplugging headphones pauses it. Sleep timer and the shuffle order live here.
  */
@@ -187,7 +187,7 @@ class MusicService : MediaLibraryService() {
         }
     }
 
-    /** Blaze DJ: keeps the music going with songs you play most (and liked ones), never the last 20 again. */
+    /** Argus DJ: keeps the music going with songs you play most (and liked ones), never the last 20 again. */
     fun startDj(on: Boolean = true) {
         MediaPrefs.setBool(this, MediaPrefs.DJ, on)
         BlazeDj.on.value = on
@@ -201,7 +201,7 @@ class MusicService : MediaLibraryService() {
         } else { djTopUp(force = true); if (!player.isPlaying) { player.prepare(); player.play() } }
     }
 
-    /** 0.46.4 Blaze DJ from the Music screen: a fresh DJ set now (replaces the queue), in the chosen vibe. */
+    /** 0.46.4 Argus DJ from the Music screen: a fresh DJ set now (replaces the queue), in the chosen vibe. */
     fun djFresh(v: DjPlan.Vibe? = null) {
         if (v != null) BlazeDj.setVibe(this, v)
         MediaPrefs.setBool(this, MediaPrefs.DJ, true); BlazeDj.on.value = true
@@ -273,7 +273,7 @@ class MusicService : MediaLibraryService() {
                 item?.mediaId?.let { id -> MediaLib.find(id)?.let { MediaLib.played(it) } }
                 startPlay()
                 djTopUp()
-                // 0.46.4 Blaze DJ: a short plain intro for the next song (only when it moved on by itself, voice on, no battery saver).
+                // 0.46.4 Argus DJ: a short plain intro for the next song (only when it moved on by itself, voice on, no battery saver).
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && MediaPrefs.bool(this@MusicService, MediaPrefs.DJ, false))
                     item?.mediaId?.let { id -> MediaLib.find(id) }?.let { BlazeDj.say(this@MusicService, DjSpeech.next(it)) }
                 prefetchNext()
@@ -293,7 +293,7 @@ class MusicService : MediaLibraryService() {
                 main.removeCallbacks(offlineStall)
                 if (state == Player.STATE_BUFFERING && player.playWhenReady && !NetWatch.now(this@MusicService)) main.postDelayed(offlineStall, NetHonesty.OFFLINE_SKIP_MS)
                 if (state == Player.STATE_ENDED && sleepAt.value == -1L) sleepAt.value = 0
-                // Blaze DJ: the queue ran out, so it adds more and carries on.
+                // Argus DJ: the queue ran out, so it adds more and carries on.
                 if (state == Player.STATE_ENDED && sleepAt.value == 0L && MediaPrefs.bool(this@MusicService, MediaPrefs.DJ, false)) {
                     val before = player.mediaItemCount
                     djTopUp(force = true)

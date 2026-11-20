@@ -11,9 +11,9 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * v0.30.1: the Music and Video libraries: what Blaze downloaded (Music/Blaze/Music, Movies/Blaze/Videos) plus the
- * audio and video files already in Blaze's Gallery, and the user's playlists, recently played and video resume
- * positions. Kept as small JSON files in filesDir/mediaapps (survive updates; included in Blaze's own backup).
+ * v0.30.1: the Music and Video libraries: what Argus downloaded (Music/Blaze/Music, Movies/Blaze/Videos) plus the
+ * audio and video files already in Argus's Gallery, and the user's playlists, recently played and video resume
+ * positions. Kept as small JSON files in filesDir/mediaapps (survive updates; included in Argus's own backup).
  */
 object MediaLib {
     private var app: Context? = null
@@ -33,7 +33,7 @@ object MediaLib {
     /** Liked songs, newest first. */
     val liked: StateFlow<List<String>> = _liked
 
-    private var downloads = listOf<Track>()   // what Blaze downloaded (both kinds)
+    private var downloads = listOf<Track>()   // what Argus downloaded (both kinds)
     private val positions = HashMap<String, Long>()
 
     private fun dir(ctx: Context) = File(ctx.filesDir, "mediaapps").apply { mkdirs() }
@@ -142,7 +142,7 @@ object MediaLib {
         return gone.size
     }
 
-    // ---- v0.34.0 play log (smart playlists, daily mixes, Wrapped, Blaze DJ) ----
+    // ---- v0.34.0 play log (smart playlists, daily mixes, Wrapped, Argus DJ) ----
     private val _plays = MutableStateFlow<List<PlayEvent>>(emptyList())
     val plays: StateFlow<List<PlayEvent>> = _plays
     fun logPlay(key: String, at: Long, ms: Long) {

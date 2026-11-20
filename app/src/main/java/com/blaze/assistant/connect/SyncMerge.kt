@@ -129,7 +129,7 @@ object SyncMerge {
         val cleared = maxOf(a.optLong(CLEARED), b.optLong(CLEARED))
         val byKey = LinkedHashMap<String, JSONObject>()
         // v0.45.0 (#37): messages with a global id match by it (two bubbles of one reply may share role@at); a copy without
-        // one (an older Blaze, or saved before ids) matches by role@at, joining the id'd message with the same role@at.
+        // one (an older Argus, or saved before ids) matches by role@at, joining the id'd message with the same role@at.
         // Reactions are kept from [a] (this phone's copy); they travel as their own items.
         val reactA = HashMap<String, Any?>()   // key → this phone's reactions (null = it has the message, without any)
         val gidAt = HashMap<String, String>()

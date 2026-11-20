@@ -50,7 +50,7 @@ import org.vosk.Recognizer
  * voice-level sound, so a quiet room costs almost no CPU. Without the model, Android's SpeechRecognizer runs in a
  * restart loop until the download finishes.
  *
- * Auto-pause (mic released): phone calls, another app recording, Blaze's own voice listening, battery below
+ * Auto-pause (mic released): phone calls, another app recording, Argus's own voice listening, battery below
  * [LifeLogs.LOW_BATTERY]% unless charging. Resumes on its own when the reason clears; a pause from the user waits
  * for Resume.
  */

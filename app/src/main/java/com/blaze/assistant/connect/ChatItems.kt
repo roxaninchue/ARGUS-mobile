@@ -10,7 +10,7 @@ import java.security.MessageDigest
  * v0.45.0 (#37): chats sync as small items instead of whole-chat blobs.
  *
  *  - kind "chat"  ([ChatHeadAdapter]): the chat's own fields (title, summary, /clear time, rooms…), the model history
- *    when it is small, and its newest [TAIL] messages, so a phone on an older Blaze (which only knows whole chats)
+ *    when it is small, and its newest [TAIL] messages, so a phone on an older Argus (which only knows whole chats)
  *    still gets new messages and merges them the way it always did. Old whole-chat items already in the cloud copy
  *    are still read and merged (same kind, same id).
  *  - kind "msg"   ([MessageAdapter]): one message, id "<chat>:<gid>" (Gid: globally unique, stable per bubble).
@@ -26,7 +26,7 @@ object ChatItems {
     const val HEAD = SyncKinds.CHATS
     const val MSG = SyncMerge.MSG
     const val REACT = "react"
-    /** Newest messages carried in the chat item for phones on an older Blaze. */
+    /** Newest messages carried in the chat item for phones on an older Argus. */
     const val TAIL = 20
     /** The model history rides along in the chat item only below this size (it is rebuilt per phone otherwise). */
     const val HISTORY_MAX = 48 * 1024
@@ -270,7 +270,7 @@ class ChatSplit(private val dir: () -> File) {
     }
 }
 
-/** kind "chat": the chat's own fields + newest messages; also merges whole-chat items from older Blaze builds. */
+/** kind "chat": the chat's own fields + newest messages; also merges whole-chat items from older Argus builds. */
 class ChatHeadAdapter(private val split: ChatSplit, private val onApplied: (String) -> Unit = {}) : SyncEngine.Adapter {
     override val kind = ChatItems.HEAD
 

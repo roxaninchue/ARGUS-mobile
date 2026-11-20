@@ -16,7 +16,7 @@ import java.io.File
 import java.nio.ByteBuffer
 
 /**
- * v0.30.1: where Blaze Music and Blaze Video keep what they download. Wave B 1: new downloads go to Blaze's private
+ * v0.30.1: where Argus Music and Argus Video keep what they download. Wave B 1: new downloads go to Argus's private
  * storage ([privateDir], .nomedia, no MediaStore); the shared folders below are now only the default Export targets
  * (older downloads already saved there keep working):
  *
@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
  * Android only allows audio under Music/ (and a few other audio roots) and video under Movies/ / DCIM/ / Pictures/, so
  * "Blaze/Music" and "Blaze/Videos" sit inside those. The Gallery reads the same two folders (keep [MUSIC_DIR] /
  * [VIDEO_DIR] in sync with it). Android 8–9: the same paths on shared storage (needs the storage permission; without it
- * the files go to Blaze's own folder on shared storage and are still scanned into MediaStore).
+ * the files go to Argus's own folder on shared storage and are still scanned into MediaStore).
  */
 object MediaFiles {
     val MUSIC_DIR = Environment.DIRECTORY_MUSIC + "/Blaze/Music"
@@ -39,7 +39,7 @@ object MediaFiles {
         "webm" -> "video/webm"; "mp4" -> "video/mp4"; else -> "application/octet-stream"
     }
 
-    /** Working files (partial downloads, merges): Blaze's own storage, removed when a download finishes or is cancelled. */
+    /** Working files (partial downloads, merges): Argus's own storage, removed when a download finishes or is cancelled. */
     fun workDir(ctx: Context): File = File(ctx.filesDir, "mediaapps/dl").apply { mkdirs() }
     fun artDir(ctx: Context): File = File(ctx.filesDir, "mediaapps/art").apply { mkdirs() }
 
@@ -47,14 +47,14 @@ object MediaFiles {
     fun freeBytes(ctx: Context): Long = try { StatFs(ctx.filesDir.path).availableBytes } catch (_: Exception) { Long.MAX_VALUE }
 
     /**
-     * Wave B 1: Blaze's own private media folders (app storage + .nomedia, never MediaStore), so downloads stay out of
+     * Wave B 1: Argus's own private media folders (app storage + .nomedia, never MediaStore), so downloads stay out of
      * the phone's gallery and music apps. Export (MediaExport) copies a file out when the user asks.
      */
     fun privateDir(ctx: Context, kind: String): File = File(ctx.filesDir, MediaStorePolicy.privateRel(kind)).apply {
         mkdirs(); val nm = File(this, ".nomedia"); if (!nm.exists()) runCatching { nm.createNewFile() }
     }
 
-    /** True when [uri] is one of Blaze's private media files (file:// inside filesDir/media). */
+    /** True when [uri] is one of Argus's private media files (file:// inside filesDir/media). */
     fun isPrivate(ctx: Context, uri: String): Boolean = runCatching {
         val u = Uri.parse(uri); u.scheme == "file" && (u.path ?: "").startsWith(File(ctx.filesDir, MediaStorePolicy.ROOT).path + "/")
     }.getOrDefault(false)

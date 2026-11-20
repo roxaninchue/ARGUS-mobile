@@ -37,16 +37,16 @@ import com.blaze.assistant.ui.Type
 import com.blaze.assistant.ui.phonePalette
 
 /**
- * 0.45.19 fix 4, the Android side of [PhonePip]: the picture-in-picture params (aspect, Stop / Open Blaze actions,
+ * 0.45.19 fix 4, the Android side of [PhonePip]: the picture-in-picture params (aspect, Stop / Open Argus actions,
  * auto-enter on API 31+), entering on onUserLeaveHint below API 31, the live-view-only content, and what Stop does.
- * Used by MainActivity (the chat) and PhoneBrowserActivity (the Blaze Phone screen).
+ * Used by MainActivity (the chat) and PhoneBrowserActivity (the Argus Phone screen).
  */
 object PhonePipHost {
     // minSdk is 26, so every picture-in-picture call here exists; only auto-enter needs API 31.
     fun supported(ctx: Context): Boolean =
         try { ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE) } catch (_: Throwable) { false }
 
-    /** Blaze works on Blaze Phone right now. */
+    /** Argus works on Argus Phone right now. */
     fun working(): Boolean = PhonePip.working(PhoneBrowser.live.value.mode, PhoneBrowser.ownerChat,
         try { com.blaze.assistant.agent.Agent.busyChats.value } catch (_: Throwable) { emptySet() })
 
@@ -67,7 +67,7 @@ object PhonePipHost {
         return b.build()
     }
 
-    /** Keeps [a]'s params current (auto-enter only while Blaze works and Blaze isn't locked). */
+    /** Keeps [a]'s params current (auto-enter only while Argus works and Argus isn't locked). */
     fun update(a: Activity, working: Boolean, locked: Boolean) {
         if (!supported(a)) return
         val wanted = PhonePip.wanted(working, true, Build.VERSION.SDK_INT, locked)
@@ -75,7 +75,7 @@ object PhonePipHost {
         catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("PhonePip.update", t) }
     }
 
-    /** Below API 31: the user is leaving (Home, Recents) while Blaze works, so enter now. True when it did. */
+    /** Below API 31: the user is leaving (Home, Recents) while Argus works, so enter now. True when it did. */
     fun enterOnLeave(a: Activity, locked: Boolean, launchingOwnScreen: Boolean): Boolean {
         if (!supported(a)) return false
         val w = working()
@@ -84,12 +84,12 @@ object PhonePipHost {
         catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("PhonePip.enter", t); false }
     }
 
-    /** Stop on the window: really cancels the turn driving Blaze Phone (its background agent too). Main thread. */
+    /** Stop on the window: really cancels the turn driving Argus Phone (its background agent too). Main thread. */
     fun stop(): Boolean = PhoneBrowser.stopTask(
         stopChat = { com.blaze.assistant.agent.Agent.stopChat(it) },
         cancelAgent = { com.blaze.assistant.agent.BgAgents.cancel(it) })
 
-    /** Open Blaze (and tapping the window's expand): bring the chat's task to the front, full screen. */
+    /** Open Argus (and tapping the window's expand): bring the chat's task to the front, full screen. */
     fun open(ctx: Context) {
         val am = ctx.getSystemService(ActivityManager::class.java)
         val main = com.blaze.assistant.MainActivity::class.java.name
@@ -102,7 +102,7 @@ object PhonePipHost {
     }
 }
 
-/** The window's Stop / Open Blaze buttons (RemoteAction broadcasts; not exported). */
+/** The window's Stop / Open Argus buttons (RemoteAction broadcasts; not exported). */
 class PhonePipReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, i: Intent) {
         val app = ctx.applicationContext
@@ -115,7 +115,7 @@ class PhonePipReceiver : BroadcastReceiver() {
     }
 }
 
-/** What the picture-in-picture window shows: only Blaze Phone's live view (and one short line when it matters). */
+/** What the picture-in-picture window shows: only Argus Phone's live view (and one short line when it matters). */
 @Composable
 fun PhonePipView() {
     val live by PhoneBrowser.live.collectAsState()

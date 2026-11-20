@@ -9,7 +9,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * v0.34.0 Blaze Camera, the pure maths (CameraSmartTest): night stacking (align + average + lift), HDR merge
+ * v0.34.0 Argus Camera, the pure maths (CameraSmartTest): night stacking (align + average + lift), HDR merge
  * (exposure fusion of a bracket), the 4-corner document crop, pro exposure / depth-of-field maths, and reading
  * prices, sums and product barcodes out of what the camera saw.
  */
