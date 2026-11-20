@@ -203,12 +203,8 @@ jobs:
           done
           rm -rf "$K"
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: blaze-${{ github.sha }}
-          path: app/build/outputs/apk/release/*.apk
-          retention-days: 14
+      # 2026-11-20 (Mark): the blaze-<sha> artifact is no longer uploaded; argus-debug-signed-<sha> is the install artifact.
+      # The release APK is still built and signed on the runner for the steps below.
 
       # 2026-11-19: every build also ships a debug-signed copy, ready to install (zipaligned, v2+v3). The key is the public
       # debug key in keystore/ci-debug.keystore (alias androiddebugkey, password android), so each build installs over the last.
