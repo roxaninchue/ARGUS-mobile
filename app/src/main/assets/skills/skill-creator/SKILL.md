@@ -2,7 +2,7 @@
 name: skill-creator
 description: How to write or improve a Argus skill (SKILL.md) - when a workflow is worth saving, how to name and describe it so it's found, how to structure the steps, checklists and templates, and how to update it later. Use before calling write_skill, when the user says "save this as a skill" or teaches you a method, or when an existing skill turned out wrong.
 tags: [skills, meta, writing, workflow]
-version: 1
+version: 3
 ---
 
 # Writing a good skill
@@ -24,10 +24,15 @@ Don't save one-off tasks, secrets (keys, passwords, tokens), or personal facts (
 
 After creating or changing a skill, tell the user in one line ("Saved this as the deploy-homeglow skill.").
 
-## 2. Name and description (this is how it's found)
+## 2. Name and description (this is how it's chosen)
+
+Every turn, Argus sees a SKILLS list: each skill's name and the first sentence of its description, cut near 80
+characters. That one line is what you (and every Argus on the user's other devices) read to decide whether to open a
+skill with use_skill. find_skill searches the whole description and tags.
+
 
 - **name**: kebab-case, specific, 2-5 words: `deploy-homeglow`, `upwork-proposal`, `arch-system-update`. Not `helper`, `my-skill`, `task1`.
-- **description**: one or two sentences: *what it does* + *when to use it*, with the words a user would actually say. The skill search ranks name and description highest.
+- **description**: first sentence = *what it does*, in plain words, under about 80 characters (it's the line on the list). Then *when to use it*, with the words a user would actually say (find_skill ranks name and description highest).
   - Good: "Deploy the HomeGlow Shopify theme to production with pnpm and the Shopify CLI. Use when the user says deploy, publish or push the store theme."
   - Bad: "Deployment stuff."
 - **tags**: 3-6 lowercase topics (`deploy, shopify, pnpm`).

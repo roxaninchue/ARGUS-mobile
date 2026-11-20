@@ -23,15 +23,15 @@ class SkillGateTest {
         assertTrue(old.full.isNotEmpty())
     }
 
-    @Test fun aPlainDeviceActionGetsNoSkills() {
+    /** 2026-11-20 skill shelf: no per-turn pick for a device action; the user's recorded fix is on the shelf to replay. */
+    @Test fun aPlainDeviceActionSeesTheLearnedFixOnTheShelf() {
         assertTrue(FastActions.plainDevice(ask))
         val learned = SkillMatch.Cand("github-links-off", "Turn off GitHub opening links in its app", listOf("github", "links", "open by default"),
-            "1. open_settings open_by_default GitHub 2. tap Open supported links", "learned", true)
-        val other = SkillMatch.Cand("weekly-report", "Make my weekly report", listOf("report"), "…", "learned", true)
-        val r = SkillMatch.learnedOnly(ask, bundled + learned + other)
-        assertEquals(listOf("github-links-off"), r.full.map { it.name })   // the user's own recorded fix still comes
-        assertTrue(SkillMatch.learnedOnly(ask, bundled).isEmpty)                // nothing bundled
-        assertEquals("", SkillMatch.block(SkillMatch.learnedOnly(ask, bundled)))
+            "1. open_settings open_by_default GitHub 2. tap Open supported links\n(run_skill github-links-off replays the recorded phone steps)", "learned", true)
+        val shelf = SkillShelf.block(bundled + learned)
+        assertTrue(shelf, shelf.contains("- github-links-off: Turn off GitHub opening links in its app [replay]"))
+        assertTrue("the user's own skill comes first", shelf.indexOf("github-links-off") < shelf.indexOf("android-app-builder"))
+        assertFalse("no skill bodies are pasted in", shelf.contains("open_settings open_by_default"))
     }
 
     @Test fun perTurnBodiesNeedAStrongMatch() {

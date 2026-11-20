@@ -51,6 +51,17 @@ class ModelFirstTest {
         assertTrue(src.contains("val pinned = ToolPick.pinnedCues(lastRung, ctxFrom); groupsOn += pinned"))
     }
 
+    /** 2026-11-20 skill shelf (docs/SKILL-SHELF.md): skills aren't picked from the message's words or refused by word overlap. */
+    @Test fun skillsAreAShelfNotAGuess() {
+        val src = agentSrc()
+        for (gone in listOf("SkillMatch.forTurn(", "SkillMatch.lookupBlock(", "SkillMatch.learnedOnly(", "SkillGuard.gate(", "skillGate("))
+            assertFalse(gone, src.contains(gone))
+        assertTrue(src.contains("slow(\"skills\", SkillShelf.promptBlock())"))
+        val shelf = File(root(), "app/src/main/java/" + SkillShelf::class.java.name.replace('.', '/') + ".kt").readText()
+        assertFalse("the shelf never reads the message", shelf.contains("userText") || shelf.contains("query"))
+        assertTrue(File(root(), "docs/MODEL-FIRST.md").readText().contains("SKILL-SHELF.md"))
+    }
+
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
         val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }

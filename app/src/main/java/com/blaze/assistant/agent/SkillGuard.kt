@@ -7,12 +7,9 @@ import org.json.JSONObject
  * v0.30.5 (Blazeinchue: "create higher measures stopping blaze from calling unrelated skills and also keep track of often
  * performed tasks so it can give priority to creating skills for them").
  *
- *  - [relevant] / [gate]: use_skill and run_skill only load a skill that shares real words with what the user is asking
- *    (the last few user messages, so "yes, do it" still counts the request before it). The user naming the skill always
- *    passes. A weak match is refused once with the reason; the model may call again with `reason` only when the skill
- *    still shares at least one word with the request. No overlap at all is always refused.
- *  - [strongHit]: the per-turn "best matches" list only shows skills matching ≥ 2 distinct request words, or one
- *    name word (a bare description word like "open" or "app" no longer drags a skill in).
+ *  - 2026-11-20 skill shelf (docs/SKILL-SHELF.md): the relevance gate (`gate` / `relevant` / `strongHit`) that refused
+ *    use_skill / run_skill by word overlap is gone. The model sees every skill (SkillShelf) and chooses; a tool no longer
+ *    tells it a skill is "unrelated". [unnamed] stays for specialist matching.
  *  - [Freq]: every real task (≥ 2 work tool calls) is counted by its fingerprint (Learn.signature). A task done
  *    [Freq.PRIORITY] times with no skill covering it is flagged: the end-of-turn learning review runs for it with
  *    skill-writing first, and the prompt carries a one-line nudge listing such tasks.
@@ -21,14 +18,6 @@ import org.json.JSONObject
 object SkillGuard {
 
     // ---------------- relevance ----------------
-
-    /** Distinct request words the skill's name / keywords / description share, and whether a name word is among them. */
-    data class Overlap(val words: Int, val nameWord: Boolean, val named: Boolean)
-
-    // 0.53.3 (owner screenshot 23:36: "official benchmarks for Dots 3 Note Preview model" loaded lecture-notes): everyday words
-    // that also sit in skill names ("note", "page", "list", "model"…) are weak: alone they never pull a skill in.
-    private val weakName = setOf("phone", "task", "app", "skill", "flow", "speed", "general", "workflow", "blaze", "argus", "helper", "tool", "open",
-        "note", "page", "list", "file", "model", "message", "post", "data", "text", "preview", "review", "card", "report", "builder", "lab", "kit")
 
     /**
      * 0.53.3: the request with proper names taken out before skills are matched: a run of 2+ capitalised words / numbers
@@ -58,51 +47,6 @@ object SkillGuard {
         val kept = ms.withIndex().filter { it.index !in drop }.joinToString(" ") { it.value.value }
         return if (SkillMatch.words(kept).size >= 1) kept else request
     }
-
-    fun overlap(request: String, c: SkillMatch.Cand): Overlap {
-        val q = SkillMatch.words(request)
-        val nameW = SkillMatch.words(c.name.replace('-', ' ').replace('_', ' '))
-        val mine = nameW + c.keywords.flatMap { SkillMatch.words(it) } + SkillMatch.words(c.description)
-        val shared = q intersect mine
-        val low = request.lowercase()
-        val named = c.name.length >= 3 && (low.contains(c.name.lowercase()) || low.contains(c.name.lowercase().replace('-', ' ')))
-        return Overlap(shared.size, (shared intersect nameW).any { it !in weakName }, named)
-    }
-
-    enum class Verdict { ALLOW, SOFT_REFUSE, REFUSE }
-
-    /** Strong enough to load without question: named, a real name word, or ≥ 2 distinct shared words. */
-    fun relevant(request: String, c: SkillMatch.Cand): Verdict {
-        if (request.isBlank()) return Verdict.ALLOW   // nothing to judge against (routines, background agents)
-        val o = overlap(request, c)
-        return when {
-            o.named || o.nameWord || o.words >= 2 -> Verdict.ALLOW
-            o.words == 1 -> Verdict.SOFT_REFUSE
-            else -> Verdict.REFUSE
-        }
-    }
-
-    /**
-     * The gate for use_skill / run_skill [name]: null to go ahead, or the refusal the model reads.
-     * [request] is the user's recent words; [reason] the model's stated reason on a second try.
-     */
-    fun gate(name: String, request: String, reason: String, cands: List<SkillMatch.Cand>): String? {
-        if (name.isBlank()) return null
-        val c = cands.firstOrNull { it.name.equals(name, true) } ?: return null   // unknown name: the tool says so itself
-        return when (relevant(request, c)) {
-            Verdict.ALLOW -> null
-            Verdict.SOFT_REFUSE -> if (reason.trim().length >= 12) null else
-                "Not loaded: skill \u201c${c.name}\u201d (${c.description.take(120)}) barely matches what the user asked. " +
-                    "Don't use skills that aren't about this request: do the task with your tools. Only if it truly covers this task, " +
-                    "call again with reason=\"how it applies\"."
-            Verdict.REFUSE ->
-                "Not loaded: skill \u201c${c.name}\u201d (${c.description.take(120)}) is unrelated to what the user asked. " +
-                    "Do the task with your tools, or find_skill with words from the request."
-        }
-    }
-
-    /** The per-turn suggestions: a hit counts only when it matches ≥ 2 distinct request words or one real name word. */
-    fun strongHit(request: String, c: SkillMatch.Cand): Boolean = relevant(request, c) == Verdict.ALLOW && request.isNotBlank()
 
     // ---------------- often-performed tasks ----------------
 

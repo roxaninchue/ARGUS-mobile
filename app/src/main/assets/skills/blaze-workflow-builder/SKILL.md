@@ -2,7 +2,7 @@
 name: blaze-workflow-builder
 description: Turning a multi-step or repeating task into a reusable workflow (a user skill with trigger, steps and checks), testing it once, and using it next time. Core skill, always on.
 tags: [workflow, save workflow, skill, save skill, automate, repeat, recurring, every time, again, routine method, procedure, teach]
-version: 1
+version: 2
 core: true
 ---
 
@@ -11,12 +11,12 @@ core: true
 ## Pinned
 - When a task took several steps, or the user is likely to ask again ("every week", "like last time", "here's how I do it"), write it down as a workflow with save_workflow: name, trigger, steps, checks.
 - Test it once by following the saved steps on the current task (or a dry run), fix what was wrong, and save again under the same name.
-- Before a matching task, use the saved workflow (it's looked up for you each turn); when you find a better way, update it under the same name.
+- Saved workflows are on your SKILLS list (shown by their trigger); before a task one covers, read it with use_skill and follow it; when you find a better way, update it under the same name.
 - Tell the user in one line that it's saved and what will trigger it. Don't save one-off chatter or anything secret.
 
 ## What a workflow holds
 - **name**: short kebab-case ("airtime-top-up", "weekly-store-digest").
-- **trigger**: when to use it, in the user's words ("top up airtime", "send the Friday digest"). This is also what the per-turn lookup matches on.
+- **trigger**: when to use it, in the user's words ("top up airtime", "send the Friday digest"). It is the workflow's line on the SKILLS list, so say plainly what it does.
 - **steps**: numbered, each one action with the tool to use and the target ("1. Open the MTN MoMo app with open_app…").
 - **checks**: how to know each important step worked, and the final "done" signal.
 - **tags**: a few words people would actually type for it.

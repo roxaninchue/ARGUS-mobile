@@ -2,12 +2,10 @@ package com.blaze.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.30.5: unrelated skills are refused; tasks done often are counted and flagged for a skill. */
+/** v0.30.5: tasks done often are counted and flagged for a skill. (The relevance gate went with the skill shelf, 2026-11-20.) */
 class SkillGuardTest {
     private val builder = SkillMatch.Cand("android-app-builder", "Build, sign and ship an Android app from a Kotlin project",
         listOf("gradle", "apk", "kotlin"), "1. …", "bundled")
@@ -15,30 +13,11 @@ class SkillGuardTest {
     private val airtime = SkillMatch.Cand("airtime-topup", "Top up Airtel airtime with the USSD menu", listOf("airtime", "airtel"), "1. …", "learned")
     private val all = listOf(builder, flash, airtime)
 
-    @Test fun unrelatedSkillIsRefused() {
-        val r = SkillGuard.gate("android-app-builder", "stop GitHub opening links in the GitHub app", "", all)
-        assertNotNull(r); assertTrue(r!!.startsWith("Not loaded"))
-        // A reason doesn't unlock a skill that shares nothing with the request.
-        assertNotNull(SkillGuard.gate("study-flashcards", "what's the weather in Ndola", "it might help somehow here", all))
-    }
-
-    @Test fun relatedOrNamedSkillLoads() {
-        assertNull(SkillGuard.gate("study-flashcards", "make me flashcards on photosynthesis and quiz me", "", all))
-        assertNull(SkillGuard.gate("airtime-topup", "top up my airtel airtime with K20", "", all))
-        assertNull(SkillGuard.gate("android-app-builder", "use the android-app-builder skill", "", all))
-        assertNull(SkillGuard.gate("no-such-skill", "anything", "", all))   // the tool reports unknown names itself
-    }
-
-    @Test fun oneSharedWordNeedsAReason() {
-        // "kotlin" alone: refused once, allowed with a real reason.
-        assertEquals(SkillGuard.Verdict.SOFT_REFUSE, SkillGuard.relevant("explain kotlin coroutines to me", builder))
-        assertNotNull(SkillGuard.gate("android-app-builder", "explain kotlin coroutines to me", "", all))
-        assertNull(SkillGuard.gate("android-app-builder", "explain kotlin coroutines to me", "its kotlin section explains coroutines", all))
-    }
-
-    @Test fun strongHitDropsStrayWords() {
-        assertFalse(SkillGuard.strongHit("open the app", builder))
-        assertTrue(SkillGuard.strongHit("build my kotlin apk with gradle", builder))
+    /** 2026-11-20 skill shelf: there is no relevance gate any more; the model picks from SkillShelf. */
+    @Test fun noGateLeft() {
+        val gone = SkillGuard::class.java.declaredMethods.map { it.name }.filter { it in setOf("gate", "relevant", "strongHit") }
+        assertTrue(gone.toString(), gone.isEmpty())
+        assertTrue(all.size == 3)
     }
 
     @Test fun frequentTasksAreCountedAndFlagged() {
@@ -58,19 +37,13 @@ class SkillGuardTest {
         assertEquals(2, two.size)
     }
 
-    // 0.53.3 (owner screenshot 23:36): a product name never pulls a skill in.
+    // 0.53.3 (owner screenshot 23:36): a product name never pulls a specialist in (unnamed is still used by SpecialistMatch).
     private val lecture = SkillMatch.Cand("lecture-notes", "Turn a lecture recording into clean notes, a short summary and key terms",
         listOf("student", "notes", "transcription", "summary", "lectures"), "1. …", "bundled")
 
     @Test fun productNamesPickNoSkill() {
         val q = "Please look for official benchmarks for Dots 3 Note Preview model"
         assertEquals("Please look for official benchmarks for model", SkillGuard.unnamed(q))
-        assertFalse(SkillGuard.strongHit(SkillGuard.unnamed(q), lecture))
-        assertTrue(SkillMatch.selectForTurn(q, listOf(lecture, flash, builder)).isEmpty)
-        // a plain everyday word alone ("note") is weak too
-        assertFalse(SkillGuard.strongHit("make a note to buy milk", lecture))
-        // the real ask still gets it
-        assertTrue(SkillGuard.strongHit("make notes from my lecture recording", lecture))
         assertEquals("Make Notes", SkillGuard.unnamed("Make Notes"))
     }
 }

@@ -10,7 +10,7 @@ import java.io.File
 
 /**
  * 0.50.0 (owner's screenshot 2026-11-01 22:51: "Skills: android-app-builder, reverse-engine…" under a casual message).
- * Skills load only for a clear task, only on strong matches, and never more than [SkillIntent.MAX_NAMES].
+ * SkillIntent now only gates specialists; skills are on the shelf (SkillShelf, 2026-11-20).
  */
 class SkillIntentTest {
     @org.junit.Before fun drainLeaks() = LeakedMainLaunches.drain()
@@ -26,28 +26,14 @@ class SkillIntentTest {
     @Test fun casualMessagesLoadNoSkills() {
         casual.forEach { m ->
             assertFalse(m, SkillIntent.taskIntent(m))
-            assertTrue(m, SkillMatch.selectForTurn(m, bundled).isEmpty)
         }
     }
 
-    @Test fun clearTasksStillGetTheirSkill() {
-        val tasks = mapOf(
-            "make flashcards on photosynthesis for my biology test" to "study-flashcards",
-            "build me an android app that tracks my water intake" to "android-app-builder",
-            "can you reverse engineer this APK and tell me what it does?" to "reverse-engineer-anything",
-            "write a landing page for my bakery" to "landing-page-builder")
-        tasks.forEach { (m, skill) ->
-            assertTrue(m, SkillIntent.taskIntent(m))
-            val r = SkillMatch.selectForTurn(m, bundled)
-            assertTrue("$m -> ${r.names}", skill in r.names)
-            assertTrue("$m -> ${r.names}", r.names.size <= SkillIntent.MAX_NAMES)
-        }
-    }
-
-    @Test fun neverMoreThanThreeSkills() {
-        val m = "please build a web design landing page with slides, diagrams, data analysis charts, pixel art and a study plan"
-        val r = SkillMatch.selectForTurn(m, bundled)
-        assertTrue(r.names.toString(), r.names.size <= SkillIntent.MAX_NAMES)
+    /** 2026-11-20 skill shelf: skills are no longer picked by intent; every bundled skill is on the shelf for the model. */
+    @Test fun everySkillIsOnTheShelfWhateverTheWords() {
+        val shelf = SkillShelf.block(bundled)
+        for (s in listOf("study-flashcards", "android-app-builder", "reverse-engineer-anything", "landing-page-builder", "study-planner"))
+            assertTrue(s, shelf.contains("- $s: "))
     }
 
     @Test fun intentRules() {

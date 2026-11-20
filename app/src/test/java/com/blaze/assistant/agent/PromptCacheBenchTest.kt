@@ -79,7 +79,7 @@ class PromptCacheBenchTest {
             s("phone_state", PhoneState.RULE)
             turn("make", if (prof.terminal) lit("turn", "terminal") + lit("turn", "make") else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             slow("about", "\nABOUT YOU: ${BrandName.NAME} family. You are ${BrandName.NAME} for Android v0.45.1 (build 149). Paired PC: none. ${BrandName.NAME} account: signed in. " + filler("about", 300))
-            turn("skills", "\nSKILLS that may fit this request: " + filler("skill${live.turn}", 600))
+            slow("skills", SkillShelf.HEAD + filler("shelf", 5_500))   // 2026-11-20: the skill shelf, same every turn
             s("identity", Duo.IDENTITY_RULES); s("context_rule", TurnContext.RULE)   // the shared persona carries the assistant rules
         }
     }

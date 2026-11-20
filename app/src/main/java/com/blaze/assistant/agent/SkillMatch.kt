@@ -3,13 +3,17 @@ package com.blaze.assistant.agent
 import java.io.File
 
 /**
- * Skills on every turn (v0.23.0). Blazeinchue's rule: before each turn's first model call, Argus looks up the
+ * 2026-11-20: the per-turn pick by words is retired (docs/SKILL-SHELF.md); [SkillShelf] lists every skill and the model
+ * chooses. What's left here: reading skills off the phone ([candidates] / [cached]), [find] for find_skill, and [match] /
+ * [block] for a matched specialist's packs and the "is this task covered by a skill" count.
+ *
+ * Before (v0.23.0, Blazeinchue's rule: before each turn's first model call, Argus looks up the
  * skills related to the request. No extra model call: a keyword score over each skill's name,
  * description and keywords (front-matter `tags:` / `keywords:`), across bundled skills (assets/skills),
  * the user's own (~/skills) and learned ones (Learning, skills.json). Disabled skills never match.
  *
  * The top 1-3 go into the prompt in full within a character budget; the other matches by name only.
- * The agent shows "Skills: …" on the work card. [match] and [block] are pure (SkillMatchTest).
+ * The agent shows "Skills: …" on the work card.) [match] and [block] are pure (SkillMatchTest).
  */
 object SkillMatch {
     data class Cand(val name: String, val description: String, val keywords: List<String>, val body: String,
@@ -90,14 +94,6 @@ object SkillMatch {
     /** v0.30.4: per-turn bar for a skill body in full: score ≥ 5 from ≥ 2 distinct query words. */
     const val FULL_MIN = 5
     const val FULL_WORDS = 2
-    /** v0.30.4: a learned (recorded) skill joins a plain device action only on this strong a match. */
-    const val STRONG = 6
-
-    /** For a plain device action: only the user's own learned skills on a strong match (they replay in seconds). */
-    fun learnedOnly(query: String, cands: List<Cand> = cached()): Result = try {
-        match(query, cands.filter { it.source == "learned" }, maxFull = 1, minScore = STRONG, fullMin = STRONG, fullWords = FULL_WORDS, maxOthers = 2)
-    } catch (_: Throwable) { Result.NONE }
-
     /** The prompt block for a [Result] ("" when nothing matched). */
     fun block(r: Result): String {
         if (r.isEmpty) return ""
@@ -159,26 +155,9 @@ object SkillMatch {
         cache?.takeIf { now - it.first < 20_000 }?.second ?: candidates().also { cache = now to it }
     } catch (_: Throwable) { emptyList() }
 
-    // v0.26.1: an in-chat diagram / chart doesn't pull in the file-route skills (VisualRoute); it's drawn in the reply.
-    fun forTurn(query: String): Result = try {
-        // v0.33.3: "list my apps" is about the phone (list_apps), never a skill whose words overlap (product-listing).
-        if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) Result.NONE else selectForTurn(query, VisualRoute.filter(query, cached()))
-    } catch (_: Throwable) { Result.NONE }
-
-    /**
-     * 0.50.0: the per-turn pick, pure. Nothing unless the message clearly asks for a task ([SkillIntent.taskIntent]); then only
-     * strong hits (SkillGuard) scoring ≥ [SkillIntent.TURN_MIN], at most [SkillIntent.MAX_NAMES] in total.
-     */
-    fun selectForTurn(query0: String, cands: List<Cand>): Result {
-        if (!SkillIntent.taskIntent(query0)) return Result.NONE
-        // 0.53.3: product / model names never pick a skill (SkillGuard.unnamed); the user naming a skill still does.
-        val query = SkillGuard.unnamed(query0)
-        val r = match(query, cands.filter { SkillGuard.strongHit(query, it) }, minScore = SkillIntent.TURN_MIN, fullMin = FULL_MIN, fullWords = FULL_WORDS, maxOthers = 4)
-        val full = r.full.take(SkillIntent.MAX_NAMES)
-        return Result(full, r.others.take((SkillIntent.MAX_NAMES - full.size).coerceAtLeast(0)))
-    }
-
     fun invalidate() { cache = null; index = null }
+    // 2026-11-20 skill shelf: forTurn / selectForTurn / lookupBlock / learnedOnly (the per-turn pickers) are gone; the model
+    // sees every skill on SkillShelf and reads one itself. match / block stay for a specialist's packs and the Freq check.
 
     // ---------------- v0.26.2: skills by lookup (SkillIndex, Desktop's bm25 ranking) ----------------
 
@@ -197,18 +176,6 @@ object SkillMatch {
         index?.takeIf { it.first == sig }?.let { return it.second }
         return indexOf(cands).also { index = sig to it }
     }
-
-    /** The per-turn skills block: the 2-3 best matches with short descriptions and one line about find_skill. No name list. */
-    fun lookupBlock(query: String, skip: Set<String> = emptySet()): String = if (com.blaze.assistant.phone.AppFinder.isAppsAsk(query)) "" else try {
-        // 0.50.0: no "best matches" for a message that doesn't ask for a task (small talk, a status update); just the find_skill line.
-        val cands = VisualRoute.filter(query, cached())
-        if (!SkillIntent.taskIntent(query)) SkillIndex.promptBlock(index(cands), "") else {
-            // v0.30.5: skills that only share a stray word with the request are never suggested (SkillGuard.strongHit).
-            val q = SkillGuard.unnamed(query)
-            val weak = cands.filter { !SkillGuard.strongHit(q, it) && !SkillGuard.overlap(query, it).named }.map { it.name }.toSet()
-            SkillIndex.promptBlock(index(cands), q, skip + weak)
-        }
-    } catch (_: Throwable) { "" }
 
     /** find_skill: search every enabled skill. */
     fun find(query: String): String = try { SkillIndex.findLine(index(), query) } catch (e: Throwable) { "Error: ${e.message}" }

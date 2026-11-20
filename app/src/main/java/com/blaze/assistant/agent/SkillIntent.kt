@@ -9,7 +9,8 @@ package com.blaze.assistant.agent
  *    "I want you to…"), a how-to ("how do I…"), or a question that names a task verb;
  *  - a terse subject-less request ("flashcards on photosynthesis") counts as a command;
  *  - the user naming a skill ("use the tutor skill") always counts.
- * Then [SkillMatch.selectForTurn] keeps only strong matches (a real name word or ≥ 2 distinct request words, and a higher
+ * 2026-11-20: skills no longer use this (SkillShelf lists them all and the model picks); specialists still do (SpecialistMatch).
+ * Before: [SkillMatch.selectForTurn] kept only strong matches (a real name word or ≥ 2 distinct request words, and a higher
  * score) and at most [MAX_NAMES] skills in total. Pure (SkillIntentTest).
  */
 object SkillIntent {

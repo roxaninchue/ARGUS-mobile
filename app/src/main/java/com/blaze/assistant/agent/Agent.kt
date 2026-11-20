@@ -366,7 +366,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      */
     fun holding(): Holding.Snapshot {
         val s = curRef
-        return Holding.Snapshot(s?.lcSummary.orEmpty(), s?.turnGoal, s?.turnSkills?.full?.map { it.name }.orEmpty())
+        return Holding.Snapshot(s?.lcSummary.orEmpty(), s?.turnGoal, s?.skillsRead.orEmpty())
     }
 
     /** v0.45.0 (#12): idle chats leave memory (SessionTrim); they reload from disk when opened again. */
@@ -1277,7 +1277,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** Owner 2026-11-20: ARGUS's small chat kit (AgentKit), on unless switched off in Settings. */
     private fun leanChat(): Boolean = try { Settings.bool(com.blaze.assistant.team.AgentKit.PREF_LEAN, true) } catch (_: Throwable) { true }
 
-    private fun systemPrompt(userText: String, skipSkills: Set<String> = emptySet(), chatId: String = _chatId.value, fullAware: Boolean = true,
+    private fun systemPrompt(userText: String, chatId: String = _chatId.value, fullAware: Boolean = true,
                              groups: Set<String> = emptySet(), viewRouted: Boolean = false, turnKey: Long = 0L): String {
         val now = SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date())
         val name = Settings.greetName()
@@ -1359,14 +1359,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "generate_image is ONLY for art and photos; charts, graphs, tables, PDFs and documents are always made with run_code. If the terminal fails, say so plainly; never substitute an AI picture.")
             } else turn("make", if (prof.simple) PromptProfile.MAKE_SIMPLE else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             tail("setup") { SelfSetup.promptLine(app) }
-            // v0.26.2: learned skills are in the one skills lookup below (SkillMatch.lookupBlock), not a block of their own.
             tail("processes") { Processes.countLine().takeIf { it.isNotBlank() }?.let { "\nTracked now: $it (IDs via processes)." }.orEmpty() }
             slow("desktop", com.blaze.assistant.link.DesktopLink.promptLine())
             slow("about", SelfKnowledge.promptBlock(app)); slow("project", Projects.promptLine(chatId))
             if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (${BrandName.NAME}'s call screen): \"I can't hear you\" means call_control speaker on or louder." }
             tail("goals") { Autonomy.promptLine() }
-            // v0.30.4: no skills lookup for a plain device / settings action (it only ever pulled in unrelated skills).
-            if (!FastActions.plainDevice(userText)) turn("skills", SkillMatch.lookupBlock(userText, skipSkills))
+            // 2026-11-20 skill shelf (docs/SKILL-SHELF.md): every skill that's on, one line each; the model picks and reads one itself.
+            slow("skills", SkillShelf.promptBlock())
             // v0.30.5: tasks the user has Argus do often, with no skill yet, come first for a skill.
             if (Settings.autoLearn) tail("frequent") { SkillGuard.Freq.promptLine(SkillGuard.Freq.load()) }
             // v0.45.9: the assistant rules and how to use the [context] block (static). The block itself goes at the very
@@ -1611,6 +1610,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** v0.23.0: the view this turn must use (keyword classifier) and the skills looked up for it. */
         @Volatile var turnView: ViewRouter.Spec? = null
         @Volatile var turnSkills: SkillMatch.Result = SkillMatch.Result.NONE
+        /** Skills the model read (use_skill) or replayed (run_skill) for the current request: What Argus is holding. */
+        @Volatile var skillsRead: List<String> = emptyList()
         @Volatile var turnSpecs: List<Specialists.Spec> = emptyList()
         /** v0.23.2: tool calls that succeeded this turn (the claim guard checks replies against them). */
         val turnOk = java.util.Collections.synchronizedList(mutableListOf<ClaimGuard.Call>())
@@ -3038,7 +3039,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // 18 Nov 2026: the [context] block (now: line with the zone, the dates asked) closed only the else branch
                     // below (Kotlin reads `if … else a + … + block` as the else's sum), so a specialist turn never had it.
                     "\n" + TurnContextSource.block(lastUserText())
-                else systemPrompt(lastUserText(), turnSkills.full.map { it.name }.toSet(), id, awareFull,
+                else systemPrompt(lastUserText(), id, awareFull,
                     promptGroups, turnView != null || turnDesignNote.isNotEmpty(), promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
@@ -3335,8 +3336,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val dTools = par.async(Dispatchers.Default) { tools().apply { put(ToolPick.loadTool()) }.let { if (isPrivate) PrivateChat.filterTools(it) else it }
                     .let { if (Projects.of(id) == null) ProjectDocs.strip(it) else it } }
                 val dDesign = par.async { if (bulk) null else try { Designs.current() } catch (e: CancellationException) { throw e } catch (_: Exception) { null } }
-                val dSkills = par.async { SkillMatch.forTurn(userNow) }
-                val dLearned = par.async { if (plainDev0) SkillMatch.learnedOnly(userNow) else null }
                 val dSpecs = par.async {
                     val userNow = SkillGuard.unnamed(userNow)   // 0.53.3: a product name picks no specialist either
                     // 0.50.0: no specialist (and so none of its skill packs) for a message that doesn't ask for a task (SkillIntent).
@@ -3423,20 +3422,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var savedPath: String? = null   // v0.45.9: a save_file this turn; the final answer names its path
                 var turnToolCalls = 0   // v0.45.9: tools run this turn (ScheduleTruth checks only answers made from the [context] block)
                 turnView?.let { groupsOn += it.groups }
-                turnSkills = dSkills.await()
-                // v0.26.2: a phone-state question ("am I on mute?") is answered from the Phone now line: no skill packs, no tool loop.
-                val stateQ = stateQ0
-                // v0.28.4: a question about Argus itself ("take me to blaze-agent repo in github") is a docs lookup: no coding skills
-                // (≈ 6,000 chars of them were pulled in by "repo" / "github") and no Coder specialist.
-                val selfQ = selfQ0
-                if (stateQ || selfQ) turnSkills = SkillMatch.Result.NONE
-                // v0.30.4 fast actions: a plain device / settings action ("stop GitHub opening links") gets no skill packs
-                // (only a learned, replayable skill of the user's own on a strong match), no specialists, none of the heavy
-                // tool groups its words happen to hit ("github" → terminal, apps), and the screen tools up front.
-                val plainDev = plainDev0
-                if (plainDev) {
-                    turnSkills = dLearned.await() ?: SkillMatch.learnedOnly(userNow)
-                }
+                // 2026-11-20 skill shelf: no skills are guessed from the words; the model reads one from the shelf (SkillShelf).
+                // turnSkills only carries a matched specialist's packs; skillsRead is what the model actually read.
+                turnSkills = SkillMatch.Result.NONE; skillsRead = emptyList()
+                val stateQ = stateQ0   // v0.26.2: a phone-state question ("am I on mute?") gets the full awareness line
                 // v0.24.3 specialists: the matching specialist(s) bring their skill packs and the delegate tool.
                 val lateSteps = ArrayList<String>()   // v0.45.3: optional look-ups that missed their PreBudget
                 turnSpecs = PreBudget.within(dSpecs, PreBudget.SPECS_MS, emptyList(), "specialists") { lateSteps += it }
@@ -4904,15 +4893,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return m.call(t, args)
         }
 
-        /**
-         * v0.30.5 SkillGuard: use_skill / run_skill only for a skill about what the user is asking (their last few
-         * messages, so "yes, do it" still carries the request). Null to go ahead, else the refusal the model reads.
-         */
-        private fun skillGate(name: String, args: JSONObject): String? {
-            if (name != "use_skill" && name != "run_skill") return null
-            if (lastUserText().startsWith("[Scheduled routine") || agentId != null) return null   // a routine / background agent names its own skills
-            val request = msgs.filter { it.role == Role.USER }.takeLast(3).joinToString(" ") { it.text.take(600) }
-            return try { SkillGuard.gate(args.optString("name"), request, args.optString("reason"), SkillMatch.cached()) } catch (_: Throwable) { null }
+        /** 2026-11-20 skill shelf: a skill the model read or replayed is remembered for Holding (no gate: the model chose it). */
+        private fun noteSkill(args: JSONObject, result: String): String {
+            val n = args.optString("name").trim()
+            if (n.isNotEmpty() && !SkillPacks.notRead(result)) skillsRead = (skillsRead + n).distinct()
+            return result
         }
 
         /** Wi-Fi or another unmetered network (speculative fetches only run there). */
@@ -5255,9 +5240,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     try { kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.phone.AndroidControl.run(app, name, a2) } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
                 in SkillPacks.names -> {
-                    skillGate(name, args)?.let { return it }
                     add(Role.STEP, when (name) { "use_skill" -> "Reading skill \u201c${args.optString("name")}\u201d"; "install_skill" -> "Installing skills"; "write_skill" -> "Saving a skill"; "save_workflow" -> "Saving a workflow"; else -> "Reading a skill file" })
-                    try { SkillPacks.run(name, args) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
+                    try { SkillPacks.run(name, args).let { if (name == "use_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
                 "watch" -> { add(Role.STEP, "Setting a watcher"); com.blaze.assistant.phone.Watchers.run(args) }
                 "goal" -> { add(Role.STEP, if (args.optString("action") == "add") "Planning \u201c${args.optString("title").take(40)}\u201d" else "Updating the plan"); Autonomy.goal(args) }
@@ -5279,9 +5263,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     com.blaze.assistant.update.Updater.fromTool(app, args.optBoolean("install", true))
                 }
                 in Learning.toolNames -> {
-                    skillGate(name, args)?.let { return it }
                     add(Role.STEP, when (name) { "run_skill" -> "Replaying skill \"${args.optString("name")}\""; "skill_manage" -> "Saving a skill"; else -> "Searching past chats" })
-                    try { Learning.run(app, name, args) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
+                    try { Learning.run(app, name, args).let { if (name == "run_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
                 "search_screen_memory" -> { add(Role.STEP, "Searching screen memory"); ScreenMemory.search(app, args.optString("query"), args.optString("app").ifBlank { null }) }
                 "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.blaze.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }

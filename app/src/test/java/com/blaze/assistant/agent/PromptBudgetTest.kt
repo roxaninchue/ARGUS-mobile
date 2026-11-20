@@ -16,7 +16,7 @@ import java.io.File
  * v0.28.4 audit: the prompt carries a pinned core + a subject index + lookup tools, never the whole memory or the docs.
  * With 500 memories and every doc indexed in blaze.db, the memory/docs part of the system prompt grows by far less
  * than the 6k-token budget compared with an empty store, and none of the docs text or the unpinned memories is in it.
- * Skills: only the matched ones are injected, within SkillMatch's budget; core skills stay within theirs.
+ * Skills: one line each on the shelf (SkillShelf, within its budget); a specialist's packs within SkillMatch's; core skills within theirs.
  */
 class PromptBudgetTest {
     private val sqls = ArrayList<Sql>()
@@ -134,9 +134,10 @@ class PromptBudgetTest {
         val block = SkillMatch.block(SkillMatch.match(broad, cands))
         assertTrue("${block.length} chars", block.length <= SkillMatch.BUDGET_CHARS + SkillMatch.MAX_FULL * 120 + 400)
         assertTrue("all skills are $all chars; one turn gets ${block.length}", block.length * 5 < all)
-        // The always-on lookup line is a few short descriptions, not the library.
-        val lookup = SkillIndex.promptBlock(SkillMatch.indexOf(cands), broad)
-        assertTrue("${lookup.length} chars", lookup.length < 1_200)
+        // 2026-11-20: the always-on skill shelf is one line per skill, within its budget, and far smaller than the library.
+        val shelf = SkillShelf.block(cands)
+        assertTrue("${shelf.length} chars", shelf.length <= SkillShelf.BUDGET_CHARS)
+        assertTrue("all skills are $all chars; the shelf is ${shelf.length}", shelf.length * 10 < all)
         // Core skills' pinned rules stay within their budget.
         val core = CoreSkills.block(CoreSkills.NAMES.associateWith { File(root, "$it/SKILL.md").readText() })
         assertTrue("${core.length} chars", core.length <= CoreSkills.BUDGET_CHARS)

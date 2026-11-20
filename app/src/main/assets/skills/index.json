@@ -38,8 +38,8 @@
     },
     {
       "name": "skill-creator",
-      "version": 2,
-      "sha256": "0d02bd7e76e19954f471d96a5ee7055a12641d2bf4faee23f99282bf1130db30"
+      "version": 3,
+      "sha256": "262097bea5cd4ee31f1f3920716e5192e09213b66415b1dfdd149772454e81d5"
     },
     {
       "name": "code-review",
@@ -279,8 +279,8 @@
     },
     {
       "name": "blaze-workflow-builder",
-      "version": 1,
-      "sha256": "6aa9df388df91d40b0f4214f16b877809f42b624dd23f66eb9412cd174776c61"
+      "version": 2,
+      "sha256": "3633a21d2f137be7c7b9c83964118be9cc655599cf994263eb6be4af53e03f59"
     },
     {
       "name": "blaze-specialists",

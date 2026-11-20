@@ -52,7 +52,7 @@ object SkillPacks {
      * System prompt block. With a handful of skills, names and one-line descriptions; with more,
      * the ones that match this request in full plus the rest by name only (like Argus Desktop).
      * Skills switched off in Settings are left out.
-     * v0.26.2: no longer sent each turn (SkillMatch.lookupBlock replaces it); kept for /skills-style listings.
+     * v0.26.2: no longer sent each turn (2026-11-20: SkillShelf is the per-turn list); kept for /skills-style listings.
      */
     fun promptBlock(query: String = ""): String {
         // v0.26.1: an in-chat diagram / chart leaves out the file-route skills (VisualRoute).
@@ -69,12 +69,30 @@ object SkillPacks {
     }
 
     fun use(name: String): String {
-        val p = find(name) ?: return "No skill \u201c$name\u201d. Installed: ${all().joinToString { it.name }.ifBlank { "none" }}."
+        // 2026-11-20 skill shelf: learned skills are on the shelf too, so use_skill reads them (run_skill replays their taps).
+        val p = find(name) ?: return learned(name)?.let { learnedText(it) } ?: "No skill \u201c$name\u201d. Installed: ${all().joinToString { it.name }.ifBlank { "none" }}."
         if (!SkillLibrary.isOn(p.dir.name)) return "The skill ${p.name} is switched off in Settings \u203a Skill library. Do the task without it."
         val body = File(p.dir, "SKILL.md").readText()
         val files = p.dir.walkTopDown().filter { it.isFile && it.name != "SKILL.md" }.map { it.relativeTo(p.dir).path }.take(30).toList()
         return body.take(12_000) + (if (files.isNotEmpty()) "\n\nFiles in this skill (folder ~/skills/${p.dir.name}/; read with skill_file, run scripts with run_shell): ${files.joinToString()}" else "")
     }
+
+    private fun learned(name: String): Learning.Skill? = try {
+        Learning.skills.value.firstOrNull { it.name.equals(name.trim(), true) }
+    } catch (_: Throwable) { null }
+
+    /** A learned skill as use_skill reads it. Pure. */
+    fun learnedText(s: Learning.Skill): String = buildString {
+        append("# ${s.name} (learned)\n")
+        if (s.description.isNotBlank()) append(s.description.trim()).append("\n")
+        if (s.whenToUse.isNotBlank()) append("When: ${s.whenToUse.trim()}\n")
+        if (s.steps.isNotBlank()) append("\n").append(s.steps.trim()).append("\n")
+        if (s.replay != null) append("\nrun_skill ${s.name} replays the recorded phone steps.")
+    }.trimEnd()
+
+    /** A use_skill / run_skill result that read nothing (unknown, switched off, failed). */
+    fun notRead(result: String): Boolean = result.startsWith("No skill") || result.startsWith("The skill ") ||
+        result.startsWith("Error") || result.startsWith("Phone control is off")
 
     fun file(name: String, path: String): String {
         val p = find(name) ?: return "No skill \u201c$name\u201d."
@@ -131,7 +149,7 @@ object SkillPacks {
         SkillMatch.invalidate()
         return "Workflow ${slug(name)} ${if (existed) "updated" else "saved"} [ID ${Processes.idFor("skill", d.name)}]" +
             (if (tested) ". It's marked tested." else ". Test it once by following the steps, then save again with tested=true.") +
-            " It's looked up automatically when a request matches its trigger."
+            " It's on your SKILLS list from the next message, shown by its trigger."
     }
 
     fun delete(dirName: String) = SkillLibrary.delete(dirName)
@@ -310,15 +328,15 @@ object SkillPacks {
     private fun str(d: String = "") = JSONObject().put("type", "string").apply { if (d.isNotBlank()) put("description", d) }
 
     fun tools(): List<JSONObject> = listOf(
-        fn("use_skill", "Read a skill's full instructions (SKILL.md) before a task it covers. Only for a skill that is about what the user asked; unrelated skills are refused.",
-            JSONObject().put("name", str()).put("reason", str("Only after a refusal: how this skill applies to the request")), listOf("name")),
-        fn("find_skill", "Search all installed and learned skills by what you need to do (best matches first, with descriptions). Use it when the skills listed this turn don't fit.",
+        fn("use_skill", "Read a skill's full instructions (its SKILL.md, or a learned skill's steps) by its name from the SKILLS list, before a task it covers.",
+            JSONObject().put("name", str("The skill's name as listed")), listOf("name")),
+        fn("find_skill", "Search installed and learned skills by what you need to do (best matches first, with descriptions).",
             JSONObject().put("query", str("What the task is about, in plain words")), listOf("query")),
         fn("skill_file", "Read an extra file from a skill (reference or script).", JSONObject().put("name", str()).put("path", str()), listOf("name", "path")),
         fn("install_skill", "Install skills from a GitHub folder/repo link, a SKILL.md link, or a .zip URL.", JSONObject().put("url", str()), listOf("url")),
         fn("write_skill", "Save a procedure you worked out as a skill (SKILL.md) for next time.",
             JSONObject().put("name", str()).put("description", str("When to use it, one line")).put("instructions", str("Markdown steps")), listOf("name", "description", "instructions")),
-        fn("save_workflow", "Save a multi-step or recurring task as a reusable workflow (a user skill with trigger, steps and checks). It is looked up automatically next time a request matches. Save again with the same name to fix or mark it tested.",
+        fn("save_workflow", "Save a multi-step or recurring task as a reusable workflow (a user skill with trigger, steps and checks). It shows in your SKILLS list from the next message. Save again with the same name to fix or mark it tested.",
             JSONObject().put("name", str("short-kebab-name")).put("trigger", str("When to use it, in the user's words"))
                 .put("steps", str("Numbered steps, one action each, with the tool to use")).put("checks", str("How to know it worked, one per line"))
                 .put("tags", JSONObject().put("type", "array").put("items", str()).put("description", "Words people would type for it"))

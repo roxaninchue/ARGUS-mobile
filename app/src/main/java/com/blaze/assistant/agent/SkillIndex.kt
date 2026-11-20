@@ -5,8 +5,8 @@ import kotlin.math.ln
 /**
  * v0.26.2 skills and tools by lookup. A small full-text index ranked exactly like Argus Desktop's store
  * (internal/store: FTS5 bm25 over name / description / when-to-use, weights 10 / 5 / 1; tools 10 / 3 / 2 over
- * name / description / group), so each turn's prompt carries only the 2-3 best skills with a short description
- * instead of every skill name. It lives in memory and is rebuilt whenever the skill set changes (install,
+ * name / description / group). It backs find_skill and find_tool (2026-11-20: the per-turn "best matches" block is gone;
+ * SkillShelf lists every skill instead). It lives in memory and is rebuilt whenever the skill set changes (install,
  * toggle, learn, delete): SkillMatch keys it on a signature of the candidates.
  *
  * Desktop's own SQLite FTS5 store (store/BlazeDb.kt) needs a bundled SQLite on Android; until memory moves
@@ -18,9 +18,6 @@ object SkillIndex {
 
     const val K1 = 1.2
     const val B = 0.75
-    /** Skills that go into the prompt each turn. */
-    const val PROMPT_MAX = 3
-    const val DESC_CHARS = 110
 
     private val stop = ("a an and are as at be but by can could did do does for from had has have he her his how i if in into is it its just me my no not of on or our she so " +
         "than that the their them then there these they this to too up us was we were what when where which who why will with would you your yes ok okay please thanks " +
@@ -69,27 +66,6 @@ object SkillIndex {
 
     /** Tools: name ×10, description ×3, group ×2 (Desktop's bm25(tools_fts, 0, 10, 3, 2)). */
     fun tools(docs: List<Doc>) = Index(docs, doubleArrayOf(10.0, 3.0, 2.0))
-
-    /**
-     * The per-turn skills block: the [PROMPT_MAX] best matches (skipping [skip], the ones already attached in full)
-     * with a short description, and one line on searching for more. No list of names. "" when no skills exist.
-     */
-    fun promptBlock(index: Index, query: String, skip: Set<String> = emptySet(), max: Int = PROMPT_MAX): String {
-        if (index.docs.isEmpty()) return ""
-        val low = skip.map { it.lowercase() }.toSet()
-        val hits = if (query.isBlank()) emptyList() else index.search(query, max + low.size).map { it.first }.filter { it.key.lowercase() !in low }.take(max)
-        return buildString {
-            append("\nSKILLS: ")
-            if (hits.isNotEmpty()) {
-                append("best matches for this request (read one with use_skill before a task it covers):\n")
-                hits.forEach { d ->
-                    val desc = d.fields.getOrNull(1).orEmpty().replace(Regex("\\s+"), " ").trim()
-                    append("- ${d.label.ifBlank { d.key }}: ${if (desc.length > DESC_CHARS) desc.take(DESC_CHARS - 1).trimEnd() + "…" else desc}${d.note}\n")
-                }
-                append("Use use_skill / find_skill to search for more.")
-            } else append("use_skill / find_skill to search for more (${index.docs.size} installed).")
-        }
-    }
 
     /** find_skill's answer: up to [limit] matches with their descriptions. */
     fun findLine(index: Index, query: String, limit: Int = 8): String {
