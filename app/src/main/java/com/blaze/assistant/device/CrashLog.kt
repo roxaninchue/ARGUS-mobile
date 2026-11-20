@@ -18,7 +18,16 @@ object CrashLog {
 
     private lateinit var dir: File
 
+    /**
+     * 0.54.x (20 Nov report, Galaxy A12: "CRASH (previous run, crash)" and no line, three memory trims before it): when
+     * the heap is full, even the fallback line can't be built. This reserve is let go first in the crash handler, so
+     * the CRASH line always has room to be written.
+     */
+    @Volatile private var reserve: ByteArray? = null
+    private fun freeReserve() { reserve = null }
+
     fun init(ctx: Context) {
+        try { if (reserve == null) reserve = ByteArray(256 * 1024) } catch (_: Throwable) { }
         file = File(ctx.filesDir, "blaze_log.txt")
         dir = ctx.filesDir
         // 0.46.6: the vault file is known before the crash handler and the last-exit check run (the Agent sets it later),
@@ -26,6 +35,7 @@ object CrashLog {
         try { if (com.blaze.assistant.agent.SecretVault.file == null) com.blaze.assistant.agent.SecretVault.file = File(ctx.filesDir, "secret_vault.json") } catch (_: Throwable) { }
         val prev = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            freeReserve()
             // 0.54.2: an OutOfMemoryError can fail the full trace (16 Nov report: "CRASH (previous run, crash)" and no line);
             // then at least its type and top frames are written.
             try { writeNow("CRASH on ${t.name}: ${android.util.Log.getStackTraceString(e).take(6000)}"); markPending() } catch (_: Throwable) {
@@ -81,12 +91,19 @@ object CrashLog {
     fun dismissReport() { try { if (::dir.isInitialized) File(dir, "blaze_crash_pending").delete() } catch (_: Throwable) { } }
     @Volatile var pendingChanged: (() -> Unit)? = null
 
-    /** Pure: the log line for a previous run's exit record, or null when it wasn't a crash / ANR. */
-    fun exitLine(reason: Int, description: String?, trace: String?, during: String?, names: Collection<String>): String? {
+    /**
+     * Pure: the log line for a previous run's exit record, or null when it wasn't a crash / ANR. [pssKb] / [rssKb] are the
+     * record's memory at exit (0 = unknown) and [background] whether Argus wasn't on screen, so a crash with no
+     * description still says whether memory was the likely cause.
+     */
+    fun exitLine(reason: Int, description: String?, trace: String?, during: String?, names: Collection<String>,
+                 pssKb: Long = 0, rssKb: Long = 0, background: Boolean? = null): String? {
         val kind = when (reason) { 4 -> "native crash"; 5 -> "crash"; 6 -> "ANR"; else -> return null }   // ApplicationExitInfo.REASON_CRASH_NATIVE / CRASH / ANR
         val sb = StringBuilder("CRASH (previous run, $kind)")
         if (!description.isNullOrBlank()) sb.append(": ").append(description.take(300))
         if (!during.isNullOrBlank()) sb.append(" | while running: ").append(during.take(300))
+        if (pssKb > 0 || rssKb > 0) sb.append(" | memory at exit: pss ").append(pssKb / 1024).append(" MB, rss ").append(rssKb / 1024).append(" MB")
+        if (background != null) sb.append(if (background) " | in the background" else " | on screen")
         if (!trace.isNullOrBlank()) sb.append("\n").append(trace.take(6000))
         return redact(scrubSecrets(sb.toString()), names)
     }
@@ -110,7 +127,8 @@ object CrashLog {
             list.maxOfOrNull { it.timestamp }?.let { seenF.writeText(it.toString()) }
             list.sortedBy { it.timestamp }.forEach { x ->
                 val trace = if (x.reason == 4 || x.reason == 6) try { x.traceInputStream?.use { head(it, 12_000) } } catch (_: Throwable) { null } else null
-                exitLine(x.reason, x.description, trace?.replace("\u0000", "")?.trim(), during, secrets)?.let { writeNow(it); wrote = true }
+                exitLine(x.reason, x.description, trace?.replace("\u0000", "")?.trim(), during, secrets,
+                    x.pss, x.rss, x.importance > android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE)?.let { writeNow(it); wrote = true }
             }
         }
         if (!wrote && during != null) { writeNow(redact(scrubSecrets("CRASH (previous run ended while running: $during)"), secrets)); wrote = true }
@@ -152,7 +170,7 @@ object CrashLog {
                 try { android.os.Looper.loop() } catch (e: Throwable) {
                     val now = System.currentTimeMillis()
                     recent.addLast(now); while (recent.isNotEmpty() && now - recent.first() > 10_000) recent.removeFirst()
-                    if (recent.size >= 5 || e is OutOfMemoryError) { writeNow("CAUGHT on main (giving up): ${android.util.Log.getStackTraceString(e).take(4000)}"); throw e }
+                    if (recent.size >= 5 || e is OutOfMemoryError) { freeReserve(); writeNow("CAUGHT on main (giving up): ${android.util.Log.getStackTraceString(e).take(4000)}"); throw e }
                     write("CAUGHT on main: ${android.util.Log.getStackTraceString(e).take(4000)}")
                     try { com.blaze.assistant.agent.Agent.reportError(lineFor(e, kept = true)) } catch (_: Throwable) { }
                 }

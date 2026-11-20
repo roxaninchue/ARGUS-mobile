@@ -1,3 +1,10 @@
+## Unreleased: crash log always writes the crash line
+
+2026-11-20 report (0.54.0, Galaxy A12, Android 12): three memory trims, then "CRASH (previous run, crash)" with no description and no CRASH line from the handler, so nothing said what died.
+- **Memory reserve** (`device/CrashLog.kt`): 256 KB held from `init`, let go first in the uncaught-exception handler and before the main-thread "giving up" line, so a full heap can't stop the CRASH line being written.
+- **Exit record says more**: the next-launch line adds memory at exit (pss / rss from ApplicationExitInfo) and whether Argus was on screen or in the background, so a bare crash still shows if memory was the likely cause.
+- Tests: CrashMemoryTest (2, new).
+
 ## Unreleased: specialist shelf (round 5) and shelf cost
 
 2026-11-20, design and numbers in docs/SKILL-SHELF.md §13 (MODEL-FIRST round 5). Specialists were still picked for each message from its words (`SpecialistMatch`, gated by the `SkillIntent` task regex), and both shelves cost more per request than they needed to.
