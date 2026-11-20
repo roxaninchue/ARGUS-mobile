@@ -56,7 +56,9 @@ object Policy {
     }
 
     /** One tool call: its name, class, and whether it can be undone (the Autopilot Undo bar). */
-    data class Call(val tool: String, val cls: ActionClass, val selfCard: Boolean = false, val undoable: Boolean = false)
+    data class Call(val tool: String, val cls: ActionClass, val selfCard: Boolean = false, val undoable: Boolean = false,
+                    /** Owner 2026-11-20: a shell command kept to the terminal sandbox (CommandPolicy.inSandbox); runs with no card. */
+                    val sandbox: Boolean = false)
 
     /** The MCP side: the tool's Ask / Always / Off override ("" = default) and whether McpConfig says it needs a tap. */
     data class Mcp(val mode: String, val needsApproval: Boolean)
@@ -156,6 +158,8 @@ object Policy {
 
         // 3. the tool is its own card
         if (call.selfCard) return Decision.Allow(Reason.SELF_CARD)
+        // 3b. owner 2026-11-20: work inside the terminal sandbox runs free (checkpoints are the safety net); Plan / Assist / NEVER above still hold
+        if (call.sandbox && c == ActionClass.WRITE_LOCAL) return Decision.Allow(Reason.RULE)
 
         val note = x.tainted?.let { "Requested after reading $it." }
 

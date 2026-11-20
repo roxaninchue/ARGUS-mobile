@@ -127,7 +127,8 @@ object JobsRuntime {
                 }
             }
             queue = JobQueue(store, g.store, runner, cap = { cap }, busy = { g.threads.isRunning(it) })
-            val tools = JobTools(store, queue, g.store, current = { jobOfChat(it) }, changed = { kick() })
+            val tools = JobTools(store, queue, g.store, current = { jobOfChat(it) }, changed = { kick() },
+                watch = { id, after -> g.threads.since(id, after) })
             val manager = ManagerTools(g.store, store, chatLog, teamNotes,
                 onAsk = { _pendingDelete.value = it },
                 onUndo = { label, undo -> UndoCenter.offer(label, undo) },

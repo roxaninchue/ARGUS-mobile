@@ -1,6 +1,7 @@
 package com.blaze.assistant.policy
 
 import com.blaze.assistant.agent.CommandPolicy
+import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.team.ActionClass
 import com.blaze.assistant.team.Autonomy
 import com.blaze.assistant.team.Bot
@@ -26,11 +27,18 @@ object PolicyCalls {
             return Classed(Policy.Call(tool, cls))
         }
         commandOf(tool, a)?.let { (kind, text) ->
-            if (text.isNotBlank()) return Classed(Policy.Call(tool, CommandPolicy.actionClass(kind, text)), CommandPolicy.level(kind, text), CommandPolicy.key(kind, text))
+            if (text.isNotBlank()) {
+                val free = kind == CommandPolicy.Kind.SHELL && sandboxFree() && CommandPolicy.inSandbox(text)
+                val lvl = if (free) CommandPolicy.Level.SAFE else CommandPolicy.level(kind, text)
+                // owner 2026-11-20: a sandboxed shell command is local work in ARGUS's own terminal, never a card
+                return Classed(Policy.Call(tool, if (free) ActionClass.WRITE_LOCAL else CommandPolicy.actionClass(kind, text), sandbox = free), lvl, CommandPolicy.key(kind, text))
+            }
         }
         val cls = ToolRegistry.classOf(tool) { k -> a.optString(k) } ?: ToolRegistry.UNDECLARED
         return Classed(Policy.Call(tool, cls, selfCard = ToolRegistry.selfCard(tool)))
     }
+
+    private fun sandboxFree(): Boolean = try { Settings.bool(CommandPolicy.PREF_FREE, true) } catch (_: Throwable) { true }
 
     /** The command a shell / git call runs (kind + text), or null. A git call with a named action uses the registry. */
     fun commandOf(tool: String, a: JSONObject): Pair<CommandPolicy.Kind, String>? = when (tool) {

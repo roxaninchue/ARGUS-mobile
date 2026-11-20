@@ -176,10 +176,37 @@ class JobQueue(
  */
 class JobTools(private val store: JobStore, private val queue: JobQueue, private val team: TeamStore,
                private val current: (chatId: String) -> String? = { null }, private val today: () -> LocalDate = { LocalDate.now() },
-               private val changed: () -> Unit = {}) {
+               private val changed: () -> Unit = {},
+               /** Owner 2026-11-20: a bot's transcript rows changed after a revision (BotThreads.since), for agent_watch. */
+               private val watch: ((botId: String, after: Long) -> List<Row>)? = null) {
 
     companion object {
-        val NAMES = setOf("add_job", "done_job", "update_job", "agent_delegate", "retry_job", "agent_status", "create_task", "update_task")
+        val NAMES = setOf("add_job", "done_job", "update_job", "agent_delegate", "retry_job", "agent_status", "create_task", "update_task", WATCH)
+        const val WATCH = "agent_watch"
+
+        /**
+         * Owner 2026-11-20 ("Argus or whichever agent triggered terminal can monitor the work closely"): an agent's live
+         * steps after revision [after], newest last: each command / tool with its state and the tail of its output, and
+         * what it said. Ends with "next=<rev>" so the watcher asks only for what is new. Pure.
+         */
+        fun watchText(name: String, rows: List<Row>, after: Long, running: Boolean, tail: Int = 600): String {
+            if (rows.isEmpty()) return "$name: nothing new" + (if (running) " (still working)" else " (idle)") + ". next=$after"
+            val lines = rows.sortedBy { it.seq }.takeLast(12).map { r ->
+                val b = try { org.json.JSONObject(r.body) } catch (_: Exception) { org.json.JSONObject() }
+                when (r.kind) {
+                    "tool-call" -> {
+                        val args = b.optJSONObject("args")
+                        val what = args?.optString("command")?.takeIf { it.isNotBlank() } ?: args?.toString()?.take(160).orEmpty()
+                        val out = b.optString("output").trim().takeIf { it.isNotEmpty() }?.let { o -> "\n    " + (if (o.length > tail) "…" + o.takeLast(tail) else o).replace("\n", "\n    ") }.orEmpty()
+                        "▸ ${b.optString("name")} [${b.optString("state")}] ${what.take(200)}$out"
+                    }
+                    "message" -> "“" + b.optString("text").take(400) + "”"
+                    else -> b.optString("text").take(300)
+                }
+            }
+            val next = rows.maxOf { it.updatedSeq }
+            return "$name " + (if (running) "(working)" else "(idle)") + ":\n" + lines.joinToString("\n") + "\nnext=$next"
+        }
         const val CHAT_PREFIX = "job-"
 
         /** The job a job chat is running ("job-<id>-<n>", JobsRuntime names them so), or null. */
@@ -204,6 +231,8 @@ class JobTools(private val store: JobStore, private val queue: JobQueue, private
             linkedMapOf("id" to str("Job id"), "title" to str(""), "due" to str("Due words"), "priority" to str("high, normal or low"), "notes" to str(""),
                 "agent" to str("Bot name"), "status" to str("cancelled to cancel")), listOf("id")),
         fn("retry_job", "Put a failed or waiting job back in the queue now.", linkedMapOf("id" to str("Job id")), listOf("id")),
+        fn(WATCH, "Watch an agent's work live: its latest commands and tool calls with their output, and what it said. Pass after=<next> from the last watch to get only what is new. Use it to follow a job you handed off (a build, an install) and step in with message or update_job.",
+            linkedMapOf("agent" to str("Bot name"), "after" to str("The next= value from your last watch (empty: the latest steps)")), listOf("agent")),
         fn("agent_status", "A bot's recent jobs and how each went; with no agent, the whole team's.", linkedMapOf("agent" to str("Bot name (empty: the whole team)")), emptyList()),
         fn("create_task", "Add a step to the job you are running (shows in its progress).", linkedMapOf("title" to str("The step")), listOf("title")),
         fn("update_task", "Mark a step of your job done or failed.", linkedMapOf("step" to str("Step number"), "status" to str("done, failed or in_progress")), listOf("step", "status")),
@@ -265,6 +294,13 @@ class JobTools(private val store: JobStore, private val queue: JobQueue, private
                 val id = s("id")?.removePrefix("#") ?: return "Error: which job? Give its id."
                 val j = queue.retry(id) ?: return "Error: no job #$id."
                 when (j.run) { JobRun.RUNNING -> "${label(j)} is running now."; JobRun.DONE -> "${label(j)} is already done."; else -> "${label(j)} is back in the queue." }
+            }
+            WATCH -> {
+                val b = bot(s("agent")) ?: return "Error: there's no bot called \"${s("agent")}\" on the team."
+                val w = watch ?: return "Error: watching isn't available here."
+                val after = s("after")?.toLongOrNull() ?: 0L
+                val running = store.all().any { it.botId == b.id && it.run == JobRun.RUNNING }
+                watchText(b.name, w(b.id, after), after, running)
             }
             "agent_status" -> {
                 fun line(j: Job, withWho: Boolean) = "${label(j)}" + (if (withWho) " (${who(j)})" else "") + ": ${j.status}" +
