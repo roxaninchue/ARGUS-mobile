@@ -1,3 +1,13 @@
+## Unreleased: agents and teams
+
+2026-11-20, owner's list. ARGUS doubles as an agent team app.
+- **Lean chat kit** (`team/AgentKit.CHAT_CORE`, `ToolPick.core(simple, lean)`, Settings `lean_chat`, on by default): ARGUS carries quick browsing, memory, phone basics and the team tools in chat; everything else stays one `load_tools` / `find_tool` away (steered, not removed).
+- **Steering** (`AgentKit.STEER`, main chat only): for work likely to come back, make an agent with the few tool groups it needs and hand it the job; reuse one from `agents_list`; heavy terminal work goes to a terminal agent.
+- **ARGUS picks agents' tools, capped** (`agent_create` / `agent_update` `tools`, at most 4 groups from `AgentKit.GROUPS`, plus memory and jobs): unknown or extra groups are left out and named in the result.
+- **Terminal agents** (`terminal: true`): terminal group, label Terminal, and instructions to own long jobs in the Linux sandbox on their own (background jobs, no phone actions, short reports).
+- **Teams | Agents pill** (`ui/team/TeamView.kt`, over the Team composer): Agents is the page as before; Teams groups agents under their lead (agents reporting to another agent, or a room's members), and agents in no team keep a row with just their name.
+- Tests: AgentKitTest (4).
+
 ## Unreleased: language wheel, heads-ups pause, faster intro, forms for planning
 
 2026-11-19, owner's list.

@@ -1034,6 +1034,9 @@ fun ChatScreen() {
                 // Owner 2026-11-15: the switch folds away while the + menu is open, so nothing sits over the opened chat box.
                 if (!landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages)
                     androidx.compose.animation.AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.living.LivingSwitch() }
+                // Owner 2026-11-20: the Team page's Teams | Agents pill, the twin of Chat | Living
+                if (!landRail && nav.tab == ChatNav.TEAM)
+                    androidx.compose.animation.AnimatedVisibility(!plusOpen, enter = MotionTokens.expand(), exit = MotionTokens.collapse()) { com.blaze.assistant.ui.team.TeamSwitch() }
                 if (plusOpen) BackHandler { plusOpen = false }
                 // 0.46.0: the reply bar folded into a floating pill by the Stage (never gone): tap for the full bar.
                 if (stageActive && stage.reply == com.blaze.assistant.stage.ReplyBar.PILL) Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {

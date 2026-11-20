@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,6 +84,7 @@ fun TeamMode(
     var sheetFor by remember { mutableStateOf<Bot?>(null) }
     var confirmDelete by remember { mutableStateOf<Bot?>(null) }
     var chip by remember { mutableStateOf(TeamModel.ALL) }
+    val view by TeamView.view.collectAsState()
     fun avatar(id: String, name: String, size: Float): @Composable () -> Unit = {
         if (id == BotRules.MANAGER_ID) ManagerOrb(size.dp, contentDescription = null)
         else BotOrb(state.faces[id]?.let { OrbFace.of(it) } ?: OrbFace.forName(name), state.colors[id] ?: 0xFFCBD5E1L, size.dp)
@@ -128,7 +130,27 @@ fun TeamMode(
         state.manager?.let { m ->
             item(key = "manager") { BotChatRow(m, { nav.openBot(m.id) }, onLongClick = { longPress(m.id) }, avatar = avatar(m.id, m.name, OrbSize.MD)) }
         }
-        items(state.rows, key = { it.id }) { r ->
+        // Owner 2026-11-20: Teams groups agents under their lead; Agents lists each agent on its own row (as before)
+        if (view == TeamView.View.TEAMS) {
+            val byId = state.rows.associateBy { it.id }
+            val g = com.blaze.assistant.team.AgentKit.teams(bots.values.sortedBy { it.createdAt })
+            for (t in g.teams) {
+                item(key = "team-" + t.lead.id) {
+                    Text(tr("{0}'s team \u00b7 {1}", t.lead.name, t.members.size + if (t.lead.kind == BotKind.ROOM) 0 else 1),
+                        style = ArgusType.sub, color = c.mute, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 2.dp))
+                }
+                val rows = (if (t.lead.kind == BotKind.ROOM) emptyList() else listOf(t.lead)) + t.members
+                items(rows.mapNotNull { byId[it.id] }, key = { "t-" + t.lead.id + "-" + it.id }) { r ->
+                    Box(Modifier.padding(start = if (r.id == t.lead.id) 0.dp else 16.dp)) {
+                        BotChatRow(r, { nav.openBot(r.id) }, onLongClick = { longPress(r.id) }, avatar = avatar(r.id, r.name, OrbSize.MD))
+                    }
+                }
+            }
+            if (g.solo.isNotEmpty() && g.teams.isNotEmpty()) item(key = "solo-gap") { androidx.compose.foundation.layout.Spacer(Modifier.padding(top = 10.dp)) }
+            items(g.solo.mapNotNull { byId[it.id] }.map { it.copy(preview = "") }, key = { "s-" + it.id }) { r ->
+                BotChatRow(r, { nav.openBot(r.id) }, onLongClick = { longPress(r.id) }, avatar = avatar(r.id, r.name, OrbSize.MD))
+            }
+        } else items(state.rows, key = { it.id }) { r ->
             BotChatRow(r, { nav.openBot(r.id) }, onLongClick = { longPress(r.id) },
                 avatar = avatar(r.id, r.name, OrbSize.MD))
         }
