@@ -4,12 +4,6 @@ main = "src/index.ts"
 compatibility_date = "2025-10-01"
 account_id = "ef895b6795ee39066c863c39a42ec8b6"   # same Cloudflare account as blaze-auth
 workers_dev = true
-# v0.4.0 fast path: Smart Placement runs the Worker close to D1 and the model providers (it learns
-# from traffic) instead of at the edge nearest the phone, so the remaining D1 round trips and the
-# provider call are short hops. The phone's single trip to the Worker is the only long one.
-[placement]
-mode = "smart"
-
 # Never log request bodies: observability stays off (console.error only prints error names).
 [observability]
 enabled = false

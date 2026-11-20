@@ -10,7 +10,6 @@ Goal: cut the time before the first token without moving any provider key off th
   admin changes (incl. Clear cooldowns) drop it.
 - **`Server-Timing` header** on every chat answer: `auth`, `prep`, `upstream` (with the attempt
   count), exposed to browsers too. Read it to see where the time goes.
-- **Smart Placement** on (`[placement] mode = "smart"` in wrangler.toml).
 
 ## 0.3.1 (2026-10-16)
 
