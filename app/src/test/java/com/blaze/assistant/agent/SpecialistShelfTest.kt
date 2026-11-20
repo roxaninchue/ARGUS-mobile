@@ -23,9 +23,14 @@ class SpecialistShelfTest {
 
     @Test fun everySpecialistOneLineInDelegateBuiltInsFirst() {
         val d = fn(Specialists.builtIn + own).getString("description")
-        for (s in Specialists.builtIn) assertTrue(s.id, d.contains("- ${s.id} (${s.name}): "))
-        assertTrue(d, d.contains("- aa-tax (Tax helper): Explains ZRA tax forms step by step (yours)"))
-        assertTrue(d.contains("- zz-farm (Farming advisor): Advises smallholder farmers on crops and pests (yours)"))
+        for (s in Specialists.builtIn) assertTrue(s.id, d.contains("- ${s.id} \u2014 use when "))
+        assertTrue(d, d.contains("- aa-tax \u2014 use when asked to explain ZRA tax forms (yours)"))
+        assertTrue(d, d.contains("- zz-farm \u2014 use when asked to advise smallholder farmers on crops (yours)"))
+        // shelf cost 4/4: about 12 words a line, built-ins and the user's own alike, no examples
+        d.lines().filter { it.startsWith("- ") }.forEach { l ->
+            assertTrue(l, l.substringAfter(" \u2014 ").removeSuffix(" (yours)").split(' ').size <= SkillShelf.LINE_WORDS)
+            assertFalse(l, l.contains("e.g") || l.contains("\""))
+        }
         // built-ins in their fixed order, then the user's own by id; the enum says the same
         val ids = d.lines().filter { it.startsWith("- ") }.map { it.removePrefix("- ").substringBefore(' ') }
         assertEquals(Specialists.builtIn.map { it.id } + listOf("aa-tax", "zz-farm"), ids)

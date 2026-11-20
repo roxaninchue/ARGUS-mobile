@@ -28,7 +28,7 @@ class SpecialistsDelegateTest {
         val fn = Specialists.tool().getJSONObject("function")
         assertEquals("delegate", fn.getString("name"))
         for (s in Specialists.builtIn) {
-            assertTrue(fn.getString("description").contains("${s.id} (${s.name})"))
+            assertTrue(fn.getString("description").contains("- ${s.id} \u2014 use when "))
             assertEquals(s, Specialists.byId(s.id))
         }
         val all = org.json.JSONArray(listOf("web_search", "delegate", "set_alarm").map { n ->

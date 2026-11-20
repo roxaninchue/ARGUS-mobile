@@ -3,7 +3,7 @@ package com.blaze.assistant.agent
 /**
  * Specialist shelf (round 5, 20 Nov 2026; docs/SKILL-SHELF.md §12, MODEL-FIRST "Still to retire": SpecialistMatch).
  *
- * The model sees every specialist, one line each (id, name: what it does), the built-ins first in their fixed order and
+ * The model sees every specialist, one line each (`id — use when …`), the built-ins first in their fixed order and
  * then the user's own (custom, marked "yours") by id, and decides itself whether to hand work to one with `delegate`.
  * Nothing reads the user's message: SpecialistMatch, which picked specialists (and their skill packs) from the words, is
  * gone.
@@ -11,8 +11,9 @@ package com.blaze.assistant.agent
  * Step 2 (shelf cost): the list lives in delegate's own description, with the ids as an enum on its `specialist`
  * parameter, and delegate rides every turn (ToolPick.ESSENTIAL); the system prompt keeps a one-line [pointer].
  *
- *  - Each line comes from the specialist's own prompt ([SkillShelf.summary] of it), so there's no second description
- *    to keep up to date.
+ *  - Each line comes from the specialist's own prompt ([SkillShelf.useWhen] of it), so there's no second description
+ *    to keep up to date. Shelf cost 4/4: `id — use when …`, capped at [SkillShelf.LINE_WORDS] words after the dash, no
+ *    examples; the user's own get the same cap.
  *  - Byte-stable for the same set (deterministic order, no clock): the pointer rides in the SLOW prompt tier and the
  *    tool description in the tool list, and both cache.
  *
@@ -20,10 +21,10 @@ package com.blaze.assistant.agent
  */
 object SpecialistShelf {
     /** Heads the list inside delegate's description. */
-    const val LIST_HEAD = "Specialists (id (name): what it does; \"yours\" = made by the user):\n"
+    const val LIST_HEAD = "Specialists (id \u2014 use when; \"yours\" = made by the user):\n"
 
     data class Entry(val id: String, val name: String, val summary: String, val yours: Boolean) {
-        val line: String get() = "- $id ($name): $summary${if (yours) " (yours)" else ""}\n"
+        val line: String get() = "- $id \u2014 $summary${if (yours) " (yours)" else ""}\n"
     }
 
     /** Built-ins in their fixed order, then the user's own by id; one per id. The same set in any order gives the same entries. */
@@ -33,7 +34,7 @@ object SpecialistShelf {
             .sortedWith(compareBy<Specialists.Spec>({ it.custom }, { order.indexOf(it.id).let { i -> if (i < 0) Int.MAX_VALUE else i } }, { it.id.lowercase() }, { it.id }))
             .distinctBy { it.id.lowercase() }.partition { it.custom }
         return (built + own).map {
-            Entry(it.id, it.name, SkillShelf.summary(it.prompt.ifBlank { it.name }), it.custom)
+            Entry(it.id, it.name, SkillShelf.useWhen(it.prompt.ifBlank { it.name }), it.custom)
         }
     }
 

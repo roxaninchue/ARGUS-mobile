@@ -69,9 +69,9 @@ class CoreSkillsTest {
     @Test fun coreSkillsAreOnTheShelfAndDisabledOnesArent() {
         val all = (CoreSkills.NAMES + listOf("study-flashcards", "tutor", "debugging", "deep-research", "email-drafting")).map { cand(it) }
         val shelf = SkillShelf.block(all)
-        for (n in listOf("blaze-coding-workflow", "blaze-workflow-builder", "blaze-specialists")) assertTrue(n, shelf.contains("- $n: "))
+        for (n in listOf("blaze-coding-workflow", "blaze-workflow-builder", "blaze-specialists")) assertTrue(n, shelf.contains("- $n \u2014 "))
         val off = SkillShelf.block(listOf(cand("study-flashcards", on = false), cand("tutor")))
-        assertFalse(off.contains("study-flashcards")); assertTrue(off.contains("- tutor: "))
+        assertFalse(off.contains("study-flashcards")); assertTrue(off.contains("- tutor \u2014 "))
         // a specialist's packs leave switched-off skills out too
         val tutor = Specialists.builtIn.first { it.id == "tutor" }
         val brief = Specialists.brief(tutor, listOf(cand("study-flashcards", on = false), cand("tutor")))
@@ -108,7 +108,7 @@ class CoreSkillsTest {
         val c = SkillMatch.fromDir(dir, "user", true)!!
         assertEquals("airtime-top-up", c.name)
         assertTrue(c.keywords.toString(), "airtime" in c.keywords && "mtn" in c.keywords)
-        assertTrue(SkillShelf.block(listOf(c, cand("deep-research"))).contains("- airtime-top-up: "))
+        assertTrue(SkillShelf.block(listOf(c, cand("deep-research"))).contains("- airtime-top-up \u2014 "))
         assertTrue(SkillPacks.workflowMd("x", "y", "1. a", "", emptyList(), tested = true).let { it.contains("tested: true") && !it.contains("Not tested") })
         assertTrue("save_workflow" in SkillPacks.names)
         assertTrue(SkillPacks.tools().any { it.getJSONObject("function").getString("name") == "save_workflow" })

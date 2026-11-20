@@ -60,7 +60,8 @@ class SpecialistStoreTest {
         // Saved and loaded back like any custom one; in delegate's specialist list from the next turn, marked as the user's own.
         val back = Specialists.parse(Specialists.toJson(listOf(s))).single()
         assertEquals(s, back)
-        assertTrue(Specialists.tool(Specialists.builtIn + back).toString().contains("- farming-advisor (Farming advisor): Advises smallholder farmers"))
+        assertTrue(Specialists.tool(Specialists.builtIn + back).getJSONObject("function").getString("description")
+            .contains("- farming-advisor \u2014 use when asked to advise smallholder farmers on crops (yours)"))
     }
 
     private val farm = """

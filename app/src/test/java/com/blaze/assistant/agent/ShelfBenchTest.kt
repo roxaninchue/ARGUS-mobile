@@ -6,6 +6,8 @@ import java.io.File
 /**
  * Round 5: what the shelves (skills + specialists) cost per request, on the real bundled library and the built-in
  * specialists plus a user's own (5 skills, 2 specialists). Chars; tokens ≈ chars / 4. Results go to build/shelf-bench.txt.
+ * Shelf cost 4/4: lines are `name — use when …` with at most [SkillShelf.LINE_WORDS] words after the dash. The delegate
+ * schema is measured as org.json writes it here, where "—" is escaped to six chars (\u2014).
  */
 class ShelfBenchTest {
     private val root = listOf(File("src/main/assets/skills"), File("app/src/main/assets/skills")).first { it.isDirectory }
@@ -23,6 +25,8 @@ class ShelfBenchTest {
         sb.append("skills shelf: ${skills.length} (${bundled.size + mine.size} skills)\n")
         sb.append("specialists in the prompt: ${people.length} (${specs.size} specialists, listed in delegate)\n")
         sb.append("delegate tool schema (every turn): ${delegate.length}\n")
+        val lines = (skills.lines() + Specialists.tool(specs).getJSONObject("function").getString("description").lines()).filter { it.startsWith("- ") }
+        sb.append("longest line: ${lines.maxOf { it.substringAfter(" \u2014 ").split(' ').size }} words after the dash (cap ${SkillShelf.LINE_WORDS})\n")
         val perRequest = skills.length + people.length + delegate.length
         sb.append("per request (system prompt + delegate schema): $perRequest (≈ ${perRequest / 4} tokens)\n")
         File("build").mkdirs(); File("build/shelf-bench.txt").writeText(sb.toString())

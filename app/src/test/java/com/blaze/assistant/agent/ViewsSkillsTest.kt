@@ -136,9 +136,9 @@ class ViewsSkillsTest {
     /** Round 5: no word score picks a skill; the shelf lists every one that's on and the model reads the one it wants. */
     @Test fun theShelfListsEverySkillThatIsOn() {
         val shelf = SkillShelf.block(lib)
-        for (c in lib) assertTrue(c.name, shelf.contains("- ${c.name}: "))
+        for (c in lib) assertTrue(c.name, shelf.contains("- ${c.name} \u2014 use when "))
         val off = SkillShelf.block(lib.map { if (it.name == "study-flashcards") it.copy(on = false) else it })
-        assertFalse(off.contains("study-flashcards")); assertTrue(off.contains("- tutor: "))
+        assertFalse(off.contains("study-flashcards")); assertTrue(off.contains("- tutor \u2014 "))
         assertEquals("", SkillShelf.block(lib.map { it.copy(on = false) }))
     }
 
@@ -153,6 +153,6 @@ class ViewsSkillsTest {
         val shipped = SkillMatch.fromDir(File(root, "study-flashcards"), "bundled", true)!!
         assertTrue(shipped.body.contains("flashcards") && shipped.body.contains("open_view") && shipped.body.contains("view=learn"))
         val tutor = SkillMatch.fromDir(File(root, "tutor"), "bundled", true)!!
-        assertTrue(SkillShelf.block(listOf(tutor, shipped)).let { it.contains("- study-flashcards: ") && it.contains("- tutor: ") })
+        assertTrue(SkillShelf.block(listOf(tutor, shipped)).let { it.contains("- study-flashcards \u2014 ") && it.contains("- tutor \u2014 ") })
     }
 }

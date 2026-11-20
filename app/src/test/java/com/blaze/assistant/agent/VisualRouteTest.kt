@@ -43,7 +43,7 @@ class VisualRouteTest {
     @Test fun visualSkillsStayOnTheShelf() {
         val cands = listOf("diagrams", "data-analysis", "tutor", "deep-research").mapNotNull { SkillMatch.fromDir(File(root, it), "bundled", true) }
         val shelf = SkillShelf.block(cands)
-        assertTrue(shelf.contains("- diagrams: ") && shelf.contains("- data-analysis: "))
+        assertTrue(shelf.contains("- diagrams \u2014 ") && shelf.contains("- data-analysis \u2014 "))
         assertTrue(VisualRoute::class.java.declaredMethods.none { it.name == "filter" || it.name == "skipSkill" })
         // The HINT for the turn says what to do.
         assertTrue(VisualRoute.HINT.contains("```mermaid") && VisualRoute.HINT.contains("use_skill"))

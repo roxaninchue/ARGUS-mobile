@@ -20,7 +20,7 @@ class SkillGateTest {
         val learned = SkillMatch.Cand("github-links-off", "Turn off GitHub opening links in its app", listOf("github", "links", "open by default"),
             "1. open_settings open_by_default GitHub 2. tap Open supported links\n(run_skill github-links-off replays the recorded phone steps)", "learned", true)
         val shelf = SkillShelf.block(bundled + learned)
-        assertTrue(shelf, shelf.contains("- github-links-off: Turn off GitHub opening links in its app [replay]"))
+        assertTrue(shelf, shelf.contains("- github-links-off \u2014 use when asked to turn off GitHub opening links [replay]"))
         assertTrue("the user's own skill comes first", shelf.indexOf("github-links-off") < shelf.indexOf("android-app-builder"))
         assertFalse("no skill bodies are pasted in", shelf.contains("open_settings open_by_default"))
     }
