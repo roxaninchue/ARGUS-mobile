@@ -76,7 +76,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import com.blaze.assistant.agent.Agent
 import com.blaze.assistant.agent.ChatMessage
 import com.blaze.assistant.agent.Role
 import com.blaze.assistant.agent.Settings
@@ -112,8 +111,10 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
                  wide: Boolean = false, title: String? = null, note: String? = null, onTitle: (() -> Unit)? = null) {
     val dark = LocalBlaze.current.dark
     val p = remember(dark) { LivingSpec.palette(dark) }
-    val messages by Agent.messages.collectAsState()
-    val chatHere by Agent.chatId.collectAsState()
+    // Bot chat redesign: the chat Living draws (the main chat, or a bot's own thread), ui/ChatFeed.kt
+    val feed = com.blaze.assistant.ui.LocalChatFeed.current
+    val messages by feed.messages.collectAsState()
+    val chatHere by feed.chatId.collectAsState()
     val trail by ToolTrail.results.collectAsState()
 
     // Living reads each step's result, so the trail records while it is open (back to the setting when it closes).
@@ -133,7 +134,7 @@ fun LivingScreen(working: Boolean, keep: ((ChatMessage) -> Boolean)?, reducedMot
     val plan = remember(board, wide) { LivingLayout.plan(board, wide) }
     // 0.2.1 landscape header: the open chat's title as the history drawer names it, and the earlier-chat note
     val chatsVersion by com.blaze.assistant.ui.team.ChatModeRuntime.version.collectAsState()
-    val privateOn by Agent.privateChat.collectAsState()
+    val privateOn by feed.privateChat.collectAsState()
     val head = remember(wide, title, note, chatsVersion, messages.size, privateOn) {
         when {
             !wide -> null

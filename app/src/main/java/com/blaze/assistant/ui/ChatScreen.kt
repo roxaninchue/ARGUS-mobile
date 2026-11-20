@@ -1289,11 +1289,13 @@ private fun fileSuggestions(text: String): List<Suggestion> {
 }
 
 @Composable
-private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (String) -> Unit,
+internal fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (String) -> Unit,
                         /** P1-SH-04: Chat mode's open chat (a window of the main chat); null = every message. */
                         keep: ((ChatMessage) -> Boolean)? = null) {
     val c = LocalBlaze.current
-    val messages by Agent.messages.collectAsState()
+    // Bot chat redesign: the chat this list draws (the main chat, or a bot's own thread), ChatFeed.kt
+    val feed = LocalChatFeed.current
+    val messages by feed.messages.collectAsState()
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // v0.26.2: the old "Fresh start" bubble stays hidden in saved chats too (compaction and /new are silent).
@@ -1308,7 +1310,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val turnSteps = remember(messages) { val u = messages.indexOfLast { it.role == Role.USER }
         messages.drop(u + 1).filter { it.role == Role.STEP }.takeLast(12).map { it.text } }
     val agentsAll by com.blaze.assistant.agent.BgAgents.all.collectAsState()
-    val chatHere by Agent.chatId.collectAsState()
+    val chatHere by feed.chatId.collectAsState()
     val agentLogs = remember(agentsAll, chatHere) { agentsAll.filter { it.live && it.parent == chatHere }.sortedBy { it.started }
         .map { b -> b.log.ifEmpty { listOfNotNull(b.last.takeIf { l -> l.isNotBlank() }) } } }
     // Milestone 4: live, expandable tool rows (group → kind → call, ui/team/thread/ChatToolRows) behind the tool_rows
@@ -1366,12 +1368,12 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val answeredLast = lastUserId != null && messages.dropWhile { it.id != lastUserId }.drop(1)
         .any { (it.role == Role.BLAZE && it.meta != com.blaze.assistant.agent.Ack.META) || it.role == Role.ERROR }
     // v0.31.0: the reply streaming in right now (the droplet rides it); -1 = none.
-    val streamId by Agent.streamingId.collectAsState()
+    val streamId by feed.streamingId.collectAsState()
     // v0.31.2 Halo x Argus: replies streaming side by side (@all, parallel team phases).
-    val duoLive by Agent.duoLive.collectAsState()
+    val duoLive by feed.duoLive.collectAsState()
     // v0.32.0 split: Halo talking with you while Argus works (her replies stream on their own; the drop stays on the work).
-    val sideLive by Agent.sideLive.collectAsState()
-    val split by Agent.split.collectAsState()
+    val sideLive by feed.sideLive.collectAsState()
+    val split by LocalChatFeed.current.split.collectAsState()
     // 0.45.24: the live line beside the drop shows until the reply's first words appear (WaitRow).
     val replyAtEnd = (items.lastOrNull() as? Item.Msg)?.m?.let { it.role == Role.BLAZE && it.meta != com.blaze.assistant.agent.Ack.META && (lastUserId == null || it.id > lastUserId) } == true
     val waitLineOn = WaitRow.showLine(mood != Mood.IDLE, streamId >= 0, replyAtEnd)
@@ -1382,7 +1384,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     // v0.31.1: one stable lambda (it captured the whole item list, so every row's params changed on every streamed frame).
     val itemsNow = rememberUpdatedState(items)
     val jumpTo: (Long) -> Unit = remember { { id -> itemsNow.value.indexOfFirst { it.key == "m$id" }.takeIf { it >= 0 }?.let { i -> scope.launch { state.animateScrollToItem(i); follow = false } } } }
-    val meter by Agent.meter.collectAsState()
+    val meter by feed.meter.collectAsState()
     val lastStepsKey = items.lastOrNull { it is Item.Steps }?.key
     // v0.27.0: messages that arrive while the chat is open fade in with a slight rise, once (not the history).
     val appear = remember { AppearOnce(items.map { it.key }) }
@@ -1405,8 +1407,8 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 Box(Modifier.fillMaxWidth().appearIn(fresh && i >= items.size - 3).padding(top = Bubbles.gapAbove(item.pos, i == 0))) {
                     when (item) {
                         is Item.Steps -> {
-                            val st0 by Agent.status.collectAsState()
-                            val chipOn by Agent.taskChip.collectAsState()
+                            val st0 by feed.status.collectAsState()
+                            val chipOn by feed.taskChip.collectAsState()
                             val st = if (chipOn.isNotBlank()) "" else st0   // no status words behind an ack
                             // v0.24.4: the token meter is a technical line; shown only with Show technical details on.
                             val m = if (Settings.longChat && com.blaze.assistant.agent.ReplyChips.showTech() && (item.live || item.key == lastStepsKey)) meter else null
@@ -1432,18 +1434,18 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 }
             }
             item(key = "working") { Column(Modifier.fillMaxWidth()) {
-                val live by Agent.thinking.collectAsState()
-                val status by Agent.status.collectAsState()
+                val live by LocalChatFeed.current.thinking.collectAsState()
+                val status by feed.status.collectAsState()
                 // One live card per turn: before the first step it's an empty "Working · 3s" card.
                 val hasLiveSteps = (items.lastOrNull() as? Item.Steps)?.live == true
                 // v0.31.0: no status words ("Working · 3s", "Thinking it through…"): the water droplet waits here until the
                 // reply starts streaming, then rides the reply itself. (A turn with steps keeps its work card above.)
                 // v0.31.1: the waiting drop sits where the reply's first line will start (same size and centre as the reply's
                 // droplet layer), and hands over without a fade: the reply's drop appears at this spot and glides to the text end.
-                val chip by Agent.taskChip.collectAsState()
+                val chip by feed.taskChip.collectAsState()
                 // 0.45.20 step pill: the newest step under the pending reply (agent/StepPill.kt), this chat only.
                 val pill by com.blaze.assistant.agent.StepPills.current.collectAsState()
-                val chatNow by Agent.chatId.collectAsState()
+                val chatNow by feed.chatId.collectAsState()
                 // 0.45.24: the live line sits beside the drop (same row, centred) and goes as soon as the reply starts.
                 val working = mood != Mood.IDLE
                 val lineOn = waitLineOn
@@ -1601,6 +1603,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                   /** fix/chat-flat-ui: this row is the reply streaming right now (its thinking is the turn's live one). */
                   streamHere: Boolean = false) {
     val entryCtx = LocalContext.current
+    val entryFeed = LocalChatFeed.current   // bot chat redesign: Retry / react act on the chat this row is in
     // 0.45.20 (spec A): the time sits inside the last bubble of a run; actions are a long-press menu (BubbleMenu), and
     // only the latest Argus reply keeps its small action row.
     val menu = remember(m.id) { mutableStateOf(false) }
@@ -1612,7 +1615,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
     BubbleMenu(menu.value, buildList<Pair<String, (() -> Unit)?>> {
         add("Copy" to { entryClip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(entryCtx, "Copied", Toast.LENGTH_SHORT).show() })
         if (m.role != Role.ERROR) add("Quote" to { onQuote(if (m.role == Role.BLAZE) com.blaze.assistant.agent.ToolLeak.forDisplay(m.text) else splitQuote(m.text).second) })
-        add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
+        add("Retry" to (if (canAct) ({ entryFeed.retry(m.id) }) else null))
         // Owner 2026-11-15: no reactions (no React item, no double-tap, no emoji chips or picker).
         // Owner 2026-11-15: no Pin on messages ("no use for it").
     }) { menu.value = false }
@@ -1622,7 +1625,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             // v0.24.6: pictures inside your bubble (tap to preview), other files as icon chips.
             SentBubble(body, quoted, rememberPresent(m.media), m.files, pos)
             if (delivery != null && DeliveryView.shown(delivery)) DeliveryLabel(delivery, onRetry = if (canAct) ({
-                com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); Agent.retry(m.id) }) else null)
+                com.blaze.assistant.agent.Delivery.tracker().apply(listOf(m.gid), com.blaze.assistant.agent.Delivery.Ev.USER_RETRY); entryFeed.retry(m.id) }) else null)
         } }
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
         else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
@@ -1638,7 +1641,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             // fix/chat-flat-ui (owner, 14 Nov 2026): the reasoning, folded above the reply (ui/ThoughtSection.kt). Saved with
             // the reply; while this reply streams, the turn's live thinking. Only the streaming row reads the live flow.
             if (Settings.showReasoning) {
-                val liveThought = if (streamHere) Agent.thinking.collectAsState().value else ""
+                val liveThought = if (streamHere) LocalChatFeed.current.thinking.collectAsState().value else ""
                 val thought = ThoughtFold.pick(m.thinking, streamHere, liveThought)
                 if (thought.isNotBlank()) ThoughtSection(m.id, thought, live = streamHere, answerStarted = m.text.isNotBlank(), ms = m.thinkMs)
             }
@@ -1659,7 +1662,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                 ReplyImages(found, low = remember { StageDevice.tier(pc) == com.blaze.assistant.stage.PerfTier.LOW }) }
             Box(Modifier.fillMaxWidth().onGloballyPositioned { tracker.root = it }) {
                 CompositionLocalProvider(LocalOrb provides tracker, LocalSpeaker provides who) { BlazeReply(m.id, shown, pos, live = fresh) }
-                if (hadLive) OrbLayer(tracker, fresh, speaker = who, latest = latest, alone = who == com.blaze.assistant.agent.Duo.Who.HALO && Agent.split.collectAsState().value)
+                if (hadLive) OrbLayer(tracker, fresh, speaker = who, latest = latest, alone = who == com.blaze.assistant.agent.Duo.Who.HALO && LocalChatFeed.current.split.collectAsState().value)
             }
             if (m.media.isNotEmpty()) MediaStrip(m.media)
             if (!live && found.sources.isNotEmpty()) SourcePills(found)
@@ -1709,6 +1712,7 @@ private fun Followups(list: List<String>, onPick: (String) -> Unit) {
 private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, onQuote: (String) -> Unit, allowQuote: Boolean, chipOnly: Boolean = false,
                     orbSlot: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null, reactable: Boolean = false) {
     val clip = LocalClipboardManager.current
+    val actFeed = LocalChatFeed.current
     val ctx = LocalContext.current
     val showTrace = remember(m.id) { mutableStateOf(false) }
     val usedUp = m.meta.startsWith("usedup:")
@@ -1719,7 +1723,7 @@ private fun Actions(m: ChatMessage, side: Side, time: String, canAct: Boolean, o
     val acts = buildList<Pair<String, (() -> Unit)?>> {
         add("Copy" to { clip.setText(AnnotatedString(if (m.role == Role.BLAZE) Md.plain(RichKit.readable(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text))) else Md.plain(splitQuote(m.text).second))); Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show() })
         // Owner 2026-11-15: no Quote icon under replies (long-press menu and swipe still quote).
-        add("Retry" to (if (canAct) ({ Agent.retry(m.id) }) else null))
+        add("Retry" to (if (canAct) ({ actFeed.retry(m.id) }) else null))
         // 0.53.2: no "What I did" button or sheet (owner, 14 Nov 2026: "remove the what I did cards"). Receipts are still
         // stored with the reply; the live tool rows (Show tool steps) are where steps show.
         // v0.45.5 (#1): "What happened": model, route, tools, timings, errors, request id. 0.45.19: never shown to users
@@ -1746,10 +1750,10 @@ private fun HeadsUpWhy(meta: String) {
 
 /** v0.45.0 reactions: toggles one; in a private chat it says once that reactions there aren't kept. */
 private var privateReactNoted = false
-private fun reactNow(ctx: android.content.Context, m: ChatMessage, emoji: String) {
-    if (!Agent.react(m.id, emoji)) return
+private fun reactNow(ctx: android.content.Context, m: ChatMessage, emoji: String, feed: ChatFeed = ChatFeed.main) {
+    if (!feed.react(m.id, emoji)) return
     try { com.blaze.assistant.device.Haptics.tick(ctx) } catch (_: Throwable) { }
-    if (Agent.privateChat.value && !privateReactNoted) {
+    if (feed.privateChat.value && !privateReactNoted) {
         privateReactNoted = true
         Toast.makeText(ctx, "Reactions in a private chat aren't saved", Toast.LENGTH_SHORT).show()
     }
