@@ -19,7 +19,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Notification brain: with notification access on, Blaze keeps the last ~150 notifications
+ * Notification brain: with notification access on, Argus keeps the last ~150 notifications
  * in memory only (never written to disk) so it can answer "what did I miss?" and reply to chats
  * through the notification's own reply action.
  */

@@ -13,7 +13,7 @@ import com.blaze.assistant.mediaapps.store.StoreFormat
 import com.blaze.assistant.mediaapps.store.StoreItem
 
 /**
- * 0.46.2 Movies downloads. Internet Archive / Blender files go through Blaze's own download queue (resumable, verified, saved to
+ * 0.46.2 Movies downloads. Internet Archive / Blender files go through Argus's own download queue (resumable, verified, saved to
  * Videos); other direct files (Jellyfin, a provider's mp4) are queued with Android's DownloadManager (with the source's headers).
  * Adaptive streams (HLS / DASH) can't be saved as one file and say so.
  */

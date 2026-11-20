@@ -16,8 +16,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * Blaze's "hands": reads what is on screen and taps / types / scrolls.
- * The user turns it on in Settings > Accessibility > Blaze phone control.
+ * Argus's "hands": reads what is on screen and taps / types / scrolls.
+ * The user turns it on in Settings > Accessibility > Argus phone control.
  */
 class BlazeAccessibilityService : AccessibilityService() {
 
@@ -52,7 +52,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         if (com.blaze.assistant.bank.BankMode.active && !com.blaze.assistant.bank.BankMode.state.value.auto) com.blaze.assistant.bank.BankMode.turnOff(this)
     }
 
-    /** v0.43.0: true when the app in front is on the user's bank list. Blaze never reads or touches banking apps. */
+    /** v0.43.0: true when the app in front is on the user's bank list. Argus never reads or touches banking apps. */
     private fun bankInFront(): Boolean = try {
         com.blaze.assistant.bank.BankMode.isBank(rootInActiveWindow?.packageName?.toString().orEmpty())
     } catch (_: Throwable) { false }
@@ -73,7 +73,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         lastEventAt = android.os.SystemClock.uptimeMillis()
-        // v0.45.1: Blaze's own orb / overlay redraws don't change another app's tree (ScreenReadCache).
+        // v0.45.1: Argus's own orb / overlay redraws don't change another app's tree (ScreenReadCache).
         eventSeq++
         if (event.packageName?.toString() != packageName) otherEventSeq++
         // 0.45.19: the cached tree re-walks only what changed (ScreenTree); events of other windows don't touch it.
@@ -223,7 +223,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     private var lastReadAt = 0L
 
     // v0.45.1 speed: the last tree walk, reused by a read right after it when nothing can have changed (ScreenReadCache):
-    // same window, no accessibility event since, no action by Blaze since, at most ScreenReadCache.MAX_AGE_MS old.
+    // same window, no accessibility event since, no action by Argus since, at most ScreenReadCache.MAX_AGE_MS old.
     // waitFor / findTarget / anyField / visibleWords / look_at_screen used to walk the whole tree (one IPC per node)
     // several times in a row on a screen that hadn't moved.
     private class Walk(val windowId: Int, val pkg: String, val eventMark: Long, val actMark: Long, val at: Long,
@@ -237,7 +237,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     internal fun acted() { actSeq++ }
 
-    /** The newest event that can matter for a read of [pkg]: any event when Blaze itself is in front, else other apps' only. */
+    /** The newest event that can matter for a read of [pkg]: any event when Argus itself is in front, else other apps' only. */
     private fun eventMark(pkg: String): Long = if (pkg == packageName) eventSeq else otherEventSeq
 
     private fun role(n: AccessibilityNodeInfo): String {
@@ -286,7 +286,7 @@ class BlazeAccessibilityService : AccessibilityService() {
     /** Cached-tree counters (speed_stats). */
     val treeStats: String get() = "tree full ${tree.fullWalks}, partial ${tree.partialWalks}, subtrees reused ${tree.reusedSubtrees}, fetches ${tree.childFetches}"
 
-    /** 0.46.4 heat audit: when Blaze last read or acted on the screen (a phone task is active for [TASK_IDLE_MS] after). */
+    /** 0.46.4 heat audit: when Argus last read or acted on the screen (a phone task is active for [TASK_IDLE_MS] after). */
     @Volatile var lastUseAt = 0L
     private fun taskActive(now: Long = android.os.SystemClock.uptimeMillis()) = lastUseAt > 0 && now - lastUseAt < com.blaze.assistant.phone.ScreenHeat.TASK_IDLE_MS
 
@@ -579,7 +579,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) return frontPkg
         return (rootInActiveWindow?.packageName?.toString().orEmpty()).also { if (it.isNotEmpty()) frontPkg = it }.ifEmpty { frontPkg }
     }
-    /** Package of the last TYPE_WINDOW_STATE_CHANGED event (any app, Blaze included). */
+    /** Package of the last TYPE_WINDOW_STATE_CHANGED event (any app, Argus included). */
     @Volatile var frontPkg: String = ""
 
     /** Words visible on screen (for checking a step worked, and short "what changed" notes). */
@@ -588,7 +588,7 @@ class BlazeAccessibilityService : AccessibilityService() {
         return elements.filterNotNull().flatMap { labelsOf(it) }.map { it.take(80) }.toSet()
     }
 
-    /** A soft ring where Blaze is about to tap, so you can watch it work. */
+    /** A soft ring where Argus is about to tap, so you can watch it work. */
     fun flash(id: Int) {
         if (!com.blaze.assistant.agent.Settings.bool("show_taps", true) || com.blaze.assistant.agent.Settings.bool("speed_mode", false)) return
         val n = element(id) ?: return
@@ -794,7 +794,7 @@ class BlazeAccessibilityService : AccessibilityService() {
 
     suspend fun type(id: Int, text: String, submit: Boolean = false): String {
         var node = element(id) ?: return "No element [$id]. Call read_screen again."
-        // v0.24.4: the pointer shows which field gets the text before Blaze focuses it (a non-field goes through tap()).
+        // v0.24.4: the pointer shows which field gets the text before Argus focuses it (a non-field goes through tap()).
         if (node.isEditable) centerOf(node)?.let { if (!pointTo(it.first, it.second)) return "Stopped before typing into [$id]: the user tapped Stop. Nothing was typed." }
         if (!node.isEditable) {
             // Search icons/bars often turn into a real field after a tap.

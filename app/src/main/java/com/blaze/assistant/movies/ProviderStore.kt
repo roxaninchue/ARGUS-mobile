@@ -6,7 +6,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /**
- * 0.46.2 the user's added source repos and installed providers. Starts EMPTY: Blaze bundles, pre-fills and suggests no repo.
+ * 0.46.2 the user's added source repos and installed providers. Starts EMPTY: Argus bundles, pre-fills and suggests no repo.
  * State (one JSON blob via [kv]) + module files under [dir]/<repo-hash>/<provider>/<file>.js. Network via [fetch] (guarded by
  * [UrlGuard]). Pure JVM (no Android): ProviderStoreTest runs it against the local mock repo.
  */
@@ -97,7 +97,7 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
     }
 
     /**
-     * 0.46.2 preinstall Blaze's own example repo ("Blaze Official") from the copy bundled in the app, once. Its providers start
+     * 0.46.2 preinstall Argus's own example repo ("Blaze Official") from the copy bundled in the app, once. Its providers start
      * switched off for browsing (the built-in Internet Archive / Blender sources show the same films); they can be tested,
      * switched on, and updated from the repo like any other.
      */

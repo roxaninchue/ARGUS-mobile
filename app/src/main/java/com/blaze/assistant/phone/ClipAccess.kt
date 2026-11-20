@@ -21,12 +21,12 @@ import org.json.JSONArray
 import java.io.File
 
 /**
- * Full clipboard access for Blaze.
+ * Full clipboard access for Argus.
  *
- * Android 10+ only lets the app that has input focus read the clipboard. When Blaze isn't on
+ * Android 10+ only lets the app that has input focus read the clipboard. When Argus isn't on
  * screen we briefly add a 1-pixel focusable window (through the accessibility service, or the
  * "draw over apps" permission), read the clipboard while it has focus, and remove it again: the
- * same trick clipboard-manager apps use. Text clips Blaze sees are kept in a short history.
+ * same trick clipboard-manager apps use. Text clips Argus sees are kept in a short history.
  */
 object ClipAccess {
     private const val HISTORY = "clip_history"
@@ -36,7 +36,7 @@ object ClipAccess {
 
     private fun cm(ctx: Context) = ctx.getSystemService(ClipboardManager::class.java)
 
-    /** Run [block] while Blaze holds input focus, so Android allows clipboard reads. */
+    /** Run [block] while Argus holds input focus, so Android allows clipboard reads. */
     private suspend fun <T> withFocus(ctx: Context, block: () -> T): T = withContext(Dispatchers.Main) {
         if (Agent.inForeground) return@withContext block()
         val (host, type) = BlazeAccessibilityService.instance?.let { it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }

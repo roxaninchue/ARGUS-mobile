@@ -8,7 +8,7 @@ import java.net.URL
 
 /**
  * 0.46.2 the only network a provider module gets. Every hop (the first URL and every redirect) passes [UrlGuard]; no cookie
- * jar, no Blaze headers or tokens, no app accounts; bodies are capped. Plain HttpURLConnection (no app-wide CookieHandler is set).
+ * jar, no Argus headers or tokens, no app accounts; bodies are capped. Plain HttpURLConnection (no app-wide CookieHandler is set).
  */
 interface SandboxHttp {
     data class Req(val url: String, val method: String = "GET", val headers: Map<String, String> = emptyMap(), val body: String? = null, val follow: Boolean = true)

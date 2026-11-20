@@ -9,7 +9,7 @@ import com.blaze.assistant.BrandName
  *  - window flags: only the hand and the dock take touches, and never touches outside themselves
  *    (NOT_TOUCH_MODAL always); the highlight layer never takes any; the dock sits above the navigation bar;
  *  - teach mode records only the app being taught: System UI, Android, launchers, screenshot tools, keyboards and
- *    Blaze itself are ignored, and labels that are really class names ("MainUiViewForStandAlone$7") are dropped;
+ *    Argus itself are ignored, and labels that are really class names ("MainUiViewForStandAlone$7") are dropped;
  *  - escape hatches: Back twice, a long-press on the dock, the "Stop Magic Hand" notification action, and a
  *    watchdog that ends Magic Hand when the UI thread stalls for over 3 s or after 10 minutes without a touch.
  */

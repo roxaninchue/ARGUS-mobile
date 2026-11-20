@@ -7,11 +7,11 @@ import android.view.accessibility.AccessibilityNodeInfo
 import com.blaze.assistant.agent.AlarmRows
 
 /**
- * v0.45.13: turns off or deletes one of Blaze's alarms in the phone's own Clock app and READS IT BACK.
+ * v0.45.13: turns off or deletes one of Argus's alarms in the phone's own Clock app and READS IT BACK.
  *
  * Android has no API to delete another app's alarm. AlarmClock.ACTION_DISMISS_ALARM only dismisses an alarm that is
  * about to ring on some clocks and does nothing on others (Samsung Clock, 21 Oct 2026 17:13: the alarm stayed ON).
- * So, with phone control on, Blaze drives the Clock screen like a person: open the alarm list, find the row by its
+ * So, with phone control on, Argus drives the Clock screen like a person: open the alarm list, find the row by its
  * "(Blaze A2)" label (or its time), long-press → Delete (delete), or flip its switch (off), then read the list again.
  * Only that second read decides the result ([Outcome.state]). Without phone control nothing can be read back, so the
  * dismiss intent is sent and the result says plainly it isn't confirmed.

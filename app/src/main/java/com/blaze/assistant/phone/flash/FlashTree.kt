@@ -4,7 +4,7 @@
  * minimum size, merging a clickable row's complementary text children, parent/child redundancy),
  * artemis/utils/visualization.py format_minimal_list_with_elements (indexed list with 0-1000 bounds, duplicate
  * suppression) and artemis/utils/element_hit_test.py (smallest covering element). Rewritten in Kotlin and changed for
- * Blaze. See THIRD_PARTY_NOTICES.md.
+ * Argus. See THIRD_PARTY_NOTICES.md.
  */
 package com.blaze.assistant.phone.flash
 

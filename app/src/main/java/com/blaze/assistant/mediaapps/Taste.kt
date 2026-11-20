@@ -9,9 +9,9 @@ import java.io.File
 
 /**
  * v0.30.5 (Blazeinchue: "let Blaze learn the style of music and videos the user listens to and watches", and the Store should
- * open on scrollable ideas instead of a blank search). Blaze Music / Blaze Video note what is played, streamed and
+ * open on scrollable ideas instead of a blank search). Argus Music / Argus Video note what is played, streamed and
  * downloaded (title + artist / channel, on this phone only). [TasteLogic] turns that into search ideas for the Store
- * (favourite artists / channels and recurring styles first, then starter ideas) and a one-line summary Blaze keeps in
+ * (favourite artists / channels and recurring styles first, then starter ideas) and a one-line summary Argus keeps in
  * memory, so the assistant knows the user's taste too.
  */
 data class TasteEvent(val kind: String, val title: String, val author: String, val weight: Int, val at: Long)
@@ -83,7 +83,7 @@ object TasteLogic {
         return out.take(max)
     }
 
-    /** One line for Blaze's memory, or "" when there isn't enough to say yet. */
+    /** One line for Argus's memory, or "" when there isn't enough to say yet. */
     fun summary(events: List<TasteEvent>, now: Long): String {
         val parts = ArrayList<String>()
         val ma = topAuthors(events, "audio", now, 5); val ms = topStyles(events, "audio", now, 3)
@@ -136,7 +136,7 @@ object Taste {
         if (++sinceMemory >= 5) { sinceMemory = 0; toMemory(now) }
     }
 
-    /** Keeps one "taste" preference line in Blaze's memory (updated in place as the taste changes). */
+    /** Keeps one "taste" preference line in Argus's memory (updated in place as the taste changes). */
     private fun toMemory(now: Long) {
         val line = TasteLogic.summary(events, now).ifEmpty { return }
         try {

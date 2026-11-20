@@ -10,11 +10,11 @@ import java.util.Locale
 
 /**
  * Notices routines: when you open the same app around the same hour on 4 of the last 7 days,
- * Blaze offers once to do it for you (a tap turns it into a routine). Stored as small date
+ * Argus offers once to do it for you (a tap turns it into a routine). Stored as small date
  * lists in prefs, never uploaded.
  *
  * v0.27.0: only visits [HabitApps] / [HabitFilter] judge deliberate reach here (a launchable app, not a keyboard,
- * home screen, system screen, overlay or Blaze, kept open a few seconds), counted at the hour the visit started.
+ * home screen, system screen, overlay or Argus, kept open a few seconds), counted at the hour the visit started.
  */
 object Habits {
     // Last line of defence (HabitFilter decides first): never offer these, whatever got through.

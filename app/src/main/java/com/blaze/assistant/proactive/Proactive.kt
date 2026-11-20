@@ -31,7 +31,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Blaze speaking up on its own. Every so often (and right away for urgent-looking messages) it
+ * Argus speaking up on its own. Every so often (and right away for urgent-looking messages) it
  * looks at what's new (notifications, calendar, phone health, time of day, what it knows about
  * you) and decides whether something is worth telling you. Most checks end in silence.
  */
@@ -84,7 +84,7 @@ object Proactive {
         am?.cancel(pi)
         if (!enabled) return
         val ms = everyMin.coerceIn(15, 240) * 60_000L
-        // Alarm revives Blaze if Android killed it; the loop does the work while it's alive.
+        // Alarm revives Argus if Android killed it; the loop does the work while it's alive.
         try { am?.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, android.os.SystemClock.elapsedRealtime() + ms, ms, pi) } catch (_: Exception) { }
         loop = scope.launch { delay(90_000); while (isActive) { tick(); delay(ms) } }
     }

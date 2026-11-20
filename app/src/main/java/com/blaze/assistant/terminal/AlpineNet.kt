@@ -1,7 +1,7 @@
 package com.blaze.assistant.terminal
 
 /**
- * v0.25.5, pure (AlpineNetTest): where Blaze's Alpine Linux comes from. Several official Alpine mirrors (from
+ * v0.25.5, pure (AlpineNetTest): where Argus's Alpine Linux comes from. Several official Alpine mirrors (from
  * mirrors.alpinelinux.org, each checked to carry v3.20 for aarch64 / armv7 / x86_64) so one slow or blocked server
  * doesn't stop the download, the minirootfs SHA-256s (published next to each tarball as `.sha256`), the
  * `/etc/apk/repositories` text for a mirror, and a resolv.conf that tries the phone's own DNS first.

@@ -24,7 +24,7 @@ import org.json.JSONObject
 /**
  * 0.46.0 the Stage on the phone: the state (saved, so it survives the app closing), the stage_* tools, and the timers.
  * Timers are real: an exact alarm at the phase's end (fires with the app closed), a lock-screen countdown notification
- * (Android's own chronometer, so nothing in Blaze ticks while the screen is off), and "time's up" / "break" alerts.
+ * (Android's own chronometer, so nothing in Argus ticks while the screen is off), and "time's up" / "break" alerts.
  */
 object StageStore {
     private const val KEY = "stage_state_v1"; private const val TKEY = "stage_timers_v1"
@@ -35,7 +35,7 @@ object StageStore {
     @Volatile private var loaded = false
     @Volatile var app: Context? = null
 
-    /** The Stage on/off switch (Settings › Look & feel); off = Blaze never puts cards on the chat. */
+    /** The Stage on/off switch (Settings › Look & feel); off = Argus never puts cards on the chat. */
     val enabled: Boolean get() = try { Settings.bool("stage_on", true) } catch (_: Throwable) { true }
 
     fun init(ctx: Context) {
@@ -149,7 +149,7 @@ object StageStore {
     private fun cancelAlarm(ctx: Context, t: TimerState) { try { ctx.getSystemService(AlarmManager::class.java)?.cancel(pi(ctx, ACT_ALARM, t.id)) } catch (_: Exception) { } }
     private fun cancel(ctx: Context, t: TimerState) { cancelAlarm(ctx, t); try { nm(ctx).cancel(nid(t.id)) } catch (_: Throwable) { } }
 
-    /** The lock-screen countdown (the system draws the ticking chronometer; Blaze does nothing per second). */
+    /** The lock-screen countdown (the system draws the ticking chronometer; Argus does nothing per second). */
     @SuppressLint("MissingPermission")
     private fun ongoing(ctx: Context, t: TimerState) {
         try {

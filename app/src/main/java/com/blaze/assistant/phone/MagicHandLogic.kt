@@ -11,7 +11,7 @@ import kotlin.math.min
 /**
  * Magic Hand (v0.24.7) rules, pure Kotlin (no Android types) so they're unit tested (MagicHandTest).
  *
- * The hand is Blaze's mascot pointer summoned by the user from the quick assistant panel and moved only by the user.
+ * The hand is Argus's mascot pointer summoned by the user from the quick assistant panel and moved only by the user.
  * These rules turn what the user's finger did on the hand into a gesture, the gesture plus what's under the flame tip
  * into an intent, and the element into the actions offered in the radial menu.
  */
@@ -237,7 +237,7 @@ object MagicHandLogic {
         (cx + r * kotlin.math.cos(a)).toFloat() to (cy + r * kotlin.math.sin(a)).toFloat()
     }
 
-    /** The prompt sent to Blaze for an action on an element (text actions only; the screenshot crop rides along as an image). */
+    /** The prompt sent to Argus for an action on an element (text actions only; the screenshot crop rides along as an image). */
     fun prompt(a: Action, text: String, app: String): String {
         val t = text.trim().take(4000)
         val where = if (app.isBlank()) "" else " (from $app)"

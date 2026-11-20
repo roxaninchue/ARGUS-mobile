@@ -23,7 +23,7 @@ import org.json.JSONObject
  * Call controls: speaker, mute, end, answer, decline, hold, keypad and call volume.
  *
  * Two kinds of call:
- *  - a call with Blaze itself (the call screen): handled directly through [Voice].
+ *  - a call with Argus itself (the call screen): handled directly through [Voice].
  *  - a real phone call: Android's telecom API where it allows it (answer / end, needs the
  *    "answer phone calls" permission), the phone's own in-call buttons through the accessibility
  *    service for speaker / mute / hold / keypad (so it works on Samsung and other dialers), and
@@ -66,7 +66,7 @@ object CallControl {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)))
             return "Started a voice call with the user. Say one short line to greet them."
         }
-        // A call with Blaze itself.
+        // A call with Argus itself.
         if (Voice.inCall && !phoneCall(ctx)) return when (action) {
             "speaker" -> { Voice.callSpeaker.value = on; "Loudspeaker ${if (on) "on" else "off (earpiece)"}." }
             "mute" -> { Voice.callMute.value = on; if (on) "Muted the mic. Tell the user to tap Unmute to talk again." else "Mic unmuted." }

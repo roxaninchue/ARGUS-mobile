@@ -10,8 +10,8 @@ import android.os.Build
 /**
  * Why "Blaze lost phone control" and how to get it back in one tap (v0.20.0).
  *
- * Android has two separate facts: whether Blaze's accessibility service is switched on in Settings,
- * and whether it's actually connected right now. When Blaze's process dies (a browser page's renderer
+ * Android has two separate facts: whether Argus's accessibility service is switched on in Settings,
+ * and whether it's actually connected right now. When Argus's process dies (a browser page's renderer
  * crash used to take it down; Device care or "close all" can kill it), the service is still on but
  * disconnected for a moment, and on Samsung phones it is often switched off for good.
  */
@@ -39,7 +39,7 @@ object PhoneControl {
         State.OFF -> "Phone control is off" to "Turn on"
     }
 
-    /** Straight to Blaze's own switch where Android allows it (Android 11+), else the accessibility list. */
+    /** Straight to Argus's own switch where Android allows it (Android 11+), else the accessibility list. */
     fun fixIntent(ctx: Context): Intent {
         if (Build.VERSION.SDK_INT >= 30) {
             val cn = ComponentName(ctx, BlazeAccessibilityService::class.java).flattenToString()

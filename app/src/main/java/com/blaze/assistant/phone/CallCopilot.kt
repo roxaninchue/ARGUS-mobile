@@ -34,7 +34,7 @@ import org.vosk.Recognizer
 /**
  * v0.33.0 Call Copilot (opt-in, pref call_copilot): when a call starts, live captions run on the phone (offline Vosk) in
  * a notification; "Blaze, help" asks Halo for a suggested answer (and a translation if the other side switched language)
- * from what was said so far; after you hang up, Blaze writes a summary with the to-dos and offers reminders. Android
+ * from what was said so far; after you hang up, Argus writes a summary with the to-dos and offers reminders. Android
  * gives apps the microphone during a call, so on speaker both sides are heard; on the earpiece mostly your side.
  * Nothing is recorded as audio; only the caption text, and it's dropped after the summary unless you keep it.
  * Pure prompt / caption helpers in [Pure] (CallCopilotTest).

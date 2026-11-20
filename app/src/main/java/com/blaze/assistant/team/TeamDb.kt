@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper
 /**
  * P0-TM-01: team.db on the phone. Raw SQLite (no Room), like cache.db and longchat.db: a plain [SQLiteOpenHelper]
  * whose schema is [TeamSchema] (05-agent-ecosystem.md §9.2 as versioned steps). Kept out of blaze.db, whose schema is
- * shared with Blaze Desktop / CLI and is never altered from here.
+ * shared with Argus Desktop / CLI and is never altered from here.
  *
  *  - Fresh install: [onCreate] runs every step (v0 → [TeamSchema.VERSION]).
  *  - Upgrade: [onUpgrade] runs the steps from the stored version on. SQLiteOpenHelper wraps both in one transaction

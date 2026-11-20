@@ -3,7 +3,7 @@ package com.blaze.assistant.store
 
 import com.blaze.assistant.BrandName
 /**
- * blaze.db: the same SQLite store as Blaze Desktop and Blaze CLI (internal/store, schema v1).
+ * blaze.db: the same SQLite store as Argus Desktop and Blaze CLI (internal/store, schema v1).
  * Memories, plus an index of skills and one of tools, each with an FTS5 table so a turn pulls only the
  * rows it needs. The schema, the normalisation, the FTS query and every ranking below are ports of the
  * Go code; change them together.

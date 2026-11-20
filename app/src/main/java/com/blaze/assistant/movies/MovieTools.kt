@@ -10,7 +10,7 @@ import org.json.JSONObject
 
 /**
  * 0.46.2 agent tool `movies` (and the in-app route for "play the movie …", "search movies …", "continue watching"): everything
- * lands on the Stage video card (shown in place; its open-in-full-view button goes to Blaze Video). Official sources only by
+ * lands on the Stage video card (shown in place; its open-in-full-view button goes to Argus Video). Official sources only by
  * default: Internet Archive public-domain films, Blender open movies, the user's own videos, their Jellyfin server. Providers
  * the user installed are used only when the user asked for one (named it, or said "my providers").
  */

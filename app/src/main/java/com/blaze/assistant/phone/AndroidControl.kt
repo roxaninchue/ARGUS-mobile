@@ -19,7 +19,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Wider Android control with plain public APIs (no root, no Shizuku): clipboard, Blaze's own
+ * Wider Android control with plain public APIs (no root, no Shizuku): clipboard, Argus's own
  * notifications (with progress and a tap action), the share sheet, ringer/DND/brightness/rotation,
  * jumping straight to any settings page, system actions (power menu, split screen, screenshot,
  * lock), app usage, uninstall prompts and the camera. Anything Android doesn't let an app change
@@ -100,8 +100,8 @@ object AndroidControl {
     } }
 
     /**
-     * v0.28.x camera-fix: the camera app first (STILL_IMAGE / VIDEO_CAMERA need no permission), then Blaze Camera; QR goes
-     * straight to Blaze Camera's Scan mode (ML Kit, it can act on the code). Every failure is logged with its real
+     * v0.28.x camera-fix: the camera app first (STILL_IMAGE / VIDEO_CAMERA need no permission), then Argus Camera; QR goes
+     * straight to Argus Camera's Scan mode (ML Kit, it can act on the code). Every failure is logged with its real
      * exception, and the reply says what really happened instead of a blanket "No camera app found."
      */
     private fun openCamera(ctx: Context, mode: String): String {
@@ -114,7 +114,7 @@ object AndroidControl {
             "qr" -> if (blaze.open(ctx, com.blaze.assistant.device.CameraModes.Mode.SCAN, com.blaze.assistant.device.CameraModes.Origin.STANDALONE)) "Opened ${BrandName.NAME} Camera's scanner: point it at the code." else "Couldn't open the scanner (it's in ${BrandName.NAME}'s log)."
             "video" -> {
                 val e1 = tryStart(Intent(android.provider.MediaStore.INTENT_ACTION_VIDEO_CAMERA), "video camera") ?: return "Opened the video camera."
-                // ACTION_VIDEO_CAPTURE needs Blaze's CAMERA permission (declared by the QR library), so only try it when granted.
+                // ACTION_VIDEO_CAPTURE needs Argus's CAMERA permission (declared by the QR library), so only try it when granted.
                 if (cs.granted(ctx) && tryStart(Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE), "video capture") == null) return "Opened the video camera."
                 if (e1 is SecurityException) "Android blocked the video camera (${e1.message?.take(80)}). ${BrandName.NAME}'s own camera takes photos only."
                 else if (!cs.granted(ctx)) "No video camera app answered directly, and ${BrandName.NAME}'s Camera permission is off. Turn it on in Settings → Apps → ${BrandName.NAME} → Permissions."

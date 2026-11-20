@@ -69,7 +69,7 @@ object StageMusicLogic {
     /** What Play does: restart an ended song from its start, prepare an idle player, else just play. */
     fun playOp(state: Int): String = when (state) { STATE_ENDED -> "restart"; STATE_IDLE -> "prepare_play"; else -> "play" }
 
-    /** The repeat button: off -> all -> one -> off, the same order as the notification's button and Blaze Music. */
+    /** The repeat button: off -> all -> one -> off, the same order as the notification's button and Argus Music. */
     fun nextRepeat(r: Repeat): Repeat = r.next()
 
     /** A card op ("seek:72000", "at:3", "shuffle") as the command and its number; the card and the widget send these. */

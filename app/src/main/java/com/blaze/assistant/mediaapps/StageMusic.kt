@@ -8,9 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * 0.46.0 Blaze Stage: music plays IN PLACE. The same MusicService (foreground media service, lock-screen controls) runs it,
+ * 0.46.0 Argus Stage: music plays IN PLACE. The same MusicService (foreground media service, lock-screen controls) runs it,
  * but nothing opens the Music screen: the service is started in the background and the Stage shows the music hero / mini
- * player. "Open in full view" still opens Blaze Music.
+ * player. "Open in full view" still opens Argus Music.
  */
 object StageMusic {
     data class Now(val service: Boolean, val playing: Boolean, val title: String, val artist: String, val posMs: Long, val durMs: Long, val queue: Int)
@@ -49,7 +49,7 @@ object StageMusic {
     }
 
     /**
-     * Start music for the Stage: [query] = a song / artist / mix name, or blank = resume the last queue, else Blaze DJ picks.
+     * Start music for the Stage: [query] = a song / artist / mix name, or blank = resume the last queue, else Argus DJ picks.
      * Returns a plain line for the tool result.
      */
     suspend fun play(ctx: Context, query: String): String {

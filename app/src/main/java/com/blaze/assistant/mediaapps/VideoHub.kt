@@ -178,7 +178,7 @@ object BrowseState {
 /**
  * 0.46.5 crash hardening: Compose throws (and closes the app) when two items in one LazyColumn / LazyRow share a key. Every
  * list on the Video screens is keyed through here (source + link, deduped) so a provider that sends the same item twice, or
- * the same link from two sources, can't crash Blaze.
+ * the same link from two sources, can't crash Argus.
  */
 object VideoKeys {
     fun post(p: MoviePost): String = p.source + "|" + p.link

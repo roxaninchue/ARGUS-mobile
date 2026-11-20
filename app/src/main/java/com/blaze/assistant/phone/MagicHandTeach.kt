@@ -30,7 +30,7 @@ object MagicHandTeach {
 
     /**
      * Collects steps in order. Repeated screens are folded, typing into the same field keeps only its final text, and
-     * Blaze's own package is ignored (the hand, the dock and the review card aren't part of what's being taught).
+     * Argus's own package is ignored (the hand, the dock and the review card aren't part of what's being taught).
      */
     class Recorder(private val ownPkg: String) {
         private val list = ArrayList<Step>()
@@ -92,13 +92,13 @@ object MagicHandTeach {
     private fun q(s: String) = "\u201c" + s.replace(Regex("\\s+"), " ").trim() + "\u201d"
     private fun id(s: String) = s.substringAfterLast('/').takeIf { it.isNotBlank() }
 
-    /** One plain instruction per step, with the identifiers Blaze needs to find the element again. */
+    /** One plain instruction per step, with the identifiers Argus needs to find the element again. */
     fun line(s: Step): String = when (s.kind) {
         Kind.OPEN_APP -> "Open ${s.app.ifBlank { s.pkg }} (package ${s.pkg})"
         Kind.SCREEN -> "Wait for the ${q(s.screen)} screen"   // only human screen titles reach here (MagicHandSafety.humanLabel)
         Kind.TAP -> buildString {
             append("Tap ").append(if (s.label.isNotBlank()) q(s.label) else "the ${id(s.viewId) ?: "element"} button")
-            // v0.25.0: the view id helps Blaze find it again; class names never appear in a step.
+            // v0.25.0: the view id helps Argus find it again; class names never appear in a step.
             id(s.viewId)?.let { append(" (id ").append(it).append(")") }
             if (s.screen.isNotBlank()) append(" on ").append(q(s.screen))
         }

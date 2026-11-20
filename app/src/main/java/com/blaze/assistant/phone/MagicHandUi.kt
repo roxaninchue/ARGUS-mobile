@@ -98,7 +98,7 @@ import com.blaze.assistant.ui.raised
 import com.blaze.assistant.ui.Type
 
 /**
- * Magic Hand's dock (v0.24.7): one rounded dark Blaze card at the bottom of the screen with the mascot, a status
+ * Magic Hand's dock (v0.24.7): one rounded dark Argus card at the bottom of the screen with the mascot, a status
  * line, the menu (the v0.24.6 pointer tiles, through MagicHandMenu's mapper), the answer, the confirm card, grabbed
  * text, the teach review, and Close. Everything renders from [MagicHandState.Ui], so ShotsTest draws it as is.
  */
@@ -434,7 +434,7 @@ private fun Buttons(labels: List<Pair<String, Boolean>>, onPick: (Int) -> Unit) 
     }
 }
 
-/** The hand itself: Blaze's mascot with a ring that lights orange while something is under its tip. */
+/** The hand itself: Argus's mascot with a ring that lights orange while something is under its tip. */
 @Composable
 fun MagicHandGlyph(sizeDp: Int, lit: Boolean, carrying: Boolean) {
     Box(Modifier.size(sizeDp.dp), contentAlignment = Alignment.Center) {

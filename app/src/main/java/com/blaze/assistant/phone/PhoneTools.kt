@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** The actions Blaze can take on the phone, exposed to the AI as tools. */
+/** The actions Argus can take on the phone, exposed to the AI as tools. */
 object PhoneTools {
 
     private fun fn(name: String, desc: String, props: JSONObject = JSONObject(), required: List<String> = emptyList()) =
@@ -203,7 +203,7 @@ object PhoneTools {
             return "Opened $p. It is installed, so never offer to install it." } }
         val q = AppMatch.clean(name)
         if (q.isEmpty()) return "Couldn't tell which app '$name' means. Ask the user, or use the earlier context."
-        // v0.45.6: Blaze's own screens open in-app (open_view), never by launching a look-alike app.
+        // v0.45.6: Argus's own screens open in-app (open_view), never by launching a look-alike app.
         AppMatch.blazeView(name)?.let { v -> return "\u201c$name\u201d is part of ${BrandName.NAME} itself: call open_view with view=$v (or music_ops for playback) instead of open_app." }
         val labelled = apps.map { it.loadLabel(pm).toString() to it.activityInfo.packageName }
         // v0.45.6: exact package or exact label only, never a fuzzy match ("Blaze*" opened BlazeFX).

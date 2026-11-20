@@ -30,7 +30,7 @@ object MovieHub {
         } } }.awaitAll())
     }
 
-    /** Sources Blaze may use for a request: official ones, plus user-installed providers only when the user asked for them. */
+    /** Sources Argus may use for a request: official ones, plus user-installed providers only when the user asked for them. */
     fun allowed(all: List<MovieSource>, allowProviders: Boolean, only: String = ""): List<MovieSource> {
         val pool = if (allowProviders) all else all.filter { it.official }
         if (only.isBlank()) return pool

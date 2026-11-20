@@ -45,7 +45,7 @@ object Watchers {
     @Volatile private var acting = false
     private var lastHumanNote = 0L
 
-    /** While Blaze is doing a phone task, task-only watchers (the built-in helpers) are live. */
+    /** While Argus is doing a phone task, task-only watchers (the built-in helpers) are live. */
     @Volatile var taskUntil = 0L
     fun taskTick() { taskUntil = SystemClock.uptimeMillis() + 90_000 }
 

@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** Alarm fired, phone rebooted, or Blaze updated: run the routine / reschedule. */
+/** Alarm fired, phone rebooted, or Argus updated: run the routine / reschedule. */
 class RoutineReceiver : BroadcastReceiver() {
     companion object { const val FIRE = "com.blaze.assistant.ROUTINE" }
 
@@ -46,7 +46,7 @@ class RoutineReceiver : BroadcastReceiver() {
     }
 }
 
-/** Keeps Blaze alive while a routine runs, then stops. */
+/** Keeps Argus alive while a routine runs, then stops. */
 class RoutineService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard)
 

@@ -98,7 +98,7 @@ object JamendoSource : StoreSource {
         r.optJSONObject("headers")?.optString("status") == "success"
     } catch (_: Exception) { false }
 
-    /** v0.30.5: the jamendo_setup tool, so "Ask Blaze to set it up" can save the id Blaze got from the dev portal. */
+    /** v0.30.5: the jamendo_setup tool, so "Ask Blaze to set it up" can save the id Argus got from the dev portal. */
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", TOOL)
         .put("description", "Save a Jamendo API client_id for ${BrandName.NAME} Music's Jamendo Store (checked against Jamendo before it's saved). " +

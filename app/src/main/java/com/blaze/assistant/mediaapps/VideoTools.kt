@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 agent tool `video_ops`: Blaze Video from the chat. Plays a library video, lists series, turns subtitles on
+ * v0.34.0 agent tool `video_ops`: Argus Video from the chat. Plays a library video, lists series, turns subtitles on
  * in a language (or off), translates subtitles with AI, writes a recap of what's been said so far, and switches
  * autoplay / smart downloads / data saver.
  */

@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
- * v0.33.0 Safe Walk: "walk me home" / "I'm taking a taxi, check on me". You pick a trusted contact and a time; Blaze shows
+ * v0.33.0 Safe Walk: "walk me home" / "I'm taking a taxi, check on me". You pick a trusted contact and a time; Argus shows
  * an ongoing notification with an "I'm safe" button. If you haven't checked in when the time is up, it buzzes you for 2
  * minutes, then texts the contact your last location (map link) and where you said you were going, and keeps texting the
  * latest location every 10 minutes (3 times) until you tap "I'm safe". Starting it shows a confirmation card that says

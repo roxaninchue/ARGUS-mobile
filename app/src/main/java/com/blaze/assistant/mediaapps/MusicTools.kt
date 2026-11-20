@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 agent tool `music_ops`: Blaze Music's smart side from the chat. Blaze DJ, daily mixes and smart playlists,
+ * v0.34.0 agent tool `music_ops`: Argus Music's smart side from the chat. Argus DJ, daily mixes and smart playlists,
  * Wrapped, the equalizer, crossfade, data saver, playlist import (YouTube / Spotify links) and the tag fixer.
  */
 object MusicTools {
@@ -51,8 +51,8 @@ object MusicTools {
     }
 
     /**
-     * 0.46.0 Blaze Stage: music starts IN PLACE (the service in the background + the music card on the chat), not on the Music
-     * screen. With the Stage off it opens Blaze Music as before. Main thread.
+     * 0.46.0 Argus Stage: music starts IN PLACE (the service in the background + the music card on the chat), not on the Music
+     * screen. With the Stage off it opens Argus Music as before. Main thread.
      */
     fun openPlayer(ctx: Context) {
         if (!com.blaze.assistant.stage.StageStore.enabled) { MusicActivity.open(ctx, "player"); return }

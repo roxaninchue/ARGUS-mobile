@@ -58,7 +58,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 /**
- * Magic Hand (v0.24.7): Blaze's mascot as a pointer the user moves, summoned from the hand button in the quick
+ * Magic Hand (v0.24.7): Argus's mascot as a pointer the user moves, summoned from the hand button in the quick
  * assistant panel (hold Home). Three accessibility overlay windows: a non-touchable highlight layer, the hand (drag it;
  * the flame tip points), and the dock (status, menu, answer, confirm, grab, teach, Close).
  *
@@ -129,7 +129,7 @@ object MagicHand {
         updateDockFocus(n.panel == Panel.TEACH_REVIEW)
     }
 
-    /** Private chat, or a private tab in Blaze's browser while it's in front. */
+    /** Private chat, or a private tab in Argus's browser while it's in front. */
     fun isPrivate(): Boolean {
         if (Agent.privateChat.value) return true
         val s = svc ?: BlazeAccessibilityService.instance
@@ -199,7 +199,7 @@ object MagicHand {
                             main.postAtFrontOfQueue { stopNow() }
                             Thread.sleep(1_500)
                             // Still stuck: the windows belong to the frozen UI thread, so the only sure way to give the
-                            // phone back is to end Blaze's process (Android restarts the accessibility service by itself).
+                            // phone back is to end Argus's process (Android restarts the accessibility service by itself).
                             if (on && SystemClock.uptimeMillis() - beatAt > MagicHandSafety.STALL_MS) android.os.Process.killProcess(android.os.Process.myPid())
                             break
                         }
@@ -499,7 +499,7 @@ object MagicHand {
             }
             DockButton.DROP_CHAT -> dropInChat()
             DockButton.CAMERA -> {
-                // The hand would sit over the shutter: close it, then open Blaze Camera (last mode used).
+                // The hand would sit over the shutter: close it, then open Argus Camera (last mode used).
                 val c = svc?.applicationContext
                 stop()
                 if (c != null) com.blaze.assistant.device.BlazeCamera.open(c, null, com.blaze.assistant.device.CameraModes.Origin.MAGIC_HAND)
@@ -590,7 +590,7 @@ object MagicHand {
         return withContext(Dispatchers.Default) { MagicHandScreen.crop(full, box) }
     }
 
-    /** Point & ask: the element's words and a crop of the screen around it go to Blaze; the answer shows in the dock. */
+    /** Point & ask: the element's words and a crop of the screen around it go to Argus; the answer shows in the dock. */
     private fun ask(a: Action, h: MagicHandScreen.Hit?, custom: String? = null) {
         if (Agent.mood.value != Mood.IDLE) { set { MagicHandState.back(it, MagicHandState.BUSY) }; return }
         val app = h?.pkg?.let(::appLabel).orEmpty()
@@ -990,7 +990,7 @@ object MagicHand {
         if (!on || _ui.value.mode != MagicHandLogic.Mode.TEACH || _ui.value.panel == Panel.TEACH_REVIEW) return
         val type = e.eventType
         if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && type != AccessibilityEvent.TYPE_VIEW_CLICKED && type != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
-        // v0.25.0: System UI, Android, launchers, screenshot tools, keyboards and Blaze are never part of a routine.
+        // v0.25.0: System UI, Android, launchers, screenshot tools, keyboards and Argus are never part of a routine.
         if (MagicHandSafety.ignoreForTeach(pkg, s.packageName, launchers, imes)) return
         if (isPrivate()) { recorder = null; set { MagicHandState.endTeach(it, MagicHandGuard.PRIVATE_NOTE) }; return }
         val now = SystemClock.uptimeMillis()

@@ -34,7 +34,7 @@ object Movies {
             override fun get(key: String) = runCatching { Settings.str(key, "") }.getOrDefault("")
             override fun put(key: String, value: String) { runCatching { Settings.setStr(key, value) } }
         }).also { st ->
-            // 0.46.2 Blaze Official (Blaze's own example repo) comes preinstalled from the copy bundled in the app.
+            // 0.46.2 Blaze Official (Argus's own example repo) comes preinstalled from the copy bundled in the app.
             val c = (ctx ?: app)!!
             runCatching { st.seedOfficial { path -> runCatching { c.assets.open("movies/blaze-official/$path").bufferedReader().use { it.readText() } }.getOrNull() } }
             store = st
@@ -91,7 +91,7 @@ object Movies {
     }
 }
 
-/** The user's own videos (Blaze's library: downloads + gallery videos, and files opened from other apps). */
+/** The user's own videos (Argus's library: downloads + gallery videos, and files opened from other apps). */
 object LocalVideos : MovieSource {
     override val id = "local"
     override val name = "Your videos"

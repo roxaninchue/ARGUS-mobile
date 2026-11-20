@@ -2,7 +2,7 @@
  * The 0-1000 normalized coordinate target follows google/artemis (Apache-2.0, Copyright 2026 Google LLC) and the
  * percentage tap of Minitap mobile-use as included in Artemis (third_party/mobile_use/controllers/unified_controller.py
  * tap_percentage, Apache-2.0, Copyright 2025-2026 Minitap, Inc., modifications Copyright 2026 Google LLC). Rewritten in
- * Kotlin for Blaze. See THIRD_PARTY_NOTICES.md.
+ * Kotlin for Argus. See THIRD_PARTY_NOTICES.md.
  */
 package com.blaze.assistant.phone.flash
 

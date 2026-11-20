@@ -8,7 +8,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * Magic Hand (v0.24.7), Android side of "what's under the tip": the deepest visible node at a screen point (Blaze's
+ * Magic Hand (v0.24.7), Android side of "what's under the tip": the deepest visible node at a screen point (Argus's
  * own overlays skipped), its child-index path from the window root (for watches), re-reading a watched node,
  * the text inside a region, a screenshot crop and on-device OCR (ML Kit, bundled Latin model: no network).
  */

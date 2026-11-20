@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * v0.38.0 Follow-ups, the Android side ([FollowUpLogic] holds the rules). Fed by [Conversations] (each new message in a
  * chat app's notification, the user's own replies included), the accessibility service (an app opened, Send tapped)
- * and Blaze's own replies. Asks "Are you going?" with Yes / No buttons, sets the reminder, nudges in the app, and shows
+ * and Argus's own replies. Asks "Are you going?" with Yes / No buttons, sets the reminder, nudges in the app, and shows
  * what's open in the prompt (Awareness) and through the follow_ups tool.
  */
 object FollowUps {
@@ -130,7 +130,7 @@ object FollowUps {
         fun act(a: String, code: Int) = PendingIntent.getBroadcast(ctx, (i.id + a).hashCode() + code, Intent(ctx, FollowUpReceiver::class.java).setAction(a).putExtra("id", i.id),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val goingWord = if (i.ask.isBlank() || i.ask.contains("going", true) || i.ask.contains("coming", true)) "Yes, I'm going" else "Yes"
-        // 0.45.19: a follow-up is a text in the one Blaze thread (avatar, alerting channel), with its own buttons.
+        // 0.45.19: a follow-up is a text in the one Argus thread (avatar, alerting channel), with its own buttons.
         val acts = mutableListOf(NotificationCompat.Action.Builder(0, goingWord, act(FollowUpReceiver.GOING, 1)).build(),
             NotificationCompat.Action.Builder(0, "No", act(FollowUpReceiver.NOT_GOING, 2)).build())
         if (i.needsReply) acts.add(1, NotificationCompat.Action.Builder(0, "I replied", act(FollowUpReceiver.REPLIED, 3)).build())
@@ -141,7 +141,7 @@ object FollowUps {
 
     // ---------------- answers ----------------
 
-    /** Going: a reminder 30 minutes before (when there's a time), and Blaze keeps nudging until they've replied. */
+    /** Going: a reminder 30 minutes before (when there's a time), and Argus keeps nudging until they've replied. */
     fun going(id: String): String {
         val now = System.currentTimeMillis()
         var said = ""

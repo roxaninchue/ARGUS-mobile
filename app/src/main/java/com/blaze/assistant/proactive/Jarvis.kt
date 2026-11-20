@@ -45,13 +45,13 @@ import java.util.Locale
 import kotlin.coroutines.resume
 
 /**
- * v0.38.0 Jarvis mode: Blaze reaching out on its own, every few minutes while the phone is in use.
+ * v0.38.0 Jarvis mode: Argus reaching out on its own, every few minutes while the phone is in use.
  *  - Questions: a real getting-to-know-you question as a heads-up ("Quick question: what do you do for fun?"); the
- *    reply lands in the Heads-ups chat, where Blaze saves what it learns with remember.
+ *    reply lands in the Heads-ups chat, where Argus saves what it learns with remember.
  *  - Screen glances (switch, off by default): the screen as text through phone control, never banks, wallets,
- *    password managers, sign-ins or codes; Blaze offers help only when it really fits, and keeps a one-line note of
+ *    password managers, sign-ins or codes; Argus offers help only when it really fits, and keeps a one-line note of
  *    what the user was doing (Awareness), nothing else.
- *  - Camera looks (switch, off by default): one small front-camera frame, only while Blaze is open on the Chat
+ *  - Camera looks (switch, off by default): one small front-camera frame, only while Argus is open on the Chat
  *    screen (Android shows its camera dot); never saved.
  *  - Usage: today's top apps (Usage access) go into its thinking.
  *  - Its own routines: every few days it may propose one; at the Jarvis level it sets it up itself, named
@@ -105,7 +105,7 @@ object Jarvis {
         val lim = JarvisLogic.limits(l)
         val now = System.currentTimeMillis()
         val blazeFront = Awareness.get("screen") != null
-        // One reach-out per tick at most: camera (Blaze open), else a screen glance, else a question, else a routine.
+        // One reach-out per tick at most: camera (Argus open), else a screen glance, else a question, else a routine.
         if (blazeFront && cameraLooks && JarvisLogic.everyDue(lim.cameraEveryMin, num("jarvis_cam_at"), now) && Awareness.get("screen")?.title == "Chat") {
             setNum("jarvis_cam_at", now); if (cameraLook()) return@withLock
         }
@@ -130,7 +130,7 @@ object Jarvis {
         val asked = Settings.str("jarvis_asked", "").split(',').filter { it.isNotBlank() }.toSet()
         val mem = try { Memory.promptBlock("") } catch (_: Throwable) { "" }
         val q = JarvisLogic.pick(asked, mem, Settings.str("jarvis_last_topic", ""), (now / 86_400_000L).toInt()) ?: return false
-        // Blaze may reword it to fit what's going on ("You've had a lot of jazz on today: who got you into it?").
+        // Argus may reword it to fit what's going on ("You've had a lot of jazz on today: who got you into it?").
         val own = try {
             val sys = "You are ${BrandName.NAME}, the user's phone assistant, getting to know them like a friend would. Write ONE short, warm, specific question on the topic \"${q.topic}\" " +
                 "(example: \"${q.text}\"), tied to what they're doing if that fits naturally. Never about passwords, money details or anything private. ${mem.take(800)}\n" +
@@ -157,7 +157,7 @@ object Jarvis {
 
     private suspend fun screenGlance(now: Long): Boolean {
         val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return false
-        // Never while Blaze is working a task (it may be using the screen's element numbers).
+        // Never while Argus is working a task (it may be using the screen's element numbers).
         if (try { com.blaze.assistant.agent.Agent.busyChats.value.isNotEmpty() } catch (_: Throwable) { true }) return false
         val pkg = try { withContext(Dispatchers.Main) { svc.rootInActiveWindow?.packageName?.toString() } } catch (_: Throwable) { null } ?: return false
         if (!JarvisLogic.glanceable(pkg, app.packageName, launcher(pkg), Settings.str("jarvis_glance_pkg", ""), num("jarvis_glance_at"), now)) return false
@@ -187,7 +187,7 @@ object Jarvis {
         override val lifecycle: Lifecycle get() = reg
     }
 
-    /** One small front-camera frame as a JPEG data URL, or null. Main thread; Blaze must be in front. */
+    /** One small front-camera frame as a JPEG data URL, or null. Main thread; Argus must be in front. */
     private suspend fun frontFrame(): String? = withContext(Dispatchers.Main) {
         if (ContextCompat.checkSelfPermission(app, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) return@withContext null
         val exec = ContextCompat.getMainExecutor(app)
@@ -284,7 +284,7 @@ object Jarvis {
 
     // ---------------- offering a call ----------------
 
-    /** "Got a minute? I can catch you up out loud." with a Call me button (Blaze's voice call). */
+    /** "Got a minute? I can catch you up out loud." with a Call me button (Argus's voice call). */
     private fun offerCall() {
         val open = Awareness.nows().count { it.key.startsWith("followup:") }
         // Unreleased after 0.52.3: a call offer is a check-in the dial judges.
@@ -294,7 +294,7 @@ object Jarvis {
         val call = android.app.PendingIntent.getActivity(app, 7400, com.blaze.assistant.IntentKey.sign(app, Intent(app, com.blaze.assistant.MainActivity::class.java)
             .setAction(com.blaze.assistant.MainActivity.ACTION_CALL).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)),
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
-        // 0.45.19: a check-in is a text in the one Blaze thread (avatar, quick replies, alerting channel), with Call me.
+        // 0.45.19: a check-in is a text in the one Argus thread (avatar, quick replies, alerting channel), with Call me.
         com.blaze.assistant.notify.Notifier.post(text, com.blaze.assistant.notify.BlazeThread.Kind.CALL_OFFER, context = text, tap = call, why = ProactiveDial.Why.checkIn(),
             extra = listOf(androidx.core.app.NotificationCompat.Action.Builder(0, "Call me", call).build()))
     }

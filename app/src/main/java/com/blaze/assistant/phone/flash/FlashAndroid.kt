@@ -9,7 +9,7 @@ import com.blaze.assistant.phone.BlazeAccessibilityService
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** The real phone, through Blaze's accessibility service (no ADB). */
+/** The real phone, through Argus's accessibility service (no ADB). */
 class A11yDevice(private val ctx: Context, private val svc: BlazeAccessibilityService) : FlashDevice {
     private var nodes: Map<Int, AccessibilityNodeInfo> = emptyMap()
 
@@ -52,7 +52,7 @@ class A11yDevice(private val ctx: Context, private val svc: BlazeAccessibilitySe
     }
 }
 
-/** The model through Blaze's own routing (Blaze Cloud gateway, then the backup brain, then the free reserve): flash steps on the STEPS lane, pro steps on MAIN. */
+/** The model through Argus's own routing (Argus Cloud gateway, then the backup brain, then the free reserve): flash steps on the STEPS lane, pro steps on MAIN. */
 class RoutedPolicy : FlashPolicy {
     override suspend fun next(req: FlashRequest): String {
         val sys = if (req.mode == FlashMode.PRO) FlashPrompt.SYSTEM_PRO else FlashPrompt.SYSTEM_FLASH

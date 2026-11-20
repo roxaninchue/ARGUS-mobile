@@ -30,14 +30,14 @@ import androidx.webkit.WebViewFeature
  * chrome; the status / navigation bars take the manifest's theme_color; a splash with the icon and name on its
  * background_color until the first page has loaded; its own task in Recents (setTaskDescription with its name, icon and
  * colour; a distinct document per site); its own WebView profile (cookies and storage) when the phone's WebView supports
- * profiles; Back goes back inside the app; links off its scope open in Blaze's browser.
+ * profiles; Back goes back inside the app; links off its scope open in Argus's browser.
  */
 class SiteAppActivity : ComponentActivity() {
     companion object {
         const val EXTRA_ID = "site_id"
         fun profile(id: String) = "site-" + id.replace(Regex("[^A-Za-z0-9._-]"), "-")
 
-        /** Uninstall: the app's own profile is emptied (never Blaze's browser data). */
+        /** Uninstall: the app's own profile is emptied (never Argus's browser data). */
         fun wipeProfile(id: String) {
             if (!WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) return
             try {
@@ -87,7 +87,7 @@ class SiteAppActivity : ComponentActivity() {
                 val u = req.url.toString()
                 if (SiteLogic.inScope(u, app.scope)) return false
                 // v0.33.3: intent://, market:, mailto:, tel:… and https links another installed app verifiably handles
-                // go to that app; other out-of-scope pages open in the Blaze browser. Subframes stay in the page.
+                // go to that app; other out-of-scope pages open in the Argus browser. Subframes stay in the page.
                 if (!req.isForMainFrame) return false
                 if (com.blaze.assistant.browser.AppLinks.handle(this@SiteAppActivity, view, req, view.url ?: app.startUrl)) return true
                 val sc = req.url.scheme.orEmpty().lowercase()
@@ -137,7 +137,7 @@ class SiteAppActivity : ComponentActivity() {
         s.animate().alpha(0f).setDuration(220).withEndAction { (s.parent as? ViewGroup)?.removeView(s) }.start()
     }
 
-    /** Off-scope links: http(s) in Blaze's browser, anything else (mailto:, tel:) to the phone. */
+    /** Off-scope links: http(s) in Argus's browser, anything else (mailto:, tel:) to the phone. */
     private fun openOutside(u: Uri) {
         try {
             if (u.scheme == "http" || u.scheme == "https")

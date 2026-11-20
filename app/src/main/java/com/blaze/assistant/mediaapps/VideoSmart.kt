@@ -3,7 +3,7 @@ package com.blaze.assistant.mediaapps
 import org.json.JSONObject
 
 /**
- * v0.34.0 Blaze Video, the pure rules (VideoSmartTest): what a stream costs in data before it plays, episodes grouped
+ * v0.34.0 Argus Video, the pure rules (VideoSmartTest): what a stream costs in data before it plays, episodes grouped
  * into series, a learned "Skip intro" per series, what plays next, which watched downloads smart downloads clears,
  * and the text for a recap and for AI subtitle translation.
  */

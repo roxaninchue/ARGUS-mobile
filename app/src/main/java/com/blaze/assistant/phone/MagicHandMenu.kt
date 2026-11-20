@@ -92,7 +92,7 @@ object BrowserMenuMapper : ElementActionMapper {
 /**
  * v0.24.7 Magic Hand safety rules (pure, tested): what the hand may do while a private chat (or a private browser
  * tab) is in front. In private nothing is captured: no screenshot, no OCR, no teach recording, no watch, nothing
- * sent to Blaze or saved. Moving text the user can already see (copy, carry, drop, share, open) still works.
+ * sent to Argus or saved. Moving text the user can already see (copy, carry, drop, share, open) still works.
  */
 object MagicHandGuard {
     private val capturing = setOf(Action.ASK, Action.EXPLAIN, Action.DESCRIBE, Action.TRANSLATE, Action.REMIND,

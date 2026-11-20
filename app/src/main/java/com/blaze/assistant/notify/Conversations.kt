@@ -22,9 +22,9 @@ import java.util.Locale
  * Notification replies (v0.19.0). With notification access on, every chat-app notification (WhatsApp, SMS,
  * Telegram, Messenger, Signal…) is read with its MessagingStyle history: who sent what, in which conversation.
  *
- *  - Each conversation keeps a rolling log in the journal (kind "notif", conv "notif:<app>:<name>"), so Blaze has
- *    more than the last few lines a notification carries. Senders are linked to people memories when Blaze reads it.
- *  - Blaze drafts a reply and sends it through the notification's own reply box (RemoteInput), without opening the
+ *  - Each conversation keeps a rolling log in the journal (kind "notif", conv "notif:<app>:<name>"), so Argus has
+ *    more than the last few lines a notification carries. Senders are linked to people memories when Argus reads it.
+ *  - Argus drafts a reply and sends it through the notification's own reply box (RemoteInput), without opening the
  *    app. Sending always shows a confirm card, unless the user switched on auto-reply for that conversation
  *    (Settings › Notification replies).
  *  - Codes and bank messages ([Sensitive]) are never stored or shown.
@@ -94,7 +94,7 @@ object Conversations {
     fun render(msgs: List<Msg>, fmt: SimpleDateFormat = SimpleDateFormat("EEE HH:mm", Locale.getDefault())): String =
         msgs.joinToString("\n") { "${fmt.format(Date(it.at))} ${if (it.self) "You" else it.sender}: ${it.text.take(600)}" }
 
-    /** True when there's too little to reply well; Blaze then asks the user or opens the chat to read more. */
+    /** True when there's too little to reply well; Argus then asks the user or opens the chat to read more. */
     fun thin(n: Int) = n < THIN
 
     fun autoKeys(raw: String): Set<String> = try {

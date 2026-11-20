@@ -3,7 +3,7 @@ package com.blaze.assistant.team
 /**
  * P0-TM-01: team.db's schema as versioned migration steps. Pure (only SQL text), so the DDL is checked on the JVM
  * against a real SQLite (TeamSchemaTest, sqlite-jdbc) and applied on the phone by [TeamDb] (SQLiteOpenHelper,
- * TeamDbTest). team.db is Argus-only and kept out of blaze.db, whose schema is shared with Blaze Desktop / CLI.
+ * TeamDbTest). team.db is Argus-only and kept out of blaze.db, whose schema is shared with Argus Desktop / CLI.
  *
  * Rules for whoever adds a version:
  *  - Never edit a shipped step. Add a new list at the end of [MIGRATIONS]; its index + 1 is the new version.

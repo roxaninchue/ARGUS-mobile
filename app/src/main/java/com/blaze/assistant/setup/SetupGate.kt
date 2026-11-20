@@ -11,7 +11,7 @@ import androidx.core.content.ContextCompat
 import java.io.File
 
 /**
- * v0.24.4 dependency setup gate. On launch (new users after the first-run flow, and users who upgraded), Blaze
+ * v0.24.4 dependency setup gate. On launch (new users after the first-run flow, and users who upgraded), Argus
  * checks which dependencies are missing and shows the setup columns for just those. Required ones block the
  * app until they're done; optional ones have "Later". Once everything is resolved `setup_deps_done` is set and
  * the gate never runs again. Before the gate first runs, prefs and user data are backed up (see [backup]).
@@ -95,7 +95,7 @@ object SetupGate {
     private const val MAX_FILE = 64L * 1024 * 1024
 
     /**
-     * Copies shared_prefs and Blaze's own data files (chats, mind.db, longchat.db, vault, memories, skills…) to
+     * Copies shared_prefs and Argus's own data files (chats, mind.db, longchat.db, vault, memories, skills…) to
      * filesDir/backup/pre-setup-v<code>-<time>/ once per build, before the gate does anything. Keeps the newest 3.
      * Returns the backup folder, or null when this build already backed up (or nothing could be written).
      */

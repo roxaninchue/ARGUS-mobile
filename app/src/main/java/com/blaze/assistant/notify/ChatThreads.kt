@@ -4,9 +4,9 @@ package com.blaze.assistant.notify
  * v0.45.5 (P1, user 2026-10-20 19:24): who said what in a chat notification.
  *
  * The bug: in the WhatsApp group "Cyp home", Stefano asked Deborah about Thursday 9:00, Debi said yes and Elena said
- * "Pronto". Blaze pinned the plan on Elena (the last sender) and asked the user to confirm, although the question was
+ * "Pronto". Argus pinned the plan on Elena (the last sender) and asked the user to confirm, although the question was
  * never put to the user. Now every message keeps its own sender, time and text (MessagingStyle, never EXTRA_TITLE /
- * EXTRA_TEXT for groups), the summary names the group and each speaker, and Blaze works out who a question is
+ * EXTRA_TEXT for groups), the summary names the group and each speaker, and Argus works out who a question is
  * addressed to. It asks the user only when the question is for them (a 1:1 chat, their name, "@them") or for the
  * whole group ("everyone", "guys"); a question for someone else, or one that person already answered, is info only.
  *
@@ -23,7 +23,7 @@ object ChatThreads {
     /** A question in the chat and who it is for. [to] is the addressee's name for [Target.OTHER]; [answered] = they replied. */
     data class Ask(val from: String, val to: String, val target: Target, val text: String, val at: Long, val answered: Boolean = false)
 
-    /** What Blaze should do with a burst of new messages. */
+    /** What Argus should do with a burst of new messages. */
     data class Decision(val askUser: Boolean, val ask: Ask?, val summary: String)
 
     /** Rolling buffer per conversation, deduped on update (MessagingStyle repeats the whole history with every post). */

@@ -8,7 +8,7 @@ import org.json.JSONObject
  * the budget?") becomes a follow-up: who, which app and conversation, what, when. Blaze asks "Are you going?"; a yes
  * sets a reminder; until the user has replied, opening that app gets a nudge ("I see you're in WhatsApp. Jack wanted
  * to meet tomorrow at 15:00 about the budget: maybe get back to him?"). A reply seen in the notification (the user's
- * own message), a Send tapped in that chat, or a reply sent through Blaze closes the loop.
+ * own message), a Send tapped in that chat, or a reply sent through Argus closes the loop.
  */
 object FollowUpLogic {
     enum class Status { ASKED, GOING, NOT_GOING, REPLIED, DONE }

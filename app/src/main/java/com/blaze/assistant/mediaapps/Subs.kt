@@ -5,7 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 subtitles, the pure side (SubsTest). Blaze Video never handed YouTube's caption tracks to the player, so
+ * v0.34.0 subtitles, the pure side (SubsTest). Argus Video never handed YouTube's caption tracks to the player, so
  * the subtitle menu had nothing to turn on. Now:
  *  - [ytTracks] reads the caption tracks out of a YouTube player reply (manual and auto-generated, with names),
  *  - [parse] reads YouTube's json3 / srv1 XML, WebVTT and SubRip into [Cue]s (auto-caption "rolling" lines cleaned up),
@@ -193,7 +193,7 @@ object Subs {
         }
     }
 
-    /** Subtitle files Blaze can load, by name. */
+    /** Subtitle files Argus can load, by name. */
     fun isSubtitleFile(name: String): Boolean = name.substringAfterLast('.', "").lowercase() in setOf("srt", "vtt", "webvtt")
 
     // ---------------------------------------------------------------- choosing
@@ -237,7 +237,7 @@ object Subs {
 
     /**
      * Languages a YouTube caption track can be machine-translated into (&tlang=). YouTube's own list is longer;
-     * these are the ones offered in the menu. Anything else goes through Blaze's AI translation.
+     * these are the ones offered in the menu. Anything else goes through Argus's AI translation.
      */
     val translateTo: List<Pair<String, String>> = listOf(
         "en" to "English", "fr" to "French", "pt" to "Portuguese", "es" to "Spanish", "sw" to "Swahili", "ny" to "Chichewa (Nyanja)",

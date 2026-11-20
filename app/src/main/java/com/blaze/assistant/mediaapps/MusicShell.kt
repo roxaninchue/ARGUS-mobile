@@ -67,7 +67,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /*
- * 0.46.4 Music + Video revamp (shared chrome and the new Music pages). Blaze's own look: the picked theme's scene shows
+ * 0.46.4 Music + Video revamp (shared chrome and the new Music pages). Argus's own look: the picked theme's scene shows
  * through, raised parts are glass, colours come from the cover art or the theme. Less text, more art; animations are
  * only fades and the existing sheet slide (cheap on every phone).
  */
@@ -91,8 +91,8 @@ fun AccountBadge(onClick: () -> Unit) {
 }
 
 /**
- * The top bar of Music and Video: account badge left, then [actions] (Blaze DJ in Music), the light / dark switch and the
- * close (X) on the right. Close always goes back to the Blaze chat ([MusicNav.CLOSE_TARGET]).
+ * The top bar of Music and Video: account badge left, then [actions] (Argus DJ in Music), the light / dark switch and the
+ * close (X) on the right. Close always goes back to the Argus chat ([MusicNav.CLOSE_TARGET]).
  * Unification: the shared header, matched to the shell's top bar and BackTitle: the same height (the 44 dp control plus
  * 10 dp above and below), the controls at the gutter ([SpaceInsets.GUTTER_DP]), round [SpaceInsets.CONTROL_DP] buttons
  * in the track colour, and the shell's serif title ([SpaceType.section]). The switch lives here, so every screen that
@@ -246,7 +246,7 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
-        // The Blaze DJ tile.
+        // The Argus DJ tile.
         item {
             Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth().clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
                 .clickable(role = Role.Button, onClickLabel = "Start ${BrandName.NAME} DJ") { onDj() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -286,7 +286,7 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
     }
 }
 
-/** Blaze's own warm tint for gradients (not a brand colour). */
+/** Argus's own warm tint for gradients (not a brand colour). */
 internal object BlazeBrushTint { val warm = Color(0xFFD6B48E) }
 
 @Composable
@@ -391,7 +391,7 @@ internal fun TrackRow(t: Track, playing: Boolean = false, menu: List<Pair<String
 // ---------------------------------------------------------------- Playlist view
 
 /**
- * A playlist, mix, album or artist: big centred cover, a header tinted from the cover blending into the Blaze background,
+ * A playlist, mix, album or artist: big centred cover, a header tinted from the cover blending into the Argus background,
  * title / owner / total time, icon actions (offline, share, shuffle) + a big round Play, chips (Add, Edit, Name & details,
  * Sort; real playlists only) and the tracks.
  */
@@ -563,9 +563,9 @@ internal fun MusicCreatePage(onCreated: (MusicHome.Tile) -> Unit, onAskBlaze: (S
     }
 }
 
-// ---------------------------------------------------------------- Blaze DJ sheet
+// ---------------------------------------------------------------- Argus DJ sheet
 
-/** Blaze DJ controls: start / stop, vibe chips, More like this, spoken intros on or off. */
+/** Argus DJ controls: start / stop, vibe chips, More like this, spoken intros on or off. */
 @Composable
 internal fun DjSheet(onDismiss: () -> Unit) {
     val c = LocalBlaze.current

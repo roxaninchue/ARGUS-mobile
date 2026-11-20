@@ -23,7 +23,7 @@ import com.blaze.assistant.agent.Agent
 /** System notifications: one combined ongoing status line with Stop (v0.24.4), and replies you can answer inline. */
 object Notifier {
     private const val CH_WORK = "blaze_work"
-    /** 0.45.19: the one alerting channel of the Blaze thread (was "blaze_reply"). */
+    /** 0.45.19: the one alerting channel of the Argus thread (was "blaze_reply"). */
     private const val CH_REPLY = BlazeThread.CHANNEL
     /** v0.20.0: the background browser needs something only the user has (a sign-in, a code). */
     const val CH_ACTION = "blaze_action"
@@ -55,7 +55,7 @@ object Notifier {
                 description = "What ${BrandName.NAME} is doing right now (thinking, browsing, downloading an update, waiting for you), with a Stop button"
                 setShowBadge(false)
             })
-            // 0.45.19: every Blaze message (replies, results, check-ins, heads-ups) on ONE alerting channel; the old
+            // 0.45.19: every Argus message (replies, results, check-ins, heads-ups) on ONE alerting channel; the old
             // message channels (one of them DEFAULT = no heads-up, and a channel can't be raised once made) are deleted.
             nm.createNotificationChannel(NotificationChannel(BlazeThread.CHANNEL, BlazeThread.CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH).apply {
                 description = BlazeThread.CHANNEL_DESC
@@ -81,7 +81,7 @@ object Notifier {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    /** v0.28.3: opens Blaze at [chatId] when it's a project chat (MainActivity → Agent.openFromLink → Projects). */
+    /** v0.28.3: opens Argus at [chatId] when it's a project chat (MainActivity → Agent.openFromLink → Projects). */
     private fun openChat(chatId: String?): PendingIntent {
         if (chatId.isNullOrBlank() || com.blaze.assistant.agent.Projects.of(chatId) == null) return openApp()
         return PendingIntent.getActivity(app, 7102, com.blaze.assistant.IntentKey.sign(app, Intent(app, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -106,7 +106,7 @@ object Notifier {
     @Volatile private var stNeeds = ""
     @Volatile private var stUpdatePct: Int? = null
     @Volatile private var stUpdateLabel = ""
-    /** True while Blaze is on screen: agent work isn't shown (the chat shows it), downloads and needs still are. */
+    /** True while Argus is on screen: agent work isn't shown (the chat shows it), downloads and needs still are. */
     @Volatile var appVisible = false
 
     /** The current input of the status notification (tests, diagnostics). */
@@ -132,7 +132,7 @@ object Notifier {
     }
 
     /**
-     * Agent work in progress. Ack-and-background (HQ 22 Oct 20:36): Blaze no longer posts a "thinking / working"
+     * Agent work in progress. Ack-and-background (HQ 22 Oct 20:36): Argus no longer posts a "thinking / working"
      * notification; the ack and the Done / failed message arrive as text-style notifications ([reply]) instead.
      * Kept as a no-op so old callers compile; [WORKING_NOTE] guards it (AckTest).
      */
@@ -175,13 +175,13 @@ object Notifier {
     /** Test hook: reset the status state. */
     internal fun resetStatus() { stBusy = false; stStep = ""; stNeeds = ""; stUpdatePct = null; stUpdateLabel = ""; appVisible = false }
 
-    /** The last few lines Blaze sent while you were away (one conversation thread in the shade), cleared on open. */
+    /** The last few lines Argus sent while you were away (one conversation thread in the shade), cleared on open. */
     private val thread = ArrayDeque<BlazeThread.Msg>()
 
-    /** Called when the user opens Blaze or the notification is dismissed: the next text starts a fresh thread. */
+    /** Called when the user opens Argus or the notification is dismissed: the next text starts a fresh thread. */
     fun clearThread() = synchronized(thread) { thread.clear() }
 
-    /** Blaze as a Person: its name, a bot, and the app icon as its avatar (not a letter "B"). */
+    /** Argus as a Person: its name, a bot, and the app icon as its avatar (not a letter "B"). */
     @Volatile private var blazePerson: androidx.core.app.Person? = null
     @Volatile private var avatar: androidx.core.graphics.drawable.IconCompat? = null
     @Volatile private var shortcutPushed = false
@@ -226,7 +226,7 @@ object Notifier {
     }
 
     /**
-     * 0.45.19: THE builder for every Blaze message (reply, honest failure, check-in, heads-up, question, follow-up, call
+     * 0.45.19: THE builder for every Argus message (reply, honest failure, check-in, heads-up, question, follow-up, call
      * offer) and, since 0.45.29, the user's own inline reply ([userReplied], drawn as "You"). One MessagingStyle conversation with one Person "Blaze" (app-icon avatar), one shortcut,
      * one notification id, quick replies that fit ([QuickReplies]) plus an inline Reply, on the alerting channel.
      * [extra] = buttons beyond Reply (a suggestion, Going / No, Call me). [tap] = what tapping opens (default: the chat).
@@ -241,13 +241,13 @@ object Notifier {
         if (text.isBlank() || !allowed()) return
         val lines = synchronized(thread) { BlazeThread.push(thread, BlazeThread.Msg(System.currentTimeMillis(), text, kind)) }
         val chips = QuickReplies.forMessage(text, kind)
-        // The collapsed line is Blaze's newest words; the user's own reply shows in the conversation as theirs.
+        // The collapsed line is Argus's newest words; the user's own reply shows in the conversation as theirs.
         val lastBlaze = lines.lastOrNull { !it.fromUser }?.text ?: text
         val input = RemoteInput.Builder(KEY_REPLY).setLabel("Reply to ${BrandName.NAME}")
             .apply { if (chips.isNotEmpty()) setChoices(Array<CharSequence>(chips.size) { chips[it] }) }.build()
         val replyA = NotificationCompat.Action.Builder(0, "Reply", replyIntent(7101, chatId, context ?: if (chatId == null && kind != BlazeThread.Kind.USER) text else null))
             .addRemoteInput(input)
-            // Android's generated replies offered "Weird" / "Great!" under a result: only Blaze's own choices.
+            // Android's generated replies offered "Weird" / "Great!" under a result: only Argus's own choices.
             .setAllowGeneratedReplies(false)
             .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY).setShowsUserInterface(false).build()
         ensureShortcut()
@@ -279,7 +279,7 @@ object Notifier {
     }
 
     /**
-     * Blaze's answer (its reply, a verified "Done ✓" toggle line or an honest failure) as a text from Blaze:
+     * Argus's answer (its reply, a verified "Done ✓" toggle line or an honest failure) as a text from Argus:
      * MessagingStyle, with an inline Reply box. 0.45.19: through [post]. 0.45.29: there is no ack text any more.
      */
     fun reply(raw: String, isError: Boolean, chatId: String? = null) = post(raw, replyKind(raw, isError), chatId)
@@ -294,13 +294,13 @@ object Notifier {
     /**
      * 0.45.29: the user answered from the notification's Reply box. Android keeps a spinner on the Reply box until the
      * notification is updated, so the thread is posted again at once with the user's words, exactly as typed and shown
-     * as theirs ("You"), quietly (no second sound). Blaze's real answer is added below when the turn ends ([reply]).
-     * Nothing is reworded and no line is invented for Blaze.
+     * as theirs ("You"), quietly (no second sound). Argus's real answer is added below when the turn ends ([reply]).
+     * Nothing is reworded and no line is invented for Argus.
      */
     fun userReplied(raw: String, chatId: String?, context: String? = null) =
         post(raw, BlazeThread.Kind.USER, chatId, context = context, quiet = true)
 
-    /** Fallback when Android blocks opening Blaze from the background: a full-screen / heads-up prompt. */
+    /** Fallback when Android blocks opening Argus from the background: a full-screen / heads-up prompt. */
     fun wakeHeard() {
         if (!allowed()) return
         val pi = PendingIntent.getActivity(app, 4,
@@ -319,7 +319,7 @@ object Notifier {
     }
 
     private const val ID_WAKE_BLOCKED = 6
-    /** Android silences a background mic; one tap brings Blaze forward and the wake word works again. */
+    /** Android silences a background mic; one tap brings Argus forward and the wake word works again. */
     fun wakeBlocked() {
         if (!allowed()) return
         val pi = PendingIntent.getActivity(app, 6, Intent(app, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -334,7 +334,7 @@ object Notifier {
 
     private const val ID_PROACTIVE = 8
 
-    /** Blaze speaking up on its own, with a one-tap suggestion and an inline reply. 0.45.19: one Blaze thread ([post]). */
+    /** Argus speaking up on its own, with a one-tap suggestion and an inline reply. 0.45.19: one Argus thread ([post]). */
     fun proactive(text0: String, suggest: String, urgent: Boolean, kind: BlazeThread.Kind = BlazeThread.Kind.HEADS_UP, why: String = "") {
         // v0.28.1: notification text never shows markdown symbols.
         val text = com.blaze.assistant.ui.Md.plain(text0)
@@ -354,7 +354,7 @@ object Notifier {
     fun question(q0: String) {
         val q = com.blaze.assistant.ui.Md.plain(q0)
         needs(q)
-        // 0.45.19: a question from Blaze is a text in the Blaze thread too (the answer goes to the chat that asked).
+        // 0.45.19: a question from Argus is a text in the Argus thread too (the answer goes to the chat that asked).
         // No inline Reply: the turn that asked is waiting on the answer in the app (tap opens it, as before).
         post(q, BlazeThread.Kind.QUESTION, tap = openApp(), reply = false)
     }
@@ -362,7 +362,7 @@ object Notifier {
         try {
             needs("")
             NotificationManagerCompat.from(app).cancel(ID_QUESTION)
-            // 0.45.19: the question was a line in the Blaze thread: once answered, it leaves the shade
+            // 0.45.19: the question was a line in the Argus thread: once answered, it leaves the shade
             val wasLast = synchronized(thread) { (thread.lastOrNull()?.kind == BlazeThread.Kind.QUESTION).also { if (it) thread.removeLast() } }
             if (wasLast) NotificationManagerCompat.from(app).cancel(BlazeThread.NOTIF_ID)
         } catch (_: Exception) { }
@@ -407,7 +407,7 @@ object Notifier {
 
     fun clearConfirm() { needs(""); NotificationManagerCompat.from(app).cancel(ID_CONFIRM) }
 
-    /** True when Blaze may post notifications (always below Android 13; a granted permission on 13+). */
+    /** True when Argus may post notifications (always below Android 13; a granted permission on 13+). */
     fun canPost(): Boolean = ::app.isInitialized && allowed()
 
     /**

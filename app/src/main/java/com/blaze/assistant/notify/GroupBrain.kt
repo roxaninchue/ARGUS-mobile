@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
- * v0.33.0 Group Brain: Blaze reads a family / class / work group from its chat log (Notification replies › Keep chat logs)
+ * v0.33.0 Group Brain: Argus reads a family / class / work group from its chat log (Notification replies › Keep chat logs)
  * and answers "when's the test?" from the history, catches you up on 300 unread messages (who said what, what needs you,
  * dates and plans), and tracks who owes what (contributions, "I'll pay you back", amounts). It hands the model a compact,
  * ranked slice of the log instead of the whole thing. Pure ranking / compression / owes in [Pure] (GroupBrainTest).

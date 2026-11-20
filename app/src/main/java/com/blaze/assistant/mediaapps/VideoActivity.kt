@@ -142,7 +142,7 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Refresh
 
 /**
- * v0.30.1 Blaze Video: its own full-screen app inside Blaze with the Library | Store pill (v0.34.1: the player is a
+ * v0.30.1 Argus Video: its own full-screen app inside Argus with the Library | Store pill (v0.34.1: the player is a
  * sheet over the Library, tab "player" = the sheet is open; swiping it down leaves a mini-player and keeps playing). ExoPlayer with
  * gestures (left half up/down = brightness, right half = volume, double-tap ±10 s; no swipe-seek since wave A),
  * fullscreen with rotation, picture-in-picture, speed, subtitle and audio-track choice, and resume where you left off.
@@ -220,7 +220,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         return if (cues.isEmpty()) null else local to cues
     }
 
-    /** "Recap so far": what was said up to here, summed up by Blaze's model. Null result = it couldn't. */
+    /** "Recap so far": what was said up to here, summed up by Argus's model. Null result = it couldn't. */
     suspend fun recap(): String {
         val t = current.value ?: return "Nothing is playing."
         work.value = "Writing a recap…"
@@ -238,7 +238,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     }
 
     /**
-     * AI subtitle translation: the subtitles that are on (or the first available) translated into [language] by Blaze's
+     * AI subtitle translation: the subtitles that are on (or the first available) translated into [language] by Argus's
      * model in batches, kept with the video as a new track "<language> (AI translation)" and turned on.
      */
     suspend fun translate(language: String): String {
@@ -274,7 +274,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
 
     /**
      * Wave A 25: "Translate to" [code]. A YouTube caption track is machine-translated by YouTube (fast, free, kept with
-     * the video); anything else goes through Blaze's AI translation. The language is remembered for the next video.
+     * the video); anything else goes through Argus's AI translation. The language is remembered for the next video.
      */
     fun translateTo(code: String, scope: kotlinx.coroutines.CoroutineScope) {
         SubsLoader.setPref(this, code)

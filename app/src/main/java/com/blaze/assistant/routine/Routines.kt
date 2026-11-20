@@ -35,7 +35,7 @@ data class Routine(val id: Int, val name: String, val prompt: String, val hour: 
     fun timeLabel() = "%02d:%02d".format(hour, minute)
 }
 
-/** Scheduled prompts Blaze runs by itself ("every weekday at 7, brief me"). */
+/** Scheduled prompts Argus runs by itself ("every weekday at 7, brief me"). */
 object Routines {
     private lateinit var app: Context
     private lateinit var prefs: SharedPreferences

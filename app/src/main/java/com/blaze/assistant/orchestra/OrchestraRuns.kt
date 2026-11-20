@@ -17,8 +17,8 @@ import java.io.File
  *  - the planner agent writes the blueprint (Pipelines.skeleton + its JSON), then the [Orchestrator] runs every node
  *    as its own agent (Session.runNode: a specialist tool loop with the node's tier — planners on Inferno, coders and
  *    writers on Flare, searches on Spark, unless the user picked a tier), up to [BgAgents.cap] at once;
- *  - builds and tests go through Blaze Terminal (the terminal-first route), each in the run's own project folder;
- *  - the run's state is saved after every node (filesDir/orchestra/<id>.json), so a run cut by Blaze closing picks up
+ *  - builds and tests go through Argus Terminal (the terminal-first route), each in the run's own project folder;
+ *  - the run's state is saved after every node (filesDir/orchestra/<id>.json), so a run cut by Argus closing picks up
  *    where it was (BgAgents re-queues it with resume = true and the finished nodes are not redone);
  *  - every node event is one step on the run's work pill ("Blueprint · 14 steps · 3m 2s ›").
  *
@@ -104,7 +104,7 @@ object OrchestraRuns {
         return outcome.ok to result(store, outcome)
     }
 
-    /** Blaze Terminal (the terminal-first route): (exit code, output). */
+    /** Argus Terminal (the terminal-first route): (exit code, output). */
     private suspend fun exec0(cmd: String, timeoutSec: Int = 120): Pair<Int, String> {
         val out = com.blaze.assistant.terminal.Terminal.run("$cmd; echo \"__BLAZE_EXIT=\$?\"", timeoutSec, linux = true)
         val code = Regex("__BLAZE_EXIT=(\\d+)").findAll(out).lastOrNull()?.groupValues?.get(1)?.toIntOrNull() ?: 1

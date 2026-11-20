@@ -3,13 +3,13 @@ package com.blaze.assistant.notify
 
 import com.blaze.assistant.BrandName
 /**
- * 0.45.19 phone tasks (user testing 0.45.18, Fri 23 Oct 09:22): Blaze texts like a messaging app with its own icon.
+ * 0.45.19 phone tasks (user testing 0.45.18, Fri 23 Oct 09:22): Argus texts like a messaging app with its own icon.
  *
  * The bug: the get-to-know-you check-in ("Did 'lovely' hit different today…") came as a plain notification (no B
  * avatar, no MessagingStyle, no quick replies) on another channel and arrived silently, while the task result two
- * lines below had the avatar and the conversation look. Every Blaze message now goes through ONE builder
+ * lines below had the avatar and the conversation look. Every Argus message now goes through ONE builder
  * (Notifier.post): the same MessagingStyle conversation with one Person "Blaze" (the app icon as its avatar), one
- * conversation shortcut, one notification id (so the shade shows one Blaze thread), quick replies that fit the
+ * conversation shortcut, one notification id (so the shade shows one Argus thread), quick replies that fit the
  * message ([QuickReplies]) and an inline Reply, on one channel that alerts (IMPORTANCE_HIGH: heads-up, sound and
  * vibration as the user's system settings say). Do Not Disturb and silent mode are honoured: nothing bypasses them.
  *
@@ -18,7 +18,7 @@ import com.blaze.assistant.BrandName
  * to a NEW channel id and the old ones are deleted ([CHANNEL], [OLD_CHANNELS]). Pure (BlazeThreadTest).
  */
 object BlazeThread {
-    /** The one channel every Blaze message posts on (IMPORTANCE_HIGH). New id: old channels can't be raised. */
+    /** The one channel every Argus message posts on (IMPORTANCE_HIGH). New id: old channels can't be raised. */
     const val CHANNEL = "blaze_messages_v2"
     const val CHANNEL_NAME = "${BrandName.NAME} messages"
     const val CHANNEL_DESC = "${BrandName.NAME}'s messages: answers, finished tasks, check-ins and heads-ups. Sound and vibration follow your phone's settings."
@@ -26,18 +26,18 @@ object BlazeThread {
     val OLD_CHANNELS = listOf("blaze_reply", "blaze_proactive", "blaze_calls", "blaze_followups")
     /** The long-lived conversation shortcut the thread is attached to (Android 11+ conversation section). */
     const val SHORTCUT = "blaze_conversation"
-    /** The one notification id of the Blaze thread (was the replies' id). */
+    /** The one notification id of the Argus thread (was the replies' id). */
     const val NOTIF_ID = 2
     const val PERSON_KEY = "blaze"
     const val PERSON_NAME = "${BrandName.NAME}"
 
     /**
      * What a line of the thread is. [USER] (0.45.29) is the user's own inline reply, shown as theirs ("You") in their
-     * exact words while Blaze works on the answer. There is no ack kind: Blaze never posts a line it didn't write.
+     * exact words while Argus works on the answer. There is no ack kind: Argus never posts a line it didn't write.
      */
     enum class Kind { USER, REPLY, RESULT, FAILED, CHECK_IN, HEADS_UP, QUESTION, FOLLOW_UP, CALL_OFFER }
 
-    /** One line of the thread. [fromUser] lines are drawn as the user's ("You"), never as Blaze's. */
+    /** One line of the thread. [fromUser] lines are drawn as the user's ("You"), never as Argus's. */
     data class Msg(val at: Long, val text: String, val kind: Kind) {
         val fromUser: Boolean get() = kind == Kind.USER
     }
@@ -65,13 +65,13 @@ object BlazeThread {
 }
 
 /**
- * Quick replies under a Blaze message (the RemoteInput choices, sent back as the user's reply). They must fit the
+ * Quick replies under an Argus message (the RemoteInput choices, sent back as the user's reply). They must fit the
  * message: a toggle that is now on gets "Turn it off" / "Thanks", a failure "Try again", a yes/no question Yes / No.
  * Android's own generated replies are switched off (they offered "Weird" / "Great!" under a result). Pure.
  */
 object QuickReplies {
     const val MAX = 3
-    /** Words the system's generated replies offered under a result; Blaze never offers them. */
+    /** Words the system's generated replies offered under a result; Argus never offers them. */
     val NEVER = setOf("weird", "great!", "great", "lol", "haha", "cool", "nice", "ok", "\ud83d\udc4d")
 
     private val stateOn = Regex("(?i)\\b([\\p{L}][\\p{L}\\p{N} .'\u2011-]{1,30}?)\\s+(?:is|are)\\s+(?:now\\s+|already\\s+|back\\s+)?(on|off|enabled|disabled)\\b")
@@ -83,7 +83,7 @@ object QuickReplies {
     private val messageSent = Regex("(?i)\\b(sent|drafted|draft is ready|replied)\\b")
     private val playing = Regex("(?i)\\b(now playing|playing|paused)\\b")
 
-    /** The quick replies for Blaze's message [raw] of [kind] (at most [MAX]; empty = Reply box only). */
+    /** The quick replies for Argus's message [raw] of [kind] (at most [MAX]; empty = Reply box only). */
     fun forMessage(raw: String, kind: BlazeThread.Kind = BlazeThread.Kind.REPLY): List<String> {
         val text = raw.trim().removePrefix("Done \u2713").trim()
         if (text.isEmpty()) return emptyList()

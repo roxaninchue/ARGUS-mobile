@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 0.46.2 runs one function of a user-added provider module in a fresh QuickJS context (engine: dokar3/quickjs-kt, Apache-2.0).
- * The module sees only [SandboxPrelude]: HTTP through [SandboxHttp] (guarded, capped, no cookies or Blaze headers), Jsoup-backed
- * cheerio, a per-provider key/value store (64 KB) and its own settings. No file system, no Android APIs, no Blaze secrets,
+ * The module sees only [SandboxPrelude]: HTTP through [SandboxHttp] (guarded, capped, no cookies or Argus headers), Jsoup-backed
+ * cheerio, a per-provider key/value store (64 KB) and its own settings. No file system, no Android APIs, no Argus secrets,
  * tokens or accounts. Limits: memory cap, stack cap, [Limits.timeoutMs] per call, [Limits.maxRequests] requests per call.
  * QuickJS here has no interrupt hook, so a module stuck in a busy loop is abandoned on the engine lane (the call fails,
  * the source is marked Failing and [abandoned] counts it; [ProviderStore] turns a source off after repeated hangs).
