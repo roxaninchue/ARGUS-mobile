@@ -1,3 +1,7 @@
+## 0.53.9 (versionCode 201, 2026-11-20): the "Unreleased" entries below down to 0.53.8
+
+CI fix (merge 7fdb0fe2 failed 7 of 3,721 release unit tests): `terminal_checkpoint` now has an ActionClass (WRITE_LOCAL; list / changes READ; delete DELETE), and four tests follow the owner's terminal-autonomy and agents rules (every agent has the terminal, sandboxed commands are local work, `agent_create` names the tool groups, the lean-chat `agents` prompt part is benchmarked).
+
 ## Unreleased: terminal autonomy
 
 2026-11-20, owner: "no need to ask user for permission … Argus + all agents get terminal use", and the agent that started terminal work must be able to monitor it closely.
