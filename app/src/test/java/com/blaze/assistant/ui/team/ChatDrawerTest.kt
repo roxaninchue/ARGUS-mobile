@@ -167,4 +167,20 @@ class ChatDrawerTest {
         m.rename(0, "")
         assertEquals("Today's Schedule", title())
     }
+
+    /** 0.53.9 crash: the first-run introduction alone (ARGUS spoke, the user hasn't) went IDLE and threw on `last { user }`. */
+    @Test fun anIntroductionOnlyChatIsNotTitledAndDoesNotThrow() {
+        val intro = listOf(false to "Hi, I'm ARGUS. What would you like to start with?")
+        assertNull(ChatDrawerModel.titleAsk(intro, 0, null))
+        assertNull(ChatDrawerModel.titleAsk(emptyList(), 0, null))
+        assertNull(ChatDrawerModel.titleAsk(listOf(false to "a", false to "b"), 0, "Kept"))
+        // once the user answers and ARGUS replies, the chat is named from the user's first line
+        val first = intro + listOf(true to "Plan my **week**", false to "Here's your week.")
+        assertEquals(ChatDrawerModel.TitleAsk("Plan my week", 1), ChatDrawerModel.titleAsk(first, 0, null))
+        // waiting on ARGUS's answer, or not yet due a rename: no call
+        assertNull(ChatDrawerModel.titleAsk(intro + listOf(true to "Plan my week"), 0, null))
+        assertNull(ChatDrawerModel.titleAsk(first, 1, "Week plan"))
+        val more = first + listOf(true to "and Friday", false to "ok", true to "and Sunday", false to "ok")
+        assertEquals(ChatDrawerModel.TitleAsk("Week plan", 3), ChatDrawerModel.titleAsk(more, 1, "Week plan"))
+    }
 }

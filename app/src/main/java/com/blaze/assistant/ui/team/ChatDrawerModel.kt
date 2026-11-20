@@ -74,6 +74,25 @@ object ChatDrawerModel {
         return "$s\u2026"
     }
 
+    /** What a due auto-title call names a chat from: the current title (or the first user line, cleaned) and the user's turn count. */
+    data class TitleAsk(val current: String, val userTurns: Int)
+
+    /**
+     * 0.53.9 crash fix: whether the chat whose listable [lines] (user? to text) are given is due a topic title
+     * ([ManagerChats.titleDue]), and from what. Null when not due: the chat doesn't end with ARGUS's answer, or holds no
+     * line of the user's yet. The first-run introduction is such a chat (ARGUS speaks first, and its thinking beat ends in
+     * IDLE), and the old `lines.last { it.first }` threw NoSuchElementException there, on the main thread, right after
+     * onboarding. Such a chat is named once the user's first exchange lands.
+     */
+    fun titleAsk(lines: List<Pair<Boolean, String>>, lastAt: Int, auto: String?): TitleAsk? {
+        if (lines.lastOrNull()?.first != false) return null
+        val lastUser = lines.lastOrNull { it.first } ?: return null
+        val n = lines.count { it.first }
+        if (!ManagerChats.titleDue(n, lastAt, auto != null, lastUser.second.length)) return null
+        val current = auto ?: clean(lines.firstOrNull { it.first }?.second)
+        return TitleAsk(current, n)
+    }
+
     /** The drawer's sections for [chats] over the main conversation's [messages], plus [projects]. */
     fun state(
         chats: ManagerChats,

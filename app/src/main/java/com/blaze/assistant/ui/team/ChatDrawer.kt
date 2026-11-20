@@ -168,10 +168,8 @@ object ChatModeRuntime {
         if (ch.named || ch.gone) return
         val w = c.window(g) ?: return
         val lines = Agent.messages.value.filter { it.at in w }.map(::msg).filter { it.listable }.map { it.user to it.text }
-        if (lines.lastOrNull()?.first != false) return   // only once the chat ends with ARGUS's answer
-        val n = lines.count { it.first }
-        if (!ManagerChats.titleDue(n, ch.autoN, ch.auto != null, lines.last { it.first }.second.length)) return
-        val current = ch.auto ?: ChatDrawerModel.clean(lines.first { it.first }.second)
+        // only once the chat ends with ARGUS's answer to a line of yours (never the first-run introduction alone)
+        val (current, n) = ChatDrawerModel.titleAsk(lines, ch.autoN, ch.auto) ?: return
         io.launch {
             val r = try { com.blaze.assistant.agent.Titles.ask("manager-$g", current, lines) } catch (t: Throwable) { null } ?: return@launch
             synchronized(this@ChatModeRuntime) { chats().autoTitle(g, r.title, n) }
