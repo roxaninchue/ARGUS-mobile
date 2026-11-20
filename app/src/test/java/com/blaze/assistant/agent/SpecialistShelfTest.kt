@@ -37,6 +37,7 @@ class SpecialistShelfTest {
         val own = listOf(mine("b", "Bee", "Does b things."), mine("a", "Ay", "Does a things."))
         assertEquals(SpecialistShelf.block(Specialists.builtIn + own), SpecialistShelf.block(Specialists.builtIn + own.reversed()))
         assertEquals(SpecialistShelf.promptBlock(Specialists.builtIn + own), SpecialistShelf.block(Specialists.builtIn + own))
+        assertEquals(SpecialistShelf.block(Specialists.builtIn + own), SpecialistShelf.block((own + Specialists.builtIn).reversed()))
     }
 
     @Test fun factsNotOrders() {

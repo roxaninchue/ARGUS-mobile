@@ -46,6 +46,8 @@ object SkillShelf {
 
     /** Switched-on skills, one per name, in shelf order. */
     fun entries(cands: List<SkillMatch.Cand>): List<Entry> = cands.asSequence().filter { it.on && it.name.isNotBlank() }
+        // the same set in any order gives the same entries: the user's own copy wins a name clash, whatever the read order
+        .sortedWith(compareBy<SkillMatch.Cand>({ rank(it.source) }, { it.name.lowercase() }, { if (it.name == it.name.lowercase()) 0 else 1 }, { it.name }, { it.description }))
         .distinctBy { it.name.lowercase() }
         .map { Entry(it.name, summary(it.description.ifBlank { it.name }), it.source, it.source == "learned" && it.body.contains("run_skill")) }
         .sortedWith(compareBy<Entry>({ rank(it.source) }, { it.name.lowercase() })).toList()
@@ -86,7 +88,7 @@ object SkillShelf {
 
     /** This phone's shelf, rebuilt only when the skill set changes (install, switch, learn, delete). */
     fun promptBlock(cands: List<SkillMatch.Cand> = SkillMatch.cached()): String = try {
-        val sig = cands.joinToString("\n") { "${it.name}\t${it.description}\t${it.on}\t${it.source}\t${it.body.contains("run_skill")}" }.hashCode()
+        val sig = cands.map { "${it.name}\t${it.description}\t${it.on}\t${it.source}\t${it.body.contains("run_skill")}" }.sorted().joinToString("\n").hashCode()
         memo?.takeIf { it.first == sig }?.second ?: block(cands).also { memo = sig to it }
     } catch (_: Throwable) { "" }
 }

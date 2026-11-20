@@ -1303,13 +1303,21 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.45.7 Settings › Language: one stable line in this (second) message; the persona message stays byte-stable.
             s("lang", ReplyLanguage.line(ReplyLanguage.current()))
             if (prof.simple) s("simple", PromptProfile.SIMPLE_RULE)
+            // 2026-11-20 skill shelf (docs/SKILL-SHELF.md): every skill that's on, one line each; the model picks and reads one itself.
+            // Round 5 specialist shelf: every specialist, one line each (built-ins, then the user's own); the model delegates.
+            // Cache (round 5, step 1): both are byte-stable for the same set and are the FIRST slow parts, so they sit in the
+            // cached prefix before anything that changes more often (connectors, desktop, about, the chat's project, turn, live).
+            slow("skills", SkillShelf.promptBlock())
+            slow("specialists", SpecialistShelf.promptBlock())
             slow("connectors", com.blaze.assistant.connect.Connectors.promptBlock())
             // 2026-11-14 harness gap: one consolidated core (HarnessPrompt) instead of ~20 stacked RULE lines (talk, self, remember,
             // again, yes, ask, pim, load_tools, weather, phone_save, leak, verify, ids, know, search, calls, autonomy, style).
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE)
             if (leanChat() && sessions[chatId]?.agentId == null) s("agents", com.blaze.assistant.team.AgentKit.STEER)   // owner 2026-11-20
             s("format", AnswerStyle.FORMAT)   // v0.31.1: HTML tags, tables never in code fences, rich blocks open in glass windows
-            if (Voice.lastTurnByVoice) s("voice", VoiceFiller.RULE)   // 0.45.20 (item 10): no filler on voice turns
+            // 0.45.20 (item 10): no filler on voice turns. A per-turn switch, so it is TURN tier (round 5: it was STATIC and
+            // broke the cached prefix, the shelves included, whenever the user switched between voice and typing).
+            if (Voice.lastTurnByVoice) turn("voice", VoiceFiller.RULE)
             s("rapid", RapidMessages.PROMPT_RULE)   // v0.30.6: [m7] ids on user messages, [re:m7] markers on replies
             s("control", HarnessPrompt.phone(control, prof.simple) + (if (control) "\n" + Orient.RULE + FastActions.RULE else ""))
             s("secrets", "\n" + SecretRules.PROMPT)
@@ -1364,10 +1372,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             slow("about", SelfKnowledge.promptBlock(app)); slow("project", Projects.promptLine(chatId))
             if (com.blaze.assistant.voice.Voice.inCall) tail("in_call") { " You are on a voice call with the user right now (${BrandName.NAME}'s call screen): \"I can't hear you\" means call_control speaker on or louder." }
             tail("goals") { Autonomy.promptLine() }
-            // 2026-11-20 skill shelf (docs/SKILL-SHELF.md): every skill that's on, one line each; the model picks and reads one itself.
-            slow("skills", SkillShelf.promptBlock())
-            // Round 5 specialist shelf: every specialist, one line each (built-ins, then the user's own); the model delegates.
-            slow("specialists", SpecialistShelf.promptBlock())
             // v0.30.5: tasks the user has Argus do often, with no skill yet, come first for a skill.
             if (Settings.autoLearn) tail("frequent") { SkillGuard.Freq.promptLine(SkillGuard.Freq.load()) }
             // v0.45.9: the assistant rules and how to use the [context] block (static). The block itself goes at the very

@@ -22,10 +22,13 @@ object SpecialistShelf {
         val line: String get() = "- $id ($name): $summary${if (yours) " (yours)" else ""}\n"
     }
 
-    /** Built-ins in their fixed order, then the user's own by id; one per id. */
+    /** Built-ins in their fixed order, then the user's own by id; one per id. The same set in any order gives the same entries. */
     fun entries(specs: List<Specialists.Spec>): List<Entry> {
-        val (own, built) = specs.filter { it.id.isNotBlank() }.distinctBy { it.id.lowercase() }.partition { it.custom }
-        return (built + own.sortedBy { it.id.lowercase() }).map {
+        val order = Specialists.builtIn.map { it.id }
+        val (own, built) = specs.filter { it.id.isNotBlank() }
+            .sortedWith(compareBy<Specialists.Spec>({ it.custom }, { order.indexOf(it.id).let { i -> if (i < 0) Int.MAX_VALUE else i } }, { it.id.lowercase() }, { it.id }))
+            .distinctBy { it.id.lowercase() }.partition { it.custom }
+        return (built + own).map {
             Entry(it.id, it.name, SkillShelf.summary(it.prompt.ifBlank { it.name }), it.custom)
         }
     }
@@ -41,7 +44,7 @@ object SpecialistShelf {
 
     /** This phone's specialists, rebuilt only when the set changes (one made in Settings or by create_specialist). */
     fun promptBlock(specs: List<Specialists.Spec> = try { Specialists.all() } catch (_: Throwable) { Specialists.builtIn }): String = try {
-        val sig = specs.joinToString("\n") { "${it.id}\t${it.name}\t${it.prompt}\t${it.custom}" }.hashCode()
+        val sig = specs.map { "${it.id}\t${it.name}\t${it.prompt}\t${it.custom}" }.sorted().joinToString("\n").hashCode()
         memo?.takeIf { it.first == sig }?.second ?: block(specs).also { memo = sig to it }
     } catch (_: Throwable) { "" }
 }

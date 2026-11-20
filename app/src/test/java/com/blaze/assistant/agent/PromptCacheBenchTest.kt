@@ -47,6 +47,8 @@ class PromptCacheBenchTest {
         return CoreSkills.promptBlock(names).also { CoreSkills.reset(); CoreSkills.loader = null }
     }
 
+    private val shelf = SkillShelf.HEAD + filler("shelf", 5_500)
+
     private fun filler(tag: String, n: Int) = buildString { var k = 0; while (length < n) append("$tag-${k++} fact about the user and their phone. ") }.take(n)
 
     /** Live data of one model call ([t] = minutes into the turn, [screen] = what the phone shows now). */
@@ -60,6 +62,9 @@ class PromptCacheBenchTest {
             s("name", "The user's name is Sam. ")
             s("names", GreetName.RULE)   // v0.45.9
             s("lang", ReplyLanguage.line("auto"))   // v0.45.7
+            // round 5 step 1: the shelves are the first SLOW parts (byte-stable, before connectors / about / project / turn / live)
+            slow("skills", shelf)   // 2026-11-20: the skill shelf, same every turn
+            slow("specialists", SpecialistShelf.block(Specialists.builtIn))   // round 5: the specialist shelf, same every turn
             slow("connectors", "\nConnected accounts you can use with tools: Gmail (mail), Google Calendar (events), Spotify (music).\n")
             // 2026-11-14 harness gap: the consolidated core (HarnessPrompt) replaced the stacked rule lines.
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE); s("format", AnswerStyle.FORMAT)
@@ -79,8 +84,6 @@ class PromptCacheBenchTest {
             s("phone_state", PhoneState.RULE)
             turn("make", if (prof.terminal) lit("turn", "terminal") + lit("turn", "make") else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             slow("about", "\nABOUT YOU: ${BrandName.NAME} family. You are ${BrandName.NAME} for Android v0.45.1 (build 149). Paired PC: none. ${BrandName.NAME} account: signed in. " + filler("about", 300))
-            slow("skills", SkillShelf.HEAD + filler("shelf", 5_500))   // 2026-11-20: the skill shelf, same every turn
-            slow("specialists", SpecialistShelf.block(Specialists.builtIn))   // round 5: the specialist shelf, same every turn
             s("identity", Duo.IDENTITY_RULES); s("context_rule", TurnContext.RULE)   // the shared persona carries the assistant rules
         }
     }
@@ -98,6 +101,35 @@ class PromptCacheBenchTest {
         val here = turns.withIndex().flatMap { (i, t) -> parts(t.text, t.groups, t.views, Live(0, 0, i)).map { it.name } }.toSet() +
             setOf("simple", "terminal", "processes", "in_call", "goals", "setup", "frequent", "desktop", "project", "voice", "build", "assistant", "servers", "agents")   // empty / off in this phone's state
         assertEquals(emptySet<String>(), inSrc - here)
+    }
+
+    /**
+     * Round 5 step 1: the shelves (skills, specialists) are byte-identical from turn to turn and sit in the prefix every
+     * kind of turn shares, before anything that changes (connectors, about, the chat's project, turn and live parts).
+     */
+    @Test fun shelvesSitInTheCachedPrefix() {
+        // the order in Agent.systemPrompt: the shelves are the first slow parts
+        val iSkills = sysSrc.indexOf("slow(\"skills\""); val iSpecs = sysSrc.indexOf("slow(\"specialists\"")
+        assertTrue(iSkills in 0 until iSpecs)
+        for (later in listOf("slow(\"connectors\"", "slow(\"desktop\"", "slow(\"about\"", "slow(\"project\"")) assertTrue(later, sysSrc.indexOf(later) > iSpecs)
+        // nothing volatile is STATIC: the voice switch is a turn part
+        assertTrue(sysSrc.contains("turn(\"voice\""))
+        // the same text for every kind of turn, and inside the prefix any two turns share
+        val specs = SpecialistShelf.block(Specialists.builtIn)
+        for (i in turns.indices) for (j in turns.indices) if (i < j) {
+            val x = PromptParts.assemble(parts(turns[i].text, turns[i].groups, turns[i].views, Live(0, 0, i)))
+            val y = PromptParts.assemble(parts(turns[j].text, turns[j].groups, turns[j].views, Live(3, 1, j)))
+            val end = x.indexOf(specs) + specs.length
+            assertTrue(x.indexOf(shelf) in 0 until end && end > specs.length)
+            assertTrue("${turns[i].name} → ${turns[j].name}", PromptParts.commonPrefix(x, y) >= end)
+        }
+        // the real blocks: same set in another order, same bytes; no clock or date in them
+        val root = File("src/main/assets/skills")
+        val cands = root.listFiles()!!.filter { File(it, "SKILL.md").isFile }.mapNotNull { SkillMatch.fromDir(it, "bundled", true) }
+        val a = SkillShelf.block(cands); val b = SkillShelf.block(cands.reversed())
+        assertEquals(a, b)
+        assertEquals(SpecialistShelf.block(Specialists.builtIn), SpecialistShelf.block(Specialists.builtIn.reversed()))
+        assertTrue(!Regex("\\b(20\\d\\d|\\d{1,2}:\\d\\d)\\b").containsMatchIn(a + specs))
     }
 
     private fun req(tools: JSONArray, system: String, history: List<JSONObject>): String =

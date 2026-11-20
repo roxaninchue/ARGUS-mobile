@@ -51,6 +51,11 @@ class SkillShelfTest {
         val a = listOf(c("b", "B"), c("a", "A"), c("m", "M", "user"))
         assertEquals(SkillShelf.block(a), SkillShelf.block(a.reversed()))
         assertEquals(SkillShelf.promptBlock(a), SkillShelf.promptBlock(a.reversed().reversed()))
+        // round 5 step 1 (cache): a name clash resolves the same way whatever order the skills were read in
+        val clash = listOf(c("tutor", "Bundled tutor"), c("tutor", "My tutor", "user"))
+        assertEquals(SkillShelf.block(clash), SkillShelf.block(clash.reversed()))
+        assertTrue(SkillShelf.block(clash).contains("- tutor: My tutor"))
+        assertEquals(SkillShelf.promptBlock(clash), SkillShelf.promptBlock(clash.reversed()))
     }
 
     @Test fun overBudgetKeepsTheUsersOwnAndSaysHowManyMore() {
