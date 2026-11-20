@@ -8,6 +8,10 @@ Goal: every line of code, resource, script and document says **Argus** instead o
 
 ## 1. Where we stand
 
+**Status (2026-11-20):**
+- **Phase 1 done** (documents and comments, class A). Prose in root docs, `docs/`, `app/blaze-docs/about.md` and other READMEs says Argus; `docs/BLAZEQUERY.md` → `docs/ARGUSQUERY.md`, `docs/blaze-link-messages.md` → `docs/argus-link-messages.md` (links fixed); dated handoffs and the `docs/overhaul/` inventories carry a "written before the rename" note instead of a rewrite; ~1,500 comment / KDoc lines in `.kt` / `.kts` say Argus (string literals, identifiers, paths, hosts, repo names, the Blaze CLI and upstream attributions untouched). Guard: 17,856 → 15,994 occurrences, baseline ratcheted down. Not touched in Phase 1: `CHANGELOG.md` (history), `LICENSE.md` (legal holder), `gateway/` (stale copy of Blaze-agent), `blazerouter/` and `wgproxy/` (synced from upstream repos), UI-quoted strings in prose (they follow the Phase 2 literal changes).
+- **Owner decision, 2026-11-20: the install id changes before v1** ("even the install id changes. until v1 we can do these kinds of things"). `applicationId com.blaze.assistant` will become an Argus id in a later phase, with **no upgrade path**: old installs must uninstall and reinstall. This overrides ground rule 1, class H and the §3 allowlist rows kept only for upgrades: the old-FQCN shims, activity-alias, WorkerFactory mapping and the allowlist entries that exist to keep existing installs updating will be dropped when that phase lands (`tools/rename/keep-blaze.txt` is not changed yet).
+
 The 0.52.1 release already did the **user-facing** rename (see `docs/RENAME-ARGUS.md`): `BrandName.NAME = "Argus"`, ~1,650 Kotlin literals routed through `${BrandName.NAME}`, launcher/activity labels, wake word ("Hey Argus", with "Hey Blaze" still accepted), logo, splash, theme, tier labels (Insight / Oracle / Panoptes). What it **deliberately left alone** is everything below the surface, and that is what this plan covers.
 
 ### Inventory (case-insensitive "blaze", excluding `.git`, `.gradle`, `.kotlin`, `build/`)
