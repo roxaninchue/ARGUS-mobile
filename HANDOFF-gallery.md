@@ -29,6 +29,6 @@ Only CI has compiled this. Nobody has run it on a phone yet.
 - **Media3/ExoPlayer** for video and audio: background playback, MediaSession and notification controls, gapless audio, and more
   codecs than VideoView/MediaPlayer. Hand off to the Music/Video player apps via intents once they exist.
 - Trash/recycle bin (Android 11+ `createTrashRequest`), favourites, edit/crop/rotate, slideshow, "Free up space".
-- Rename of shared-storage files Blaze doesn't own (needs `createWriteRequest`). Today it shows a clear message.
+- Rename of shared-storage files Argus doesn't own (needs `createWriteRequest`). Today it shows a clear message.
 - Video thumbnails on Android 8–9 for content URIs use a 1 s frame (MediaMetadataRetriever), which is slower than on 10+.
 - Robolectric screenshot of the new Gallery in `ShotsTest`.

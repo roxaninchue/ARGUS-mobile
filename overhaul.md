@@ -99,7 +99,7 @@ Run each one on the phone with a strong model (Gemini 3.5 Flash or bigger) and a
 
 ## Goal
 One unified ARGUS app (this repo, `argus-mobile`, Kotlin + Compose) that contains:
-1. **Everything in Argus-mobile** today (Blaze Android: chat, voice, orb, phone control, terminal, browser, media, memory, life logs, routines…).
+1. **Everything in Argus-mobile** today (Argus Android: chat, voice, orb, phone control, terminal, browser, media, memory, life logs, routines…).
 2. **Everything in A-team** (`gitlab.com/blazeinchue/a-team`: team of bots as chats, Manager bot, jobs/approvals inline, Compose graph, Ubuntu workspace per bot, cloud computer, connectors, vault, skills, Needle on-device commands, `argus-agents-api`).
 3. **Everything in Bot HQ** (`github.com/nickvasilescu/bot-hq`, MIT, from Nick Vasilescu's video "I Stole the Best Part of Every AI Agent… With One Prompt"): Grok-Bot-style texting UI with many bots + voice + X search, Muse-style social connections + editable soul/memory files, Dots-style per-agent computer you can watch/take over, Hermes agent engine, Composio apps with approval cards, routines/tasks/Library, bots talking to bots.
 
@@ -503,7 +503,7 @@ Each line is a place the work differs from this file or 06-team-plan, or a choic
 ### P11.1 What ARGUS already has to build on
 | Piece | Where | What P11 uses it for |
 |---|---|---|
-| Models | Blaze Gateway (Blaze-agent, a Cloudflare Worker; 0.9.13): lanes `chat / quick / code / vision / long / agent`, tiers Spark / Flare / Inferno, `/v1/models/live` (probe-verified, plan-gated; D13 / D15 free Apinex + NVIDIA Nemotron lanes), manual pick + Auto | Every P11 model call: the leader, workers, routines, the learning fork. No new provider. |
+| Models | Argus Gateway (Blaze-agent, a Cloudflare Worker; 0.9.13): lanes `chat / quick / code / vision / long / agent`, tiers Spark / Flare / Inferno, `/v1/models/live` (probe-verified, plan-gated; D13 / D15 free Apinex + NVIDIA Nemotron lanes), manual pick + Auto | Every P11 model call: the leader, workers, routines, the learning fork. No new provider. |
 | Cloud loop | Gateway `/v1/runs` + `agent/CloudRuns.kt` (0.42.0): the gateway runs the model loop, keeps the reply, streams numbered events (resumable), and hands phone tools back as `needs_device` | Becomes ARGUS's **server-side tool loop** (§P11.3.1). Cap: 3 concurrent cloud runs. |
 | Phone loop | `Agent.Session` + `LocalEngine` (`BotEngine`), ToolScheduler (parallel quiet calls, cards in order), OutputLimit, ReasoningReplay | Unchanged; tools gain a `runsAt` so the same catalog serves both loops. |
 | Tools today | `web_search` (SearchChain: DDG → Bing RSS → Bing News → Google News → Wikipedia → GitHub), `fetch_page`, `http_request`, `run_code` / `run_shell` (Alpine system + Ubuntu workspace, proot), `browser_*` (in-app browser, glass panel), `look_at_screen` / `phone_act`, `memory_*`, `cache_search`, `search_past_chats`, `file_*`, `mcp__*` (`connect/Mcp.kt`, HTTP / SSE MCP client with Ask / Always / Off), `blaze_research` (`agent/query/Research.kt`: plan → retrieve → judge → gaps, multi-round, cited brief), `spawn_agent`, `orchestrate` (`orchestra/Orchestrator.kt` dataflow, KeyedLocks) | The native equivalents of every Grok server tool already exist on the phone; P11 adds the cloud side, X, collections and the sandbox mode. |
