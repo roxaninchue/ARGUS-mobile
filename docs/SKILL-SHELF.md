@@ -1,6 +1,6 @@
 # Skill shelf: ARGUS picks its own skills
 
-Status: design + first implementation, 20 Nov 2026. Follows [MODEL-FIRST.md](MODEL-FIRST.md), where
+Status: implemented on main, 20 Nov 2026 (not built yet). Follows [MODEL-FIRST.md](MODEL-FIRST.md), where
 "`SkillMatch` … still pick … skill packs … from the message's words" is listed under *Still to retire*, with the
 suggested fix "list them in the prompt and let the model load one". This doc is that fix, reasoned out.
 
@@ -46,7 +46,8 @@ says to stop.
   then told the skill is "unrelated" — a false fact in a tool result, which is the exact thing MODEL-FIRST forbids.
 - **The prompt changes every message.** The skills block is a TURN-tier prompt part whose text depends on the
   message, so it can't be cached, and the full bodies it pastes in (up to ~1,500 tokens) are paid on every step of
-  the turn whether the model needed them or not.
+  the turn whether the model needed them or not. Measured on today's library: "stop GitHub opening links in the GitHub
+  app" pasted android-app-builder and wf-do-it-on-screen in full, 4,494 characters of the wrong skills (SkillGateTest).
 - **Users can't predict it.** A skill the user wrote works only if they happened to describe it with the words they
   later type. "It didn't use my skill" has no fix the user can see.
 
@@ -96,8 +97,11 @@ start; one marked [replay] is the user's recorded phone steps and run_skill repl
 - **The user's own skills first** (learned, then written / installed), then the bundled library, each group
   alphabetical. The user's skills are the most specific to them, and alphabetical order keeps the text byte-stable.
 - **One line each**, from the skill's own `description`: a leading "Workflow. Use when:" or one-to-three-word title
-  sentence ("Price Scout.") is dropped, and the line is cut at a word boundary near 90 characters. No new metadata,
-  no second description to maintain.
+  sentence ("Price Scout.") is dropped, then the first sentence, cut at a word boundary near 80 characters. No new
+  metadata, no second description to maintain.
+- **The reader rides with the list.** With the lean chat kit on (the default), the main chat carries `AgentKit.CHAT_CORE`
+  only, which had no skill tool. `use_skill` joins it (40 of the 40 allowed); `run_skill` and `find_skill` join the
+  turn when the model calls them, like any tool outside the kit.
 
 ## 5. Decisions and why
 
@@ -109,9 +113,9 @@ start; one marked [replay] is the user's recorded phone steps and run_skill repl
    turn.
 3. **SLOW tier, so it caches.** The shelf only changes when the skill set changes. In the SLOW tier it sits in the
    cached prefix (`PromptParts`), unlike today's per-message TURN block.
-4. **A budget with an honest overflow.** 6,000 characters (≈ 1,500 tokens). The user's own skills are always listed;
-   if bundled lines don't fit, the shelf ends with "+N more: find_skill lists them". Today's 57 bundled skills take
-   about 5,000 characters.
+4. **A budget with an honest overflow.** 6,500 characters (≈ 1,600 tokens). The user's own skills are always listed;
+   if bundled lines don't fit, the shelf ends with "+N more bundled skills: find_skill lists them". Today's 57 bundled
+   skills take 5,550 characters, header included.
 5. **No refusals.** `SkillGuard.gate` is removed. If the model reads a skill that doesn't help, the cost is one step,
    and the step is visible. A tool that lies ("unrelated") to steer the model is worse than an occasional extra read.
 6. **`use_skill` reads learned skills too.** The shelf lists learned skills, so `use_skill <learned name>` now returns
@@ -129,10 +133,10 @@ start; one marked [replay] is the user's recorded phone steps and run_skill repl
 ## 6. The ecosystem
 
 Skills are shared across ARGUS: the phone, Argus Desktop and the CLI read the same SKILL.md format, and the user's own
-skills follow their Argus account (`SkillSync`, blaze-auth `/v1/skills`). The gateway's catalog lists Apps and Skills.
+skills follow their Argus account (`SkillSync`, the Argus auth Worker's `/v1/skills`). The gateway's catalog lists Apps and Skills.
 
 - **The description is the contract.** On every client, a skill is found by its name and description. With the
-  shelf, the first ~90 characters of the description are literally what the model reads to decide. The bundled
+  shelf, the first ~80 characters of the description are literally what the model reads to decide. The bundled
   `skill-creator` and `blaze-workflow-builder` skills (which the model reads when writing skills) now say so: start the
   description with what the skill does, in the user's words.
 - **A skill written on Desktop shows on the phone's shelf** as soon as it syncs, with no keyword tuning.
@@ -144,7 +148,7 @@ skills follow their Argus account (`SkillSync`, blaze-auth `/v1/skills`). The ga
 
 | | Before | After |
 |---|---|---|
-| Skills text per turn | 0 (casual) to ~6,500 chars (3 bodies + lookup) | ~5,000 chars, same every turn |
+| Skills text per turn | 0 (casual) to ~6,500 chars (3 bodies + lookup) | 5,550 chars, same every turn |
 | Cacheable | No (TURN tier, per message) | Yes (SLOW tier) |
 | Code before the first call | 6 layers, 2 async lookups | One cached list |
 | Extra model calls | 0 | 0 (a `use_skill` read is a tool step the model chooses) |
@@ -160,6 +164,10 @@ skills follow their Argus account (`SkillSync`, blaze-auth `/v1/skills`). The ga
 - **SkillPacks**: `use_skill` / `find_skill` / `save_workflow` descriptions say what the tools do (no refusal
   wording, no `reason` parameter); `use()` falls back to a learned skill.
 - **Learning**: `run_skill` loses the `reason` parameter (it only existed for the gate).
+- **AgentKit**: `use_skill` joins the lean chat kit (`CHAT_CORE`).
+- **Bundled skills the model reads when writing skills**: `skill-creator` (v3) and `blaze-workflow-builder` (v2) say
+  that the description's first sentence is the skill's line on the list; index.json versions and sha256 updated so
+  phones refresh them.
 - **Deleted** (no callers left): `SkillMatch.forTurn`, `selectForTurn`, `lookupBlock`, `learnedOnly`;
   `SkillIndex.promptBlock`; `SkillGuard.gate`, `relevant`, `strongHit`, `Verdict`.
 - **Kept**: `SkillIntent` and `SkillGuard.unnamed` (still used by specialists), `SkillMatch.match / block / cached /
@@ -168,14 +176,14 @@ skills follow their Argus account (`SkillSync`, blaze-auth `/v1/skills`). The ga
 ## 9. Risks, and how we'd notice
 
 - **A small model ignores the shelf.** Then it does the task with its tools, as it does today on any message the
-  guesser skipped. Visible in Holding ("skills read") and the `BlazeSkills` log. Fix what the model is given (a
+  guesser skipped. Visible in Holding ("skills read"). Fix what the model is given (a
   clearer description line) before adding any rule.
 - **A model reads skills it doesn't need.** One tool step each, shown as "Reading skill …". If it becomes a pattern,
   improve the descriptions that mislead it.
 - **Libraries far larger than 57.** The budget keeps the user's own skills and cuts bundled lines with an honest
   "+N more: find_skill". If users reach hundreds of their own skills, group by folder or show the most used; not
   needed now.
-- **Prompt size on low-RAM phones.** ~1,250 tokens, cached; less than a single pasted body today on matching turns.
+- **Prompt size on low-RAM phones.** ~1,400 tokens, cached; about what two pasted bodies cost today on matching turns.
 
 ## 10. Tests
 
@@ -184,8 +192,8 @@ skills follow their Argus account (`SkillSync`, blaze-auth `/v1/skills`). The ga
   budget; the block has no shouting / absolutes; the block is byte-identical for the same set (cache).
 - `ModelFirstTest.skillsAreAShelfNotAGuess`: Agent.kt no longer calls `SkillMatch.forTurn(`, `lookupBlock(`,
   `learnedOnly(` or `SkillGuard.gate(`, and sends `slow("skills", SkillShelf.promptBlock())`.
-- Updated: SkillGuardTest, SkillGateTest, SkillIntentTest, SkillIndexTest, PromptBudgetTest (their deleted-function
-  cases removed or moved to the shelf).
+- Updated: SkillGuardTest, SkillGateTest, SkillIntentTest, SkillIndexTest, PromptBudgetTest, PromptCacheBenchTest
+  (the bench's skills part is SLOW and stable now), AgentKitTest (`use_skill` in the chat kit).
 
 ## 11. Undo
 

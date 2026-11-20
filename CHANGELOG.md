@@ -1,3 +1,14 @@
+## Unreleased: skill shelf, ARGUS picks its own skills
+
+2026-11-20, design in docs/SKILL-SHELF.md (MODEL-FIRST round 4). Skills were picked for each message by six layers of word rules (task-intent regex, word score, stray-word list, proper-name stripper, a "best matches" lookup, and a gate that refused the model's own use_skill), so wrong skills came in and right ones stayed out.
+- **The shelf** (`agent/SkillShelf.kt`): every turn carries every switched-on skill, one line each (name: the first sentence of its description), your own skills first, within 6,500 chars, in the cached SLOW tier. The model reads one with `use_skill` or replays a learned one (`[replay]`) with `run_skill`.
+- **Removed:** the per-message pick (`SkillMatch.forTurn` / `selectForTurn` / `lookupBlock` / `learnedOnly`, `SkillIndex.promptBlock`), pasted skill bodies, and the relevance gate (`SkillGuard.gate` / `relevant` / `strongHit`, Agent `skillGate`). Agent.kt −17 lines.
+- **use_skill reads learned skills** (description, when, steps); `use_skill` joins the lean chat kit; the tool descriptions drop the refusal wording and the `reason` parameter.
+- **What Argus is holding** lists the skills ARGUS actually read for the last request (`Session.skillsRead`).
+- **skill-creator v3, blaze-workflow-builder v2:** the description's first sentence is the skill's line on the list.
+- Kept: `find_skill`, a matched specialist's packs, the frequent-task count. Next: specialists the same way.
+- Tests: SkillShelfTest (7, new), ModelFirstTest.skillsAreAShelfNotAGuess; SkillGate / SkillGuard / SkillIntent / SkillIndex / PromptBudget / PromptCacheBench / AgentKit tests updated.
+
 ## 0.54.0 (versionCode 202, 2026-11-20): bot chat rebuild, distro-pick crash fix
 
 Owner "build" (2026-11-20 16:11 CAT). Rollover after 0.53.9 (STATUS rollover rule: patch .9 → minor +1, patch 0).

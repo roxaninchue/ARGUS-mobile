@@ -107,11 +107,26 @@ The fix is what the model receives. Nothing detects "exam", "completed" or "fini
 
 - 2026-11-18: the Learn safety net (`ViewRouter.shouldConvert` / `cardsFrom` turning a text reply into a deck, plus its re-prompt) is gone from the turn; `ViewRouter`'s helpers stay only for their old tests.
 
+## Round 4: skills by the model, the skill shelf (20 Nov 2026)
+
+Design and reasoning: **[SKILL-SHELF.md](SKILL-SHELF.md)**. Which skills a turn sees no longer depends on the message's words.
+
+- **Every turn sends the shelf** (`SkillShelf.promptBlock()`, SLOW tier so it caches): every skill that's switched on, one
+  line each (name: the first sentence of its description), the user's own first. The model reads one with `use_skill`
+  (now in the lean chat kit) or replays a learned one with `run_skill`; `find_skill` searches.
+- **Gone from the turn:** `SkillMatch.forTurn` / `selectForTurn` (word score + `SkillIntent` task regex + `SkillGuard.strongHit`),
+  `SkillMatch.lookupBlock` / `SkillIndex.promptBlock` (the per-message "best matches"), `SkillMatch.learnedOnly` (the
+  plain-device-action path), the state / self-question skill blanking, and pasted skill bodies.
+- **Gone from the tools:** `SkillGuard.gate` (Agent `skillGate`), which refused `use_skill` / `run_skill` and told the model a
+  skill was "unrelated" when the words didn't overlap. Tool results state facts; they don't argue with the model.
+- **Kept:** `find_skill` (the model's own search), `SkillGuard.Freq` (counts finished work), a matched specialist's packs.
+- Guard: `ModelFirstTest.skillsAreAShelfNotAGuess`; `SkillShelfTest`.
+
 ## Still to retire (owner to schedule; don't add more)
 
-- **`ViewRouter.route` / `SkillMatch` / `SpecialistMatch`** still pick views, skill packs and specialists from the message's words (they add the `make` / `extras` groups). Next candidate: list them in the prompt and let the model load one.
+- **`ViewRouter.route` / `SpecialistMatch`** still pick views and specialists (and a specialist's skill packs) from the message's words (they add the `make` / `extras` groups). Next candidate: list specialists the way the skill shelf lists skills and let the model delegate to one (SKILL-SHELF.md §12). Skills themselves are done (round 4).
 - **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
-- **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
+- **Small guesses:** `SkillIntent.taskIntent` and `SkillGuard.unnamed` (now only for specialists), `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
 - **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.
 
 When you touch one of these, replace it with structure plus the model's own decision, and add a line to

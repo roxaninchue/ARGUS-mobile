@@ -108,3 +108,14 @@ import waits until planned and written; no two agents write one file at once on 
 build failure → fixer → success; failure cancels dependents only; skip; cancellation cascades into every agent and a
 nested run; parallel cap; restore; orphan deps; events), `PipelinesTest` (research, media, APK, generic end to end),
 `composer/TiersTest`, `ui/RichMediaTest`, `ui/RichMediaShotsTest` (screenshots, BLAZE_SHOTS=1).
+
+## Skills: the skill shelf (2026-11-20, [SKILL-SHELF.md](SKILL-SHELF.md))
+
+- **What the model sees:** every turn's system prompt carries `SkillShelf.promptBlock()` (SLOW tier): every switched-on
+  skill (bundled, written / installed in ~/skills, learned), one line each, the user's own first, alphabetical, within
+  6,500 chars ("+N more bundled skills: find_skill lists them" past that).
+- **What it does with it:** `use_skill <name>` reads a SKILL.md (or a learned skill's steps), `run_skill <name>` replays a
+  learned skill's recorded taps, `find_skill` searches by bm25. `use_skill` is in the lean chat kit (`AgentKit.CHAT_CORE`).
+- **Nothing guesses or refuses:** no per-message skill pick, no relevance gate. A read is a visible step ("Reading skill …"),
+  and `Session.skillsRead` feeds Settings › What Argus is holding.
+- **Specialists** still bring their own skill packs when `SpecialistMatch` matches (next to retire, MODEL-FIRST.md).
