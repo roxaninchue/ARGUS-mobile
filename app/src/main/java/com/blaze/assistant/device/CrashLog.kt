@@ -199,10 +199,24 @@ object CrashLog {
         append("${synchronized(fmt) { fmt.format(Date()) }}  $line\n") }
 
     @Synchronized private fun append(stamped: String) {
+        // 0.54.x (20 Nov A12 report): the trim read the whole 400 KB log into one String (~800 KB of chars) on every
+        // overflow, and caught only Exception, so on a full heap the OutOfMemoryError escaped the log writer (and the
+        // crash handler's own write). Now it copies the last 200 KB as bytes and nothing thrown here leaves this method.
         try {
-            if (file.length() > 400_000) file.writeText(file.readText().takeLast(200_000))
+            if (file.length() > 400_000) trimTail(file, 200_000)
             file.appendText(if (secrets.isEmpty()) stamped else redact(stamped, secrets))
-        } catch (_: Exception) { }
+        } catch (_: Throwable) { }
+    }
+
+    /** Keep only the last [keep] bytes of [f], starting at a line, without reading the whole file into a String. */
+    internal fun trimTail(f: File, keep: Int) {
+        val len = f.length()
+        if (len <= keep) return
+        val buf = ByteArray(keep)
+        java.io.RandomAccessFile(f, "r").use { r -> r.seek(len - keep); r.readFully(buf) }
+        val nl = buf.indexOf('\n'.code.toByte())
+        val from = if (nl in 0 until buf.size - 1) nl + 1 else 0
+        f.outputStream().use { it.write(buf, from, buf.size - from) }
     }
 
     /** Log steps that take long so we can see where time goes. */
@@ -229,7 +243,7 @@ object CrashLog {
     fun quietLogs(e: Throwable?): Boolean = !(e is kotlinx.coroutines.CancellationException || e is InterruptedException)
 
     /** The log as the user / model sees it: scrubbed again on the way out (lines written before a secret was saved). */
-    fun read(): String = try { if (::file.isInitialized && file.exists()) reportText(file.readText()) else "" } catch (_: Exception) { "" }
+    fun read(): String = try { if (::file.isInitialized && file.exists()) reportText(file.readText()) else "" } catch (_: Throwable) { "" }
 
     /** Pure (0.46.6): what leaves the log (Send crash report, share, the crash_log tool): saved secrets as handles (user sources were redacted on write). */
     fun reportText(text: String): String = scrubSecrets(text)

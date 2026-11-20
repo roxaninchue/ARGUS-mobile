@@ -26,4 +26,19 @@ class CrashMemoryTest {
         assertTrue(s.contains("e is OutOfMemoryError) { freeReserve(); writeNow("))
         assertTrue(s.contains("x.pss, x.rss"))
     }
+
+    @Test fun trimKeepsTheTailFromALineWithoutReadingItAll() {
+        val f = File.createTempFile("argus-log", ".txt")
+        try {
+            f.writeText((1..2000).joinToString("") { "line $it\n" })
+            CrashLog.trimTail(f, 1000)
+            val left = f.readText()
+            assertTrue(left.length <= 1000)
+            assertTrue(left.endsWith("line 2000\n"))
+            assertTrue(left.startsWith("line "))
+            val s = src()
+            assertFalse(s.contains("file.writeText(file.readText().takeLast"))
+            assertTrue(s.contains("if (file.length() > 400_000) trimTail(file, 200_000)"))
+        } finally { f.delete() }
+    }
 }
