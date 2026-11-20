@@ -342,6 +342,15 @@ object Settings {
         get() = b("show_reasoning", true)
         set(v) = prefs.edit().putBoolean("show_reasoning", v).apply()
 
+    /**
+     * Fix (Finn, 20 Nov 2026: "I leave the app and come back and the thinking re-expands even when I left it collapsed"):
+     * whether a thought that is still streaming starts open. A tap on a live thought sets it, so folding it once keeps
+     * live thinking folded (across tool steps, turns, leaving the app and restarts) until it is opened again.
+     */
+    var liveThoughtsOpen: Boolean
+        get() = b("live_thoughts_open", true)
+        set(v) = prefs.edit().putBoolean("live_thoughts_open", v).apply()
+
     /** Show every step as it happens (the old list) instead of one calm plain-English line. */
     var showSteps: Boolean
         get() = b("show_steps", false)
