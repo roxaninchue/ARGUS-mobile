@@ -19,7 +19,7 @@ package com.blaze.assistant.agent
  * Pure apart from [promptBlock], which reads the cached candidates (SkillShelfTest).
  */
 object SkillShelf {
-    /** ≈ 1,600 tokens; the 57 bundled skills take about 5,500 chars. */
+    /** ≈ 1,600 tokens; since shelf cost 4/4 the 57 bundled skills take about 4,100 chars (ShelfBenchTest). */
     const val BUDGET_CHARS = 6_500
     /** A line's summary is cut near this length, at a word boundary. */
     const val LINE_CHARS = 80
