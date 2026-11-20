@@ -47,7 +47,7 @@ export function safeEqual(a: string, b: string): boolean {
 export const CORS: Record<string, string> = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
-  "Access-Control-Expose-Headers": "X-Blaze-Task, X-Blaze-Provider, X-Blaze-Model, X-RateLimit-Remaining-Requests, Retry-After, Server-Timing",
+  "Access-Control-Expose-Headers": "X-Blaze-Task, X-Blaze-Provider, X-Blaze-Model, X-RateLimit-Remaining-Requests, Retry-After",
 };
 
 export function json(data: unknown, status = 200, headers: Record<string, string> = {}): Response {

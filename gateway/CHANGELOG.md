@@ -1,16 +1,5 @@
 # Blaze Gateway changelog
 
-## 0.4.0 (2026-11-20): fast path
-
-Goal: cut the time before the first token without moving any provider key off the server.
-- **Parallel pre-flight.** After the session check, access, request body, config, quota charge and
-  model health load at once instead of one D1 round trip after another. A refused call (waitlisted,
-  rejected, bad body) gets its charge back and leaves no empty usage row.
-- **Model health cached per isolate for 5 s** (`loadMarksCached`); the router updates it in place,
-  admin changes (incl. Clear cooldowns) drop it.
-- **`Server-Timing` header** on every chat answer: `auth`, `prep`, `upstream` (with the attempt
-  count), exposed to browsers too. Read it to see where the time goes.
-
 ## 0.3.1 (2026-10-16)
 
 - **Nous Research (Nous Portal) provider** (`nous`, OpenAI-compatible,

@@ -331,7 +331,6 @@ async function clearCooldown(req: Request, env: Env): Promise<Response> {
   if (!provider) throw new HttpError(400, "missing", "provider");
   if (model) await env.DB.prepare("UPDATE model_state SET until = 0, state = 'ok', reason = '' WHERE provider_id = ?1 AND model IN (?2, '*')").bind(provider, model).run();
   else await env.DB.prepare("UPDATE model_state SET until = 0, state = 'ok', reason = '' WHERE provider_id = ?1").bind(provider).run();
-  invalidateConfig(); // also drops the cached model health (v0.4.0)
   return json({ ok: true });
 }
 

@@ -43,15 +43,7 @@ export class FakeD1 {
   prepare(sql: string) {
     return new FakeStmt(this.sqlite, sql);
   }
-  // Real D1 runs a batch atomically on its side; queue them here so concurrent callers (the gateway's
-  // parallel pre-flight since v0.4.0) never interleave inside one sqlite transaction.
-  private queue: Promise<unknown> = Promise.resolve();
-  batch(stmts: FakeStmt[]) {
-    const run = this.queue.then(() => this.runBatch(stmts));
-    this.queue = run.catch(() => undefined);
-    return run;
-  }
-  private async runBatch(stmts: FakeStmt[]) {
+  async batch(stmts: FakeStmt[]) {
     this.sqlite.exec("BEGIN");
     try {
       const out = [];
