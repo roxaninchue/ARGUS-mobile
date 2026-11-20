@@ -5,7 +5,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 20 Nov report (Galaxy A12, 0.54.0): "CRASH (previous run, crash)" with nothing else. */
+/** 20 Nov report (low-memory phone, 0.54.0): "CRASH (previous run, crash)" with nothing else. */
 class CrashMemoryTest {
     private fun src() = listOf(File("src/main/java/com/blaze/assistant/device/CrashLog.kt"), File("app/src/main/java/com/blaze/assistant/device/CrashLog.kt")).first { it.exists() }.readText()
 

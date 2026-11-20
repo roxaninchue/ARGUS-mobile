@@ -19,7 +19,7 @@ object CrashLog {
     private lateinit var dir: File
 
     /**
-     * 0.54.x (20 Nov report, Galaxy A12: "CRASH (previous run, crash)" and no line, three memory trims before it): when
+     * 0.54.x (20 Nov report, a low-memory phone: "CRASH (previous run, crash)" and no line, three memory trims before it): when
      * the heap is full, even the fallback line can't be built. This reserve is let go first in the crash handler, so
      * the CRASH line always has room to be written.
      */
@@ -199,7 +199,7 @@ object CrashLog {
         append("${synchronized(fmt) { fmt.format(Date()) }}  $line\n") }
 
     @Synchronized private fun append(stamped: String) {
-        // 0.54.x (20 Nov A12 report): the trim read the whole 400 KB log into one String (~800 KB of chars) on every
+        // 0.54.x (20 Nov low-memory report): the trim read the whole 400 KB log into one String (~800 KB of chars) on every
         // overflow, and caught only Exception, so on a full heap the OutOfMemoryError escaped the log writer (and the
         // crash handler's own write). Now it copies the last 200 KB as bytes and nothing thrown here leaves this method.
         try {
