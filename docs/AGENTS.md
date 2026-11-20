@@ -111,11 +111,25 @@ nested run; parallel cap; restore; orphan deps; events), `PipelinesTest` (resear
 
 ## Skills: the skill shelf (2026-11-20, [SKILL-SHELF.md](SKILL-SHELF.md))
 
-- **What the model sees:** every turn's system prompt carries `SkillShelf.promptBlock()` (SLOW tier): every switched-on
-  skill (bundled, written / installed in ~/skills, learned), one line each, the user's own first, alphabetical, within
-  6,500 chars ("+N more bundled skills: find_skill lists them" past that).
+- **What the model sees:** every turn's system prompt carries `SkillShelf.promptBlock()` (SLOW tier, the first SLOW part):
+  every switched-on skill (bundled, written / installed in ~/skills, learned), one line each (`name — use when …`), the
+  user's own first, alphabetical, within 6,500 chars ("+N more bundled skills: find_skill lists them" past that).
 - **What it does with it:** `use_skill <name>` reads a SKILL.md (or a learned skill's steps), `run_skill <name>` replays a
   learned skill's recorded taps, `find_skill` searches by bm25. `use_skill` is in the lean chat kit (`AgentKit.CHAT_CORE`).
 - **Nothing guesses or refuses:** no per-message skill pick, no relevance gate. A read is a visible step ("Reading skill …"),
   and `Session.skillsRead` feeds Settings › What Argus is holding.
-- **Specialists** still bring their own skill packs when `SpecialistMatch` matches (next to retire, MODEL-FIRST.md).
+- **Lines:** `SkillShelf.useWhen` builds each line from the first sentence of the description (examples cut, at most
+  10 words after the dash, 80 chars). A thin line is fixed in the description, not in code: write a first sentence that
+  fits the cap whole (bump the skill's version and its index.json sha256).
+
+## Specialists: the specialist shelf (round 5, 2026-11-20, [SKILL-SHELF.md](SKILL-SHELF.md) §13)
+
+- **What the model sees:** `delegate`'s description lists every specialist, one line each (`id — use when …`, built-ins
+  in their fixed order, then the user's own marked "yours"), with the ids as an enum on its `specialist` parameter;
+  `delegate` is in `ToolPick.ESSENTIAL`, so it rides every turn. The system prompt keeps one line
+  (`SpecialistShelf.promptBlock()`, SLOW tier, right after the skill shelf).
+- **Nothing guesses:** `SpecialistMatch` and `SkillIntent` are gone; the model decides whether to delegate. A specialist's
+  skill packs are its own (`Specialists.brief`), read in its own run.
+- **Cost:** both shelves are byte-stable and cached; ShelfBenchTest measures them per request (6,972 chars, ≈ 1,743
+  tokens, with 62 skills and 12 specialists). Sending them once per chat, then a diff, was measured and dropped: the
+  history is resent every request anyway.

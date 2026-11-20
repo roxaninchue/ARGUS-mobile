@@ -122,11 +122,32 @@ Design and reasoning: **[SKILL-SHELF.md](SKILL-SHELF.md)**. Which skills a turn 
 - **Kept:** `find_skill` (the model's own search), `SkillGuard.Freq` (counts finished work), a matched specialist's packs.
 - Guard: `ModelFirstTest.skillsAreAShelfNotAGuess`; `SkillShelfTest`.
 
+## Round 5: specialists by the model, the specialist shelf (20 Nov 2026)
+
+Design, cost and numbers: **[SKILL-SHELF.md](SKILL-SHELF.md) §13**. Which specialists a turn sees no longer depends on the
+message's words either.
+
+- **Every turn lists every specialist** (`SpecialistShelf`): the built-ins in their fixed order, then the user's own,
+  one line each from the specialist's own prompt. The list sits in `delegate`'s description with the ids as an enum,
+  and `delegate` rides every turn (`ToolPick.ESSENTIAL`); the system prompt keeps a one-line pointer. The model decides
+  whether to delegate; a specialist reads its own skill packs in its own run (`Specialists.brief`).
+- **Gone from the turn:** `SpecialistMatch` (specialists and their packs picked from the words), `SkillIntent.taskIntent`,
+  `SkillGuard.unnamed`, the skill word score (`SkillMatch.match` / `score` / `block`), and `turnSpecs` / `turnSkills`
+  with the `extras` group they added. `SkillGuard.Freq` counts a task as covered only by what the model did.
+- **Shelf cost, both shelves:** cut 1 puts them first in the cached SLOW tier (deterministic order; the voice-turn rule
+  moved to TURN so switching voice / typing no longer breaks the prefix); cut 2 moves the specialist list into
+  `delegate`; cut 4 makes every line `name — use when …`, capped at 10 words after the dash by `SkillShelf.useWhen`;
+  thin lines were then fixed in the skill descriptions and specialist prompts, not in code. ShelfBenchTest per
+  request: 8,926 chars after cut 2, 6,697 after cut 4, 6,972 with the sharper lines (≈ 1,743 tokens). Cut 3 (send the
+  shelves once, then a diff) was dropped: the history is resent every request, so it saved nothing and moved the
+  shelves out of the cache (uncached chars 55,642 → 76,823 in the bench).
+- Guard: `ModelFirstTest.specialistsAreAShelfNotAGuess`; `SpecialistShelfTest`, `ShelfBenchTest`.
+
 ## Still to retire (owner to schedule; don't add more)
 
-- **`ViewRouter.route` / `SpecialistMatch`** still pick views and specialists (and a specialist's skill packs) from the message's words (they add the `make` / `extras` groups). Next candidate: list specialists the way the skill shelf lists skills and let the model delegate to one (SKILL-SHELF.md §12). Skills themselves are done (round 4).
+- **`ViewRouter.route`** still picks a view from the message's words (it adds the `make` / `extras` groups). Next candidate: the model already has the view tools (SKILL-SHELF.md §12). Skills (round 4) and specialists (round 5) are done.
 - **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
-- **Small guesses:** `SkillIntent.taskIntent` and `SkillGuard.unnamed` (now only for specialists), `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
+- **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
 - **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.
 
 When you touch one of these, replace it with structure plus the model's own decision, and add a line to

@@ -1,3 +1,16 @@
+## Unreleased: specialist shelf (round 5) and shelf cost
+
+2026-11-20, design and numbers in docs/SKILL-SHELF.md §13 (MODEL-FIRST round 5). Specialists were still picked for each message from its words (`SpecialistMatch`, gated by the `SkillIntent` task regex), and both shelves cost more per request than they needed to.
+- **The specialist shelf** (`agent/SpecialistShelf.kt`, 8de7a76a): every specialist, one line each from its own prompt, built-ins first, then yours (marked "yours"). The model decides whether to `delegate`; a specialist reads its own skill packs in its run (`Specialists.brief`).
+- **Removed:** `SpecialistMatch`, `SkillIntent` (and SkillIntentTest), `SkillGuard.unnamed`, the skill word score (`SkillMatch.match` / `score` / `block` / `cardLine`), Agent `turnSpecs` / `turnSkills` and the `extras` group they added. Holding records a skill read only when that skill exists and is on (`SkillShelf.known`); the frequent-task count trusts what the model did.
+- **Cut 1, cache-stable placement** (27fe5abe): the shelves are the first SLOW parts with a deterministic order; the voice-turn rule moved from STATIC to TURN so switching voice / typing no longer breaks the cached prefix. ShelfBenchTest added.
+- **Cut 2, the list in delegate** (ef3c94cc): the specialist list lives in `delegate`'s description (ids as an enum), `delegate` is in `ToolPick.ESSENTIAL`, the prompt keeps one pointer line.
+- **Cut 3 dropped:** sending the shelves once per chat and then a diff saves nothing, because the history is resent every request; in the bench it moved them out of the cache (uncached chars 55,642 → 76,823).
+- **Cut 4, tighter lines** (3a0f18a6): every line is `name — use when …` (`id — use when …` for specialists, display names dropped), at most 10 words after the dash, enforced by `SkillShelf.useWhen`.
+- **Sharper lines** (65987a29): 16 skill descriptions (version bumps, index.json sha256) and 5 specialist prompts (operator, writer, planner, booker, designer) start with a sentence that fits the cap, e.g. `planner — use when asked to turn goals into schedules and reminders` (was `… asked to plan`).
+- **Cost per request** (ShelfBenchTest, 62 skills, 12 specialists): 8,926 chars (≈ 2,231 tokens) after cut 2 → 6,697 (≈ 1,674) after cut 4 → 6,972 (≈ 1,743) with the sharper lines.
+- Tests: SpecialistShelfTest and ShelfBenchTest (new), ModelFirstTest.specialistsAreAShelfNotAGuess; SkillShelf / SpecialistStore / SkillGate / ViewsSkills / VisualRoute / CoreSkills / SpecialistsDelegate / PromptCacheBench tests updated.
+
 ## Unreleased: skill shelf, ARGUS picks its own skills
 
 2026-11-20, design in docs/SKILL-SHELF.md (MODEL-FIRST round 4). Skills were picked for each message by six layers of word rules (task-intent regex, word score, stray-word list, proper-name stripper, a "best matches" lookup, and a gate that refused the model's own use_skill), so wrong skills came in and right ones stayed out.

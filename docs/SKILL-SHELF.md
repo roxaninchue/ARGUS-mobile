@@ -1,6 +1,7 @@
 # Skill shelf: ARGUS picks its own skills
 
-Status: implemented on main, 20 Nov 2026 (not built yet). Follows [MODEL-FIRST.md](MODEL-FIRST.md), where
+Status: implemented on main, 20 Nov 2026. Round 5 (the specialist shelf) and the shelf cost cuts 1, 2 and 4 followed the
+same day (§13). Follows [MODEL-FIRST.md](MODEL-FIRST.md), where
 "`SkillMatch` … still pick … skill packs … from the message's words" is listed under *Still to retire*, with the
 suggested fix "list them in the prompt and let the model load one". This doc is that fix, reasoned out.
 
@@ -83,22 +84,25 @@ own language, and their own skills "just work" without careful wording. When ARG
 One prompt part, in the SLOW tier (it only changes when skills are installed, switched or learned):
 
 ```
-SKILLS on this phone (name: what it's for). When one fits what the user wants, read it with use_skill before you
-start; one marked [replay] is the user's recorded phone steps and run_skill replays it. find_skill searches them.
-- airtime-topup: Top up Airtel airtime with the USSD menu [replay]
-- my-weekly-report: Make my weekly sales report from the store emails
-- ad-lab: Write 5 ad variants for a product or offer and score each on hook, clarity and…
-- android-app-builder: Build a real Android app (Kotlin + Jetpack Compose) from the phone and install…
+SKILLS on this phone (name — use when). When one fits what the user wants, read it with use_skill before you start;
+one marked [replay] is the user's recorded phone steps and run_skill replays it. find_skill searches them.
+- airtime-topup — use when asked to top up Airtel airtime [replay]
+- my-weekly-report — use when asked to make my weekly sales report
+- ad-lab — use when asked to write and score ad copy variants
+- android-app-builder — use when asked to build a real Android app
 …
 ```
+
+(The line format is cut 4's, §13; round 4 shipped `name: first sentence`, cut near 80 characters.)
 
 - **Facts, not orders.** It says what is there and what the tools do. No "ALWAYS", no "only if relevant", no
   "unrelated skills are refused". Deciding relevance is the model's job and it is good at it.
 - **The user's own skills first** (learned, then written / installed), then the bundled library, each group
   alphabetical. The user's skills are the most specific to them, and alphabetical order keeps the text byte-stable.
 - **One line each**, from the skill's own `description`: a leading "Workflow. Use when:" or one-to-three-word title
-  sentence ("Price Scout.") is dropped, then the first sentence, cut at a word boundary near 80 characters. No new
-  metadata, no second description to maintain.
+  sentence ("Price Scout.") is dropped, then the first sentence. Since cut 4 (§13) it reads `name — use when …`, at most
+  10 words after the dash (80 chars), examples cut, enforced by `SkillShelf.useWhen`. No new metadata, no second
+  description to maintain.
 - **The reader rides with the list.** With the lean chat kit on (the default), the main chat carries `AgentKit.CHAT_CORE`
   only, which had no skill tool. `use_skill` joins it (40 of the 40 allowed); `run_skill` and `find_skill` join the
   turn when the model calls them, like any tool outside the kit.
@@ -202,7 +206,65 @@ store are untouched.
 
 ## 12. Next
 
-1. **Specialists the same way:** list specialists (name + one line) and let the model `delegate` / load one, instead
-   of `SpecialistMatch.match` on the message's words. Then `SkillIntent` and `SkillGuard.unnamed` can go.
+1. ~~**Specialists the same way.**~~ Done in round 5 (§13): `SpecialistMatch`, `SkillIntent` and `SkillGuard.unnamed`
+   are gone.
 2. **Views:** `ViewRouter.route` still picks a view by words; the model already has the view tools.
 3. **Desktop / CLI shelf:** render the same block from their stores so every client chooses skills the same way.
+
+## 13. Round 5 and shelf cost (20 Nov 2026)
+
+### Round 5: the specialist shelf (8de7a76a)
+
+Specialists now work the way skills do: the model sees every specialist and decides itself whether to `delegate`.
+
+- **New** `agent/SpecialistShelf.kt` (pure): one line per specialist, the built-ins first in their fixed order, then the
+  user's own (marked "yours") by id; each line comes from the specialist's own prompt, so there is no second
+  description to keep.
+- **Gone:** `SpecialistMatch` (picked specialists, and their skill packs, from the message's words), `SkillIntent`
+  (the task-intent regex), `SkillGuard.unnamed` and the skill word score (`SkillMatch.score` / `match` / `block` /
+  `cardLine`), plus the Agent.kt lookup that ran them before the first call (`turnSpecs`, `turnSkills`, the `extras`
+  group they added). A specialist's packs are now its own (`Specialists.brief`), read inside its own run.
+- **Holding** records a skill read only when a switched-on skill by that name exists (`SkillShelf.known`), and
+  `SkillGuard.Freq` counts a task as covered only by what the model did (a `use_skill` / `run_skill` call, a skill
+  saved), never by a word match.
+
+### Shelf cost
+
+Both shelves ride every request, so what they cost per request was measured (`ShelfBenchTest`: the real bundled library
+plus 5 of the user's skills, the 10 built-in specialists plus 2 of the user's; chars, tokens ≈ chars / 4).
+
+- **Cut 1, cache-stable placement (27fe5abe).** The skill and specialist shelves are the first SLOW parts, ahead of
+  connectors, about, the chat's project, turn and live parts, so they sit in the cached prefix. Their order is
+  deterministic (the same set in any order gives the same bytes). The voice-turn rule moved from STATIC to TURN: as a
+  per-turn switch in STATIC it broke the cached prefix, shelves included, whenever the user switched between voice and
+  typing.
+- **Cut 2, the specialist list in delegate (ef3c94cc).** The list moved into `delegate`'s own description, with the ids
+  as an enum on its `specialist` parameter, and `delegate` joined `ToolPick.ESSENTIAL` so it rides every turn. The system
+  prompt keeps one line (`SpecialistShelf.pointer`: how many there are and where they're listed).
+- **Cut 3, send once then a diff: dropped.** The idea was to send the shelves once per chat and later only what changed.
+  But the chat history is resent on every request anyway, so a shelf kept in the history is still paid every request,
+  and it leaves the cached prefix: in the bench, uncached chars rose from 55,642 to 76,823. The shelves stay in the
+  cached SLOW tier.
+- **Cut 4, tighter lines (3a0f18a6).** Every line is `name — use when …` (specialists `id — use when …`, display names
+  dropped). `SkillShelf.useWhen` enforces it in code for the bundled library and the user's own alike: the first
+  sentence of the description or prompt, examples cut (parentheses, quotes, "e.g." / "such as" / "including" lists,
+  dash asides, text after a colon), at most `LINE_WORDS` = 10 words after the dash and `LINE_CHARS` = 80, cut at a
+  phrase boundary and never ending on a joining word. Pure and deterministic, so the shelves stay byte-stable.
+- **Sharper lines (65987a29).** The cap left some lines thin (`planner — use when asked to plan`,
+  the views core skill's `… — use when Argus puts its output`). The first sentence of 16 skill descriptions (versions bumped,
+  index.json sha256 updated) and 5 specialist prompts was rewritten so the capped line names when to use it, e.g.
+  `planner — use when asked to turn goals into schedules and reminders`; `useWhen` is unchanged. A description's
+  first sentence should fit the cap whole: at most 6 words after a verb ("Analyse spreadsheet or CSV data"), or 8 after
+  a gerund ("Splitting a task across specialists in parallel").
+
+| ShelfBenchTest, per request | Skills shelf | Specialist pointer | delegate schema | Total chars | ≈ tokens |
+|---|---|---|---|---|---|
+| After cut 2 | 6,020 | 179 | 2,727 | 8,926 | 2,231 |
+| After cut 4 | 4,201 | 179 | 2,317 | 6,697 | 1,674 |
+| After the sharper lines | 4,392 | 179 | 2,401 | 6,972 | 1,743 |
+
+The 57 bundled skills alone now take 4,097 chars of the 6,500 budget; the longest line is 10 words after the dash.
+
+Tests: `SpecialistShelfTest` (new), `ShelfBenchTest` (new, writes build/shelf-bench.txt), `SkillShelfTest`,
+`SpecialistStoreTest`, `SkillGateTest`, `ViewsSkillsTest`, `VisualRouteTest`, `CoreSkillsTest`,
+`SpecialistsDelegateTest`, `PromptCacheBenchTest`; `SkillIntentTest` deleted with `SkillIntent`.
