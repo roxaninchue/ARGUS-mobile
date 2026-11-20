@@ -1,8 +1,8 @@
 ---
 name: shell-sysadmin
-description: Run and fix things on the user's computer across Windows (PowerShell), macOS and Linux including Arch - install software, manage services, disk space, processes, ports, networks, permissions, startup apps, scheduled jobs and updates - safely and with the right commands for that OS. Use for any "my PC…", "install…", "why is X slow/full/broken" or system-level task.
+description: Administer Windows, macOS or Linux computers (PowerShell, Arch included): install software, manage services, disk space, processes, ports, networks, permissions, startup apps, scheduled jobs and updates, safely and with the right commands for that OS. Use for any "my PC…", "install…", "why is X slow/full/broken" or system-level task.
 tags: [shell, sysadmin, windows, macos, linux, arch, powershell]
-version: 2
+version: 3
 ---
 
 > **On the phone:** commands run in Argus's Alpine Linux (proot, no root, no systemd, no Docker). Use it for remote servers over ssh (`apk add openssh-client`) and for the Linux sandbox itself; phone settings go through Argus's device tools, and a paired PC through `ask_pc`.

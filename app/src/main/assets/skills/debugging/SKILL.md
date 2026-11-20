@@ -1,8 +1,8 @@
 ---
 name: debugging
-description: Find and fix the root cause of a bug, crash, failing test, wrong output, build error or "it worked yesterday" - systematically, with a reproduction, one hypothesis at a time, and a regression test. Use whenever something is broken or behaves unexpectedly.
+description: Fix bugs, crashes or failing tests at the root cause (wrong output, build error, "it worked yesterday") - systematically, with a reproduction, one hypothesis at a time, and a regression test. Use whenever something is broken or behaves unexpectedly.
 tags: [code, debugging, errors, testing, troubleshooting]
-version: 1
+version: 2
 ---
 
 # Debugging

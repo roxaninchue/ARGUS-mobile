@@ -1,8 +1,8 @@
 ---
 name: lecture-notes
-description: Turn a lecture recording (audio or video) or a rough transcript into clean notes, a short summary and key terms, plus optional flashcards. Use for "transcribe my lecture", "make notes from this recording", "summarise this class", or when the user shares an audio file from class.
+description: Turn a lecture recording into notes (from audio, video or a rough transcript), with a short summary and key terms, plus optional flashcards. Use for "transcribe my lecture", "make notes from this recording", "summarise this class", or when the user shares an audio file from class.
 tags: [student, notes, transcription, summary, lectures]
-version: 1
+version: 2
 ---
 
 # Lecture notes

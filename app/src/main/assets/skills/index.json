@@ -3,8 +3,8 @@
   "skills": [
     {
       "name": "blaze-voice",
-      "version": 1,
-      "sha256": "a65b70434c11ec5c91f9b4a0271205200884005cdcc60ede2c17928438152f8c"
+      "version": 2,
+      "sha256": "b0027bc40f38ad0900542efc2b55064f838bd1aac7476f3e425ddd04eed155bf"
     },
     {
       "name": "deep-research",
@@ -18,8 +18,8 @@
     },
     {
       "name": "planning-task-breakdown",
-      "version": 1,
-      "sha256": "a9bede6fd297dd0456c5ae610f7402eb732921ecdc64385540c2a18536402fb3"
+      "version": 2,
+      "sha256": "ad95cecb368381d7c155bc3b5ad12a482f5e125f037906edfe00ac1369398b8a"
     },
     {
       "name": "document-writing",
@@ -28,8 +28,8 @@
     },
     {
       "name": "data-analysis",
-      "version": 2,
-      "sha256": "a1c07694d98a2332d6317ce32569b7ac6618eb408cdaae93ff4a7efa719d253c"
+      "version": 3,
+      "sha256": "249168a68ac0e8585afeef9f8e12e8b827a02e05c85fb0023a6f3167471f1aef"
     },
     {
       "name": "api-integration",
@@ -48,8 +48,8 @@
     },
     {
       "name": "debugging",
-      "version": 1,
-      "sha256": "329da5e64d9e5a04df55d274ffee02a47faaf263b7595aed4d87bb2608ff9214"
+      "version": 2,
+      "sha256": "5fa4ee86c160c7d7f8e6093c26f2265673c858eee1b19faa791029e39a1782be"
     },
     {
       "name": "git-pr-workflow",
@@ -91,8 +91,8 @@
     },
     {
       "name": "web-design-blaze-classic",
-      "version": 1,
-      "sha256": "23a1146a559241d0c9cb05ebc2dd9f9afaee1646e75afd88a057db6c66e44597",
+      "version": 2,
+      "sha256": "08e175ee95f5be80d4bbfaae055d5a4bd1339cd654d112aba2e980b27a1ab58e",
       "files": [
         "SKILL.md",
         "assets/starter.html",
@@ -101,8 +101,8 @@
     },
     {
       "name": "web-design-teamofkeys",
-      "version": 1,
-      "sha256": "96f278b21a2801f606aebb8f6cac3636f487feff00e510c33481303ff8f3879d",
+      "version": 2,
+      "sha256": "1e8044dfe5fe54f60d5049b701f3b88ef7662ba2ed5fba72375b17b41f446fae",
       "files": [
         "SKILL.md",
         "assets/starter.html",
@@ -163,8 +163,8 @@
     },
     {
       "name": "shell-sysadmin",
-      "version": 2,
-      "sha256": "ef485523a1bf3daaa6c8cf2ebb31b26196309ae38cb2a280e7ce85483a13a782"
+      "version": 3,
+      "sha256": "8a1cf42d9f2e358f3baa1984faf33b5a9d16f37daadba2f8c6cd4d8b660db53f"
     },
     {
       "name": "three-d-design",
@@ -209,8 +209,8 @@
     },
     {
       "name": "lecture-notes",
-      "version": 1,
-      "sha256": "f7cd2e2851f580be6643dad5823c6a24c35a8b95679f2dc1ea40e8435182b315"
+      "version": 2,
+      "sha256": "5dc6e8e263102890a0535e797f7bff85827b6e954543581b8a129795803c09a0"
     },
     {
       "name": "essay-coach",
@@ -229,18 +229,18 @@
     },
     {
       "name": "content-calendar",
-      "version": 1,
-      "sha256": "ae34380d7d26ebc9a6f820410323f3f4bc16d78858d29d751a6852875dd126ea"
+      "version": 2,
+      "sha256": "5ea6bf8fee0cd69903b9f63a2bbad08e31dc613bdfed9d4ec8de4a343b805916"
     },
     {
       "name": "product-listing",
-      "version": 1,
-      "sha256": "2c00f791dc43a0925ddc9e743cceed2dac6529d2bdc4abf0133835249cf1449d"
+      "version": 2,
+      "sha256": "651425a22829a224827fad85fd093e3e5d58440977ba35e1aa5e55e8609db91b"
     },
     {
       "name": "ad-lab",
-      "version": 1,
-      "sha256": "f024bc13c41f79cd4d8dd19c9202e183d64d5aa7468fdbf92af1e387f8ec2b6a"
+      "version": 2,
+      "sha256": "8914bd8d3fd5647565b67b0aa72ee5ec24529efc9804ea99d9d45c232eadbc1f"
     },
     {
       "name": "research-brief",
@@ -274,18 +274,18 @@
     },
     {
       "name": "blaze-views",
-      "version": 2,
-      "sha256": "f265f5664ac13a81a4b1d4e458310d9ea8d9390a9f246f16dc3ed22597b79a13"
+      "version": 3,
+      "sha256": "244fd4a06e93c4385f7207e5986a58eacb3eba329377f872c0a772696fcac498"
     },
     {
       "name": "blaze-workflow-builder",
-      "version": 2,
-      "sha256": "3633a21d2f137be7c7b9c83964118be9cc655599cf994263eb6be4af53e03f59"
+      "version": 3,
+      "sha256": "0c37a488e3d431f031223411ada74466a00ca08ebdcafc6c6f925f6056e99fd4"
     },
     {
       "name": "blaze-specialists",
-      "version": 3,
-      "sha256": "ad1852de7c9b7923bca1840077a8ebb983b84767dc3c392855519162036fc0f2"
+      "version": 4,
+      "sha256": "965a046ebb5fe8534c7d436c73c608670d0c5ffef5145ad5207241bf9b40ee91"
     },
     {
       "name": "wf-send-to-person",
@@ -309,8 +309,8 @@
     },
     {
       "name": "wf-make-and-share",
-      "version": 1,
-      "sha256": "8f7f5a5fee9ead6238c9c615c474ea3fb3605342e96e0070f83bd516da2b9a45"
+      "version": 2,
+      "sha256": "9ed49f432b7010e716cf1a0f17af3d7623f633ec5dc8292968222bdd63807a6c"
     },
     {
       "name": "wf-do-it-on-screen",
@@ -319,8 +319,8 @@
     },
     {
       "name": "paperwork-mode",
-      "version": 1,
-      "sha256": "c44bd53f019a682345c8ebfc25a136426f651c86881b509a80a422ebb9d4b26c"
+      "version": 2,
+      "sha256": "8a68896addef2cb111c4172d1bb82a9ab2cd404efb2801b73e088634f174f3e2"
     },
     {
       "name": "price-scout",

@@ -1,8 +1,8 @@
 ---
 name: ad-lab
-description: Write 5 ad variants for a product or offer and score each on hook, clarity and call to action, best first, with what to test. Use for "write ads", "ad copy", "Facebook/TikTok/Instagram ad", "which ad is better", "improve this ad".
+description: Write and score ad copy variants for a product or offer: five angles scored on hook, clarity and call to action, best first, with what to test. Use for "write ads", "ad copy", "Facebook/TikTok/Instagram ad", "which ad is better", "improve this ad".
 tags: [marketing, ads, copywriting, testing]
-version: 1
+version: 2
 ---
 
 # Ad lab

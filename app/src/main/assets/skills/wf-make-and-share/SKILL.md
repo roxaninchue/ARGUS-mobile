@@ -1,9 +1,9 @@
 ---
 name: wf-make-and-share
-description: Workflow. Use when: Make something (image, document, design, audio) and then share or save it outside Argus. Use for "make a poster and share it", "generate a picture and save it to my phone", "create a PDF and send it".
+description: Workflow. Use when: Make and share something, or save it outside Argus (an image, document, design or audio). Use for "make a poster and share it", "generate a picture and save it to my phone", "create a PDF and send it".
 tags: [workflow, generate, image, share, save, gallery, export]
 workflow: true
-version: 1
+version: 2
 ---
 
 # Make it, then share it

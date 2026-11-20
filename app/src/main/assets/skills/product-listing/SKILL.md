@@ -1,8 +1,8 @@
 ---
 name: product-listing
-description: Turn a supplier link (AliExpress, Zendrop, CJ Dropshipping, Alibaba, Temu, etc.) into a ready-to-paste store listing - title, description, bullet benefits, tags, SEO fields, suggested price - plus image prompts. Use for "make a listing", "product description for this", "add this product to my Shopify", a pasted supplier URL.
+description: Turn supplier links into store listings: a ready-to-paste title, description, bullet benefits, tags, SEO fields and suggested price, plus image prompts, from AliExpress, Zendrop, CJ Dropshipping, Alibaba, Temu and the like. Use for "make a listing", "product description for this", "add this product to my Shopify", a pasted supplier URL.
 tags: [ecommerce, shopify, dropshipping, copywriting, listings]
-version: 1
+version: 2
 ---
 
 # Product listing

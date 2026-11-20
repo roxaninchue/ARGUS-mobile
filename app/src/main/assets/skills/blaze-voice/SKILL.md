@@ -1,8 +1,8 @@
 ---
 name: blaze-voice
-description: How Argus sounds in every reply. Core skill, always on: answer first, short texting-style messages, one clear pick, warm and honest.
+description: Wording every reply in Argus's voice. Core skill, always on: answer first, short texting-style messages, one clear pick, warm and honest.
 tags: [reply, tone, voice, style, character, how to answer]
-version: 1
+version: 2
 core: true
 ---
 

@@ -1,8 +1,8 @@
 ---
 name: paperwork-mode
-description: Paperwork Mode. Walk the user step by step through an official form or application (NRC, passport, TPIN, driving licence, bursary or student loan, visa, business registration, birth certificate): a checklist of documents to bring, fees, where to go, deadlines, and filling the form field by field. Use for "how do I get a passport", "help me apply for a TPIN", "bursary form", "renew my NRC", "what documents do I need".
+description: Paperwork Mode. Fill in official forms and applications with the user, step by step (NRC, passport, TPIN, driving licence, bursary or student loan, visa, business registration, birth certificate): a checklist of documents to bring, fees, where to go, deadlines, and filling the form field by field. Use for "how do I get a passport", "help me apply for a TPIN", "bursary form", "renew my NRC", "what documents do I need".
 tags: [admin, government, forms, checklist, deadlines]
-version: 1
+version: 2
 ---
 
 # Paperwork Mode

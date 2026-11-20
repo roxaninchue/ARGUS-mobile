@@ -1,8 +1,8 @@
 ---
 name: web-design-teamofkeys
-description: Design or build a website in the style of teamofkeys.com - near-black and white sections, one hot orange accent, huge tight sans headlines with one italic serif word, mono "(labels)", pill CTAs and slow scroll-driven motion. Use when the user asks for that look, a studio/agency feel, or names Team of Keys.
+description: Design a website in teamofkeys.com style - near-black and white sections, one hot orange accent, huge tight sans headlines with one italic serif word, mono "(labels)", pill CTAs and slow scroll-driven motion. Use when the user asks for that look, a studio/agency feel, or names Team of Keys.
 tags: [design, web, css, landing-page, agency, motion]
-version: 1
+version: 2
 ---
 
 # Web design: the Team of Keys look

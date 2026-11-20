@@ -1,8 +1,8 @@
 ---
 name: blaze-specialists
-description: Hand independent parts of a task to specialists in parallel with delegate, and follow up as each result lands. Covers when to split, how to write a brief, and how to merge the results.
+description: Splitting a task across specialists in parallel with delegate, and following up as each result lands. Covers when to split, how to write a brief, and how to merge the results.
 tags: [specialist, specialists, delegate, parallel, background agent, compare, split, team, shopper, booker, researcher, coder, tutor, designer]
-version: 3
+version: 4
 core: true
 ---
 

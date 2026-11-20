@@ -1,8 +1,8 @@
 ---
 name: planning-task-breakdown
-description: Turn a goal or a big messy request into a concrete plan - milestones, ordered tasks with owners and estimates, dependencies, risks and the next action - and keep it updated as work happens. Use for projects, launches, study plans, "how do I start", multi-step coding work, or before any task that will take more than ~30 minutes.
+description: Break goals into concrete plans - milestones, ordered tasks with owners and estimates, dependencies, risks and the next action - and keep each plan updated as work happens, even for a big messy request. Use for projects, launches, study plans, "how do I start", multi-step coding work, or before any task that will take more than ~30 minutes.
 tags: [planning, tasks, project-management, productivity]
-version: 1
+version: 2
 ---
 
 # Planning and task breakdown

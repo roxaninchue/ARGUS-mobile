@@ -1,8 +1,8 @@
 ---
 name: content-calendar
-description: Plan and write a week of social posts for the user's store or brand (TikTok, Instagram, Facebook, WhatsApp Status), with visuals that follow the brand kit, and save each post as a Schedule item that reminds them to publish. Use for "content calendar", "posts for this week", "what should I post", "plan my TikToks".
+description: Plan a week of social posts for the user's store or brand (TikTok, Instagram, Facebook, WhatsApp Status) and write them, with visuals that follow the brand kit, and save each post as a Schedule item that reminds them to publish. Use for "content calendar", "posts for this week", "what should I post", "plan my TikToks".
 tags: [marketing, social-media, content, schedule, brand]
-version: 1
+version: 2
 ---
 
 # Content calendar

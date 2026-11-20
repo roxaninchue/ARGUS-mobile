@@ -1,8 +1,8 @@
 ---
 name: blaze-views
-description: Where Argus puts its output. Core skill, always on: anything that fits one of Argus's views is created there with its tool, then opened or linked, with a one-line chat reply instead of a text dump.
+description: Putting output in Argus's views, not chat text. Core skill, always on: anything that fits one of Argus's views is created there with its tool, then opened or linked, with a one-line chat reply instead of a text dump.
 tags: [view, views, learn, flashcards, quiz, design, schedule, reminder, memory, gallery, projects, skills, browser, open_view]
-version: 2
+version: 3
 core: true
 ---
 

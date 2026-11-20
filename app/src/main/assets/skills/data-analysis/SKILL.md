@@ -1,8 +1,8 @@
 ---
 name: data-analysis
-description: Analyse data from CSV, Excel/Google Sheets exports, JSON or SQLite - clean it, answer questions with numbers, find trends and outliers, make charts and a short written summary. Use for "analyse this spreadsheet", sales/expense/traffic numbers, survey results, logs or any table of data.
+description: Analyse spreadsheet or CSV data (Excel/Google Sheets exports, JSON or SQLite too) - clean it, answer questions with numbers, find trends and outliers, make charts and a short written summary. Use for "analyse this spreadsheet", sales/expense/traffic numbers, survey results, logs or any table of data.
 tags: [data, csv, excel, spreadsheet, python, pandas, charts]
-version: 2
+version: 3
 ---
 
 # Data analysis (CSV and spreadsheets)

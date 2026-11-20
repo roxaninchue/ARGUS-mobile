@@ -1,8 +1,8 @@
 ---
 name: blaze-workflow-builder
-description: Turning a multi-step or repeating task into a reusable workflow (a user skill with trigger, steps and checks), testing it once, and using it next time. Core skill, always on.
+description: Saving a repeating task as a reusable workflow (a multi-step user skill with trigger, steps and checks), testing it once, and using it next time. Core skill, always on.
 tags: [workflow, save workflow, skill, save skill, automate, repeat, recurring, every time, again, routine method, procedure, teach]
-version: 2
+version: 3
 core: true
 ---
 
