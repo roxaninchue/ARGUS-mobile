@@ -8,7 +8,7 @@
 ".github/workflows/youtube-daily.yml":26,
 ".gitignore":1,
 ".gitlab-ci.yml":29,
-"app/blaze-docs/about.md":30,
+"app/blaze-docs/about.md":28,
 "app/build.gradle.kts":38,
 "app/proguard-rules.pro":6,
 "app/src/androidTest/java/com/blaze/assistant/smoke/LowRamSmokeTest.kt":48,
