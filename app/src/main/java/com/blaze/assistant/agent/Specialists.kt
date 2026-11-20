@@ -11,7 +11,7 @@ import org.json.JSONObject
  */
 object Specialists {
     /**
-     * [skills] = bundled skill packs it loads (v0.24.3; empty = SpecialistMatch.skills for its id).
+     * [skills] = bundled skill packs it loads (v0.24.3; empty = [packs] for its id).
      * v0.26.2: [playbook] = its field playbook (custom ones; built-ins read assets/specialists/<id>.md, see Playbooks),
      * [madeBy] = "user" (Settings) or "blaze" (create_specialist). Both are optional in the saved JSON.
      */
@@ -38,12 +38,37 @@ object Specialists {
         Spec("planner", "Planner", "You plan: break goals into steps, schedule, check the calendar and routines, and set reminders. Return a short, ordered plan and what you scheduled.", setOf("comms", "memory", "routines", "web")),
         Spec("coder", "Coder", "You write, run and debug code and shell commands in ${BrandName.NAME}'s terminal. Run things to check them; keep output short; explain fixes in one line each.", setOf("terminal", "web")),
         Spec("inbox", "Inbox manager", "You handle the user's mail, messages, notifications and connected apps: find, summarise, draft replies. Never send without approval.", setOf("connectors", "comms", "notifications", "memory")),
-        // v0.24.3 (blaze-specialists): matched per turn by SpecialistMatch, each with its own skill packs.
+        // v0.24.3 (blaze-specialists): each with its own skill packs ([packs]). Round 5: listed on SpecialistShelf; the model picks.
         Spec("shopper", "Shopper", "You find and compare products for one shopping goal: real listings, prices with currency, delivery to the user's country, stock, seller rating and the link. Respect the price limit as a hard filter. Never buy or check out; return the options and your one pick with the reason.", setOf("web", "browser", "memory")),
         Spec("booker", "Booker", "You find bookings (flights, buses, hotels, tables, appointments) for one target: times, prices, availability, cancellation rules and the link. Never pay or confirm a booking; return the options that fit the limits and your pick.", setOf("web", "browser", "memory", "routines")),
         Spec("tutor", "Tutor", "You help the user learn one topic: explain simply with an example, check understanding, and turn key facts into flashcards (Learn) when asked. Never hand over answers to graded work; teach the method instead.", setOf("web", "memory", "study")),
         Spec("designer", "Designer", "You make one visual thing for real with the design tool (3D, pages, UI, posters, slides, diagrams): clear hierarchy, real content, no lorem ipsum. Return what you made and how to open it.", setOf("design", "web", "memory")),
     )
+
+    /** Bundled skill packs each built-in brings to its own runs (missing ones are skipped). Was SpecialistMatch.skills. */
+    val packs: Map<String, List<String>> = mapOf(
+        "shopper" to listOf("deep-research", "product-listing"),
+        "booker" to listOf("planning-task-breakdown"),
+        "coder" to listOf("blaze-coding-workflow", "debugging", "code-review", "writing-tests", "git-pr-workflow", "refactoring"),
+        "researcher" to listOf("deep-research", "research-brief"),
+        "tutor" to listOf("study-flashcards", "tutor", "study-planner", "lecture-notes"),
+        "designer" to listOf("blaze-views", "landing-page-builder", "three-d-design", "slide-deck", "diagrams", "print-design"),
+        "writer" to listOf("document-writing", "email-drafting", "essay-coach"),
+        "planner" to listOf("planning-task-breakdown", "study-planner"),
+        "inbox" to listOf("email-drafting", "whatsapp-replies"),
+        "operator" to listOf("blaze-task-workflow"),
+    )
+
+    fun skillsFor(s: Spec): List<String> = s.skills.ifEmpty { packs[s.id].orEmpty() }
+
+    /** Skill text a delegated specialist gets in its own prompt (first [max] of its packs, trimmed). Pure. */
+    fun brief(s: Spec, cands: List<SkillMatch.Cand>, max: Int = 2, per: Int = 1_800): String {
+        val byName = cands.filter { it.on }.associateBy { it.name.lowercase() }
+        val packs = skillsFor(s).mapNotNull { byName[it.lowercase()] }.take(max)
+        if (packs.isEmpty()) return ""
+        return "\nSKILLS for this work (the user's skill library):\n" + packs.joinToString("\n\n") { "### ${it.name}\n" + it.body.trim().take(per) } +
+            "\nIf a step fails twice in a row, stop and report what you tried and what's left."
+    }
 
     fun custom(): List<Spec> = parse(Settings.str("specialists", "[]"))
 
@@ -122,7 +147,7 @@ object Specialists {
         if (!check.ok) return no("\n" + check.feedback())
         val spec = Spec(id, name, prompt, groups, true, skills, playbook.trim(), BLAZE)
         return Made(true, spec, "Saved the new specialist $name ($id, tools: ${groups.joinToString(", ")}) with its playbook. " +
-            "It is in Settings \u203a Specialists (made by ${BrandName.NAME}) and matched in later turns. Use it now with delegate specialist=$id.")
+            "It is in Settings \u203a Specialists (made by ${BrandName.NAME}) and on the specialist list from the next turn. Use it now with delegate specialist=$id.")
     }
 
     fun createTool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()

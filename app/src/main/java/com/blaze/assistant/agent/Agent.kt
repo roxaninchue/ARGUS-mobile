@@ -1366,6 +1366,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             tail("goals") { Autonomy.promptLine() }
             // 2026-11-20 skill shelf (docs/SKILL-SHELF.md): every skill that's on, one line each; the model picks and reads one itself.
             slow("skills", SkillShelf.promptBlock())
+            // Round 5 specialist shelf: every specialist, one line each (built-ins, then the user's own); the model delegates.
+            slow("specialists", SpecialistShelf.promptBlock())
             // v0.30.5: tasks the user has Argus do often, with no skill yet, come first for a skill.
             if (Settings.autoLearn) tail("frequent") { SkillGuard.Freq.promptLine(SkillGuard.Freq.load()) }
             // v0.45.9: the assistant rules and how to use the [context] block (static). The block itself goes at the very
@@ -1607,12 +1609,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val turnTools = java.util.Collections.synchronizedList(mutableListOf<String>())
         /** v0.33.3: the ```apps card of this turn's last list_apps (added to the reply when it says it shows a list). */
         @Volatile var turnAppsCard: String? = null
-        /** v0.23.0: the view this turn must use (keyword classifier) and the skills looked up for it. */
+        /** v0.23.0: the view this turn must use (keyword classifier). */
         @Volatile var turnView: ViewRouter.Spec? = null
-        @Volatile var turnSkills: SkillMatch.Result = SkillMatch.Result.NONE
         /** Skills the model read (use_skill) or replayed (run_skill) for the current request: What Argus is holding. */
         @Volatile var skillsRead: List<String> = emptyList()
-        @Volatile var turnSpecs: List<Specialists.Spec> = emptyList()
         /** v0.23.2: tool calls that succeeded this turn (the claim guard checks replies against them). */
         val turnOk = java.util.Collections.synchronizedList(mutableListOf<ClaimGuard.Call>())
         /** v0.44.0: every tool call this turn with its verified status (ClaimCheck reviews the final reply against it). */
@@ -3033,7 +3033,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             } else { from = maxOf(windowStart(), base); windowed = from > base }
             lastRung = rung
             val sp = specialist
-            val sys = if (sp != null) Playbooks.specialistSystem(sp, Playbooks.forSpec(sp), SpecialistMatch.brief(sp, SkillMatch.cached()),
+            val sys = if (sp != null) Playbooks.specialistSystem(sp, Playbooks.forSpec(sp), Specialists.brief(sp, SkillMatch.cached()),
                     SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date()), Memory.promptBlock(lastUserText()), agentId) +
                     Modes.promptLine(agentPlan) + (if (Settings.longChat && rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") +
                     // 18 Nov 2026: the [context] block (now: line with the zone, the dates asked) closed only the else branch
@@ -3046,7 +3046,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 cacheBlock +
                 GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
-                (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) + SkillMatch.block(turnSkills) + SpecialistMatch.hint(turnSpecs) +
+                (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.
                 AnswerStyle.turnHint(lastUserText()) +
                 // 0.53.6: the user said to stop and answer: answer from what was found (WrapUp)
@@ -3313,8 +3313,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.41.0 speed: the independent lookups before the first model call (tool list, current design, skills,
                 // specialists, plan memory) start together instead of one after another. Each is cheap to throw away.
                 val stateQ0 = !routine && PhoneState.kind(userNow) != null
-                val selfQ0 = !routine && BlazeDocs.isAboutBlaze(userNow)
-                val plainDev0 = !routine && !bulk && FastActions.plainDevice(userNow)
                 val par = kotlinx.coroutines.CoroutineScope(kotlin.coroutines.coroutineContext + Dispatchers.IO)
                 // 0.51.0 BlazeQuery ("involuntary omniscience"): fires the moment the turn starts, in parallel with the prompt
                 // assembly below. The reply waits at most BlazeQuery.HOT_MS for the pack; later results reach the next model
@@ -3336,12 +3334,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val dTools = par.async(Dispatchers.Default) { tools().apply { put(ToolPick.loadTool()) }.let { if (isPrivate) PrivateChat.filterTools(it) else it }
                     .let { if (Projects.of(id) == null) ProjectDocs.strip(it) else it } }
                 val dDesign = par.async { if (bulk) null else try { Designs.current() } catch (e: CancellationException) { throw e } catch (_: Exception) { null } }
-                val dSpecs = par.async {
-                    val userNow = SkillGuard.unnamed(userNow)   // 0.53.3: a product name picks no specialist either
-                    // 0.50.0: no specialist (and so none of its skill packs) for a message that doesn't ask for a task (SkillIntent).
-                    if (routine || stateQ0 || selfQ0 || plainDev0 || agentId != null || !SkillIntent.taskIntent(userNow)) emptyList()
-                    else try { SpecialistMatch.match(userNow, Specialists.all()) } catch (e: CancellationException) { throw e } catch (_: Exception) { emptyList() }
-                }
                 val dPlan = par.async {
                     // 0.45.15 (device /phoneqa 22:40): an ask a direct phone tool does (set_alarm, set_timer, compose_sms,
                     // add_contact, device_setting, open_settings then tap) never gets the saved tap plan: the plan hint made
@@ -3422,20 +3414,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var savedPath: String? = null   // v0.45.9: a save_file this turn; the final answer names its path
                 var turnToolCalls = 0   // v0.45.9: tools run this turn (ScheduleTruth checks only answers made from the [context] block)
                 turnView?.let { groupsOn += it.groups }
-                // 2026-11-20 skill shelf: no skills are guessed from the words; the model reads one from the shelf (SkillShelf).
-                // turnSkills only carries a matched specialist's packs; skillsRead is what the model actually read.
-                turnSkills = SkillMatch.Result.NONE; skillsRead = emptyList()
+                // 2026-11-20 skill shelf / round 5 specialist shelf: no skills or specialists are guessed from the words; the
+                // model sees both shelves and picks. skillsRead is what the model actually read (What Argus is holding).
+                skillsRead = emptyList()
                 val stateQ = stateQ0   // v0.26.2: a phone-state question ("am I on mute?") gets the full awareness line
-                // v0.24.3 specialists: the matching specialist(s) bring their skill packs and the delegate tool.
                 val lateSteps = ArrayList<String>()   // v0.45.3: optional look-ups that missed their PreBudget
-                turnSpecs = PreBudget.within(dSpecs, PreBudget.SPECS_MS, emptyList(), "specialists") { lateSteps += it }
-                if (turnSpecs.isNotEmpty()) {
-                    turnSkills = SpecialistMatch.attach(turnSkills, turnSpecs, SkillMatch.cached())
-                    groupsOn += "extras"
-                }
-                // 0.53.3 (owner: "remove the pills"): which skills / specialist loaded is technical; it goes to the trace, never the chat.
-                try { listOf(SpecialistMatch.cardLine(turnSpecs), SkillMatch.cardLine(turnSkills)).filter { it.isNotBlank() }
-                    .takeIf { it.isNotEmpty() }?.let { android.util.Log.i("BlazeSkills", it.joinToString(" | ")) } } catch (_: Throwable) { /* android.util.Log is absent in JVM unit tests */ }
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
                 if (turnView != null) groupsOn += "make"
@@ -4461,7 +4444,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val playbook = Playbooks.forSpec(spec).ifBlank { if (spec.custom && !isPrivate) Agent.ensurePlaybook(spec) else "" }
             val tools = Specialists.filter(all, spec)
             val msgs = JSONArray()
-                .put(JSONObject().put("role", "system").put("content", Playbooks.specialistSystem(spec, playbook, SpecialistMatch.brief(spec, SkillMatch.cached()),
+                .put(JSONObject().put("role", "system").put("content", Playbooks.specialistSystem(spec, playbook, Specialists.brief(spec, SkillMatch.cached()),
                     SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date()), Memory.promptBlock(task))))
                 .put(JSONObject().put("role", "user").put("content", task))
             val shots = mutableListOf<String>()
@@ -4893,10 +4876,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return m.call(t, args)
         }
 
-        /** 2026-11-20 skill shelf: a skill the model read or replayed is remembered for Holding (no gate: the model chose it). */
+        /**
+         * 2026-11-20 skill shelf: a skill the model read or replayed is remembered for Holding (no gate: the model chose it).
+         * Round 5: recorded only when a switched-on skill by that name really exists (SkillShelf.known), not guessed from
+         * how the result reads.
+         */
         private fun noteSkill(args: JSONObject, result: String): String {
-            val n = args.optString("name").trim()
-            if (n.isNotEmpty() && !SkillPacks.notRead(result)) skillsRead = (skillsRead + n).distinct()
+            val n = try { SkillShelf.known(args.optString("name"), SkillMatch.cached()) } catch (_: Throwable) { null }
+            if (n != null) skillsRead = (skillsRead + n).distinct()
             return result
         }
 
@@ -5588,11 +5575,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val repeat = Learn.repeatsAndRecord(sig, n >= 5 && distinct >= 2)
             val savedSkill = tools.any { it == "write_skill" || it == "skill_manage" || it == "save_workflow" }
             // v0.30.5: count every real task (≥ 2 work tool calls); one done often with no skill covering it gets a skill first.
+            // Round 5: "covered" is what the model actually did this turn (a use_skill / run_skill call, or a skill saved),
+            // never a word match between the message and a skill's description.
             val usedSkill = tools.any { it == "use_skill" || it == "run_skill" }
             val frequent = if (agentId == null && n >= 2 && !Learn.trivial(userText)) {
-                val covered = savedSkill || usedSkill || try { !SkillMatch.match(userText, SkillMatch.cached().filter { it.source == "learned" || it.source == "user" },
-                    minScore = SkillMatch.STRONG, fullMin = SkillMatch.STRONG, fullWords = SkillMatch.FULL_WORDS).isEmpty } catch (_: Throwable) { false }
-                SkillGuard.Freq.note(sig, userText, covered)
+                SkillGuard.Freq.note(sig, userText, covered = savedSkill || usedSkill)
             } else false
             val d00 = Learn.decide(Learn.Turn(userText, reply.text, tools,
                 savedMemory = tools.any { it == "remember" || it == "forget" || it == "memory_save" || it == "memory_update" || it == "memory_merge" },

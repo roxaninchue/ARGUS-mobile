@@ -39,16 +39,12 @@ class VisualRouteTest {
         assertEquals("design", ViewRouter.route("make me a tall modern 3D rocket")?.id)
     }
 
-    @Test fun skillMatchingDoesNotPushTheDiagramsSkill() {
+    /** Round 5: the diagrams / data-analysis skills stay on the shelf (no word filter hides them); the turn hint stays. */
+    @Test fun visualSkillsStayOnTheShelf() {
         val cands = listOf("diagrams", "data-analysis", "tutor", "deep-research").mapNotNull { SkillMatch.fromDir(File(root, it), "bundled", true) }
-        val q = "draw a flowchart of how solar panels work"
-        val r = SkillMatch.match(q, VisualRoute.filter(q, cands))
-        assertFalse(r.names.toString(), "diagrams" in r.names)
-        assertTrue(VisualRoute.skipSkill(q, "diagrams")); assertTrue(VisualRoute.skipSkill("make a chart of my spending", "data-analysis"))
-        // With data to analyse, or a file to make, the skills come back.
-        assertFalse(VisualRoute.skipSkill("make a chart from this spreadsheet", "data-analysis"))
-        val f = "make a flowchart and export it as svg"
-        assertEquals(cands, VisualRoute.filter(f, cands))
+        val shelf = SkillShelf.block(cands)
+        assertTrue(shelf.contains("- diagrams: ") && shelf.contains("- data-analysis: "))
+        assertTrue(VisualRoute::class.java.declaredMethods.none { it.name == "filter" || it.name == "skipSkill" })
         // The HINT for the turn says what to do.
         assertTrue(VisualRoute.HINT.contains("```mermaid") && VisualRoute.HINT.contains("use_skill"))
     }
@@ -57,7 +53,7 @@ class VisualRouteTest {
         val d = File(root, "diagrams/SKILL.md").readText()
         val body = SkillMatch.body(d)
         assertTrue(body.trimStart().startsWith("> **In chat: just reply with a ```mermaid block.**"))
-        assertTrue(SkillMatch.fromDir(File(root, "diagrams"), "bundled", true)!!.description.contains("only when the user asks to save"))
+        assertTrue(SkillMatch.fromDir(File(root, "diagrams"), "bundled", true)!!.description.contains("when the user asks to save"))
         assertTrue(File(root, "data-analysis/SKILL.md").readText().contains("In chat: a chart is a ```chart block"))
         val views = File(root, "blaze-views/SKILL.md").readText()
         assertTrue(CoreSkills.pinned(views).any { it.contains("```mermaid") && it.contains("no Design") })

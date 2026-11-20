@@ -64,25 +64,18 @@ class CoreSkillsTest {
         assertTrue(vw.contains("flashcards") && vw.contains("open_view view=learn") && vw.contains("save_workflow"))
     }
 
-    // ---------------- per-turn matching ----------------
+    // ---------------- on the shelf (round 5: no per-turn word match) ----------------
 
-    @Test fun perTurnMatchingFindsTheRightSkills() {
+    @Test fun coreSkillsAreOnTheShelfAndDisabledOnesArent() {
         val all = (CoreSkills.NAMES + listOf("study-flashcards", "tutor", "debugging", "deep-research", "email-drafting")).map { cand(it) }
-        val code = SkillMatch.match("fix this kotlin build error in my repo", all)
-        assertTrue(code.names.toString(), "blaze-coding-workflow" in code.names)
-        val wf = SkillMatch.match("save this as a workflow so you can repeat it every week", all)
-        assertEquals("blaze-workflow-builder", wf.full.first().name)
-        val sp = SkillMatch.match("delegate this to specialists in parallel and compare", all)
-        assertTrue(sp.names.toString(), "blaze-specialists" in sp.names)
-        assertTrue(SkillMatch.match("hi", all).isEmpty)
-    }
-
-    @Test fun disabledSkillsNeverMatchOrAttach() {
-        val off = cand("study-flashcards", on = false)
-        val all = listOf(off, cand("tutor"))
-        assertFalse("study-flashcards" in SkillMatch.match("make flashcards on cells, quiz me", all).names)
-        val r = SpecialistMatch.attach(SkillMatch.Result.NONE, listOf(Specialists.builtIn.first { it.id == "tutor" }), all)
-        assertFalse("study-flashcards" in r.names); assertTrue("tutor" in r.names)
+        val shelf = SkillShelf.block(all)
+        for (n in listOf("blaze-coding-workflow", "blaze-workflow-builder", "blaze-specialists")) assertTrue(n, shelf.contains("- $n: "))
+        val off = SkillShelf.block(listOf(cand("study-flashcards", on = false), cand("tutor")))
+        assertFalse(off.contains("study-flashcards")); assertTrue(off.contains("- tutor: "))
+        // a specialist's packs leave switched-off skills out too
+        val tutor = Specialists.builtIn.first { it.id == "tutor" }
+        val brief = Specialists.brief(tutor, listOf(cand("study-flashcards", on = false), cand("tutor")))
+        assertFalse(brief.contains("### study-flashcards")); assertTrue(brief.contains("### tutor"))
     }
 
     // ---------------- views: flashcards go to Learn ----------------
@@ -101,7 +94,7 @@ class CoreSkillsTest {
 
     // ---------------- workflow builder ----------------
 
-    @Test fun workflowSavesAsAMatchableSkill() {
+    @Test fun workflowSavesAsAShelfSkill() {
         val text = SkillPacks.workflowMd("Airtime Top Up", "top up airtime, buy airtime",
             "1. Open the MTN app with open_app\n2. Tap Airtime\n- Enter the amount the user gave", "Balance went up\nSMS confirmation received",
             listOf("airtime", "mtn"), tested = false)
@@ -115,8 +108,7 @@ class CoreSkillsTest {
         val c = SkillMatch.fromDir(dir, "user", true)!!
         assertEquals("airtime-top-up", c.name)
         assertTrue(c.keywords.toString(), "airtime" in c.keywords && "mtn" in c.keywords)
-        val hit = SkillMatch.match("can you top up my airtime with K20", listOf(c, cand("deep-research")))
-        assertEquals("airtime-top-up", hit.full.first().name)
+        assertTrue(SkillShelf.block(listOf(c, cand("deep-research"))).contains("- airtime-top-up: "))
         assertTrue(SkillPacks.workflowMd("x", "y", "1. a", "", emptyList(), tested = true).let { it.contains("tested: true") && !it.contains("Not tested") })
         assertTrue("save_workflow" in SkillPacks.names)
         assertTrue(SkillPacks.tools().any { it.getJSONObject("function").getString("name") == "save_workflow" })
@@ -124,30 +116,13 @@ class CoreSkillsTest {
 
     // ---------------- specialists ----------------
 
-    @Test fun specialistMatching() {
-        fun ids(t: String) = SpecialistMatch.match(t).map { it.id }
-        assertEquals("shopper", ids("compare prices for a Samsung A15 at 3 shops").first())
-        assertEquals("booker", ids("book me a bus ticket to Lusaka on Friday").first())
-        assertEquals("coder", ids("debug this python script, it throws an exception").first())
-        assertEquals("tutor", ids("help me study for my CIT102 exam").first())
-        assertEquals("designer", ids("design a landing page for my lamp store").first())
-        assertEquals("researcher", ids("research the best solar inverters and give me sources").first())
-        assertTrue(ids("hi").isEmpty()); assertTrue(ids("/learn").isEmpty()); assertTrue(ids("thanks a lot").isEmpty())
-        assertTrue(ids("[Scheduled routine: buy airtime]").isEmpty())
-        assertTrue(SpecialistMatch.match("compare prices and research shops and write an email", max = 2).size <= 2)
-        // Custom specialists match on their name.
-        val custom = Specialists.Spec("farm", "Farming advisor", "x", setOf("web"), custom = true)
-        assertEquals("farm", SpecialistMatch.match("ask the farming advisor about maize", listOf(custom)).first().id)
-        // Card line, hint and skill packs.
-        val shop = Specialists.builtIn.first { it.id == "shopper" }
-        assertEquals("Specialist: Shopper", SpecialistMatch.cardLine(listOf(shop)))
-        assertEquals("", SpecialistMatch.cardLine(emptyList())); assertEquals("", SpecialistMatch.hint(emptyList()))
-        assertTrue(SpecialistMatch.hint(listOf(shop)).contains("delegate"))
-        for (s in Specialists.builtIn) for (k in SpecialistMatch.skillsFor(s)) assertTrue("${s.id} → $k ships", File(root, "$k/SKILL.md").isFile)
+    @Test fun specialistPacksShipAndBrief() {
+        // Round 5: nothing picks a specialist from the words (SpecialistMatch is gone); each brings its packs to its own runs.
+        for (s in Specialists.builtIn) for (k in Specialists.skillsFor(s)) assertTrue("${s.id} → $k ships", File(root, "$k/SKILL.md").isFile)
         val tutor = Specialists.builtIn.first { it.id == "tutor" }
-        val attached = SpecialistMatch.attach(SkillMatch.Result.NONE, listOf(tutor), listOf(cand("study-flashcards"), cand("tutor")))
-        assertEquals(listOf("study-flashcards", "tutor"), attached.full.map { it.name })
-        assertTrue(SpecialistMatch.brief(tutor, listOf(cand("study-flashcards"))).contains("### study-flashcards"))
+        val b = Specialists.brief(tutor, listOf(cand("study-flashcards"), cand("tutor")))
+        assertTrue(b.contains("### study-flashcards") && b.contains("### tutor"))
+        assertFalse("no order wording", b.contains("follow them"))
         // Delegated specialists only get tools from their groups (browser and study are real groups now).
         assertEquals("browser", Specialists.group("browser_open")); assertEquals("study", Specialists.group("flashcards"))
     }

@@ -9,44 +9,15 @@ import org.json.JSONObject
  *
  *  - 2026-11-20 skill shelf (docs/SKILL-SHELF.md): the relevance gate (`gate` / `relevant` / `strongHit`) that refused
  *    use_skill / run_skill by word overlap is gone. The model sees every skill (SkillShelf) and chooses; a tool no longer
- *    tells it a skill is "unrelated". [unnamed] stays for specialist matching.
- *  - [Freq]: every real task (≥ 2 work tool calls) is counted by its fingerprint (Learn.signature). A task done
- *    [Freq.PRIORITY] times with no skill covering it is flagged: the end-of-turn learning review runs for it with
+ *    tells it a skill is "unrelated". Round 5: `unnamed` (the proper-name stripper for specialist matching) went with
+ *    SpecialistMatch.
+ *  - [Freq]: every real task (≥ 2 work tool calls) is counted by its fingerprint (Learn.signature). It counts as covered
+ *    only when the model really used or saved a skill for it (use_skill / run_skill / save_workflow…), never by word
+ *    overlap with a skill's description. A task done [Freq.PRIORITY] times with no skill covering it is flagged: the end-of-turn learning review runs for it with
  *    skill-writing first, and the prompt carries a one-line nudge listing such tasks.
  * Pure except [Freq]'s small store in Settings (FreqLogicTest / SkillGuardTest cover the logic).
  */
 object SkillGuard {
-
-    // ---------------- relevance ----------------
-
-    /**
-     * 0.53.3: the request with proper names taken out before skills are matched: a run of 2+ capitalised words / numbers
-     * that doesn't start the sentence ("Dots 3 Note Preview", "Google Pixel 9"), or a quoted name. A product's name says
-     * nothing about which skill to load. When almost nothing is left the request is used as it is.
-     */
-    fun unnamed(request: String): String {
-        val noQuotes = request.replace(Regex("[\"\u201c\u201d][^\"\u201c\u201d]{2,60}[\"\u201c\u201d]"), " ")
-        val tok = Regex("[\\p{L}\\p{N}][\\p{L}\\p{N}.'-]*")
-        val ms = tok.findAll(noQuotes).toList()
-        if (ms.isEmpty()) return request
-        fun cap(t: String) = t[0].isUpperCase() || t[0].isDigit()
-        val drop = HashSet<Int>()
-        var i = 0
-        while (i < ms.size) {
-            if (!cap(ms[i].value)) { i++; continue }
-            var j = i
-            while (j + 1 < ms.size && cap(ms[j + 1].value) && noQuotes.substring(ms[j].range.last + 1, ms[j + 1].range.first).isBlank()) j++
-            val sentenceStart = i == 0 || noQuotes.substring(0, ms[i].range.first).trimEnd().let { it.isEmpty() || it.last() in ".!?\n:" }
-            val len = j - i + 1
-            val words = (i..j).count { ms[it].value.any(Char::isLetter) }
-            // a name: 2+ capitalised tokens with at least one word (a sentence-opening run needs 3, "Make Notes" stays)
-            if (words >= 1 && ((len >= 2 && !sentenceStart) || len >= 3)) { val from = if (sentenceStart && len >= 3) i + 1 else i; for (k in from..j) drop += k }
-            i = j + 1
-        }
-        if (drop.isEmpty()) return noQuotes
-        val kept = ms.withIndex().filter { it.index !in drop }.joinToString(" ") { it.value.value }
-        return if (SkillMatch.words(kept).size >= 1) kept else request
-    }
 
     // ---------------- often-performed tasks ----------------
 

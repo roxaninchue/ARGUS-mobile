@@ -72,7 +72,7 @@ object Learning {
 
     fun promptBlock(userText: String): String {
         val r = relevant(userText); if (r.isEmpty()) return ""
-        return "\nSkills you learned earlier that may fit (follow them; run_skill replays saved phone steps fast):\n" +
+        return "\nSkills you learned earlier (run_skill replays saved phone steps fast):\n" +
             r.joinToString("\n") { "- ${it.name}: ${it.description}${if (it.replay != null) " [replayable]" else ""}\n  ${it.steps.take(400).replace("\n", "\n  ")}" } + "\n"
     }
 

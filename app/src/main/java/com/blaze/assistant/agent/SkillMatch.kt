@@ -3,113 +3,16 @@ package com.blaze.assistant.agent
 import java.io.File
 
 /**
- * 2026-11-20: the per-turn pick by words is retired (docs/SKILL-SHELF.md); [SkillShelf] lists every skill and the model
- * chooses. What's left here: reading skills off the phone ([candidates] / [cached]), [find] for find_skill, and [match] /
- * [block] for a matched specialist's packs and the "is this task covered by a skill" count.
+ * The skills on this phone: reading them ([candidates] / [cached]: bundled, the user's own in ~/skills, and learned ones;
+ * switched-off ones marked) and [find] for find_skill (SkillIndex, Desktop's bm25 ranking).
  *
- * Before (v0.23.0, Blazeinchue's rule: before each turn's first model call, Argus looks up the
- * skills related to the request. No extra model call: a keyword score over each skill's name,
- * description and keywords (front-matter `tags:` / `keywords:`), across bundled skills (assets/skills),
- * the user's own (~/skills) and learned ones (Learning, skills.json). Disabled skills never match.
- *
- * The top 1-3 go into the prompt in full within a character budget; the other matches by name only.
- * The agent shows "Skills: …" on the work card.) [match] and [block] are pure (SkillMatchTest).
+ * History: v0.23.0 picked 1-3 skills per turn by a keyword score over name, description and keywords and pasted them into
+ * the prompt. 2026-11-20 the skill shelf ([SkillShelf], docs/SKILL-SHELF.md) replaced the per-turn pick; round 5 removed
+ * the word score itself. Nothing here reads the user's message.
  */
 object SkillMatch {
     data class Cand(val name: String, val description: String, val keywords: List<String>, val body: String,
                     val source: String, val on: Boolean = true)
-    data class Hit(val cand: Cand, val score: Int)
-    data class Result(val full: List<Cand>, val others: List<String>) {
-        val names: List<String> get() = full.map { it.name } + others
-        val isEmpty: Boolean get() = full.isEmpty() && others.isEmpty()
-        companion object { val NONE = Result(emptyList(), emptyList()) }
-    }
-
-    const val MAX_FULL = 3
-    /** ≈ 1,500 tokens for all full skills together. */
-    const val BUDGET_CHARS = 6_000
-    const val PER_SKILL_CHARS = 3_200
-    const val MIN_SCORE = 3
-
-    private val stop = ("the and for with that this you your me my our are was were can could would should will just please " +
-        "what when where which who how why its it's about from into have has had get got make made want need let lets " +
-        "some any all one two also very really then than them they their there here now today help hey blaze okay ok thanks").split(" ").toSet()
-
-    private val genericName = setOf("phone", "task", "app", "skill", "flow", "speed", "general")
-
-    /** Lowercase word stems: "flashcards" → "flashcard", "studying" → "study", "quizzes" → "quiz". */
-    fun stem(w: String): String {
-        var s = w
-        if (s.length > 5 && s.endsWith("ying")) s = s.dropLast(3)          // studying → stud(y)
-        else if (s.length > 5 && s.endsWith("ing")) s = s.dropLast(3)
-        if (s.length > 4 && s.endsWith("zzes")) s = s.dropLast(3)          // quizzes → quiz
-        else if (s.length > 4 && s.endsWith("ies")) s = s.dropLast(3) + "y"
-        else if (s.length > 4 && s.endsWith("es") && (s.endsWith("ches") || s.endsWith("shes") || s.endsWith("xes"))) s = s.dropLast(2)
-        else if (s.length > 3 && s.endsWith("s") && !s.endsWith("ss")) s = s.dropLast(1)
-        return s
-    }
-
-    fun words(s: String): Set<String> = s.lowercase().replace("flash cards", "flashcards").replace("flash card", "flashcard")
-        .split(Regex("[^\\p{L}\\p{N}]+")).filter { it.length > 2 && it !in stop }.map { stem(it) }.toSet()
-
-    /** Name words ×3, keywords ×2 (a multi-word keyword phrase in the text ×3), description words ×1. */
-    fun score(query: String, c: Cand): Int {
-        val q = words(query); if (q.isEmpty()) return 0
-        val low = " " + query.lowercase().replace(Regex("[^\\p{L}\\p{N}]+"), " ") + " "
-        // v0.26.2: generic name words ("phone", "task", "app") count once, so "what's my phone's sound profile?" doesn't pull in phone-task-speed.
-        val nameHits = words(c.name.replace('-', ' ')) intersect q
-        var s = nameHits.fold(0) { acc, w -> acc + if (w in genericName) 1 else 3 }
-        val kw = c.keywords.map { it.trim().lowercase() }.filter { it.isNotEmpty() }
-        s += 2 * (kw.filter { !it.contains(' ') }.flatMap { words(it) }.toSet() intersect q).size
-        s += 3 * kw.count { it.contains(' ') && low.contains(" $it ") }
-        s += (words(c.description) intersect q).size
-        return s
-    }
-
-    /** The skills for [query]: disabled ones excluded, best first, top [maxFull] in full within [budget]. */
-    fun match(query: String, cands: List<Cand>, maxFull: Int = MAX_FULL, budget: Int = BUDGET_CHARS, minScore: Int = MIN_SCORE,
-              fullMin: Int = 0, fullWords: Int = 0, maxOthers: Int = 8): Result {
-        if (query.isBlank()) return Result.NONE
-        val hits = cands.asSequence().filter { it.on }.distinctBy { it.name.lowercase() }
-            .map { Hit(it, score(query, it)) }.filter { it.score >= minScore }
-            .sortedWith(compareByDescending<Hit> { it.score }.thenBy { it.cand.name }).toList()
-        val full = ArrayList<Cand>(); val others = ArrayList<String>()
-        var left = budget
-        for (h in hits) {
-            val len = minOf(h.cand.body.length, PER_SKILL_CHARS)
-            // v0.30.4: a body goes in full only on a strong match (score and distinct query words); weaker ones by name.
-            val strong = h.score >= fullMin && (fullWords <= 0 || matchedWords(query, h.cand) >= fullWords)
-            if (strong && full.size < maxFull && len <= left) { full += h.cand; left -= len } else others += h.cand.name
-        }
-        return Result(full, others.take(maxOthers))
-    }
-
-    /** Distinct query words the skill's name, keywords or description share with [query]. */
-    fun matchedWords(query: String, c: Cand): Int {
-        val q = words(query)
-        val mine = words(c.name.replace('-', ' ')) + c.keywords.flatMap { words(it) } + words(c.description)
-        return (q intersect mine).size
-    }
-
-    /** v0.30.4: per-turn bar for a skill body in full: score ≥ 5 from ≥ 2 distinct query words. */
-    const val FULL_MIN = 5
-    const val FULL_WORDS = 2
-    /** The prompt block for a [Result] ("" when nothing matched). */
-    fun block(r: Result): String {
-        if (r.isEmpty) return ""
-        return buildString {
-            append("\n\nSKILLS FOR THIS REQUEST (looked up for you; follow them, they are the user's own way of doing it):\n")
-            for (c in r.full) {
-                append("### ${c.name} (${c.source})\n")
-                val b = c.body.trim()
-                append(if (b.length > PER_SKILL_CHARS) b.take(PER_SKILL_CHARS) + "\n…(more with use_skill ${c.name})" else b).append("\n\n")
-            }
-            if (r.others.isNotEmpty()) append("Other matching skills (read with use_skill if useful): ${r.others.joinToString(", ")}\n")
-        }
-    }
-
-    /** The work-card line: "Skills: tutor, study-flashcards". */
-    fun cardLine(r: Result): String = if (r.isEmpty) "" else "Skills: " + r.names.take(5).joinToString(", ")
 
     // ---------------- reading skills on the phone ----------------
 
@@ -141,7 +44,7 @@ object SkillMatch {
             for (p in SkillPacks.all()) fromDir(p.dir, if (p.dir.name in bundled) "bundled" else "user", SkillLibrary.isOn(p.dir.name))?.let { out += it }
         } catch (_: Throwable) { }
         try {
-            for (s in Learning.skills.value) out += Cand(s.name, s.description, words(s.whenToUse).toList(),
+            for (s in Learning.skills.value) out += Cand(s.name, s.description, listOf(s.whenToUse).filter { it.isNotBlank() },
                 (s.description + "\n" + (if (s.whenToUse.isNotBlank()) "When: ${s.whenToUse}\n" else "") + s.steps +
                     (if (s.replay != null) "\n(run_skill ${s.name} replays the recorded phone steps)" else "")).trim(), "learned", true)
         } catch (_: Throwable) { }
@@ -157,7 +60,8 @@ object SkillMatch {
 
     fun invalidate() { cache = null; index = null }
     // 2026-11-20 skill shelf: forTurn / selectForTurn / lookupBlock / learnedOnly (the per-turn pickers) are gone; the model
-    // sees every skill on SkillShelf and reads one itself. match / block stay for a specialist's packs and the Freq check.
+    // sees every skill on SkillShelf and reads one itself. Round 5: the word score behind them (stem / words / score / match /
+    // block / cardLine) went too: specialists bring their packs by name (Specialists.brief) and Freq trusts the actual calls.
 
     // ---------------- v0.26.2: skills by lookup (SkillIndex, Desktop's bm25 ranking) ----------------
 

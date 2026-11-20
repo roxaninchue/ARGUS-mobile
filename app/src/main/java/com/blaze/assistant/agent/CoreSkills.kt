@@ -44,7 +44,7 @@ object CoreSkills {
     fun block(mds: Map<String, String>, budget: Int = BUDGET_CHARS, names: List<String> = NAMES): String {
         val per = names.mapNotNull { n -> mds[n]?.let { n to pinned(it) } }.filter { it.second.isNotEmpty() }
         if (per.isEmpty()) return ""
-        val head = "\n\nCORE SKILLS (always on, every turn; follow them — full text with use_skill <name>):\n"
+        val head = "\n\nCORE SKILLS (their pinned rules; the full text is one use_skill <name> away):\n"
         val sb = StringBuilder(head)
         var left = budget - head.length
         var cut = false

@@ -60,7 +60,21 @@ class SkillShelfTest {
         mine.forEach { assertTrue(it.name, b.contains("- ${it.name}: ")) }
         val shown = b.lines().count { it.startsWith("- lib-") }
         assertTrue(b, b.trimEnd().endsWith("+${200 - shown} more bundled skills: find_skill lists them."))
-        assertTrue(b.length <= 2_000 + 60)
+        assertTrue(b.length <= 2_000)
+    }
+
+    /** Round 5 review: the user's own skills get the room first, but can't push the shelf past its budget; the cut is counted. */
+    @Test fun aBigPersonalLibraryStaysInsideTheBudget() {
+        val mine = (1..300).map { c("mine-%03d".format(it), "My own skill number $it with a description long enough to matter", "user") }
+        val lib = (1..20).map { c("lib-$it", "Bundled $it") }
+        val b = SkillShelf.block(mine + lib, budget = 3_000)
+        assertTrue("${b.length}", b.length <= 3_000)
+        val ownShown = b.lines().count { it.startsWith("- mine-") }
+        val libShown = b.lines().count { it.startsWith("- lib-") }
+        assertTrue(ownShown > 0)
+        assertTrue(b, b.trimEnd().endsWith("+${300 - ownShown + 20 - libShown} more skills (${300 - ownShown} yours, ${20 - libShown} bundled): find_skill lists them."))
+        // the real library plus a large personal one still fits
+        assertTrue(SkillShelf.block(bundled + mine).length <= SkillShelf.BUDGET_CHARS)
     }
 
     @Test fun theRealLibraryFitsWithEverySkillListed() {
@@ -84,10 +98,13 @@ class SkillShelfTest {
         assertTrue(t, t.startsWith("# airtime-topup (learned)") && t.contains("When: user asks for airtime") && t.contains("1. Dial *778#"))
         assertTrue(t.endsWith("run_skill airtime-topup replays the recorded phone steps."))
         assertFalse(SkillPacks.learnedText(s.copy(replay = null)).contains("run_skill"))
-        assertTrue(SkillPacks.notRead("No skill \u201cx\u201d. Installed: a, b."))
-        assertTrue(SkillPacks.notRead("The skill tutor is switched off in Settings \u203a Skill library. Do the task without it."))
-        assertFalse(SkillPacks.notRead("---\nname: tutor\n---\n# Tutor"))
-        assertFalse(SkillPacks.notRead(t))
+        // Round 5 (What Argus is holding): a read counts only for a skill that really exists and is on, by its shelf name.
+        val cands = listOf(c("tutor", "Teach"), c("airtime-topup", "Top up", "learned"), c("off-one", "Off", on = false))
+        assertEquals("tutor", SkillShelf.known(" Tutor ", cands))
+        assertEquals("airtime-topup", SkillShelf.known("airtime-topup", cands))
+        assertEquals(null, SkillShelf.known("made-up", cands))
+        assertEquals(null, SkillShelf.known("off-one", cands))
+        assertEquals(null, SkillShelf.known("", cands))
         // the tool descriptions state what the tools do; nothing refuses
         val desc = SkillPacks.tools().joinToString(" ") { it.getJSONObject("function").getString("description") }
         assertFalse(desc, desc.contains("refused") || desc.contains("looked up automatically"))

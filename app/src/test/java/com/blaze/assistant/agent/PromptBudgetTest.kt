@@ -16,7 +16,7 @@ import java.io.File
  * v0.28.4 audit: the prompt carries a pinned core + a subject index + lookup tools, never the whole memory or the docs.
  * With 500 memories and every doc indexed in blaze.db, the memory/docs part of the system prompt grows by far less
  * than the 6k-token budget compared with an empty store, and none of the docs text or the unpinned memories is in it.
- * Skills: one line each on the shelf (SkillShelf, within its budget); a specialist's packs within SkillMatch's; core skills within theirs.
+ * Skills: one line each on the shelf (SkillShelf, within its budget); a specialist's own run gets two packs, trimmed; core skills within theirs.
  */
 class PromptBudgetTest {
     private val sqls = ArrayList<Sql>()
@@ -129,11 +129,9 @@ class PromptBudgetTest {
         val cands = root.listFiles()!!.filter { File(it, "SKILL.md").isFile }.mapNotNull { SkillMatch.fromDir(it, "bundled", true) }
         assertTrue(cands.size > 20)
         val all = cands.sumOf { it.body.length }
-        // The broadest request still brings at most MAX_FULL skills, within the budget (plus their headers).
-        val broad = "build a website app with code and research a design plan, email, data analysis, flashcards, debugging, review, github repo"
-        val block = SkillMatch.block(SkillMatch.match(broad, cands))
-        assertTrue("${block.length} chars", block.length <= SkillMatch.BUDGET_CHARS + SkillMatch.MAX_FULL * 120 + 400)
-        assertTrue("all skills are $all chars; one turn gets ${block.length}", block.length * 5 < all)
+        // Round 5: no per-turn bodies are pasted any more (the word score is gone); a specialist's own run gets two packs, trimmed.
+        val packs = Specialists.builtIn.maxOf { Specialists.brief(it, cands).length }
+        assertTrue("$packs chars", packs <= 2 * 1_800 + 400)
         // 2026-11-20: the always-on skill shelf is one line per skill, within its budget, and far smaller than the library.
         val shelf = SkillShelf.block(cands)
         assertTrue("${shelf.length} chars", shelf.length <= SkillShelf.BUDGET_CHARS)

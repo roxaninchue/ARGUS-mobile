@@ -48,26 +48,6 @@ object SkillPacks {
             Processes.register("skill", p.name, p.dir.name, props = JSONObject().put("about", p.description.take(160)))
     }
 
-    /**
-     * System prompt block. With a handful of skills, names and one-line descriptions; with more,
-     * the ones that match this request in full plus the rest by name only (like Argus Desktop).
-     * Skills switched off in Settings are left out.
-     * v0.26.2: no longer sent each turn (2026-11-20: SkillShelf is the per-turn list); kept for /skills-style listings.
-     */
-    fun promptBlock(query: String = ""): String {
-        // v0.26.1: an in-chat diagram / chart leaves out the file-route skills (VisualRoute).
-        val l = all().filter { SkillLibrary.isOn(it.dir.name) && !VisualRoute.skipSkill(query, it.dir.name) }; if (l.isEmpty()) return ""
-        fun words(s: String) = s.lowercase().split(Regex("[^a-z0-9]+")).filter { it.length > 3 }.toSet()
-        val head = "\nSKILLS (call use_skill to read one before doing a matching task): "
-        if (l.size <= 12 || query.isBlank()) return head + l.take(40).joinToString("; ") { "${it.name}: ${it.description.take(120)}" }
-        val q = words(query)
-        val hits = l.map { it to (words(it.name.replace('-', ' ') + " " + it.description) intersect q).size }
-            .filter { it.second > 0 }.sortedByDescending { it.second }.take(6).map { it.first }
-        val rest = l - hits.toSet()
-        return head + (if (hits.isNotEmpty()) hits.joinToString("; ") { "${it.name}: ${it.description.take(140)}" } + ". Also: " else "") +
-            rest.take(40).joinToString(", ") { it.name }
-    }
-
     fun use(name: String): String {
         // 2026-11-20 skill shelf: learned skills are on the shelf too, so use_skill reads them (run_skill replays their taps).
         val p = find(name) ?: return learned(name)?.let { learnedText(it) } ?: "No skill \u201c$name\u201d. Installed: ${all().joinToString { it.name }.ifBlank { "none" }}."
@@ -89,10 +69,6 @@ object SkillPacks {
         if (s.steps.isNotBlank()) append("\n").append(s.steps.trim()).append("\n")
         if (s.replay != null) append("\nrun_skill ${s.name} replays the recorded phone steps.")
     }.trimEnd()
-
-    /** A use_skill / run_skill result that read nothing (unknown, switched off, failed). */
-    fun notRead(result: String): Boolean = result.startsWith("No skill") || result.startsWith("The skill ") ||
-        result.startsWith("Error") || result.startsWith("Phone control is off")
 
     fun file(name: String, path: String): String {
         val p = find(name) ?: return "No skill \u201c$name\u201d."

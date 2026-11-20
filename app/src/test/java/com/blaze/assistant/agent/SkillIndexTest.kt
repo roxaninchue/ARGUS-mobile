@@ -35,8 +35,9 @@ class SkillIndexTest {
         assertTrue(SkillPacks.names.contains("find_skill"))
     }
 
-    @Test fun genericNameWordsDontPullInAPhoneSkill() {
-        val speed = cand("phone-task-speed", "Doing multi-step tasks inside phone apps as fast as possible")
-        assertTrue(SkillMatch.match("what sound profile is my phone set to?", listOf(speed)).isEmpty)
+    /** Round 5: the per-turn word score (match / score / block) is gone; find_skill's bm25 is the only search, run by the model. */
+    @Test fun noWordScoreLeft() {
+        val gone = SkillMatch::class.java.declaredMethods.map { it.name }.filter { it in setOf("match", "score", "block", "cardLine", "matchedWords", "words", "stem") }
+        assertTrue(gone.toString(), gone.isEmpty())
     }
 }

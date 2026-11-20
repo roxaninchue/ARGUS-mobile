@@ -9,8 +9,9 @@ package com.blaze.assistant.agent
  *  - Order: the user's own first (learned, then written / installed), then the bundled library; alphabetical inside
  *    each group, so the text is byte-stable for the same set (it rides in the SLOW prompt tier and caches).
  *  - Each line comes from the skill's own description ([summary]); no second description to keep up to date.
- *  - Within [BUDGET_CHARS]: the user's own skills are always listed; bundled lines that don't fit end in an honest
- *    "+N more" pointing at find_skill.
+ *  - Within [BUDGET_CHARS], always: the user's own skills get the room first, then the bundled library; lines that
+ *    don't fit are counted by group in one honest "+N more" line pointing at find_skill (round 5: a big personal
+ *    library can no longer push the shelf past its budget).
  *
  * Pure apart from [promptBlock], which reads the cached candidates (SkillShelfTest).
  */
@@ -49,19 +50,36 @@ object SkillShelf {
         .map { Entry(it.name, summary(it.description.ifBlank { it.name }), it.source, it.source == "learned" && it.body.contains("run_skill")) }
         .sortedWith(compareBy<Entry>({ rank(it.source) }, { it.name.lowercase() })).toList()
 
-    /** The prompt part ("" when no skill is on). */
+    /** Room kept at the end of the block for the overflow line. */
+    private const val TAIL = 70
+
+    /**
+     * The prompt part ("" when no skill is on). Everything fits inside [budget]: the user's own skills get the room first,
+     * then the bundled library; whatever doesn't fit is counted, by group, in one honest "+N more" line.
+     */
     fun block(cands: List<SkillMatch.Cand>, budget: Int = BUDGET_CHARS): String {
         val all = entries(cands)
         if (all.isEmpty()) return ""
         val sb = StringBuilder(HEAD)
-        var left = budget - HEAD.length
-        var cut = 0
+        var left = budget - HEAD.length - TAIL
+        var ownCut = 0; var libCut = 0
         for (e in all) {
             val l = e.line
-            if (rank(e.source) < 2 || l.length <= left - 60) { sb.append(l); left -= l.length } else cut++
+            if (l.length <= left) { sb.append(l); left -= l.length } else if (rank(e.source) < 2) ownCut++ else libCut++
         }
-        if (cut > 0) sb.append("+$cut more bundled skills: find_skill lists them.\n")
+        if (ownCut > 0) sb.append("+${ownCut + libCut} more skills ($ownCut yours, $libCut bundled): find_skill lists them.\n")
+        else if (libCut > 0) sb.append("+$libCut more bundled skills: find_skill lists them.\n")
         return sb.toString().trimEnd('\n')
+    }
+
+    /**
+     * What Argus is holding: the shelf's own name for [name] when a switched-on skill (bundled, the user's, or learned)
+     * by that name really exists, else null. A read is recorded from what exists, not from how the tool's result reads.
+     */
+    fun known(name: String, cands: List<SkillMatch.Cand>): String? {
+        val n = name.trim()
+        if (n.isEmpty()) return null
+        return cands.firstOrNull { it.on && it.name.equals(n, ignoreCase = true) }?.name
     }
 
     @Volatile private var memo: Pair<Int, String>? = null

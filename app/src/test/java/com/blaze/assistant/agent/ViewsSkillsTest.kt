@@ -133,48 +133,13 @@ class ViewsSkillsTest {
         cand("airtime-topup", "Top up MTN airtime with USSD", emptyList(), "1. dial *303#", source = "learned"),
     )
 
-    @Test fun matchesByNameKeywordsAndDescription() {
-        val r = SkillMatch.match("Make me flashcards on photosynthesis", lib)
-        assertEquals("study-flashcards", r.full.first().name)
-        assertTrue(r.names.contains("tutor"))
-        assertFalse(r.names.contains("email-drafting"))
-        assertEquals("landing-page-builder", SkillMatch.match("build a landing page for my store", lib).full.first().name)
-        assertEquals("airtime-topup", SkillMatch.match("top up my airtime", lib).full.first().name)
-        assertTrue(SkillMatch.match("hi there", lib).isEmpty)
-        assertTrue(SkillMatch.match("", lib).isEmpty)
-    }
-
-    @Test fun stemsPluralsAndIng() {
-        assertEquals("flashcard", SkillMatch.stem("flashcards"))
-        assertEquals("study", SkillMatch.stem("studying"))
-        assertEquals("study", SkillMatch.stem("studies"))
-        assertEquals("quiz", SkillMatch.stem("quizzes"))
-        assertTrue("flashcard" in SkillMatch.words("Flash cards please"))
-    }
-
-    @Test fun disabledSkillsNeverMatch() {
-        val off = lib.map { if (it.name == "study-flashcards") it.copy(on = false) else it }
-        val r = SkillMatch.match("Make me flashcards on photosynthesis", off)
-        assertFalse(r.names.contains("study-flashcards"))
-        assertEquals("tutor", r.full.first().name)
-        assertTrue(SkillMatch.match("quiz me", off.map { it.copy(on = false) }).isEmpty)
-    }
-
-    @Test fun topThreeInFullWithinTheBudgetRestByName() {
-        val many = (1..6).map { cand("quiz-helper-$it", "quiz helper number $it for flashcards", listOf("quiz", "flashcards"), body = "x".repeat(1_000)) }
-        val r = SkillMatch.match("quiz me with flashcards", many)
-        assertEquals(3, r.full.size)
-        assertEquals(3, r.others.size)
-        val big = many.map { it.copy(body = "y".repeat(2_500)) }
-        val r2 = SkillMatch.match("quiz me with flashcards", big, budget = 6_000)
-        assertEquals(2, r2.full.size)    // a third 2,500-char body would pass the 6,000 budget
-        assertEquals(4, r2.others.size)
-        val block = SkillMatch.block(r2)
-        assertTrue(block.contains("SKILLS FOR THIS REQUEST")); assertTrue(block.contains("### quiz-helper-1 (bundled)"))
-        assertTrue(block.contains("Other matching skills")); assertTrue(block.length < 6_000 + 600)
-        assertEquals("", SkillMatch.block(SkillMatch.Result.NONE))
-        assertTrue(SkillMatch.cardLine(r).startsWith("Skills: quiz-helper-1"))
-        assertEquals("", SkillMatch.cardLine(SkillMatch.Result.NONE))
+    /** Round 5: no word score picks a skill; the shelf lists every one that's on and the model reads the one it wants. */
+    @Test fun theShelfListsEverySkillThatIsOn() {
+        val shelf = SkillShelf.block(lib)
+        for (c in lib) assertTrue(c.name, shelf.contains("- ${c.name}: "))
+        val off = SkillShelf.block(lib.map { if (it.name == "study-flashcards") it.copy(on = false) else it })
+        assertFalse(off.contains("study-flashcards")); assertTrue(off.contains("- tutor: "))
+        assertEquals("", SkillShelf.block(lib.map { it.copy(on = false) }))
     }
 
     @Test fun readsSkillFoldersWithTagsAndTheShippedSkill() {
@@ -183,11 +148,11 @@ class ViewsSkillsTest {
         val c = SkillMatch.fromDir(dir, "user", on = false)!!
         assertEquals("my-skill", c.name); assertEquals(listOf("alpha", "beta gamma"), c.keywords)
         assertEquals("# Body\n1. go", c.body); assertFalse(c.on)
-        // The bundled study-flashcards skill points at Learn and wins for a flashcards request.
+        // The bundled study-flashcards skill points at Learn; both it and tutor are on the shelf.
         val root = listOf(File("src/main/assets/skills"), File("app/src/main/assets/skills")).first { it.isDirectory }
         val shipped = SkillMatch.fromDir(File(root, "study-flashcards"), "bundled", true)!!
         assertTrue(shipped.body.contains("flashcards") && shipped.body.contains("open_view") && shipped.body.contains("view=learn"))
         val tutor = SkillMatch.fromDir(File(root, "tutor"), "bundled", true)!!
-        assertEquals("study-flashcards", SkillMatch.match("make flashcards on loops", listOf(tutor, shipped)).full.first().name)
+        assertTrue(SkillShelf.block(listOf(tutor, shipped)).let { it.contains("- study-flashcards: ") && it.contains("- tutor: ") })
     }
 }

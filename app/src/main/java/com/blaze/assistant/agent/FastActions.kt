@@ -8,9 +8,8 @@ import org.json.JSONObject
  * v0.30.4 fast phone actions: the pure rules behind making a simple phone action ("stop GitHub opening links in
  * the GitHub app") take a few seconds and a few steps instead of 18 steps and 4+ minutes. Pure (FastActionsTest).
  *
- *  - [plainDevice]: a plain device / settings action. It gets no skill packs, no specialists and no skills lookup
- *    (they were picked by word overlap: "github" + "app" pulled in android-app-builder and git-pr-workflow, ≈ 6,000
- *    chars, before the first call) and the screen tools up front, so open_settings + tap can go in one reply.
+ *  - (round 5, 20 Nov 2026: `plainDevice`, the word test that kept skills and specialists off "plain device actions",
+ *    is gone with the word-picked skills and specialists it guarded; the model sees both shelves and chooses.)
  *  - [isScreen] / [stripScreen]: which tool results carry a screen readout, so only the newest is sent in full.
  *    Since v1.9.7 the check looked for "Foreground app:", a header readScreen no longer writes, so EVERY old screen
  *    went to the model on every step and the prompt grew with each tap.
@@ -22,28 +21,6 @@ import org.json.JSONObject
 object FastActions {
 
     private fun r(p: String) = Regex(p, RegexOption.IGNORE_CASE)
-
-    private val verb = r("""^(?:hey (?:argus|blaze),?\s+|(?:argus|blaze),?\s+|ok(?:ay)?,?\s+)?(?:please\s+|pls\s+)?(?:can you\s+|could you\s+|would you\s+)?(?:please\s+)?""" +
-        """(stop|turn|switch|set|change|make|disable|enable|allow|block|don'?t let|do not let|let|open|show|go to|take me to|clear|mute|unmute|""" +
-        """toggle|prevent|keep|put|lower|raise|increase|decrease|reduce|remove (?:the )?(?:notification|permission)|give|revoke|grant|connect|disconnect|forget)\b""")
-    private val noun = r("""\b(settings?|links?|default (?:apps?|browser)|by default|notifications?|wi-?fi|bluetooth|battery|brightness|location|gps|permissions?|""" +
-        """app info|storage|cache|dark (?:mode|theme)|night (?:light|mode)|ringtone|ringer|volume|hotspot|airplane|flight mode|data saver|mobile data|screen timeout|""" +
-        """font size|keyboard|vpn|nfc|auto-?rotat\w*|rotation|do not disturb|dnd|wallpaper|lock ?screen|fingerprint|developer options|usb debugging|""" +
-        """unknown (?:apps|sources)|background (?:data|usage|activity)|overlay|display over|pop-?ups?|auto-?update|language|date|time zone)\b""")
-    private val notPlain = r("""\b(build|code|coding|repo|repository|commit|pull request|\bpr\b|merge|write|draft|essay|research|compare|explain|why|""" +
-        """how (?:do|can|should) i|how to|what is|what's|summari[sz]e|email|e-mail|send|post|buy|order|book|pay|search the web|look up|""" +
-        """flash ?cards?|quiz|design|chart|diagram|document|pdf|install (?:the )?apk|create (?:an? )?app|make (?:an? )?app|workflow|skill|every (?:day|week|morning)|remind)\b""")
-
-    /** True for a plain one-off device / settings action, short enough to be one ("turn off GitHub's link opening"). */
-    fun plainDevice(text: String): Boolean {
-        val t = text.trim().replace(Regex("\\s+"), " ")
-        if (t.isEmpty() || t.length > 160 || t.startsWith("/") || t.startsWith("[")) return false
-        if (notPlain.containsMatchIn(t)) return false
-        return verb.containsMatchIn(t) && noun.containsMatchIn(t)
-    }
-
-    /** Tool groups that a plain device action never needs (they cost schema tokens on every call). */
-    val heavyGroups = setOf("terminal", "apps", "media", "seller", "browser", "google", "study", "home", "pc", "logs")
 
     // ---------------- screen readouts in the history ----------------
 

@@ -13,15 +13,9 @@ import org.junit.Test
  */
 class FastActionsTest {
 
-    @Test fun plainDeviceActions() {
-        for (t in listOf("stop GitHub opening links in the GitHub app", "Stop github from opening links", "turn off wifi",
-            "disable notifications for WhatsApp", "please turn on bluetooth", "can you allow Chrome to use location",
-            "set screen timeout to 2 minutes", "don't let YouTube open links", "turn on dark mode", "open battery settings"))
-            assertTrue(t, FastActions.plainDevice(t))
-        for (t in listOf("build me an android app for my github repo", "write an email to my boss about the wifi", "why does my battery drain",
-            "how do I stop github opening links", "research the best bluetooth speakers", "make flashcards on notifications in android",
-            "open whatsapp", "hi", "", "remind me every morning to turn off wifi"))
-            assertFalse(t, FastActions.plainDevice(t))
+    /** Round 5: the plain-device word test is gone with the word-picked skills and specialists it kept away. */
+    @Test fun noPlainDeviceGuess() {
+        assertTrue(FastActions::class.java.declaredMethods.none { it.name == "plainDevice" })
     }
 
     // ---------------- screen readouts: only the newest goes to the model ----------------

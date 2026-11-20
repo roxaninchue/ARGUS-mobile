@@ -37,13 +37,8 @@ class SkillGuardTest {
         assertEquals(2, two.size)
     }
 
-    // 0.53.3 (owner screenshot 23:36): a product name never pulls a specialist in (unnamed is still used by SpecialistMatch).
-    private val lecture = SkillMatch.Cand("lecture-notes", "Turn a lecture recording into clean notes, a short summary and key terms",
-        listOf("student", "notes", "transcription", "summary", "lectures"), "1. …", "bundled")
-
-    @Test fun productNamesPickNoSkill() {
-        val q = "Please look for official benchmarks for Dots 3 Note Preview model"
-        assertEquals("Please look for official benchmarks for model", SkillGuard.unnamed(q))
-        assertEquals("Make Notes", SkillGuard.unnamed("Make Notes"))
+    /** Round 5: the proper-name stripper went with SpecialistMatch; nothing here reads the user's message. */
+    @Test fun noNameStripperLeft() {
+        assertTrue(SkillGuard::class.java.declaredMethods.none { it.name == "unnamed" })
     }
 }

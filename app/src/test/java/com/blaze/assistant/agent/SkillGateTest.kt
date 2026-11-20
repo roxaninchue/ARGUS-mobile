@@ -1,6 +1,5 @@
 package com.blaze.assistant.agent
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,16 +15,8 @@ class SkillGateTest {
     private val bundled = root.listFiles()!!.filter { it.isDirectory }.mapNotNull { SkillMatch.fromDir(it, "bundled", true) }
     private val ask = "stop GitHub opening links in the GitHub app"
 
-    @Test fun theOldMatchLoadedUnrelatedSkills() {
-        val old = SkillMatch.match(ask, bundled)
-        val chars = SkillMatch.block(old).length
-        println("Before: ${old.names} in full ${old.full.map { it.name }}, $chars chars in the prompt")
-        assertTrue(old.full.isNotEmpty())
-    }
-
     /** 2026-11-20 skill shelf: no per-turn pick for a device action; the user's recorded fix is on the shelf to replay. */
     @Test fun aPlainDeviceActionSeesTheLearnedFixOnTheShelf() {
-        assertTrue(FastActions.plainDevice(ask))
         val learned = SkillMatch.Cand("github-links-off", "Turn off GitHub opening links in its app", listOf("github", "links", "open by default"),
             "1. open_settings open_by_default GitHub 2. tap Open supported links\n(run_skill github-links-off replays the recorded phone steps)", "learned", true)
         val shelf = SkillShelf.block(bundled + learned)
@@ -34,14 +25,11 @@ class SkillGateTest {
         assertFalse("no skill bodies are pasted in", shelf.contains("open_settings open_by_default"))
     }
 
-    @Test fun perTurnBodiesNeedAStrongMatch() {
-        // Real requests still get their skill in full.
-        val f = SkillMatch.match("make me flashcards on photosynthesis and quiz me", bundled, fullMin = SkillMatch.FULL_MIN, fullWords = SkillMatch.FULL_WORDS)
-        assertEquals("study-flashcards", f.full.first().name)
-        val c = SkillMatch.match("fix this kotlin build error in my repo and open a pull request", bundled, fullMin = SkillMatch.FULL_MIN, fullWords = SkillMatch.FULL_WORDS)
-        assertTrue(c.full.map { it.name }.toString(), c.full.any { it.name in setOf("blaze-coding-workflow", "debugging", "git-pr-workflow") })
-        // One shared word is not enough for a body in full.
-        val weak = SkillMatch.match("is github down?", bundled, fullMin = SkillMatch.FULL_MIN, fullWords = SkillMatch.FULL_WORDS)
-        assertFalse(weak.full.map { it.name }.toString(), weak.full.any { it.name == "android-app-builder" })
+    /** Round 5: nothing pastes skill bodies by word overlap any more; the shelf is the same text whatever the request. */
+    @Test fun noBodiesAndNoWordPick() {
+        val shelf = SkillShelf.block(bundled)
+        assertFalse("android-app-builder's body isn't pasted", shelf.contains(bundled.first { it.name == "android-app-builder" }.body.take(200)))
+        assertTrue(SkillMatch::class.java.declaredMethods.none { it.name == "match" })
+        println("Shelf for \"$ask\": ${shelf.length} chars, the same for every request")
     }
 }

@@ -62,6 +62,15 @@ class ModelFirstTest {
         assertTrue(File(root(), "docs/MODEL-FIRST.md").readText().contains("SKILL-SHELF.md"))
     }
 
+    /** Round 5 (docs/SKILL-SHELF.md §12): specialists are a shelf too; nothing picks one, or its packs, from the words. */
+    @Test fun specialistsAreAShelfNotAGuess() {
+        val src = agentSrc()
+        for (gone in listOf("SpecialistMatch.", "SkillIntent.", "SkillGuard.unnamed(", "FastActions.plainDevice(", "VisualRoute.filter(",
+                "SkillPacks.promptBlock(", "turnSkills", "turnSpecs", "SkillMatch.match("))
+            assertFalse(gone, src.contains(gone))
+        assertTrue(src.contains("slow(\"specialists\", SpecialistShelf.promptBlock())"))
+    }
+
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
         val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }
