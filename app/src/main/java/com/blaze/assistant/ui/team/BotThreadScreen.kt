@@ -60,8 +60,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * Bot chat redesign 2026-11-20: the thread is drawn by the main chat's own parts (MessageList, Living, the model /
- * effort row, attachments, the mic, Continue on a cut reply) over the bot's hidden chat, through [com.blaze.assistant.ui.ChatFeed]
- * ([com.blaze.assistant.ui.BotChatFeed]); nothing is copied. Every send still goes through [BotThreads.send], so a
+ * effort row, attachments, the mic, Continue on a cut reply) over the bot's hidden chat, through the ChatFeed seam
+ * (BotChatFeed in ui/ChatFeed.kt); nothing is copied. Every send still goes through [BotThreads.send], so a
  * turn keeps the bot's identity, tools and rows. The team's record of the bot (jobs, cards, hand-offs: its team.db
  * rows) is the Activity view (the list icon).
  *

@@ -1,3 +1,13 @@
+## 0.54.0 (versionCode 202, 2026-11-20): bot chat rebuild, distro-pick crash fix
+
+Owner "build" (2026-11-20 16:11 CAT). Rollover after 0.53.9 (STATUS rollover rule: patch .9 → minor +1, patch 0).
+- **Crash fix after the onboarding distro pick** (fd3e8616): the first-run introduction (ARGUS speaks first) went IDLE and `ChatDrawer`'s auto-title threw `NoSuchElementException` on a chat with no user line. The decision is now pure `ChatDrawerModel.titleAsk` (null until the user's first exchange); ChatDrawerTest +1.
+- **Bot chat keeps the full reply** (36eab1f9): a streamed reply's first token went through TeamHooks and later frames grew it silently, so a bot's row kept "Hey". New `TeamHooks.revise` / `reply` hooks (Agent.kt +2 lines), one row per bubble with the full final text, frames throttled to 400 ms, non-streamed replies land too; LocalEngineTest +cases.
+- **ChatFeed seam** (7a79591b, `ui/ChatFeed.kt`): MessageList, the entry actions and LivingScreen read `LocalChatFeed`; the default is the main chat, which is unchanged.
+- **Each bot's thread is the main chat's own UI** (ad1cab55, `ui/team/BotThreadScreen.kt`): the bot's own chat drawn with Living, the model chip and effort row, attachments (`AgentSessionDriver.files`), the mic and Continue / Retry (resent through `BotThreads.send`); the team rows (jobs, cards) move to an Activity view. BotChatTest, BotThreadsTest +cases.
+- **CI** (e71e303c): the Build APK run no longer uploads the per-sha APK artifact; `argus-debug-signed-<sha>` stays the install artifact.
+- Rename guard: comments reworded (LocalEngine, LocalEngineTest, BotThreadScreen); the package / import names in the new files (ChatFeed.kt, BotChatTest.kt) and the new fully qualified names (BotThreadScreen, AgentSessionDriver) are class D leftovers for Phase 4, added to the baseline (15,994 → 16,044).
+
 ## 0.53.9 (versionCode 201, 2026-11-20): the "Unreleased" entries below down to 0.53.8
 
 CI fix (merge 7fdb0fe2 failed 7 of 3,721 release unit tests): `terminal_checkpoint` now has an ActionClass (WRITE_LOCAL; list / changes READ; delete DELETE), and four tests follow the owner's terminal-autonomy and agents rules (every agent has the terminal, sandboxed commands are local work, `agent_create` names the tool groups, the lean-chat `agents` prompt part is benchmarked).

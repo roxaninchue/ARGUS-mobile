@@ -189,7 +189,7 @@ class RowMapper(private val botId: String, private val generation: Int, firstSeq
         }
     }
 
-    /** A BLAZE bubble: a new row, or (a stream the loop dropped and opened again) the open streamed reply's row. */
+    /** An assistant bubble: a new row, or (a stream the loop dropped and opened again) the open streamed reply's row. */
     private fun reopen(text: String): Row {
         lastReply = text
         val l = live

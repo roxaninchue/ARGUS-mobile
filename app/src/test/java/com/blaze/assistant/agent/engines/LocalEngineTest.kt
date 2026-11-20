@@ -58,7 +58,7 @@ class LocalEngineTest {
                         is FakeLlm.Reply.Say -> { TeamHooks.message(threadId, "BLAZE", r.text); break }
                         is FakeLlm.Reply.Stream -> {
                             val frames = r.tokens.runningReduce { a, b -> a + b }
-                            TeamHooks.message(threadId, "BLAZE", frames.first())                    // Session.add(BLAZE, first token)
+                            TeamHooks.message(threadId, "BLAZE", frames.first())                    // Session.add: the first token
                             frames.drop(1).forEach { TeamHooks.revise(threadId, "BLAZE", it) }     // Session.replace per frame
                             TeamHooks.reply(threadId, frames.last(), streamed = true)              // Session.addReply(liveId, …)
                             break
