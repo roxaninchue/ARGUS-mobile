@@ -21,6 +21,7 @@ Owner rule (Finn, 13 Nov 2026): every agent follows this before pushing a commit
 | do-not-port | tools/check-do-not-port.mjs | `node tools/check-do-not-port.mjs` must show 0 hits |
 | A-team evals | evals/ | `node --test evals/test/*.test.mjs` must pass 34/34 |
 | Empty catch in a "cleaned" file (Agent.kt, BlazeApp.kt, Mind.kt, CloudSync.kt, BrowserEngine.kt, Bridge.kt, Dashboard.kt, DashHttp.kt) | SecurityP4Test.cleanedFilesHaveNoEmptyCatch (run 43681828555, a Log line wrapped in `catch (_: Throwable) { }`) | `grep -nE 'catch \(_: (Throwable\|Exception)\) \{ ?\}'` on those files must be empty; put a comment inside, e.g. `{ /* android.util.Log is absent in JVM unit tests */ }` |
+| A new "blaze" anywhere (test FQNs like `com.blaze.assistant...` count) | Rename guard step, run 44698990408 (ToolRegistryTest 7 → 8) | `node tools/check-no-blaze.mjs` must not exceed the baseline; use imports already in the file or `.name` checks instead of new fully qualified names |
 | Low-RAM smoke contract | tools/smoke | Don't touch LowRamSmokeTest (exactly 7 tests, STALL_MS 700), and never add `@Ignore` or `assume` |
 
 ## 2. Run the tests the way CI will

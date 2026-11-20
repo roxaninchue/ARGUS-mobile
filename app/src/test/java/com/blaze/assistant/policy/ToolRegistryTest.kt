@@ -118,6 +118,6 @@ class ToolRegistryTest {
         // inside the sandbox (terminal_free on by default) the same delete is local work with no card
         val home = PolicyCalls.classify("run_shell", JSONObject().put("command", "rm -rf /root/old").toString())
         assertEquals(ActionClass.WRITE_LOCAL, home.call.cls); assertTrue(home.call.sandbox)
-        assertEquals(com.blaze.assistant.agent.CommandPolicy.Level.SAFE, home.command)
+        assertEquals("SAFE", home.command?.name)
     }
 }
