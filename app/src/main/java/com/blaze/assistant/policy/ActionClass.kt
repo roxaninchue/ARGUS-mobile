@@ -71,7 +71,7 @@ object ToolRegistry {
 
     init {
         // ---------------- READ: look, search, list; nothing changes ----------------
-        all(READ, "about_blaze", "agent_status", "agents_list", "app_usage", "ask_user", "battery_level", "blaze_docs_read", "blaze_docs_search",
+        all(READ, "about_blaze", "agent_status", "agent_watch", "agents_list", "app_usage", "ask_user", "battery_level", "blaze_docs_read", "blaze_docs_search",
             "blaze_now", "blaze_research", "browser_back", "browser_find", "browser_open", "browser_read", "browser_scroll", "browser_show",
             "browser_tabs", "browser_wait", "cache_read", "cache_search", "cache_summarize", "cache_toc", "calendar_events", "camera_math",
             "check_agent", "classroom_courses", "classroom_coursework", "classroom_sync", "device_status", "drive_search", "fetch_page",

@@ -18,13 +18,15 @@ object AgentKit {
         "web_search", "fetch_page", "browser_open", "browser_read", "browser_click", "browser_type",
         "open_app", "read_screen", "device_status", "blaze_now", "open_view", "get_weather", "save_file",
         "calendar_events", "set_alarm", "set_timer", "message_contact", "request_secret", "blaze_self",
-        "agents_list", "agent_create", "agent_update", "add_job", "agent_delegate", "agent_status")
+        "agents_list", "agent_create", "agent_update", "add_job", "agent_delegate", "agent_status", "agent_watch",
+        // owner 2026-11-20: ARGUS has the terminal too (sandboxed commands need no card; checkpoints are the safety net)
+        "run_shell", "run_code", "file_read", "file_write", "file_edit", "file_list", "terminal_checkpoint")
 
     /** Most tool groups one agent may hold: a focused agent picks better from a short list. */
     const val MAX_GROUPS = 4
 
-    /** Groups an agent always has on top of what ARGUS picks (team jobs and its own memory). */
-    val BASE_GROUPS = setOf("memory", "jobs")
+    /** Groups an agent always has on top of what ARGUS picks (team jobs, its own memory, and the terminal: owner 2026-11-20). */
+    val BASE_GROUPS = setOf("memory", "jobs", "terminal")
 
     /**
      * The groups ARGUS may give an agent, with what each brings (shown in agent_create's description). Ids are the
@@ -33,7 +35,6 @@ object AgentKit {
     val GROUPS: Map<String, String> = linkedMapOf(
         "web" to "search and read the web",
         "browser" to "the background browser: sign in, fill forms, click through sites",
-        "terminal" to "the Linux terminal: shell, code, files, builds",
         "schedule" to "calendar, routines, triggers",
         "messages" to "texts, calls, contacts, WhatsApp",
         "google" to "Gmail, Drive, Google contacts and Docs",
@@ -60,8 +61,7 @@ object AgentKit {
 
     /** What an agent's set ends up as: its picked groups, plus [BASE_GROUPS], plus terminal for a terminal agent. */
     fun toolSet(picked: List<String>, terminal: Boolean): Set<String> {
-        val g = (if (terminal && "terminal" !in picked) listOf("terminal") + picked else picked).take(MAX_GROUPS)
-        return BASE_GROUPS + g
+        return BASE_GROUPS + picked.filter { it !in BASE_GROUPS }.take(MAX_GROUPS)
     }
 
     /** Groups asked for beyond [MAX_GROUPS] or unknown: told back to the model so it can choose again. */
@@ -76,13 +76,15 @@ object AgentKit {
     fun terminalSoul(): String =
         "You are a terminal agent. You own long jobs in ${BrandName.NAME}'s Linux sandbox: builds, installs, scripts, servers, data work. " +
         "Inside the terminal you act on your own: run what the job needs, read the output, fix and retry, without asking for each command. " +
-        "Start anything that takes more than a minute in the background and check on it, so the chat is never blocked. " +
-        "Stay inside the terminal: no messages, purchases or phone actions. Before anything that wipes data outside your workspace, say what and why. " +
+        "Start anything that takes more than a minute in the background (run_shell background=true) and check on it, so the chat is never blocked. " +
+        "Commands inside the sandbox run without asking the user; a checkpoint is taken before each change, so if you break something, roll back with terminal_checkpoint. " +
+        "Whoever handed you the job can watch your steps live, so say what you're doing in a short line as you go. " +
+        "Stay inside the terminal: no messages, purchases or phone actions, and leave the phone's shared storage alone unless the job names it. " +
         "Report back short: what ran, what it produced (paths), and what failed with the one line that matters."
 
     /** The steering line in ARGUS's system prompt: suggest, never force. */
     val STEER = """
-AGENTS: you are also the lead of the user's team of agents. Your own kit in chat is small on purpose; the long tail of tools belongs to agents. When a request is the kind of work that will likely come back (a weekly report, watching prices, triage of a mailbox, builds and scripts, research on one subject), prefer making an agent for it with agent_create and the few tool groups it needs (at most $MAX_GROUPS), then hand it the job; a long or heavy terminal job (an Android build, installs, a data run) goes to a terminal agent (terminal: true). Check agents_list first and reuse an agent that already fits. One-off questions you just answer yourself, and if a tool you need isn't loaded, load it. Tell the user in one line when you made an agent and why.
+AGENTS: you are also the lead of the user's team of agents. Your own kit in chat is small on purpose; the long tail of tools belongs to agents. When a request is the kind of work that will likely come back (a weekly report, watching prices, triage of a mailbox, builds and scripts, research on one subject), prefer making an agent for it with agent_create and the few tool groups it needs (at most $MAX_GROUPS), then hand it the job; a long or heavy terminal job (an Android build, installs, a data run) goes to a terminal agent (terminal: true) so the chat stays free. Every agent, you included, has the terminal; commands inside the sandbox run without asking the user, and a checkpoint is taken before each change (terminal_checkpoint rolls back). When you hand off terminal work, follow it with agent_watch (pass after=next each time) and step in with update_job if it goes wrong; tell the user what it is doing when they ask. Check agents_list first and reuse an agent that already fits. One-off questions you just answer yourself, and if a tool you need isn't loaded, load it. Tell the user in one line when you made an agent and why.
 """.trim()
 
     /** One team: a lead and the agents that report to it (a room's members count too). */

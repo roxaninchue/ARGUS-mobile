@@ -1,3 +1,11 @@
+## Unreleased: terminal autonomy
+
+2026-11-20, owner: "no need to ask user for permission … Argus + all agents get terminal use", and the agent that started terminal work must be able to monitor it closely.
+- **Sandbox runs free** (`CommandPolicy.inSandbox` / `sandboxed`, Settings `terminal_free`, on by default): shell commands that stay in ARGUS's home and its Linux installs run with no card (deletes, sudo, installs, curl | sh included). Shared storage (/sdcard, /storage), other apps' data, `am start`, `pm`, `settings put` and termux SMS/calls still ask; git push stays WRITE_REMOTE. Plan, Assist and NEVER grants still hold (`Policy.Call.sandbox`, step 3b). Automatic checkpoints are the safety net.
+- **Everyone has the terminal**: ARGUS's chat kit carries run_shell, run_code, file_*, terminal_checkpoint; every bot gets the terminal group (`ToolSubset.EVERYONE`, `AgentKit.BASE_GROUPS`).
+- **agent_watch** (JobTools): an agent's live steps after a revision (command, state, output tail, what it said) with `next=` for incremental polling; STEER and the terminal agent's instructions use it.
+- Tests: SandboxPolicyTest (2), AgentKitTest (+watch).
+
 ## Unreleased: agents and teams
 
 2026-11-20, owner's list. ARGUS doubles as an agent team app.

@@ -18,6 +18,23 @@ import com.blaze.assistant.team.ActionClass
  * CommandPolicyTest.
  */
 object CommandPolicy {
+    /**
+     * Owner 2026-11-20 ("no need to ask the user for permission" in the terminal): with Settings `terminal_free` on (the
+     * default), a command that stays inside the terminal sandbox (ARGUS's home and its Linux installs) runs with no card,
+     * whatever its level: deletes, sudo, apt / pip / npm installs, curl | sh. Automatic checkpoints are the safety net
+     * (TermCheckpoints). What still asks: a command that names the phone's shared storage or another app's data
+     * ([OUTSIDE]), and anything whose class sends, pays or pushes (git push stays WRITE_REMOTE in the policy).
+     */
+    const val PREF_FREE = "terminal_free"
+    val OUTSIDE = Regex("""(?:^|[\s'"=:>])(?:/sdcard|/storage/|/mnt/(?:sdcard|media_rw|user)|/data/(?:data|user|media|app)/|/system/|/vendor/|content://)""")
+
+    /** True when [text] keeps to the sandbox, so with [PREF_FREE] on it needs no card. Pure. */
+    fun inSandbox(text: String): Boolean = text.isNotBlank() && !OUTSIDE.containsMatchIn(text) &&
+        !Regex("""\b(?:am\s+(?:start|broadcast)|pm\s+(?:uninstall|clear|disable)|termux-(?:sms-send|telephony-call|clipboard-set)|settings\s+put)\b""").containsMatchIn(text)
+
+    /** The level after the sandbox rule: [Level.SAFE] for a sandboxed command when [free], else [level]. Pure. */
+    fun sandboxed(level: Level, text: String, free: Boolean): Level = if (free && inSandbox(text)) Level.SAFE else level
+
     enum class Level { SAFE, ASK, RISKY }
     enum class Kind { SHELL, GIT }
 

@@ -118,6 +118,9 @@ object ToolSubset {
      */
     val SELF = setOf("update_agent", "note_team")
 
+    /** Owner 2026-11-20 ("Argus + all agents get terminal use"): the group every bot has whatever it was given. A NEVER grant still removes a tool. */
+    const val EVERYONE = "terminal"
+
     /** Null = every tool (the Manager, or a bot granted [ALL]); else the rule for one tool name. */
     fun of(bot: Bot, groupOf: (String) -> String?): ((String) -> Boolean)? =
         if (bot.kind == BotKind.MANAGER || ALL in bot.toolGroups) null else { name -> allows(bot, name, groupOf(name)) }
@@ -129,7 +132,7 @@ object ToolSubset {
     fun allows(bot: Bot, name: String, group: String?): Boolean = when (bot.toolGrants[name]) {
         Rule.NEVER -> false
         Rule.ALLOW, Rule.ASK -> true
-        null -> group == null || group in bot.toolGroups || name in SELF
+        null -> group == null || group in bot.toolGroups || name in SELF || group == EVERYONE   // owner 2026-11-20: every agent has the terminal
     }
 }
 

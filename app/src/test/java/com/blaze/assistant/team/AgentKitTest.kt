@@ -10,9 +10,10 @@ class AgentKitTest {
             soulPath = "", toolGroups = setOf("web"), reportsTo = lead, members = members, createdAt = 0, u = 0)
 
     @Test fun groupsAreCheckedAndCapped() {
-        assertEquals(listOf("web", "terminal"), AgentKit.groups("web, terminal"))
+        assertEquals(listOf("web", "browser"), AgentKit.groups("web, browser"))
+        assertEquals("terminal is everyone's, not a pick", listOf("web"), AgentKit.groups("web, terminal"))
         assertEquals(listOf("web"), AgentKit.groups("Web, nonsense"))
-        assertEquals(AgentKit.MAX_GROUPS, AgentKit.groups("web,browser,terminal,schedule,messages,google").size)
+        assertEquals(AgentKit.MAX_GROUPS, AgentKit.groups("web,browser,apps,schedule,messages,google").size)
         assertEquals(listOf("browser", "web"), AgentKit.groups(listOf("browser", "web", "browser")))
         assertEquals(listOf("nonsense"), AgentKit.dropped("web,nonsense"))
         assertEquals(emptyList<String>(), AgentKit.groups(null))
@@ -21,13 +22,25 @@ class AgentKitTest {
     @Test fun terminalAgentsGetTheTerminal() {
         val t = AgentKit.toolSet(listOf("web"), terminal = true)
         assertTrue("terminal" in t && "web" in t && "memory" in t && "jobs" in t)
+        assertTrue("every agent has the terminal", "terminal" in AgentKit.toolSet(listOf("web"), terminal = false))
         assertTrue(AgentKit.toolSet(listOf("web", "browser", "schedule", "messages"), terminal = true).size <= AgentKit.MAX_GROUPS + AgentKit.BASE_GROUPS.size)
         assertTrue(AgentKit.terminalSoul().contains("terminal agent"))
     }
 
     @Test fun chatKitIsSmallAndKeepsTheWayOut() {
-        assertTrue(AgentKit.CHAT_CORE.size <= 32)
+        assertTrue(AgentKit.CHAT_CORE.size <= 40)
+        assertTrue("run_shell" in AgentKit.CHAT_CORE && "agent_watch" in AgentKit.CHAT_CORE)
         assertTrue("load_tools" in AgentKit.CHAT_CORE && "find_tool" in AgentKit.CHAT_CORE && "agent_create" in AgentKit.CHAT_CORE && "web_search" in AgentKit.CHAT_CORE)
+    }
+
+    @Test fun watchShowsStepsAndNext() {
+        val rows = listOf(
+            Row("nova", 1, 5, 7, "tool-call", "{\"name\":\"run_shell\",\"state\":\"done\",\"args\":{\"command\":\"./gradlew assembleDebug\"},\"output\":\"BUILD SUCCESSFUL\"}", 0),
+            Row("nova", 1, 6, 6, "message", "{\"text\":\"Build finished\"}", 0))
+        val t = JobTools.watchText("Nova", rows, 4, running = false)
+        assertTrue(t.contains("./gradlew assembleDebug") && t.contains("BUILD SUCCESSFUL") && t.contains("Build finished"))
+        assertTrue(t.endsWith("next=7"))
+        assertTrue(JobTools.watchText("Nova", emptyList(), 7, running = true).contains("still working"))
     }
 
     @Test fun teamsGroupUnderTheirLead() {

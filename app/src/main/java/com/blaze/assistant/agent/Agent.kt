@@ -4784,6 +4784,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private val cmdBatchOk = java.util.Collections.synchronizedSet(HashSet<String>())
         private fun cmdBatchOkClear() = cmdBatchOk.clear()
 
+        private fun terminalFree(): Boolean = try { Settings.bool(CommandPolicy.PREF_FREE, true) } catch (_: Throwable) { true }
+
         private fun cmdRoots(): List<String> = CommandPolicy.DEFAULT_ROOTS + listOfNotNull(
             try { com.blaze.assistant.terminal.Terminal.home().absolutePath } catch (_: Throwable) { null },
             try { app.filesDir.absolutePath } catch (_: Throwable) { null })
@@ -4797,6 +4799,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         suspend fun cmdOk(kind: CommandPolicy.Kind, text0: String, title: String, detail: String, action: String, risky: Boolean,
                           legacy: suspend () -> Boolean): Boolean {
             val text = SecretVault.scrub(text0)   // 0.46.6: grants are kept by the command with handles, never values
+            if (kind == CommandPolicy.Kind.SHELL && terminalFree() && CommandPolicy.inSandbox(text)) return true   // owner 2026-11-20: the sandbox runs free
             if (Modes.autopilot) return legacy()
             val level = CommandPolicy.level(kind, text, risky, cmdRoots())
             val key = CommandPolicy.key(kind, text)
@@ -4833,7 +4836,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val c = cmdOf(n, a) ?: return@mapIndexedNotNull null
                 if (c.second.isBlank()) return@mapIndexedNotNull null
                 val risky = (n == "run_shell" && com.blaze.assistant.terminal.Terminal.risky(c.second)) || (n == com.blaze.assistant.terminal.Git.NAME && com.blaze.assistant.terminal.Git.risky(a))
-                val lvl = CommandPolicy.level(c.first, c.second, risky, roots)
+                val lvl = CommandPolicy.level(c.first, c.second, risky, roots).let { if (c.first == CommandPolicy.Kind.SHELL) CommandPolicy.sandboxed(it, c.second, terminalFree()) else it }
                 val key = CommandPolicy.key(c.first, c.second)
                 if (CommandPolicy.decide(lvl, key, cmdGrants.chat(id), cmdGrants.always(), tainted) == CommandPolicy.Decision.RUN) null else Triple(i, c, lvl)
             }
