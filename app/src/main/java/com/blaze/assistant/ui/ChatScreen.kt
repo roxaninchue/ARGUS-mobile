@@ -1630,6 +1630,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
         Role.BLAZE -> if (m.meta == com.blaze.assistant.update.Updater.CARD) UpdateCard()
         else if (m.meta.startsWith(com.blaze.assistant.agent.BgAgents.CARD)) Unit   // 0.52.1: agents show only in the one TaskPill
         else if (m.meta.startsWith(com.blaze.assistant.agent.Duo.ROOM_CARD)) RoomCard(m)   // v0.32.0 meeting room
+        else if (m.meta.startsWith(com.blaze.assistant.agent.BotOffer.CARD)) BotOfferCard(m)   // 0.54.1 suggested bot
         else SwipeToQuote(true, onQuote = { onQuote(com.blaze.assistant.agent.ToolLeak.forDisplay(m.text)) }) { Column(Modifier.fillMaxWidth()) {
             // v0.31.0: no "Thought it through · 4 s" line; the droplet was the status while it thought.
             // v0.28.3: old saved replies may hold raw leaked tool syntax; it's hidden when drawn too.

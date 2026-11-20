@@ -12,6 +12,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.blaze.assistant.BrandName
 import com.blaze.assistant.R
+import com.blaze.assistant.notify.Notifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,11 +33,12 @@ class AgentKeeper : Service() {
 
     companion object {
         private const val ID = 79
-        private const val CH = "blaze_agents"
-        private const val ACT_STOP = "com.blaze.assistant.agent.STOP_RUN"
+        private const val CH = "argus_agents"
+        private const val ACT_STOP = "argus.agent.STOP_RUN"
         private const val EXTRA_ID = "run_id"
 
-        private const val CH_END = "blaze_agent_results"
+        private const val CH_END = "argus_agent_results"
+        private val ICON = R.drawable.ic_stat_blaze
 
         /**
          * A run ended: say so in a notification of its own (done, partly done or stopped, with which parts didn't finish),
@@ -45,14 +47,14 @@ class AgentKeeper : Service() {
         fun ended(ctx: Context, bg: BgAgents.Bg) {
             val t = AgentNote.ended(bg) ?: return
             try {
-                if (com.blaze.assistant.notify.Notifier.isVisible()) return
+                if (Notifier.isVisible()) return
                 val nm = ctx.getSystemService(NotificationManager::class.java)
                 if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel(CH_END, "Background run results", NotificationManager.IMPORTANCE_DEFAULT).apply {
                     description = "When research, a build or an agent finishes or stops, and why" })
-                val n = NotificationCompat.Builder(ctx, CH_END).setSmallIcon(R.drawable.ic_stat_blaze)
+                val n = NotificationCompat.Builder(ctx, CH_END).setSmallIcon(ICON)
                     .setContentTitle(t.title).setContentText(t.body).setStyle(NotificationCompat.BigTextStyle().bigText(t.body))
                     .setAutoCancel(true).setCategory(NotificationCompat.CATEGORY_STATUS)
-                    .setContentIntent(com.blaze.assistant.notify.Notifier.openChat(bg.parent)).build()
+                    .setContentIntent(Notifier.openChat(bg.parent)).build()
                 nm.notify(8000 + (bg.id.filter { it.isDigit() }.toIntOrNull() ?: 0) % 900, n)
             } catch (_: Throwable) { }
         }
@@ -74,10 +76,10 @@ class AgentKeeper : Service() {
             description = "Research, builds and agents ${BrandName.NAME} is running for you, with their progress"; setShowBadge(false) })
         val t = AgentNote.build(live)
         val first = live.firstOrNull()
-        val b = NotificationCompat.Builder(this, CH).setSmallIcon(R.drawable.ic_stat_blaze)
+        val b = NotificationCompat.Builder(this, CH).setSmallIcon(ICON)
             .setContentTitle(t.title).setContentText(t.body)
             .setOngoing(true).setOnlyAlertOnce(true).setSilent(true).setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setContentIntent(try { com.blaze.assistant.notify.Notifier.openChat(first?.parent) } catch (_: Throwable) { null })
+            .setContentIntent(try { Notifier.openChat(first?.parent) } catch (_: Throwable) { null })
         // Elapsed time ticks on its own (no per-second updates): counted from when the oldest running one started.
         live.filter { it.started > 0 }.minOfOrNull { it.started }?.let { b.setWhen(it).setShowWhen(true).setUsesChronometer(true) }
         if (t.lines.isNotEmpty()) b.setStyle(NotificationCompat.InboxStyle().also { s -> t.lines.take(6).forEach { s.addLine(it) } })

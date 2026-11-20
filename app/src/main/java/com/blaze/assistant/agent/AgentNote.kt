@@ -1,5 +1,6 @@
 package com.blaze.assistant.agent
 
+import com.blaze.assistant.BrandName
 import com.blaze.assistant.orchestra.OrchestraRuns
 import com.blaze.assistant.orchestra.Pipelines
 
@@ -34,7 +35,7 @@ object AgentNote {
 
     /** What it is doing this moment. */
     fun now(bg: BgAgents.Bg, running: Int): String = when {
-        bg.waiting -> "Waiting for you: open ${com.blaze.assistant.BrandName.NAME} and answer its card"
+        bg.waiting -> "Waiting for you: open ${BrandName.NAME} and answer its card"
         bg.status == BgAgents.QUEUED && bg.resume -> "Picking up where it stopped"
         bg.status == BgAgents.QUEUED -> "Queued: starts when a slot frees ($running running)"
         bg.last.isNotBlank() -> bg.last

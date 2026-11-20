@@ -1181,6 +1181,22 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         return "Posted. End this turn now: reply with exactly ${ProgressGate.SKIP}."
     }
 
+    /** 0.54.1 (BotOffer): a card row in chat [chatId] (display only; never in the model's history). Returns its id. */
+    fun postCard(chatId: String, text: String, meta: String): Long? {
+        val p = sessions[chatId] ?: load(chatId)?.also { sessions[it.id] = it } ?: return null
+        val id = p.add(Role.BLAZE, text)
+        p.msgs = p.msgs.map { if (it.id == id) it.copy(meta = meta) else it }
+        p.persist()
+        return id
+    }
+
+    /** 0.54.1: change a card row's meta (its state) wherever it is. */
+    fun setCardMeta(msgId: Long, meta: String) {
+        val p = sessions.values.firstOrNull { s -> s.msgs.any { it.id == msgId } } ?: return
+        p.msgs = p.msgs.map { if (it.id == msgId) it.copy(meta = meta) else it }
+        p.persist()
+    }
+
     /** A background agent reached a milestone: the main Argus may tell the user, in its own words (never while it is busy). */
     fun agentMilestone(bg: BgAgents.Bg) {
         if (!Settings.bool("progress_updates", true)) return

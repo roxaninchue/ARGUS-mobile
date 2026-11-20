@@ -178,6 +178,8 @@ object BgAgents {
         synchronized(this) { _all.value = (_all.value + bg).takeLast(40) }
         save()
         scope.launch { pump() }
+        // 0.54.1: the third job of one kind in two weeks pops a card suggesting a bot for it (BotOffer).
+        if (::app.isInitialized) BotOffer.noted(app, specialist, task, parent)
         return bg
     }
 
