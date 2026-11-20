@@ -11,6 +11,7 @@
 ## v0.54.0 (versionCode 202, 2026-11-20, main): bot chat rebuild, distro-pick crash fix
 - **What:** see CHANGELOG 0.54.0: the onboarding distro-pick crash fix (fd3e8616), bot chat full streamed replies (36eab1f9), the ChatFeed seam (7a79591b), each bot's thread on the main chat UI with an Activity view (ad1cab55), CI artifact cleanup (e71e303c).
 - **Ran before push:** rename guard (after rewording comments and adding the new files' package names to the baseline), do-not-port 0 hits, evals 34/34, full local `:app:testDebugUnitTest --continue` (counts in the overhaul.md handoff line; the Robolectric failures are the sandbox's aarch64 limit).
+- **CI:** Build APK run 44756835586 (#94) on 60726065: green, 23m 46s; artifacts argus-debug-signed-<sha> 49.4 MB, mapping-<sha> 11.3 MB (no YouTube plug-in in this APK).
 - **Not run:** Robolectric tests and shots outside CI, device. CI is the check.
 
 ## v0.53.9 (versionCode 201, 2026-11-20, main): build of everything unreleased since 0.53.8
