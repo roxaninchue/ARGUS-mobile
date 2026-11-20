@@ -124,8 +124,8 @@
     },
     {
       "name": "diagrams",
-      "version": 2,
-      "sha256": "9a7b07f5eb7ad0265d248cb9f5988f27eb190faf8bfb96d7343b7d39aab5ff12"
+      "version": 3,
+      "sha256": "8bd2647142b311459c24a68d67dceb449ea7020659ee72c4da3588d044e56017"
     },
     {
       "name": "floor-plan",
@@ -254,8 +254,8 @@
     },
     {
       "name": "weekly-digest",
-      "version": 1,
-      "sha256": "cdd34119fe53a5e10506f44c65a5af907558a34d3ec97a11a76bddf2f76e6b69"
+      "version": 2,
+      "sha256": "0c62ceb41882351376a36a02808699930cd27055eefb7713e38cc72eef9ae6b5"
     },
     {
       "name": "study-flashcards",
@@ -284,8 +284,8 @@
     },
     {
       "name": "blaze-specialists",
-      "version": 2,
-      "sha256": "a0e9163b22770abe1edbeab5a3ca4d32638550de1f416224e6215e5eb3957f51"
+      "version": 3,
+      "sha256": "ad1852de7c9b7923bca1840077a8ebb983b84767dc3c392855519162036fc0f2"
     },
     {
       "name": "wf-send-to-person",

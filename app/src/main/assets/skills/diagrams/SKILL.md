@@ -1,8 +1,8 @@
 ---
 name: diagrams
-description: Diagram FILES - flowcharts, mind maps, org charts, sequence and architecture diagrams, timelines, ER and state diagrams - as Mermaid or hand-placed SVG saved to a file, previewed and exported as PNG, SVG or PDF. Use only when the user asks to save, export, download, edit or make a diagram file. A diagram asked for in chat needs no skill - reply with a ```mermaid block.
+description: Make a diagram file (flowchart, mind map, org chart, sequence, architecture, timeline, ER or state) and export it as PNG, SVG or PDF. For when the user asks to save, export, download, edit or make a diagram file; a diagram asked for in chat is a ```mermaid block in the reply.
 tags: [diagrams, flowchart, mermaid, svg, visual, design]
-version: 2
+version: 3
 ---
 
 > **In chat: just reply with a ```mermaid block.** When someone asks in chat for a diagram, flowchart, mind map or

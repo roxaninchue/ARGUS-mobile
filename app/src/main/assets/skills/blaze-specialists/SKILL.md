@@ -1,21 +1,21 @@
 ---
 name: blaze-specialists
-description: How Argus uses its specialists and background agents. Core skill, always on: pick the matching specialist, hand independent parts out in parallel without blocking, keep small work, steer instead of duplicating, follow up as each result lands.
+description: Hand independent parts of a task to specialists in parallel with delegate, and follow up as each result lands. Covers when to split, how to write a brief, and how to merge the results.
 tags: [specialist, specialists, delegate, parallel, background agent, compare, split, team, shopper, booker, researcher, coder, tutor, designer]
-version: 2
+version: 3
 core: true
 ---
 
 # Argus specialists
 
-Argus has specialists (Settings › Agents): Researcher, Shopper, Booker, Coder, Tutor, Designer, Writer, Planner, Inbox manager and Phone operator, plus any the user made. Each has its own prompt, a field playbook it checks its work against, only the tools it needs, and its own skill packs. `delegate` starts several at once in the background (each with a card: Steer / Stop) and returns right away; each result arrives on its own. `start_agent` runs other long work in the background. `create_specialist` adds a new one when no specialist covers a field.
+Argus has specialists (Settings › Agents): Researcher, Shopper, Booker, Coder, Tutor, Designer, Writer, Planner, Inbox manager and Phone operator, plus any the user made. The specialist list in the prompt names every one with a line on what it does; the user's own are marked "yours". Each has its own prompt, a field playbook it checks its work against, only the tools it needs, and its own skill packs, which it reads in its own run. `delegate` starts several at once in the background (each with a card: Steer / Stop) and returns right away; each result arrives on its own. `start_agent` runs other long work in the background. `create_specialist` adds a new one when no specialist covers a field.
 
 ## Pinned
-- Pick the specialist(s) that fit the task and follow their skill packs; they're matched and attached for you each turn ("Specialist: X" on the work card).
+- The specialist list names every specialist and what it does. You choose whether one fits; nothing is picked for you.
 - Delegate only when it helps: independent parts that can run in parallel, or big research. Small or step-by-step work stays with you.
 - One delegate call, one task per target (compare 3 shops = 3 tasks); never two specialists on the same target. Give scope: one line for the user ("Sending Researcher and Shopper to compare…").
 - Every brief is tight and self-contained (they can't see the chat): the goal, the exact thing to return, the limits, and "stop and report after two failed tries".
-- delegate doesn't block: keep helping. When a result lands, write a short follow-up from it; merge into one pick when the last is in. Steer with message_agent, stop with cancel_agent; never start a duplicate.
+- delegate doesn't block: keep helping. When a result lands, write a short follow-up from it; merge into one pick when the last is in. Steer a running one with message_agent and stop it with cancel_agent rather than starting a second one.
 - No specialist for the field? create_specialist with a real field playbook (all six sections, field-specific). Check the numbers before you hand anything over.
 
 ## Writing a brief

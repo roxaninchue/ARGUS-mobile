@@ -1,8 +1,8 @@
 ---
 name: weekly-digest
-description: The weekly store digest - last week's orders and revenue (from the store's order emails), the top social posts, and the next 3 posts to make. Runs every Monday as a Schedule job (Settings › Seller › Weekly store digest) or on request ("how did the store do this week").
+description: Make the weekly store digest with last week's orders and revenue, the top social posts, and the next 3 posts to make. Runs every Monday as a Schedule job (Settings › Seller › Weekly store digest) or on request ("how did the store do this week").
 tags: [ecommerce, analytics, reporting, marketing, schedule]
-version: 1
+version: 2
 ---
 
 # Weekly store digest
@@ -29,4 +29,4 @@ Next: 1) … 2) … 3) …
 - Save the full digest to ~/store/digests/<yyyy-mm-dd>.md.
 
 ## Rules
-- Only numbers you actually read; mark gaps plainly. Read-only: the digest never posts, emails or changes the store.
+- Use the numbers you actually read and mark gaps plainly. The digest is read-only: it doesn't post, email or change the store.
