@@ -8,15 +8,19 @@ package com.blaze.assistant.agent
  * Nothing reads the user's message: SpecialistMatch, which picked specialists (and their skill packs) from the words, is
  * gone.
  *
+ * Step 2 (shelf cost): the list lives in delegate's own description, with the ids as an enum on its `specialist`
+ * parameter, and delegate rides every turn (ToolPick.ESSENTIAL); the system prompt keeps a one-line [pointer].
+ *
  *  - Each line comes from the specialist's own prompt ([SkillShelf.summary] of it), so there's no second description
  *    to keep up to date.
- *  - Byte-stable for the same set (deterministic order, no clock), so it rides in the SLOW prompt tier and caches.
+ *  - Byte-stable for the same set (deterministic order, no clock): the pointer rides in the SLOW prompt tier and the
+ *    tool description in the tool list, and both cache.
  *
  * Pure apart from [promptBlock], which reads [Specialists.all] (SpecialistShelfTest).
  */
 object SpecialistShelf {
-    const val HEAD = "\n\nSPECIALISTS you can hand work to (id, name: what it does). delegate sends one a task; it's in the extras " +
-        "group (load_tools extras). create_specialist makes a new one when none covers the field.\n"
+    /** Heads the list inside delegate's description. */
+    const val LIST_HEAD = "Specialists (id (name): what it does; \"yours\" = made by the user):\n"
 
     data class Entry(val id: String, val name: String, val summary: String, val yours: Boolean) {
         val line: String get() = "- $id ($name): $summary${if (yours) " (yours)" else ""}\n"
@@ -33,18 +37,26 @@ object SpecialistShelf {
         }
     }
 
-    /** The prompt part ("" when there are no specialists). */
-    fun block(specs: List<Specialists.Spec>): String {
-        val all = entries(specs)
-        if (all.isEmpty()) return ""
-        return (HEAD + all.joinToString("") { it.line }).trimEnd('\n')
+    /** The list as it reads in delegate's description (trailing newline trimmed). */
+    fun lines(entries: List<Entry>): String = entries.joinToString("") { it.line }.trimEnd('\n')
+
+    /**
+     * The system prompt's one line (round 5 step 2): how many specialists there are and where they're listed. The list
+     * itself is in delegate's description, which rides every turn ("" when there are none).
+     */
+    fun pointer(specs: List<Specialists.Spec>): String {
+        val e = entries(specs)
+        if (e.isEmpty()) return ""
+        val yours = e.count { it.yours }
+        return "\n\nSPECIALISTS: ${e.size} (${e.size - yours} built in, $yours yours), each listed with what it does in the delegate tool, " +
+            "which hands one a task. create_specialist makes a new one when none covers the field."
     }
 
     @Volatile private var memo: Pair<Int, String>? = null
 
-    /** This phone's specialists, rebuilt only when the set changes (one made in Settings or by create_specialist). */
+    /** This phone's pointer line, rebuilt only when the set changes (one made in Settings or by create_specialist). */
     fun promptBlock(specs: List<Specialists.Spec> = try { Specialists.all() } catch (_: Throwable) { Specialists.builtIn }): String = try {
         val sig = specs.map { "${it.id}\t${it.name}\t${it.prompt}\t${it.custom}" }.sorted().joinToString("\n").hashCode()
-        memo?.takeIf { it.first == sig }?.second ?: block(specs).also { memo = sig to it }
+        memo?.takeIf { it.first == sig }?.second ?: pointer(specs).also { memo = sig to it }
     } catch (_: Throwable) { "" }
 }

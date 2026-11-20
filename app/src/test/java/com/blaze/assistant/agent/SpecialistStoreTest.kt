@@ -57,10 +57,10 @@ class SpecialistStoreTest {
         assertTrue(ok.message, ok.ok)
         val s = ok.spec!!
         assertEquals("farming-advisor", s.id); assertTrue(s.byBlaze); assertTrue(s.custom); assertEquals(farm.trim(), s.playbook)
-        // Saved and loaded back like any custom one; on the specialist shelf from the next turn, marked as the user's own.
+        // Saved and loaded back like any custom one; in delegate's specialist list from the next turn, marked as the user's own.
         val back = Specialists.parse(Specialists.toJson(listOf(s))).single()
         assertEquals(s, back)
-        assertTrue(SpecialistShelf.block(Specialists.builtIn + back).contains("- farming-advisor (Farming advisor): Advises smallholder farmers"))
+        assertTrue(Specialists.tool(Specialists.builtIn + back).toString().contains("- farming-advisor (Farming advisor): Advises smallholder farmers"))
     }
 
     private val farm = """

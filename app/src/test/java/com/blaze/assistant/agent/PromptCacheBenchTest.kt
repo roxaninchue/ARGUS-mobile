@@ -64,7 +64,7 @@ class PromptCacheBenchTest {
             s("lang", ReplyLanguage.line("auto"))   // v0.45.7
             // round 5 step 1: the shelves are the first SLOW parts (byte-stable, before connectors / about / project / turn / live)
             slow("skills", shelf)   // 2026-11-20: the skill shelf, same every turn
-            slow("specialists", SpecialistShelf.block(Specialists.builtIn))   // round 5: the specialist shelf, same every turn
+            slow("specialists", SpecialistShelf.pointer(Specialists.builtIn))   // round 5: one line; the list is in delegate's description
             slow("connectors", "\nConnected accounts you can use with tools: Gmail (mail), Google Calendar (events), Spotify (music).\n")
             // 2026-11-14 harness gap: the consolidated core (HarnessPrompt) replaced the stacked rule lines.
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE); s("format", AnswerStyle.FORMAT)
@@ -115,7 +115,7 @@ class PromptCacheBenchTest {
         // nothing volatile is STATIC: the voice switch is a turn part
         assertTrue(sysSrc.contains("turn(\"voice\""))
         // the same text for every kind of turn, and inside the prefix any two turns share
-        val specs = SpecialistShelf.block(Specialists.builtIn)
+        val specs = SpecialistShelf.pointer(Specialists.builtIn)
         for (i in turns.indices) for (j in turns.indices) if (i < j) {
             val x = PromptParts.assemble(parts(turns[i].text, turns[i].groups, turns[i].views, Live(0, 0, i)))
             val y = PromptParts.assemble(parts(turns[j].text, turns[j].groups, turns[j].views, Live(3, 1, j)))
@@ -128,7 +128,7 @@ class PromptCacheBenchTest {
         val cands = root.listFiles()!!.filter { File(it, "SKILL.md").isFile }.mapNotNull { SkillMatch.fromDir(it, "bundled", true) }
         val a = SkillShelf.block(cands); val b = SkillShelf.block(cands.reversed())
         assertEquals(a, b)
-        assertEquals(SpecialistShelf.block(Specialists.builtIn), SpecialistShelf.block(Specialists.builtIn.reversed()))
+        assertEquals(Specialists.tool(Specialists.builtIn).toString(), Specialists.tool(Specialists.builtIn.reversed()).toString())
         assertTrue(!Regex("\\b(20\\d\\d|\\d{1,2}:\\d\\d)\\b").containsMatchIn(a + specs))
     }
 

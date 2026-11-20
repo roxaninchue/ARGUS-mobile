@@ -147,12 +147,12 @@ object Specialists {
         if (!check.ok) return no("\n" + check.feedback())
         val spec = Spec(id, name, prompt, groups, true, skills, playbook.trim(), BLAZE)
         return Made(true, spec, "Saved the new specialist $name ($id, tools: ${groups.joinToString(", ")}) with its playbook. " +
-            "It is in Settings \u203a Specialists (made by ${BrandName.NAME}) and on the specialist list from the next turn. Use it now with delegate specialist=$id.")
+            "It is in Settings \u203a Specialists (made by ${BrandName.NAME}) and in delegate's specialist list from the next turn. Use it now with delegate specialist=$id.")
     }
 
     fun createTool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", "create_specialist")
-        .put("description", "Create and save a NEW specialist when a task needs a field none of the existing ones covers (check the delegate list first; " +
+        .put("description", "Create and save a NEW specialist when a task needs a field none of the existing ones covers (check delegate's specialist list first; " +
             "never for small work you can do yourself). It needs a field playbook in markdown with exactly these sections: " +
             Playbooks.SECTIONS.joinToString(", ") { "## ${it.title}" } + ". The playbook is checked before saving: every section present and substantial, " +
             "at least ${Playbooks.MIN_CHECKS} \"- [ ]\" self-check items, specific to the field (its own terms, tools, standards, failure modes), not a copy, no secrets. " +
@@ -196,18 +196,24 @@ object Specialists {
         }
     }
 
-    fun tool(): JSONObject {
-        val list = all().joinToString("; ") { "${it.id} (${it.name})" }
+    /**
+     * The delegate tool. Round 5 step 2: the specialist list lives here (one line each, [SpecialistShelf.lines]) and the
+     * ids are an enum on `specialist`, so the model sees every specialist where it uses them; the system prompt keeps a
+     * one-line pointer ([SpecialistShelf.pointer]). Byte-stable for the same set (cache). Pure apart from [all].
+     */
+    fun tool(specs: List<Spec> = all()): JSONObject {
+        val entries = SpecialistShelf.entries(specs)
         return JSONObject().put("type", "function").put("function", JSONObject()
             .put("name", "delegate")
-            .put("description", "Hand work to specialists: $list. It does NOT block: each task starts as a background specialist with its own card (Steer / Stop) and the chat keeps going; " +
-                "each result reaches you on its own as soon as it lands, and you then write a short follow-up. Use it only when it helps: independent parts that can run in parallel, or big research. " +
-                "One task per target (compare 3 shops = 3 Shopper tasks), never two specialists on the same target. Each task is a tight, self-contained brief (they don't see this chat): " +
-                "the goal, what to return, limits, and to stop and report after two failed tries. Small or step-by-step work you do yourself. " +
-                "For two or more tasks give scope: one line telling the user who you're sending and why. wait=true only when you can't continue without the answers (it blocks).")
+            .put("description", "Hand work to specialists. Each task starts as a background specialist with its own card (Steer / Stop) and the chat keeps going; " +
+                "each result reaches you on its own as soon as it lands, and you then write a short follow-up. It helps for independent parts that can run in parallel, or big research; " +
+                "small or step-by-step work you do yourself. One task per target (compare 3 shops = 3 Shopper tasks), one specialist per target. Each task is a tight, self-contained brief (they don't see this chat): " +
+                "the goal, what to return, limits, and to stop and report after two failed tries. " +
+                "For two or more tasks give scope: one line telling the user who you're sending and why. wait=true blocks until the answers are in, for when you can't continue without them.\n" +
+                SpecialistShelf.LIST_HEAD + SpecialistShelf.lines(entries))
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
                 .put("tasks", JSONObject().put("type", "array").put("items", JSONObject().put("type", "object").put("properties", JSONObject()
-                    .put("specialist", JSONObject().put("type", "string"))
+                    .put("specialist", JSONObject().put("type", "string").put("enum", JSONArray(entries.map { it.id })).put("description", "The specialist's id"))
                     .put("task", JSONObject().put("type", "string"))
                     .put("title", JSONObject().put("type", "string").put("description", "2-5 word card title")))
                     .put("required", JSONArray(listOf("specialist", "task")))))

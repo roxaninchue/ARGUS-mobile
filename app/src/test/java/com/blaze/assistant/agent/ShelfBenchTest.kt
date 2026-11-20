@@ -17,12 +17,12 @@ class ShelfBenchTest {
 
     @Test fun measure() {
         val skills = SkillShelf.block(bundled + mine)
-        val people = SpecialistShelf.block(specs)
-        val delegate = Specialists.tool().toString()
+        val people = SpecialistShelf.pointer(specs)   // step 2: one line; the list moved into delegate's description
+        val delegate = Specialists.tool(specs).toString()
         val sb = StringBuilder("Shelf bench (chars; tokens ≈ chars/4)\n")
         sb.append("skills shelf: ${skills.length} (${bundled.size + mine.size} skills)\n")
-        sb.append("specialists shelf: ${people.length} (${specs.size} specialists)\n")
-        sb.append("delegate tool schema: ${delegate.length}\n")
+        sb.append("specialists in the prompt: ${people.length} (${specs.size} specialists, listed in delegate)\n")
+        sb.append("delegate tool schema (every turn): ${delegate.length}\n")
         val perRequest = skills.length + people.length + delegate.length
         sb.append("per request (system prompt + delegate schema): $perRequest (≈ ${perRequest / 4} tokens)\n")
         File("build").mkdirs(); File("build/shelf-bench.txt").writeText(sb.toString())
