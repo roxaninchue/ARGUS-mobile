@@ -62,10 +62,12 @@ let seededFor: D1Database | null = null;
 /** Drop the isolate cache (after an admin change, and in tests). */
 export function invalidateConfig(): void {
   cached = null;
+  marksCache = null;
 }
 
 export function resetDbCacheForTests(): void {
   cached = null;
+  marksCache = null;
   seededFor = null;
 }
 
@@ -181,4 +183,17 @@ export function keyResultStmt(db: D1Database, keyId: number, ok: boolean, now: n
   return ok
     ? db.prepare("UPDATE provider_keys SET last_ok_at = ?2, cooling_until = 0, last_error = '' WHERE id = ?1").bind(keyId, now)
     : db.prepare("UPDATE provider_keys SET last_fail_at = ?2, cooling_until = MAX(cooling_until, ?3), last_error = ?4 WHERE id = ?1").bind(keyId, now, coolUntil, error.slice(0, 140));
+}
+
+// v0.4.0 fast path: model health cached per isolate for a few seconds, so a chat request doesn't wait
+// on a D1 read for it. The chat router updates the map in place, so this isolate sees its own results
+// at once; other isolates catch up within MARKS_TTL_MS. Admin changes clear it (invalidateConfig).
+const MARKS_TTL_MS = 5_000;
+let marksCache: { at: number; db: D1Database; marks: Map<string, Mark> } | null = null;
+
+export async function loadMarksCached(db: D1Database, now = Date.now()): Promise<Map<string, Mark>> {
+  if (marksCache && marksCache.db === db && now - marksCache.at < MARKS_TTL_MS) return marksCache.marks;
+  const marks = await loadMarks(db, now);
+  marksCache = { at: now, db, marks };
+  return marks;
 }

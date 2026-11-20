@@ -34,8 +34,15 @@ export async function chargeRequest(db: D1Database, uid: string, now = Date.now(
 }
 
 /** Give the request back when no model could answer it. */
-export async function refundRequest(db: D1Database, uid: string, now = Date.now()): Promise<void> {
-  await db.prepare("UPDATE usage SET requests = MAX(0, requests - 1) WHERE uid = ?1 AND day = ?2").bind(uid, utcDay(now)).run();
+export async function refundRequest(db: D1Database, uid: string, now = Date.now(), dropEmpty = false): Promise<void> {
+  const day = utcDay(now);
+  const up = db.prepare("UPDATE usage SET requests = MAX(0, requests - 1) WHERE uid = ?1 AND day = ?2").bind(uid, day);
+  if (!dropEmpty) { await up.run(); return; }
+  await db.batch([
+    up,
+    // v0.4.0: the charge now runs alongside the access check, so a refused call leaves no empty row behind.
+    db.prepare("DELETE FROM usage WHERE uid = ?1 AND day = ?2 AND requests = 0 AND tokens = 0").bind(uid, day),
+  ]);
 }
 
 export async function addTokens(db: D1Database, uid: string, tokens: number, now = Date.now()): Promise<void> {

@@ -4,7 +4,7 @@ import { checkAccess } from "./access";
 import { requireUser } from "./auth";
 import { isRoutable } from "./catalog";
 import { decryptKey } from "./crypto";
-import { loadConfig, loadMarks, saveMarkStmt, statStmt, keyResultStmt, type Config, type KeyRow } from "./db";
+import { loadConfig, loadMarksCached, saveMarkStmt, statStmt, keyResultStmt, type Config, type KeyRow } from "./db";
 import type { Candidate } from "./defaults";
 import type { Env } from "./env";
 import { callOpenAI, callWorkersAI, upstreamBody, usageTap, type Upstream } from "./providers";
@@ -159,16 +159,43 @@ export async function route(
   return { attempts, retryAt: coolTimes.length ? Math.min(...coolTimes) : undefined, clientError: badRequests > 0 && attempts.every(a => a.kind === "bad_request") ? lastBad : undefined };
 }
 
+/** Server-Timing: where the milliseconds go before the first byte (read it in the app's network log). */
+export class Timer {
+  private t = Date.now();
+  readonly parts: string[] = [];
+  mark(name: string): void {
+    const n = Date.now();
+    this.parts.push(`${name};dur=${n - this.t}`);
+    this.t = n;
+  }
+  header(): string {
+    return this.parts.join(", ");
+  }
+}
+
 export async function chatCompletions(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const tm = new Timer();
   const user = await requireUser(env, req);
-  await checkAccess(env, user, ctx, true); // 403 waitlisted / access_rejected
-  const body = await readJSON(req);
-  if (!Array.isArray(body.messages) || body.messages.length === 0) throw new HttpError(400, "invalid_request_error", "'messages' must be a non-empty array");
+  tm.mark("auth");
   if (!env.KEY_ENCRYPTION_SECRET) throw new HttpError(503, "not_configured", "The gateway isn't set up yet (KEY_ENCRYPTION_SECRET missing)");
 
-  const cfg = await loadConfig(env.DB);
+  // v0.4.0: everything that only needs the account runs at once instead of one D1 round trip after
+  // another (access, body, config, quota charge, model health). The charge is given back when access fails.
+  const access = checkAccess(env, user, ctx, true).then(() => null, (e: unknown) => e); // 403 waitlisted / access_rejected
+  const bodyP = readJSON(req).then(b => ({ b }), (e: unknown) => ({ e }));
+  const [denied, parsed, cfg, used, marks] = await Promise.all([access, bodyP, loadConfig(env.DB), chargeRequest(env.DB, user.id), loadMarksCached(env.DB)]);
+  tm.mark("prep");
+  if (denied || "e" in parsed) {
+    await refundRequest(env.DB, user.id, Date.now(), true).catch(() => undefined);
+    throw denied ?? (parsed as { e: unknown }).e;
+  }
+  const body = parsed.b;
+  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    await refundRequest(env.DB, user.id, Date.now(), true).catch(() => undefined);
+    throw new HttpError(400, "invalid_request_error", "'messages' must be a non-empty array");
+  }
+
   const plan = planFor(user.email, cfg.assignments, cfg.plans);
-  const used = await chargeRequest(env.DB, user.id);
   const verdict = judge(plan, used.requests, used.tokens);
   const rlHeaders = { "X-RateLimit-Remaining-Requests": String(verdict.remaining) };
   if (!verdict.ok) {
@@ -177,20 +204,22 @@ export async function chatCompletions(req: Request, env: Env, ctx: ExecutionCont
   }
 
   const { task, source } = pickTask(body);
-  const marks = await loadMarks(env.DB);
   const persist = (stmts: D1PreparedStatement[]) => { if (stmts.length) ctx.waitUntil(env.DB.batch(stmts).then(() => undefined, () => undefined)); };
   const r = await route(env, cfg, marks, task, body, persist);
+  tm.mark(`upstream;desc="${r.attempts.length} attempt${r.attempts.length === 1 ? "" : "s"}"`);
+  const timing = { "Server-Timing": tm.header() };
 
   if (!r.upstream || !r.candidate) {
     ctx.waitUntil(refundRequest(env.DB, user.id).catch(() => undefined));
-    if (r.clientError) return apiError(r.clientError.status || 400, "invalid_request_error", `The model rejected the request: ${r.clientError.message || "bad request"}`, rlHeaders);
+    if (r.clientError) return apiError(r.clientError.status || 400, "invalid_request_error", `The model rejected the request: ${r.clientError.message || "bad request"}`, { ...rlHeaders, ...timing });
     const wait = r.retryAt ? Math.max(1, Math.ceil((r.retryAt - Date.now()) / 1000)) : 30;
-    return apiError(503, "blaze_models_busy", `Every model for '${task}' is busy right now. The next one frees up in about ${wait}s.`, { ...rlHeaders, "Retry-After": String(wait) });
+    return apiError(503, "blaze_models_busy", `Every model for '${task}' is busy right now. The next one frees up in about ${wait}s.`, { ...rlHeaders, ...timing, "Retry-After": String(wait) });
   }
 
   const headers = new Headers({
     ...CORS,
     ...rlHeaders,
+    ...timing,
     "Content-Type": r.upstream.headers.get("Content-Type") || (body.stream ? "text/event-stream" : "application/json"),
     "Cache-Control": "no-store",
     "X-Blaze-Task": `${task}${source === "inferred" ? ";inferred" : ""}`,
@@ -200,4 +229,3 @@ export async function chatCompletions(req: Request, env: Env, ctx: ExecutionCont
   const out = usageTap(r.upstream.body!, n => ctx.waitUntil(addTokens(env.DB, user.id, n).catch(() => undefined)));
   return new Response(out, { status: 200, headers });
 }
-
