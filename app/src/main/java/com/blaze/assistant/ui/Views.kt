@@ -7,10 +7,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Every screen Blaze has, in one place. Nothing was deleted in the 0.12 redesign: pages left the
+ * Every screen Argus has, in one place. Nothing was deleted in the 0.12 redesign: pages left the
  * sidebar and live here, reachable from /views, their own /command, Search, and open_view.
  * v0.24.0: the Archive (old chat list) is gone with the conversation switcher; old chats stay on disk and in
- * the journal, so Blaze still finds them with search_chat / search_past_chats.
+ * the journal, so Argus still finds them with search_chat / search_past_chats.
  *
  * [page] = a settings page id ("" = the settings list); [special] = a screen that isn't a settings page.
  */
@@ -53,7 +53,7 @@ object Views {
         BlazeView("account", "${BrandName.NAME} account", "Sign in, shared with Desktop", page = "account"),
         // v0.40.0: optional end-to-end encrypted live sync between your phones (off by default).
         BlazeView("sync", "Cloud sync", "Keep chats, memory, settings and designs the same on all your phones: on/off, passphrase, what syncs, Sync now, delete the cloud copy", page = "sync", aliases = listOf("cloud sync", "sync", "backup to cloud", "other phone", "sync phones")),
-        // v0.39.0 Simple mode: what Blaze is doing on its own, and the living backgrounds.
+        // v0.39.0 Simple mode: what Argus is doing on its own, and the living backgrounds.
         BlazeView("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders with friendly names and on/off, and a \u201cToday I\u2026\u201d diary", page = "doing", aliases = listOf("things", "doing now", "diary", "activity", "today i")),
         BlazeView("look", "Look & feel", "Light / Dark / Auto, accent colour, the Home's tilt effect", page = "look", aliases = listOf("theme", "themes", "background", "backgrounds", "wallpaper", "look and feel", "look & feel")),
         BlazeView("settings", "Settings", "Behaviour, voice, privacy, backup", page = ""),
@@ -80,7 +80,7 @@ object Views {
 
     // ---------------- v0.24.6: ask before switching ----------------
 
-    /** "Open in Design?": a chip in the chat that opens the view on one tap (Blazeinchue: Blaze asks, it doesn't jump). */
+    /** "Open in Design?": a chip in the chat that opens the view on one tap (Blazeinchue: Argus asks, it doesn't jump). */
     data class Offer(val id: String, val target: String = "", val n: Long = System.nanoTime())
     val offer = MutableStateFlow<Offer?>(null)
 

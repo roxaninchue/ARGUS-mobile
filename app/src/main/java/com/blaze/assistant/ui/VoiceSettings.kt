@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.voice.Voice
 
-/** Blaze's voice: which voice, how fast, how high, which language it listens in, and call options. */
+/** Argus's voice: which voice, how fast, how high, which language it listens in, and call options. */
 @Composable
 fun VoiceTuning() {
     val c = LocalBlaze.current.mono

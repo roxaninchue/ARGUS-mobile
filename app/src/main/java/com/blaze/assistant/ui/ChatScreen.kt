@@ -144,7 +144,7 @@ internal sealed class Item(val key: String) {
     var pos: GroupPos = GroupPos.SINGLE
     abstract val side: Side
     abstract val at: Long
-    /** 0.45.19: who wrote it on Blaze's side ("halo" or "" for Blaze), so Halo's and Blaze's messages group apart. */
+    /** 0.45.19: who wrote it on Argus's side ("halo" or "" for Argus), so Halo's and Argus's messages group apart. */
     open val who: String get() = ""
     class Msg(val m: ChatMessage) : Item("m${m.id}") {
         override val side: Side get() = if (m.role == Role.USER) Side.ME else Side.BLAZE
@@ -191,7 +191,7 @@ fun ChatScreen() {
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val clip = LocalClipboardManager.current
-    // 0.48.0 RC4: the new Blaze look is the only chat surface: chat happens over the blurred Home (the composer), the old
+    // 0.48.0 RC4: the new Argus look is the only chat surface: chat happens over the blurred Home (the composer), the old
     // full chat screen (Chat / Projects pills, themed scenes, Hold to talk / Type / Photo, draft cards) is never drawn.
     val composer = com.blaze.assistant.ui.composer.rememberComposerState()
 
@@ -208,7 +208,7 @@ fun ChatScreen() {
     // Home's "Finishing setup" card shows what is left.
     val setupState by com.blaze.assistant.setup.SetupRunner.state.collectAsState()
     var setupSheet by rememberSaveable { mutableStateOf(false) }
-    // Blaze opening one of its own settings pages (setup help).
+    // Argus opening one of its own settings pages (setup help).
     val askedPage by com.blaze.assistant.agent.SelfSetup.openPage.collectAsState()
     LaunchedEffect(askedPage) { askedPage?.let { settingsPage = it; com.blaze.assistant.agent.SelfSetup.openPage.value = null } }
     var input by remember { mutableStateOf(TextFieldValue("")) }
@@ -218,9 +218,9 @@ fun ChatScreen() {
     var assistJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     // v0.39.0 Simple mode: who the next message goes to (@blaze / @halo / @all), typed or spoken.
     var talkTo by rememberSaveable { mutableStateOf("blaze") }
-    // v0.45.28: "Halo x Blaze" is no longer a pick (it joins in by itself): a restored "all" becomes Blaze.
+    // v0.45.28: "Halo x Blaze" is no longer a pick (it joins in by itself): a restored "all" becomes Argus.
     if (talkTo != TalkArcMath.normalize(talkTo)) talkTo = TalkArcMath.normalize(talkTo)
-    // v0.43.0: the Blaze / Halo / All arc, opened from the header orb (replaces the "Talk to" pills, in both modes).
+    // v0.43.0: the Argus / Halo / All arc, opened from the header orb (replaces the "Talk to" pills, in both modes).
     var arcOpen by remember { mutableStateOf(false) }
     var quote by rememberSaveable { mutableStateOf("") }
     // v0.45.28: a link tapped in a reply opens in Home's glass window (GlassWindow), over the chat.
@@ -288,7 +288,7 @@ fun ChatScreen() {
         }
     }
 
-    // v0.24.1: the composer's rotating placeholder, rebuilt from on-device data each time Blaze comes to the front.
+    // v0.24.1: the composer's rotating placeholder, rebuilt from on-device data each time Argus comes to the front.
     var hints by remember { mutableStateOf(emptyList<String>()) }
     var reducedMotion by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -336,7 +336,7 @@ fun ChatScreen() {
         if (fresh && listenReq > 0 && mood == Mood.IDLE) onMic()
     }
 
-    // Call Blaze: full-screen voice call.
+    // Call Argus: full-screen voice call.
     var inCall by remember { mutableStateOf(false) }
     val callPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) inCall = true else Toast.makeText(ctx, "${BrandName.NAME} needs the microphone for calls.", Toast.LENGTH_SHORT).show()
@@ -474,7 +474,7 @@ fun ChatScreen() {
         // P1-SH-04: Chat mode sends to the newest Manager chat (an older one is read-only)
         if (navNow().tab == ChatNav.CHAT && !navNow().inProjectChat && currentChat == ChatNav.MAIN && !Agent.privateChat.value)
             com.blaze.assistant.ui.team.ChatModeRuntime.beforeSend()
-        // v0.30.6 rapid messages: no "busy" check; a message sent while Blaze works joins the turn (Agent.send).
+        // v0.30.6 rapid messages: no "busy" check; a message sent while Argus works joins the turn (Agent.send).
         // v0.28.3: a new project chat joins its project with its first message (only from its own screen in Projects).
         val n = navNow()
         if (n.inProjectChat && Agent.chatId.value == n.chat && com.blaze.assistant.agent.Projects.of(n.chat) == null) com.blaze.assistant.agent.Projects.assign(n.chat, n.project)
@@ -491,7 +491,7 @@ fun ChatScreen() {
     // v0.27.2: what each selection-pill action does in the chat. Every action but Select all ends the selection.
     fun askNow(prompt: String) {
         input = TextFieldValue(prompt, TextRange(prompt.length))
-        send(prompt)   // v0.30.6: joins the turn when Blaze is working
+        send(prompt)   // v0.30.6: joins the turn when Argus is working
     }
     fun onSelection(a: SelectionActions.Action) {
         val copy = tbCopy
@@ -581,7 +581,7 @@ fun ChatScreen() {
     val chatBody = nav.tab == ChatNav.CHAT || nav.inProjectChat
     // 0.52.3: the floating composer is on Home too (Hark's "Message ARGUS"); a message from Home opens the Chat tab.
     val composerShown = chatBody || nav.tab == ChatNav.HOME || ChatNav.isMode(nav.tab)
-    // 0.46.0 Blaze Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
+    // 0.46.0 Argus Stage: the main chat is one playground (heroes, widgets, a movable chat, top / reply bars that can hide).
     val stage by com.blaze.assistant.stage.StageStore.state.collectAsState()
     val stageActive = com.blaze.assistant.stage.StageStore.enabled && nav.tab == ChatNav.CHAT && !nav.inProjectChat && showing.isEmpty()
     // Living UI 0.2.1: landscape Living on the main chat trades the top bars, the Chat | Living switch and the full-width
@@ -954,7 +954,7 @@ fun ChatScreen() {
                     }
                 } else chatPane(false)
                 }
-                // v0.39.0: the 10-second Undo bar for what Blaze just did on Autopilot.
+                // v0.39.0: the 10-second Undo bar for what Argus just did on Autopilot.
                 if (chatBody) UndoCountdownBar(onUndone = { line -> Agent.note(line) })
                 // Dim the chat while a sheet (/views, the arc) is open (the + sheet brings its own scrim), so half-cut lines at its edge read as background.
                 if (chatBody && viewShowing.isEmpty() && (showViews || arcOpen)) SheetScrim { showViews = false; arcOpen = false }
@@ -966,7 +966,7 @@ fun ChatScreen() {
                 if (voiceState == Voice.State.LISTENING) ListeningStrip(onStop = { Voice.stopByTap() })
                 LaunchedEffect(a11yOn) { if (a11yOn) Settings.setBool("a11y_seen", true) }
                 LaunchedEffect(control) { if (control == com.blaze.assistant.phone.PhoneControl.State.CONNECTED) Settings.setBool("a11y_seen", true) }
-                // v0.20.0: say which way it dropped and fix it in one tap (Blaze's own switch, not the whole list).
+                // v0.20.0: say which way it dropped and fix it in one tap (Argus's own switch, not the whole list).
                 if (control != com.blaze.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
                     PhoneControlBanner(control) {
                         ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
@@ -991,7 +991,7 @@ fun ChatScreen() {
             // 0.46.6 Secure form: request_secret's card, and the "looks like a secret" hold before a message is sent.
             SecretRequestCard()
             SecretPasteCard()
-            // 0.45.19: Blaze Phone's live tile (frame, site, step, Take control) while Blaze works on its own phone.
+            // 0.45.19: Argus Phone's live tile (frame, site, step, Take control) while Argus works on its own phone.
             PhoneLiveCard()
             // v0.24.6: "Open in Design?" instead of switching views on its own.
             if (nav.tab == ChatNav.CHAT) viewOffer?.let { o -> if (showing != o.id) ViewOfferChip(Views.offerLabel(o.id),
@@ -1029,7 +1029,7 @@ fun ChatScreen() {
                 // v0.24.6: pictures straight from the keyboard (Samsung clipboard, GIFs, stickers) attach like picked photos.
                 // 0.52.3: always the composer pill (Simple mode's big hold-to-talk bar is gone with the old chat look).
                 // v0.43.0: who the next message goes to (@blaze / @halo / @all), picked on the arc from the header orb.
-                // 0.51.0 one persona: the Blaze / Halo arc is gone (there is only Blaze).
+                // 0.51.0 one persona: the Argus / Halo arc is gone (there is only Argus).
                 if (arcOpen) BackHandler { arcOpen = false }
                 // Owner 2026-11-15: the switch folds away while the + menu is open, so nothing sits over the opened chat box.
                 if (!landRail && nav.tab == ChatNav.CHAT && !nav.inProjectChat && (currentChat == ChatNav.MAIN || isPrivate) && hasMessages)
@@ -1172,7 +1172,7 @@ fun ChatScreen() {
         chatGlassUrl?.let { u -> GlassWindow(u, onClose = { chatGlassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
             onAsk = { t -> chatGlassUrl = null; send(t) }, onQuote = { t -> chatGlassUrl = null; quote = t }) }
 
-        // v0.27.2: the selection pill, swipe sideways for Search, Ask Blaze, Translate, Define, Read aloud, Share.
+        // v0.27.2: the selection pill, swipe sideways for Search, Ask Argus, Translate, Define, Read aloud, Share.
         tbRect?.let { r ->
             val d = LocalDensity.current
             val short = with(d) { SelectionActions.likelyShort(r.width / density, r.height / density) }
@@ -1270,7 +1270,7 @@ private fun ArgusShellLocals(dark: Boolean, content: @Composable () -> Unit) {
     )
 }
 
-/** "@ind" → files in Blaze's home whose path matches, to mention in the message. */
+/** "@ind" → files in Argus's home whose path matches, to mention in the message. */
 /** A row in the composer's pop-up list (the @file picker). */
 data class Suggestion(val title: String, val sub: String, val fill: String, val runNow: Boolean)
 
@@ -1339,7 +1339,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         if (animated) state.animateScrollToItem(total - 1) else state.scrollToItem(total - 1)
         state.scrollBy(100_000f)
     }
-    // Open at the latest message, and jump back there whenever you come back to Blaze.
+    // Open at the latest message, and jump back there whenever you come back to Argus.
     LaunchedEffect(Unit) { toEnd(false) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -1367,9 +1367,9 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
         .any { (it.role == Role.BLAZE && it.meta != com.blaze.assistant.agent.Ack.META) || it.role == Role.ERROR }
     // v0.31.0: the reply streaming in right now (the droplet rides it); -1 = none.
     val streamId by Agent.streamingId.collectAsState()
-    // v0.31.2 Halo x Blaze: replies streaming side by side (@all, parallel team phases).
+    // v0.31.2 Halo x Argus: replies streaming side by side (@all, parallel team phases).
     val duoLive by Agent.duoLive.collectAsState()
-    // v0.32.0 split: Halo talking with you while Blaze works (her replies stream on their own; the drop stays on the work).
+    // v0.32.0 split: Halo talking with you while Argus works (her replies stream on their own; the drop stays on the work).
     val sideLive by Agent.sideLive.collectAsState()
     val split by Agent.split.collectAsState()
     // 0.45.24: the live line beside the drop shows until the reply's first words appear (WaitRow).
@@ -1377,7 +1377,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
     val waitLineOn = WaitRow.showLine(mood != Mood.IDLE, streamId >= 0, replyAtEnd)
     // v0.31.2: the newest reply keeps the joined drop + halo, dimmed and waiting, while the chat is idle.
     val waitingId = if (mood == Mood.IDLE) messages.lastOrNull { it.role == Role.BLAZE }?.id ?: -1L else -1L
-    // v0.30.6 rapid messages: quote chips on replies, the glow on what Blaze is working on, tap a chip to jump (ReplyQuote.kt).
+    // v0.30.6 rapid messages: quote chips on replies, the glow on what Argus is working on, tap a chip to jump (ReplyQuote.kt).
     val replyRefs = rememberReplyRefs(messages)
     // v0.31.1: one stable lambda (it captured the whole item list, so every row's params changed on every streamed frame).
     val itemsNow = rememberUpdatedState(items)
@@ -1450,7 +1450,7 @@ private fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Stri
                 // 0.52.1: the waiting drop is replaced by the one TaskPill below (no second "working" indicator).
                 @Suppress("UNUSED_VARIABLE") val dropWas = WaitRow.showDrop(working, streamId >= 0, chip.isNotBlank(), duoLive.isNotEmpty())
                 val dropOn = false
-                // The step pill first; otherwise what Blaze is doing (the status line that used to sit above in the work card).
+                // The step pill first; otherwise what Argus is doing (the status line that used to sit above in the work card).
                 val liveSteps = (items.lastOrNull() as? Item.Steps)?.takeIf { it.live }
                 val pillText = WaitRow.line(pill?.takeIf { it.chat == chatNow }?.text, if (chip.isBlank()) status else "",
                     liveSteps?.steps?.lastOrNull()?.text.orEmpty(), simple = simpleUi && liveSteps != null, on = lineOn)
@@ -1590,8 +1590,8 @@ private fun ThinkingLine(text: String, live: Boolean) {
 }
 
 /**
- * One message in the thread (v0.24.0): yours on the right in an ink bubble, Blaze's on the left in a soft bubble,
- * errors in Blaze's bubble with an accent wash. Only the last message of a group gets the quiet time + actions line.
+ * One message in the thread (v0.24.0): yours on the right in an ink bubble, Argus's on the left in a soft bubble,
+ * errors in Argus's bubble with an accent wash. Only the last message of a group gets the quiet time + actions line.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1602,7 +1602,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                   streamHere: Boolean = false) {
     val entryCtx = LocalContext.current
     // 0.45.20 (spec A): the time sits inside the last bubble of a run; actions are a long-press menu (BubbleMenu), and
-    // only the latest Blaze reply keeps its small action row.
+    // only the latest Argus reply keeps its small action row.
     val menu = remember(m.id) { mutableStateOf(false) }
     val entryClip = LocalClipboardManager.current
     val bubbleTime = remember(m.at, pos) { if (pos.ends) BubbleDays.time(m.at) else "" }
@@ -1632,7 +1632,7 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
             // v0.28.3: old saved replies may hold raw leaked tool syntax; it's hidden when drawn too.
             val shown = remember(m.text, live) { ParseMemo.memo(ParseMemo.bubble, m.text, live) { com.blaze.assistant.agent.ToolLeak.bubbleText(m.text) } }
             val tracker = remember(m.id) { OrbTracker() }
-            // v0.31.2 Halo x Blaze: who wrote it (the name over Halo's replies and in a duo, the shimmer colour, the orb half that travels).
+            // v0.31.2 Halo x Argus: who wrote it (the name over Halo's replies and in a duo, the shimmer colour, the orb half that travels).
             val who = com.blaze.assistant.agent.Duo.Who.of(m.speaker)
             if (m.speaker.isNotEmpty()) SpeakerName(who)
             // fix/chat-flat-ui (owner, 14 Nov 2026): the reasoning, folded above the reply (ui/ThoughtSection.kt). Saved with
@@ -1669,13 +1669,13 @@ private fun Entry(m: ChatMessage, pos: GroupPos, canAct: Boolean, onQuote: (Stri
                 if (com.blaze.assistant.agent.ReplyChips.shown(m.meta).isNotBlank()) Actions(m, Side.BLAZE, "", canAct, onQuote, allowQuote = true, chipOnly = true)
             }
             if (followups.isNotEmpty()) Followups(followups, onFollowup)
-            // v0.39.0 Simple mode: Yes / No / Later / Do it for me under a question from Blaze.
+            // v0.39.0 Simple mode: Yes / No / Later / Do it for me under a question from Argus.
             if (askChips && !live) {
                 val chips = remember(m.text) { com.blaze.assistant.agent.SimpleHome.replyChips(com.blaze.assistant.agent.ToolLeak.bubbleText(m.text)) }
                 ReplyChipRow(chips, onFollowup)
             }
         } }
-        // v0.45.4: signed out of Blaze Cloud: a Sign in card; the message above it is sent by itself once signed in.
+        // v0.45.4: signed out of Argus Cloud: a Sign in card; the message above it is sent by itself once signed in.
         Role.ERROR -> if (m.meta == com.blaze.assistant.agent.SignInGate.CARD) Column(Modifier.fillMaxWidth()) {
             ErrorBubble(m.text, pos)
             FollowupRow(listOf(com.blaze.assistant.agent.SignInGate.BUTTON)) { com.blaze.assistant.agent.SelfSetup.openPage.value = "account" }
@@ -1910,7 +1910,7 @@ private fun AttachmentStrip(files: List<com.blaze.assistant.agent.Attachment>, l
 private val callWords = Regex("""^(?:(?:hey |ok )?(?:(?:argus|blaze)[, ]+)?)(?:(?:can we|could we|can you|let['’]?s|lets|i want to|i wanna|wanna|please)\s+)?(?:(?:get|hop|jump|be)\s+on\s+(?:a\s+)?(?:voice\s+)?call|(?:start|have|do|make)\s+a\s+(?:voice\s+)?call|call(?:\s+(?:(?:argus|blaze)|me))?|talk(?:\s+to\s+me)?|voice\s+(?:call|chat|mode))(?:\s+(?:with\s+(?:me|(?:argus|blaze)|you)|(?:argus|blaze)|now|please))*[.!?]*$""", RegexOption.IGNORE_CASE)
 
 
-/** v0.31.2 Halo x Blaze: a small coloured name over a reply when it isn't plain Blaze talking alone. */
+/** v0.31.2 Halo x Argus: a small coloured name over a reply when it isn't plain Argus talking alone. */
 @Composable
 internal fun SpeakerName(who: com.blaze.assistant.agent.Duo.Who) {
     Row(Modifier.padding(start = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1927,8 +1927,8 @@ internal fun SpeakerName(who: com.blaze.assistant.agent.Duo.Who) {
 const val STREAM_STALE_MS = 2200L
 
 /**
- * 0.48.0 RC4: what Blaze is waiting on, under the chat over Home (it lived at the bottom of the old chat screen): the
- * listening strip, approvals and drafts (Send / Not now), questions, fix cards, secure forms and secret requests, Blaze
+ * 0.48.0 RC4: what Argus is waiting on, under the chat over Home (it lived at the bottom of the old chat screen): the
+ * listening strip, approvals and drafts (Send / Not now), questions, fix cards, secure forms and secret requests, Argus
  * Phone's live tile, "Open in Design?", the update banner, and the Undo bar.
  */
 @Composable

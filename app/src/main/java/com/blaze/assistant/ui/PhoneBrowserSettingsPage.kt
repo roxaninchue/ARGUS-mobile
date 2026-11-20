@@ -23,7 +23,7 @@ import com.blaze.assistant.browser.phone.PhoneBrowser
 import com.blaze.assistant.browser.phone.PhoneBrowserActivity
 
 /**
- * 0.45.19 Settings › Advanced › Blaze Phone: open it, sign out of one site, or clear every Blaze Phone session. Blaze
+ * 0.45.19 Settings › Advanced › Argus Phone: open it, sign out of one site, or clear every Argus Phone session. Argus
  * Phone's sign-ins are its own (a WebView profile per site), apart from the user's browser and its private tabs.
  */
 @Composable

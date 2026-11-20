@@ -12,16 +12,16 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
 
 /**
- * 0.45.19 Blaze Phone UI fix 7: ONE rule for the system Back button. From Blaze Phone and from every other window,
- * view, sheet and page Blaze has, Back returns to the Blaze chat in one press. The chat itself is the root (Back there
- * does what it always did: a private chat asks before leaving, otherwise Android leaves Blaze).
+ * 0.45.19 Argus Phone UI fix 7: ONE rule for the system Back button. From Argus Phone and from every other window,
+ * view, sheet and page Argus has, Back returns to the Argus chat in one press. The chat itself is the root (Back there
+ * does what it always did: a private chat asks before leaving, otherwise Android leaves Argus).
  *
  * How it stays central (future screens get it without doing anything):
  *  - Inside the main window, the chat shell publishes what is in front ([shellNow]) and how to get back to the chat
  *    ([toChat]); every view is reached through the shell's own state (settings pages, Views, sheets, Projects, Home,
  *    Design, Gallery, Search, menus), so a new one is just another value of that state and [front] already names it.
- *  - Every Blaze activity's window gets a key interceptor when it is created ([install], from BlazeApp), before any
- *    Compose BackHandler or onBackPressed sees the key; an activity that needs a last step before leaving (Blaze Phone
+ *  - Every Argus activity's window gets a key interceptor when it is created ([install], from BlazeApp), before any
+ *    Compose BackHandler or onBackPressed sees the key; an activity that needs a last step before leaving (Argus Phone
  *    hands back, Video keeps a playing video in picture-in-picture) implements [ToChat]. A new activity is covered the
  *    moment it is in the manifest.
  *  - Exempt on purpose ([OWN_BACK], [EXEMPT_ACTIVITIES]): the app lock (Back never skips it), first-run setup, a live
@@ -206,7 +206,7 @@ object BackRule {
         return true
     }
 
-    /** From BlazeApp.onCreate: every Blaze activity gets the rule when it is created. */
+    /** From BlazeApp.onCreate: every Argus activity gets the rule when it is created. */
     fun install(app: Application) {
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityCreated(a: Activity, b: Bundle?) { try { wrap(a) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BackRule.wrap", t) } }

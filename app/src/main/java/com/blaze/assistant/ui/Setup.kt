@@ -61,7 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
 /**
- * Watches for a system toggle the user was sent to flip, and brings Blaze back to the front the
+ * Watches for a system toggle the user was sent to flip, and brings Argus back to the front the
  * moment it's on, so nobody has to find their way back through Android settings.
  */
 object ComeBack {
@@ -97,7 +97,7 @@ object ComeBack {
  * checklist in Life (setup/SetupChecklist.kt) or from Settings › System Preferences › Permissions.
  */
 
-/** Settings › Brain (v0.25.0): one brain, Blaze Cloud, and whether this phone can reach it. */
+/** Settings › Brain (v0.25.0): one brain, Argus Cloud, and whether this phone can reach it. */
 @Composable
 fun BrainCard(onSignIn: () -> Unit = {}) {
     val c = LocalBlaze.current.mono

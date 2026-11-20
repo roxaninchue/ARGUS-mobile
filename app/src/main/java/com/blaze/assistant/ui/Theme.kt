@@ -60,7 +60,7 @@ data class BlazeColors(
     val faint: Color,
     val accent: Color,
     val dark: Boolean,
-    /** 0.45.29: the opaque base of the user's bubble and of Blaze's / Halo's for the theme ([BubbleTones]); Unspecified = neutral. */
+    /** 0.45.29: the opaque base of the user's bubble and of Argus's / Halo's for the theme ([BubbleTones]); Unspecified = neutral. */
     val bubbleMe: Color = Color.Unspecified,
     val bubbleBlaze: Color = Color.Unspecified,
 )
@@ -176,7 +176,7 @@ fun BlazeTheme(content: @Composable () -> Unit) {
     val accentHex by Look.accent.collectAsState()
     // An accent picked in Look & feel drives the app's accents; on light grounds a pale accent is deepened so it still reads.
     val c = androidx.compose.runtime.remember(dark, accentHex) { blazePalette(dark, LookLogic.parseAccent(accentHex)) }
-    // v0.24.5: Material's own colours mapped to Blaze, so no default purple / lavender can leak into anything Material draws.
+    // v0.24.5: Material's own colours mapped to Argus, so no default purple / lavender can leak into anything Material draws.
     androidx.compose.material3.MaterialTheme(colorScheme = blazeScheme(dark, c.accent), shapes = BlazeShapes.material, typography = Type.material()) {
         // 0.52.4: Settings › Appearance › Size scales every dp and sp by one factor (1.0 leaves the phone's own density).
         val scale by Look.scale.collectAsState()
@@ -194,7 +194,7 @@ fun BlazeTheme(content: @Composable () -> Unit) {
 }
 
 /**
- * v0.24.8 "no square UI": the one set of corner radii every Blaze surface uses. Inputs and buttons are pills or [medium],
+ * v0.24.8 "no square UI": the one set of corner radii every Argus surface uses. Inputs and buttons are pills or [medium],
  * cards [medium], sheets and dialogs [large], tiny marks (checkboxes, tags inside rows) [small]. Nothing is square:
  * `ui/NoSquareTest` fails the build if RectangleShape or RoundedCornerShape(0 appears in ui/.
  */
@@ -229,7 +229,7 @@ object BlazeIconStyle {
     fun fillAlpha(dark: Boolean): Float = com.blaze.assistant.ui.space.SpaceIcons.fillAlpha(dark)
 }
 
-/** Primary buttons: the classic Blaze blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */
+/** Primary buttons: the classic Argus blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */
 /**
  * v0.31.0: monochrome. [primary] is a bright frosted-glass fill that white text reads on (every existing caller draws
  * white text on it); [blue] / [orange] keep their names but are greys / a desaturated warm for warnings.
@@ -242,7 +242,7 @@ object BlazeBrush {
 }
 
 /**
- * Material colour scheme from Blaze's tokens (v0.24.5): blue primary, orange secondary, Blaze surfaces; never purple.
+ * Material colour scheme from Argus's tokens (v0.24.5): blue primary, orange secondary, Argus surfaces; never purple.
  * Unification: the primary is the app's accent ([accent], the one Look and feel picked, else the shell's: Electric text
  * in dark, Argus Blue in light), so a Material slider or progress bar matches the shell and the accent picker.
  */
@@ -340,7 +340,7 @@ object ParticleBlue {
 
 private data class Dot(val x: Float, val y: Float, val r: Float, val vx: Float, val vy: Float)
 
-/** Faint drifting particle dots (the site's button-hover particles), livelier while Blaze works. */
+/** Faint drifting particle dots (the site's button-hover particles), livelier while Argus works. */
 @Composable
 fun ParticleField(mood: Mood, modifier: Modifier = Modifier, overlay: Boolean = false, paused: Boolean = false) {
     val c = LocalBlaze.current
@@ -349,7 +349,7 @@ fun ParticleField(mood: Mood, modifier: Modifier = Modifier, overlay: Boolean = 
     // A slow clock instead of 60/120 fps: ~12 fps when idle, ~30 fps while working.
     var time by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val busy = mood != Mood.IDLE
-    // 0.46.4 heat audit: a still frame while idle or while the phone is warm / saving battery (Thermal); moves only while Blaze works
+    // 0.46.4 heat audit: a still frame while idle or while the phone is warm / saving battery (Thermal); moves only while Argus works
     val hot by com.blaze.assistant.device.Thermal.hot.collectAsState()
     LaunchedEffect(busy, paused, hot) {
         if (paused || hot || !busy) return@LaunchedEffect
@@ -385,7 +385,7 @@ fun ParticleField(mood: Mood, modifier: Modifier = Modifier, overlay: Boolean = 
 }
 
 /**
- * Brand mark (v0.24.8): Blaze's mascot in a dark circle (it used to be a square with a pixel "B"). While Blaze works a
+ * Brand mark (v0.24.8): Argus's mascot in a dark circle (it used to be a square with a pixel "B"). While Argus works a
  * thin orange-to-blue ring spins around it.
  */
 @Composable
@@ -393,7 +393,7 @@ fun BrandMark(mood: Mood, size: Dp, modifier: Modifier = Modifier) {
     val busy = mood != Mood.IDLE
     Box(modifier.size(size).clip(BlazeShapes.pill).background(Color(com.blaze.assistant.phone.Mascot.ICON_BG), BlazeShapes.pill),
         contentAlignment = Alignment.Center) {
-        // v0.32.0: the new Blaze icon (glass drop in its gold halo); a spinning ring around it while Blaze works.
+        // v0.32.0: the new Argus icon (glass drop in its gold halo); a spinning ring around it while Argus works.
         DuoEmblem(size * 1.05f, animate = busy)
     }
 }

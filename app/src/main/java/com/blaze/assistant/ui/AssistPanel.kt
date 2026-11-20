@@ -86,9 +86,9 @@ object PanelButtons {
 }
 
 /**
- * Compact chat over any app (v0.24.6 look): a fully rounded dark Blaze card, the mascot with a listening pulse,
+ * Compact chat over any app (v0.24.6 look): a fully rounded dark Argus card, the mascot with a listening pulse,
  * round icon buttons (described for TalkBack) instead of NEW / PIN / OPEN / LESS / ×, a rounded input pill that
- * also takes pictures from the keyboard, round mic / stop and send buttons, and Blaze's particles running along the
+ * also takes pictures from the keyboard, round mic / stop and send buttons, and Argus's particles running along the
  * screen edges while it's summoned (they stop when it's dismissed).
  * [preview*] parameters are for screenshots only.
  */
@@ -147,7 +147,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
     }
     fun submit() {
         if (text.isBlank() && pending.isEmpty()) return
-        // v0.30.6 rapid messages: sending while Blaze works is fine (the message joins the turn). 16 Nov 2026: no "/" commands.
+        // v0.30.6 rapid messages: sending while Argus works is fine (the message joins the turn). 16 Nov 2026: no "/" commands.
         Agent.send(text, attachments = pending); text = ""; pending = emptyList()
     }
 
@@ -162,7 +162,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 .shadow(20.dp, card, ambientColor = Color.Black, spotColor = Color.Black)
                 .clip(card).background(Glass.surface).border(1.dp, Glass.border, card)
         ) {
-            // v0.33.0 Screen Doctor: "What's this?" over the app you summoned Blaze on.
+            // v0.33.0 Screen Doctor: "What's this?" over the app you summoned Argus on.
             if (previewMessages != null && !busy && com.blaze.assistant.assist.ScreenDoctor.fresh()) {   // v0.39.0: the Duo strip has the chip now
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(tr("What's this?"), modifier = Modifier.clip(RoundedCornerShape(50)).background(Glass.raised)
@@ -176,7 +176,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = Glass.sub))
                 }
             }
-            // v0.39.0 home-button sheet: who's listening (Halo x Blaze), what Blaze sees, and one-tap chips.
+            // v0.39.0 home-button sheet: who's listening (Halo x Argus), what Argus sees, and one-tap chips.
             if (previewMessages == null) AssistDuoStrip(listening = listening, busy = busy, partial = partial,
                 onChip = { prompt, withScreen ->
                     Voice.cancelListening(); touched = true
@@ -294,7 +294,7 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
 
 /**
  * v0.39.0 the home-button sheet's top strip: "Blaze & Halo" with the Duo dots and a plain status, "Sees: <app>"
- * (from the assist structure the system hands Blaze, or Awareness), the live words while listening, and chips:
+ * (from the assist structure the system hands Argus, or Awareness), the live words while listening, and chips:
  * What is this? / Reply for me / @halo / Type instead. Replies come back as drafts with a Send button (ConfirmCard).
  */
 @Composable

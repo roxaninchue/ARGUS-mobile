@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 
 /**
- * The pointer as drawn by phone/Pointer.kt (v0.24.5: Blaze's flame mascot, gradient, eyes, glow, white edge; the tip is
+ * The pointer as drawn by phone/Pointer.kt (v0.24.5: Argus's flame mascot, gradient, eyes, glow, white edge; the tip is
  * the click point), from the same geometry ([com.blaze.assistant.phone.Mascot]), for screenshots. [ripple] 0..1 draws
  * the click ring and the squish; [pulse] is the gliding scale. [sizeDp] lets the icon shots draw it bigger.
  */
@@ -47,7 +47,7 @@ fun PointerGlyph(ripple: Float = -1f, pulse: Float = 1f, modifier: Modifier = Mo
     }
 }
 
-/** The Stop chip at the bottom-left edge while Blaze drives the phone (phone/Pointer.kt draws it with plain Views). */
+/** The Stop chip at the bottom-left edge while Argus drives the phone (phone/Pointer.kt draws it with plain Views). */
 @Composable
 fun PointerStopChip() {
     Box(Modifier.clip(BlazeShapes.pill).background(Color(0xC81D1A16), BlazeShapes.pill).padding(horizontal = 10.dp, vertical = 5.dp)) {
@@ -55,7 +55,7 @@ fun PointerStopChip() {
     }
 }
 
-/** Draws Blaze's mascot with its tip at (tx, ty), [k] px per unit, squish (sx, sy): glow, shadow, gradient body, edge, eyes. */
+/** Draws Argus's mascot with its tip at (tx, ty), [k] px per unit, squish (sx, sy): glow, shadow, gradient body, edge, eyes. */
 fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMascot(tx: Float, ty: Float, k: Float, sx: Float = 1f, sy: Float = 1f,
                                                                 d: Float = density, edge: Boolean = true) {
     val M = com.blaze.assistant.phone.Mascot
@@ -105,7 +105,7 @@ fun MascotMark(size: androidx.compose.ui.unit.Dp, spin: Boolean = false, modifie
                 topLeft = Offset(sw, sw), size = androidx.compose.ui.geometry.Size(w - 2 * sw, w - 2 * sw),
                 style = Stroke(sw, cap = androidx.compose.ui.graphics.StrokeCap.Round))
         }
-        // v0.32.0: the new Blaze icon (glass drop in its gold halo) replaces the old flame face.
+        // v0.32.0: the new Argus icon (glass drop in its gold halo) replaces the old flame face.
         drawDuoEmblem(Offset(w / 2f, w / 2f), w * (if (spin) 0.86f else 1f), angle / 57.3f)
     }
 }

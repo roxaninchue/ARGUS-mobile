@@ -116,7 +116,7 @@ fun SecureForm(site: String, title: String, reason: String, fields: List<SecureI
     }
 }
 
-/** Android 13+: without notification permission Blaze can't say "Action required" from the background. Offer it once here. */
+/** Android 13+: without notification permission Argus can't say "Action required" from the background. Offer it once here. */
 @Composable
 private fun NotificationsLine(force: Boolean?) {
     val c = LocalBlaze.current

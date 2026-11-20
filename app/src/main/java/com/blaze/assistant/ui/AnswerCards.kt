@@ -147,7 +147,7 @@ object AnswerCards {
 }
 
 /**
- * A Blaze reply drawn as text plus cards. v0.31.0: rich blocks (diagrams, pictures, charts, tables, compare cards, mini
+ * An Argus reply drawn as text plus cards. v0.31.0: rich blocks (diagrams, pictures, charts, tables, compare cards, mini
  * tools) are detached glass preview windows ([RichPreviewCard]), never inline. [live] = streaming right now: the last
  * text block fades its newest words in and tells the droplet ([LocalOrb]) where the text ends.
  */
@@ -169,7 +169,7 @@ fun AnswerBody(key: Long, src: String, live: Boolean = false) {
     } }
     // Blocks already on screen when this reply was first drawn don't play the landing again.
     val seen = remember(key) { HashSet<Int>().apply { if (!live) addAll(blocks.indices) } }
-    // v0.26.1: a visual still streaming in shows a quiet placeholder only while Blaze is replying.
+    // v0.26.1: a visual still streaming in shows a quiet placeholder only while Argus is replying.
     val streaming = com.blaze.assistant.agent.Agent.mood.collectAsState().value != com.blaze.assistant.agent.Mood.IDLE
     val orb = LocalOrb.current
     val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 10.dp.toPx() }
@@ -255,7 +255,7 @@ private fun MdText(md: String, tail: Boolean = false, live: Boolean = false) {
         orb?.aimAtTextEnd(co, l, gap)
     }
     val mod0 = if (tracking && orb != null) Modifier.onGloballyPositioned { holder[0] = it; aim() } else Modifier
-    // v0.31.2 Halo x Blaze: the newest words shimmer in the speaker's colour (blue Blaze, gold Halo), then one band sweeps and fades.
+    // v0.31.2 Halo x Argus: the newest words shimmer in the speaker's colour (blue Argus, gold Halo), then one band sweeps and fades.
     val mod = mod0.duoShimmer(LocalSpeaker.current, tracking) { holder[1] as? androidx.compose.ui.text.TextLayoutResult }
     // v0.45.28: a tap on a link opens it (the chat's glass window, LocalOpenLink); long-press still selects and copies.
     val openLink = LocalOpenLink.current
@@ -298,7 +298,7 @@ val LocalArgusRich = androidx.compose.runtime.staticCompositionLocalOf<com.blaze
 @Composable
 private fun cardShape(): RoundedCornerShape = if (LocalArgusRich.current != null) ArgusCardShape else CardShape
 
-/** v0.24.0: cards are soft rounded insets, no outline. Inside a Blaze bubble they're lighter than the bubble. */
+/** v0.24.0: cards are soft rounded insets, no outline. Inside an Argus bubble they're lighter than the bubble. */
 @Composable
 private fun cardFill(): Color {
     val c = LocalBlaze.current

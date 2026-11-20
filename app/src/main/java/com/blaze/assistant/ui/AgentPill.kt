@@ -35,7 +35,7 @@ import kotlinx.coroutines.delay
  * 0.52.0: a background agent in the chat is ONE work pill, nothing else:
  * "● Working · Researcher · 5 steps · 40s ›" while it runs, "Worked · Researcher · 12 steps · 2m 3s ›" when done.
  * Tap it to see its steps (newest last) and, inside, Message (steer it, or a follow-up once done) and Stop.
- * Its result arrives as Blaze's reply right under it; the pill never shows status words of its own.
+ * Its result arrives as Argus's reply right under it; the pill never shows status words of its own.
  * Replaces the old AgentCard (status line, shimmer, Steer / Stop / Open buttons always on show).
  */
 object AgentPillText {

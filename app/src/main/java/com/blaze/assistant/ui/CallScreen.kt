@@ -39,8 +39,8 @@ import com.blaze.assistant.voice.Voice
 import kotlinx.coroutines.delay
 
 /**
- * Call Blaze: a full-screen, hands-free voice call. You talk, Blaze answers out loud, and the
- * mic reopens on its own. Tap anywhere while Blaze is talking to cut in. "Bye" or the red
+ * Call Argus: a full-screen, hands-free voice call. You talk, Argus answers out loud, and the
+ * mic reopens on its own. Tap anywhere while Argus is talking to cut in. "Bye" or the red
  * button ends the call. Questions and confirmations still show as cards you can tap.
  */
 /** v0.31: the call screen is always the dark glass look (whatever the app theme). */
@@ -87,7 +87,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
         onDispose { if (Voice.inCall) { Voice.inCall = false; Voice.cancelListening(); Voice.stopSpeaking(); Voice.setEarpiece(false); Voice.hushBeeps(false); view.keepScreenOn = false } }
     }
     LaunchedEffect(Unit) { while (true) { delay(1000); seconds++ } }
-    // Speaker and mute can change from the buttons or from Blaze itself (call_control).
+    // Speaker and mute can change from the buttons or from Argus itself (call_control).
     LaunchedEffect(speakerOn) { Voice.setEarpiece(!speakerOn) }
     LaunchedEffect(muted) { Voice.callMuted = muted; if (muted) Voice.cancelListening() }
     LaunchedEffect(ended) { if (ended != startEnded) hangUp() }
@@ -120,7 +120,7 @@ private fun CallScreenBody(onHangUp: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(GlassTokens.bg).glassBackground(true)
         .clickable(remember { MutableInteractionSource() }, indication = null) {
-            // Barge in: stop Blaze talking and listen right away.
+            // Barge in: stop Argus talking and listen right away.
             if (voice == Voice.State.SPEAKING && !muted) { Voice.stopSpeaking(); Voice.conversationListen() }
             else if (voice == Voice.State.IDLE && mood == Mood.IDLE && !muted) Voice.conversationListen()
         }) {
@@ -199,7 +199,7 @@ private fun CallButton(label: String, on: Boolean, onClick: () -> Unit, glyph: @
     }
 }
 
-/** The big orb: grows with your voice, breathes while Blaze talks, spins while it thinks. */
+/** The big orb: grows with your voice, breathes while Argus talks, spins while it thinks. */
 @Composable
 private fun CallOrb(size: Dp, mood: Mood, voice: Voice.State, level: Float, muted: Boolean) {
     val c = LocalBlaze.current

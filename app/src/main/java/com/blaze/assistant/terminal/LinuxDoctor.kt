@@ -4,7 +4,7 @@ package com.blaze.assistant.terminal
 import com.blaze.assistant.BrandName
 /**
  * v0.30.2 `blaze-doctor`: a small self-test that lives in every installed Linux (/usr/local/bin/blaze-doctor) and
- * that Blaze also runs once per build in the background (Linux.selfTest). It checks the system calls a shell needs
+ * that Argus also runs once per build in the background (Linux.selfTest). It checks the system calls a shell needs
  * under PRoot on Android: cd into ~/phone and /sdcard, getcwd, stat, the file tools, fork. Pure parts (LinuxDoctorTest).
  *
  * Why: up to v0.30.1 the bundled PRoot answered chdir()/getcwd() with ENOSYS under Android's app seccomp filter, so in

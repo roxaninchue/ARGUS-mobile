@@ -15,7 +15,7 @@ import com.blaze.assistant.phone.flash.PhoneExplainer
 
 /**
  * 0.46.3: the one-time explainer for phone control (accessibility only, no ADB): what it does, what it never does, and one
- * button straight to Blaze's own switch in Android Settings. Shown once (PhoneExplainer.markShown on first composition).
+ * button straight to Argus's own switch in Android Settings. Shown once (PhoneExplainer.markShown on first composition).
  */
 @Composable
 fun PhoneExplainerDialog(onOpenSettings: () -> Unit, onClose: () -> Unit) {

@@ -12,7 +12,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 
 /**
  * 0.52.1 (owner: "when I leave the app and come back the keyboard pops up"): the chat box never takes focus by itself.
- * Android restores the focused text field (and so the keyboard) when Blaze comes back, so every text field that can hold
+ * Android restores the focused text field (and so the keyboard) when Argus comes back, so every text field that can hold
  * the cursor across a leave drops its focus when the screen stops; the keyboard only shows when you tap the box.
  * MainActivity also has windowSoftInputMode stateAlwaysHidden. No LaunchedEffect requests focus on the chat box.
  */
@@ -26,7 +26,7 @@ object KeyboardPolicy {
     }
 }
 
-/** Put once inside a screen that holds a text field: when Blaze goes to the background the field loses focus. */
+/** Put once inside a screen that holds a text field: when Argus goes to the background the field loses focus. */
 @Composable
 fun ClearFocusOnLeave() {
     val fm = LocalFocusManager.current

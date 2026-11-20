@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.Mood
 
 /**
- * 0.52.1 (owner, screenshot sc-5ce1629eddc5): a small pill under the top bar with the Blaze mark (and the project name
+ * 0.52.1 (owner, screenshot sc-5ce1629eddc5): a small pill under the top bar with the Argus mark (and the project name
  * when you are in a project). Tapping it opens an overlay of options; for now the options are the views that exist:
  * Chat, Projects, Home, Agents (background tasks) and Terminal.
  */

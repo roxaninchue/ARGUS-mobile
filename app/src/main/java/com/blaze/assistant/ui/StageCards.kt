@@ -136,7 +136,7 @@ import com.blaze.assistant.stage.TimerState
 import org.json.JSONArray
 
 /**
- * Blaze Stage cards: the stateless faces of every hero and widget. They get plain data ([StageData]) and report taps
+ * Argus Stage cards: the stateless faces of every hero and widget. They get plain data ([StageData]) and report taps
  * ([StageEvent]); StageHost feeds them live values (the timer once a second, the music state once a second) so the
  * screenshot tests can draw every card in any theme without services. Only theme colours ([LocalBlaze]) are used.
  * 0.46.1: icons, not words (Material Symbols Rounded, each with a content description), denser layouts, and the basics
@@ -475,7 +475,7 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
         }
         return
     }
-    // 0.46.2 Movies: search results (tap = play here), else Continue watching, else the Blaze Video button.
+    // 0.46.2 Movies: search results (tap = play here), else Continue watching, else the Argus Video button.
     val busy = item.props["busy"] == "true"
     if (results.isNotEmpty() || item.props["query"] != null) {
         Column(Modifier.fillMaxSize()) {

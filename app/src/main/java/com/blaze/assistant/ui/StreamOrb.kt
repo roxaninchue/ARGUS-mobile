@@ -203,8 +203,8 @@ private fun orbClock(running: Boolean): androidx.compose.runtime.State<Float> {
  * The droplet layer of one reply. Put it last inside the reply's Box (it draws over the text, laid out at TopStart and
  * moved with graphicsLayer). [live] = the reply is streaming.
  *
- * v0.31.2 Halo x Blaze: the drop sits inside its golden halo. The SPEAKER's half leaves home and rides the end of the
- * text (Blaze: the drop, Halo: the ring) while the other half waits at the start of the reply. When the stream ends the
+ * v0.31.2 Halo x Argus: the drop sits inside its golden halo. The SPEAKER's half leaves home and rides the end of the
+ * text (Argus: the drop, Halo: the ring) while the other half waits at the start of the reply. When the stream ends the
  * traveller glides home, they join and dim, and stay there waiting while [latest] (the newest reply, chat idle);
  * otherwise they fade away.
  */
@@ -275,7 +275,7 @@ fun BoxScope.OrbLayer(tracker: OrbTracker, live: Boolean, size: Dp = 14.dp, spea
     val boxDp = size * 5
     val half = with(d) { boxDp.toPx() } / 2f
     // The half that waits in the rest slot while the other one travels (only once that slot is laid out).
-    // v0.32.0 split: [alone] = the other half is off working (Blaze's drop), so only the speaker's half is drawn.
+    // v0.32.0 split: [alone] = the other half is off working (Argus's drop), so only the speaker's half is drawn.
     if (tracker.rest.isSpecified && started && !alone) {
         Canvas(Modifier.align(Alignment.TopStart).size(boxDp).graphicsLayer {
             val h = tracker.rest
@@ -307,7 +307,7 @@ const val WAIT_DIM = 0.38f
 
 /**
  * The droplet on its own, where a status line used to be ("Thinking it through…", the empty "Working" card):
- * it wobbles and bobs gently inside its golden halo while Blaze and Halo think. [label] is read by TalkBack.
+ * it wobbles and bobs gently inside its golden halo while Argus and Halo think. [label] is read by TalkBack.
  */
 @Composable
 fun ThinkingOrb(label: String, modifier: Modifier = Modifier, size: Dp = 16.dp, ring: Float = 1f) {

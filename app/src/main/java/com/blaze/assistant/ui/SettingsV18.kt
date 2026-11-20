@@ -98,7 +98,7 @@ fun DashboardPage() {
             Spacer(Modifier.height(8.dp))
             V18Button("Copy Wi-Fi link", primary = false) {
                 ctx.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(android.content.ClipData.newPlainText("${BrandName.NAME} dashboard", u)) }
-            // v0.33.0 Desktop Bridge: scan with the laptop / tablet camera to open Blaze on the big screen.
+            // v0.33.0 Desktop Bridge: scan with the laptop / tablet camera to open Argus on the big screen.
             val qr = remember(u) { com.blaze.assistant.dashboard.Bridge.qr(u)?.let { it.asImageBitmap() } }
             if (qr != null) {
                 Spacer(Modifier.height(12.dp))

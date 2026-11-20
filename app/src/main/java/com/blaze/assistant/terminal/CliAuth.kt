@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * 0.48.0 RC4: the `blaze` CLI inside the phone's Linux is signed in to the same Blaze account as the app, so the
+ * 0.48.0 RC4: the `blaze` CLI inside the phone's Linux is signed in to the same Argus account as the app, so the
  * terminal never shows "Sign in to Blaze to start" while the app is signed in.
  *
  * How (no token of the app is ever copied):

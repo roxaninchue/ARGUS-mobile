@@ -12,7 +12,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Git inside Blaze's Alpine Linux, signed in with the user's connected GitHub account.
+ * Git inside Argus's Alpine Linux, signed in with the user's connected GitHub account.
  * The token never goes into a command line or the output: a credential helper reads it from a
  * private file, and anything that echoes it back is scrubbed.
  */

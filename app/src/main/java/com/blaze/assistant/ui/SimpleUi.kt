@@ -83,7 +83,7 @@ import java.util.Calendar
 
 /*
  * v0.39.0 Simple mode pieces for the chat, drawn with the app's own look (glass, greys, the Duo colours): the home
- * greeting and starters, the @blaze / @halo / @all row, the big hold-to-talk mic, reply chips under Blaze's
+ * greeting and starters, the @blaze / @halo / @all row, the big hold-to-talk mic, reply chips under Argus's
  * questions, the one-button fix card and the 10-second Undo bar. Layout and wording follow the Simple mockups.
  */
 
@@ -118,7 +118,7 @@ fun SimpleChip(text: String, primary: Boolean = false, modifier: Modifier = Modi
     }
 }
 
-/** Yes / No / Later / Do it for me under a question from Blaze. */
+/** Yes / No / Later / Do it for me under a question from Argus. */
 @Composable
 fun ReplyChipRow(chips: List<SimpleHome.Chip>, onPick: (String) -> Unit) {
     if (chips.isEmpty()) return
@@ -129,7 +129,7 @@ fun ReplyChipRow(chips: List<SimpleHome.Chip>, onPick: (String) -> Unit) {
 
 /**
  * Type · the big hold-to-talk mic · Photo. Hold the mic to talk (the phone's own speech recogniser, as before),
- * let go to send. A quick tap also starts listening, and a tap while listening stops and sends. While Blaze works the mic becomes Stop.
+ * let go to send. A quick tap also starts listening, and a tap while listening stops and sends. While Argus works the mic becomes Stop.
  */
 @Composable
 fun HoldToTalkBar(listening: Boolean, busy: Boolean, onHold: () -> Unit, onRelease: () -> Unit, onType: () -> Unit, onPhoto: () -> Unit, onStop: () -> Unit) {
@@ -273,11 +273,11 @@ fun HomeSurface(progress: Float, onAsk: (String) -> Unit, onQuote: (String) -> U
                 swipeToChat: Boolean = true) {
     // v0.45.8: the strip sits on Home's own ground (HomePane bottom slot), so the scene behind Home never shows through
     // under "Swipe up to chat" (on a dark Home, a light ink scene used to); with a theme, Home and the strip both show it.
-    // 0.47 chat composer: the bottom Blaze button ("Swipe up to chat" strip) is replaced by the chat bar (profile · Message Blaze · +);
+    // 0.47 chat composer: the bottom Argus button ("Swipe up to chat" strip) is replaced by the chat bar (profile · Message Argus · +);
     // chat and Spotlight open over the blurred Home. Swiping up on the bar still slides the full chat over Home.
     // RC2: asks from Home (Quick actions, the board's "ask" buttons) open the chat OVER Home (the composer), not the full
     // chat sheet; a quote goes into the bar. The bar fades while a Home card is focused, and a tap on it closes the card.
-    // RC4: one Blaze look: the bar, the chat over Home and Spotlight use Home's dark glass palette whatever the app theme.
+    // RC4: one Argus look: the bar, the chat over Home and Spotlight use Home's dark glass palette whatever the app theme.
     androidx.compose.runtime.CompositionLocalProvider(LocalBlaze provides (if (com.blaze.assistant.ui.HomeRedesign.enabled) DarkColors.mono else LocalBlaze.current)) {
     com.blaze.assistant.ui.composer.BlazeComposerHome(state = composer, onProfile = onProfile, cards = cards,
         barModifier = Modifier.graphicsLayer { alpha = (1f - progress * 2f).coerceIn(0f, 1f) * (1f - HomeFocusBus.amount) * HomeIntroBus.barAlpha.floatValue }

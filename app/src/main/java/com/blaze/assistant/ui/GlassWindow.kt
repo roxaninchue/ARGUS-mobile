@@ -56,7 +56,7 @@ import androidx.compose.ui.viewinterop.AndroidView
  * v0.29.3: a web page inside a floating pane of glass, like a small monitor sitting on the Home board. The page scrolls and
  * its links open inside the pane. Tapping outside does nothing (only the × closes it, or Back).
  *
- * v0.29.9: selecting words on the page shows the chat's selection pill (Copy, Quote, Select all, Search, Ask Blaze,
+ * v0.29.9: selecting words on the page shows the chat's selection pill (Copy, Quote, Select all, Search, Ask Argus,
  * Translate, Define, Read aloud, Share).
  *
  * v0.30.5: back to the first window: a fixed size, no moving, no resizing ([TiltGlassPane]). The page is only for

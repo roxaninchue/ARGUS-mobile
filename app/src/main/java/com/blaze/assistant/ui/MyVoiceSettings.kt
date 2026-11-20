@@ -50,7 +50,7 @@ data class MyVoiceUi(
     val message: String = "",
     /** A good recording saved on the phone, not confirmed with "Use this voice" yet. */
     val candidateSaved: Boolean = false,
-    /** v0.41.0: the Gemini voice is the one Blaze speaks with. */
+    /** v0.41.0: the Gemini voice is the one Argus speaks with. */
     val geminiChosen: Boolean = false,
 )
 

@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.Agent
 import androidx.compose.ui.graphics.Color
 
-/** Blaze's mid-task question: tap an option, or type your own answer. */
+/** Argus's mid-task question: tap an option, or type your own answer. */
 @Composable
 fun QuestionCard() {
     val p by Agent.pendingQuestion.collectAsState()
@@ -48,8 +48,8 @@ fun QuestionCard() {
 }
 
 /**
- * The ask_user card itself (also used by screenshots). v0.24.0: it reads as Blaze's newest message: the question
- * in Blaze's bubble, the answers as rounded pills under it, and your own answer in a small pill field.
+ * The ask_user card itself (also used by screenshots). v0.24.0: it reads as Argus's newest message: the question
+ * in Argus's bubble, the answers as rounded pills under it, and your own answer in a small pill field.
  */
 @Composable
 fun QuestionView(question: String, options: List<String>, chat: String = "", key: Any? = question, onAnswer: (String) -> Unit = {}) {
@@ -83,7 +83,7 @@ fun QuestionView(question: String, options: List<String>, chat: String = "", key
     }
 }
 
-/** "Send a text to Mary?" with Allow / Don't. Shown wherever Blaze is on screen. */
+/** "Send a text to Mary?" with Allow / Don't. Shown wherever Argus is on screen. */
 @Composable
 fun ConfirmCard() {
     val c = LocalBlaze.current

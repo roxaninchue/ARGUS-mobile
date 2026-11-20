@@ -160,7 +160,7 @@ fun CleanUpDialog(all: List<Entry>, onTrash: (List<Entry>) -> Unit, onDismiss: (
     }
 }
 
-/** The 30-day Trash: Blaze's own items (restore / delete now) and phone photos in Android's trash (restore). */
+/** The 30-day Trash: Argus's own items (restore / delete now) and phone photos in Android's trash (restore). */
 @Composable
 fun TrashDialog(onRestorePhone: (android.content.IntentSender) -> Unit, onDismiss: () -> Unit) {
     val ctx = LocalContext.current
@@ -214,7 +214,7 @@ fun BackupPlanDialog(all: List<Entry>, onDismiss: () -> Unit) {
     }
 }
 
-/** Basic editor: rotate, crop to a shape, brightness / contrast / colour; saves a copy into Blaze's Gallery. */
+/** Basic editor: rotate, crop to a shape, brightness / contrast / colour; saves a copy into Argus's Gallery. */
 @Composable
 fun PhotoEditor(e: Entry, onDone: () -> Unit) {
     val ctx = LocalContext.current

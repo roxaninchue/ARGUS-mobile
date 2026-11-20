@@ -37,10 +37,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * v0.29.2 Blaze Terminal: a full-screen, Termux-style terminal. Black screen, monospace text, Termux's two
+ * v0.29.2 Argus Terminal: a full-screen, Termux-style terminal. Black screen, monospace text, Termux's two
  * extra-keys rows (ESC / ― HOME ↑ END PGUP · ⇥ CTRL ALT ← ↓ → PGDN), tabs along the top, pinch to zoom,
  * long-press to select and copy, paste from the menu. Tabs run the user's Alpine Linux (PRoot) or the phone shell.
- * v0.29.8: Blaze colours (blue accent, rounded key caps), ⋮ and + open a Blaze bottom sheet (TermSheetHost) instead of a
+ * v0.29.8: Argus colours (blue accent, rounded key caps), ⋮ and + open an Argus bottom sheet (TermSheetHost) instead of a
  * white Android pop-up, and a phone tab shows tappable example commands above the keys.
  */
 class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
@@ -113,7 +113,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         keys = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(barBg); setPadding(dp(4), dp(3), dp(4), dp(4)) }
         root.addView(keys)
 
-        // The Blaze sheet floats over everything (scrim + rounded card); it draws nothing while closed.
+        // The Argus sheet floats over everything (scrim + rounded card); it draws nothing while closed.
         val frame = FrameLayout(this)
         frame.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         frame.addView(ComposeView(this).apply {
@@ -123,7 +123,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         setContentView(frame)
         com.blaze.assistant.ui.MotionTokens.refresh(this)
 
-        // RC4: signed in to Blaze in the app = the `blaze` CLI here is signed in too (off the main thread, files only when done).
+        // RC4: signed in to Argus in the app = the `blaze` CLI here is signed in too (off the main thread, files only when done).
         CliAuth.sync()
         TermSessions.screen = this
         val tab = TermSessions.ensureOne(this)
@@ -280,7 +280,7 @@ class BlazeTerminalActivity : ComponentActivity(), TermSessions.Listener {
         }
     }
 
-    /** A rounded Blaze key cap; [on] = held, or a CTRL/ALT that's switched on (Blaze blue). */
+    /** A rounded Argus key cap; [on] = held, or a CTRL/ALT that's switched on (Argus blue). */
     private fun keyCap(on: Boolean) = GradientDrawable().apply {
         cornerRadius = dp(10).toFloat()
         setColor(if (on) Color.argb(60, Color.red(accent), Color.green(accent), Color.blue(accent)) else keyBg)

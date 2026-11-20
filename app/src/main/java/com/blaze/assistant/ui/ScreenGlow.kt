@@ -35,8 +35,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * 0.50.0: while Blaze controls the screen ([ScreenWork.active]), Blaze's own particles drift along the screen edges over a
- * soft glow, so the user can see Blaze is working; gone ~1 s after the last step. Low-RAM rules:
+ * 0.50.0: while Argus controls the screen ([ScreenWork.active]), Argus's own particles drift along the screen edges over a
+ * soft glow, so the user can see Argus is working; gone ~1 s after the last step. Low-RAM rules:
  *  - one window, added only while active and removed after; nothing runs while idle (the watcher suspends on the flow);
  *  - the existing [EdgeParticles] (40 dots, ~24 fps, one Canvas, no bitmaps or blur; frozen when the phone is warm or
  *    saving battery) over a still gradient glow; reduced motion = the glow only;
@@ -52,7 +52,7 @@ object ScreenGlow {
 
     val enabled: Boolean get() = try { Settings.bool("screen_glow", true) } catch (_: Throwable) { true }
 
-    /** Started once from BlazeApp (after the first frame). Suspends while Blaze isn't touching the screen. */
+    /** Started once from BlazeApp (after the first frame). Suspends while Argus isn't touching the screen. */
     fun watch(ctx: Context) {
         if (watch != null) return
         val app = ctx.applicationContext
@@ -109,7 +109,7 @@ object EdgeParticleMath {
 }
 
 /**
- * Blaze's own signature edge particles ([EdgeParticles], the assistant-summon effect: white dots with blue / orange sparks
+ * Argus's own signature edge particles ([EdgeParticles], the assistant-summon effect: white dots with blue / orange sparks
  * drifting round the border) over a soft warm glow, faded in and out with [visible]. With reduced motion only the still
  * glow shows (no frames).
  */

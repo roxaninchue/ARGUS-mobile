@@ -38,14 +38,14 @@ object StatusPillColors {
 }
 
 /**
- * The solid accent pill with a soft pulsing dot while an action runs. Used by Blaze Phone (PhoneLiveCard,
- * PhoneBrowserActivity). It lived in the Linux desktop card until wave B 12 removed that; kept here for Blaze Phone.
+ * The solid accent pill with a soft pulsing dot while an action runs. Used by Argus Phone (PhoneLiveCard,
+ * PhoneBrowserActivity). It lived in the Linux desktop card until wave B 12 removed that; kept here for Argus Phone.
  */
 @Composable
 fun StatusPill(text: String, working: Boolean, modifier: Modifier = Modifier,
                chip: Color = Color(PhoneColors.STATUS_CHIP), onChip: Color = Color(PhoneColors.STATUS_ON_CHIP)) {
     // 0.45.19 fix 3: was white text on the light Glass.blue fill (1.2:1, unreadable); now dark ink on it (AA), or the
-    // caller's palette pair (PhoneColors: the Blaze Phone tile and screen, every theme x light / dark).
+    // caller's palette pair (PhoneColors: the Argus Phone tile and screen, every theme x light / dark).
     val pulse = rememberInfiniteTransition(label = "pill")
     val a by pulse.animateFloat(0.35f, 1f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "dot")
     Row(modifier.clip(Glass.pill).background(chip).padding(start = 8.dp, end = 10.dp, top = 4.dp, bottom = 4.dp),

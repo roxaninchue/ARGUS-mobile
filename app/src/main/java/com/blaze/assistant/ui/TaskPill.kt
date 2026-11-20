@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 /**
  * 0.52.1: the ONE task pill (owner: "Hark-style"). A single short line of natural text ([com.blaze.assistant.agent.TaskLine])
  * with a soft shimmer running through the words. It never expands, shows no count, timer, list or command, and is
- * removed by its caller when the task is done. Anything Blaze writes during the task sits above it in the chat.
+ * removed by its caller when the task is done. Anything Argus writes during the task sits above it in the chat.
  * Stop lives in the composer's stop button. Replaces WorkCard / AgentPill / StepsChip in the chat surfaces.
  */
 object TaskPillTokens { const val TAG = "task_pill" }

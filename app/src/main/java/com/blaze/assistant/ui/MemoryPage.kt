@@ -72,7 +72,7 @@ import kotlin.math.sin
 import androidx.compose.ui.draw.clip
 
 /**
- * Memory (v0.19.0): Blaze Desktop's Memory view on the phone. An animated graph of the memories
+ * Memory (v0.19.0): Argus Desktop's Memory view on the phone. An animated graph of the memories
  * table (Mind.all(): kind, subject, related), with a list toggle, search, and a detail card to
  * view, edit and forget a memory. [mems0], [mode0], [select0] and [query0] are for screenshots.
  */
@@ -98,7 +98,7 @@ fun MemoryPage(mems0: List<Mind.Mem>? = null, mode0: String = "", select0: Long 
     val tidyNow by tidyProgress.collectAsState()
     val tidyStop = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     var tidying by remember { mutableStateOf(false) }
-    // v0.26.3: one plain line when blaze.db couldn't be used (Blaze is on the copy it kept in mind.db).
+    // v0.26.3: one plain line when blaze.db couldn't be used (Argus is on the copy it kept in mind.db).
     val notice = if (mems0 == null) Mind.notice else null
 
     if (mems.isEmpty()) {

@@ -34,7 +34,7 @@ import com.blaze.assistant.agent.Role
  * bubble styling there can change freely: a quote chip above a reply that answers a message that isn't right above it
  * (or several). Which chips show is decided in RapidMessages.chipMap (pure, RapidMessagesTest).
  *
- * 0.45.29 (user screenshot, 09:05): the soft wash behind a user message while Blaze worked on it (and after a chip jump)
+ * 0.45.29 (user screenshot, 09:05): the soft wash behind a user message while Argus worked on it (and after a chip jump)
  * read as a full-width grey box around the bubble and its Read label. It is gone: a user message is only its bubble.
  */
 /** What the list needs to draw quotes: chips per reply id and the chat's messages by id. */
@@ -53,7 +53,7 @@ fun rememberReplyRefs(messages: List<ChatMessage>): ReplyRefs {
     return remember(chips, byId) { ReplyRefs(chips, byId) }
 }
 
-/** Wraps one message of the thread: a Blaze reply that quotes gets its chips above it. Anything else is drawn untouched. */
+/** Wraps one message of the thread: an Argus reply that quotes gets its chips above it. Anything else is drawn untouched. */
 @Composable
 fun ReplyThread(m: ChatMessage, refs: ReplyRefs, onJump: (Long) -> Unit, content: @Composable () -> Unit) {
     when {

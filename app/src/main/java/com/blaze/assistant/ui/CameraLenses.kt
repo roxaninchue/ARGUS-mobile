@@ -13,7 +13,7 @@ import com.blaze.assistant.device.CameraZoom
 
 /**
  * v0.45.28: the phone's back cameras as Camera2 describes them (for [CameraZoom.pickBack] / [CameraZoom.ultraWide]),
- * and a selector for one camera id. Anything that fails here leaves Blaze Camera on CameraX's default back camera.
+ * and a selector for one camera id. Anything that fails here leaves Argus Camera on CameraX's default back camera.
  */
 @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
 object CameraLenses {

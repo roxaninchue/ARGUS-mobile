@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 /**
  * A real shell on the phone: Android's sh plus ~300 BusyBox tools (vi, wget, httpd, tar, grep,
  * awk, nc…) shipped inside the APK. Home is filesDir/home. Long jobs (local servers) run in the
- * background. For a full Linux (pkg install python/nodejs/gradle) Blaze hands commands to Termux.
+ * background. For a full Linux (pkg install python/nodejs/gradle) Argus hands commands to Termux.
  */
 object Terminal {
     private lateinit var app: Context
@@ -154,7 +154,7 @@ object Terminal {
     val sessions = MutableStateFlow(listOf(Session(nextSession++, "phone")))
     val active = MutableStateFlow(sessions.value.first())
 
-    /** Read-only tab: every command Blaze itself runs, with its output, live. */
+    /** Read-only tab: every command Argus itself runs, with its output, live. */
     val agentLog = MutableStateFlow("")
     fun logAgent(cmd: String, result: String) {
         val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())

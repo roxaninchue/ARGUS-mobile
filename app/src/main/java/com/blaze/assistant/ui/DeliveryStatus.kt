@@ -63,7 +63,7 @@ object DeliveryView {
 
     /**
      * What the label shows for the latest user bubble. [tracked] = the tracker's state (null: never tracked, e.g. older
-     * chats or a local-only answer); [answered] = a real Blaze reply (not the ack) came after it; [busy] = a turn is
+     * chats or a local-only answer); [answered] = a real Argus reply (not the ack) came after it; [busy] = a turn is
      * running in this chat now. Read only ever comes from a real event or a real reply, never from time passing.
      */
     fun effective(tracked: DeliveryState?, answered: Boolean, busy: Boolean): DeliveryState = when {

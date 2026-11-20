@@ -157,7 +157,7 @@ object StageVideo {
         return if (n == n.toInt().toFloat()) n.toInt().toString() else n.toString()
     }
     fun pause() { try { saveProgress(); player?.pause() } catch (_: Exception) { } }
-    /** A Stage video is playing now (MainActivity takes it into picture-in-picture when the user leaves Blaze). */
+    /** A Stage video is playing now (MainActivity takes it into picture-in-picture when the user leaves Argus). */
     fun playing(): Boolean = try { player?.isPlaying == true } catch (_: Exception) { false }
     /** Bumped when the picture-in-picture window gives the player back, so the card's view takes the video surface again. */
     val gen = androidx.compose.runtime.mutableIntStateOf(0)
@@ -167,7 +167,7 @@ object StageVideo {
 
 /**
  * 0.46.1 the browser card's WebView: the built-in browser's current tab (the same WebView browser_* tools drive), hosted
- * while the card is big and given back (offscreen, paused once Blaze is idle) when it shrinks or the app goes to the background.
+ * while the card is big and given back (offscreen, paused once Argus is idle) when it shrinks or the app goes to the background.
  */
 object StageWeb {
     fun now(): StageBrowserNow = try {
@@ -310,7 +310,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
             }
             StageEvent.OpenFull -> if (i.kind == StageKind.BROWSER) com.blaze.assistant.browser.BrowserTools.show(ctx)
                 else if (i.kind == StageKind.VIDEO && com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"]) != null) {
-                    // 0.46.2: the movie goes on in Blaze Video at the same spot (the card's player pauses).
+                    // 0.46.2: the movie goes on in Argus Video at the same spot (the card's player pauses).
                     val m = com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"])!!; val at = StageVideo.position(); StageVideo.pause()
                     com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, m, at)
                 } else i.kind.fullView?.let { Views.open(it) }
@@ -515,7 +515,7 @@ private fun Modifier.onWindowPos(f: (Offset) -> Unit): Modifier =
     this.onGloballyPositioned { f(it.positionInWindow()) }
 
 /**
- * 0.46.1 picture-in-picture for a Stage video: when the user leaves Blaze while a Stage video plays, MainActivity enters
+ * 0.46.1 picture-in-picture for a Stage video: when the user leaves Argus while a Stage video plays, MainActivity enters
  * picture-in-picture and draws only this (the shared player, no controls); back in the app the card takes the video again.
  */
 @Composable

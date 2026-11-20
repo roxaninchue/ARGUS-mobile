@@ -35,7 +35,7 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.launch
 
-/** Settings › Blaze Desktop: pair this phone with Blaze on a computer by scanning its QR code. */
+/** Settings › Argus Desktop: pair this phone with Argus on a computer by scanning its QR code. */
 @Composable
 internal fun DesktopPage() {
     val c = LocalBlaze.current.mono

@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 /**
- * v0.24.6: the rounded dark Blaze look used by the browser, the page pointer, the assistant overlay and
+ * v0.24.6: the rounded dark Argus look used by the browser, the page pointer, the assistant overlay and
  * the Ask-about-this-page sheet. Always dark (the overlay sits on top of any app), brand blue + orange
  * from the mascot, pills and circles instead of squares, no stock Material components.
  */

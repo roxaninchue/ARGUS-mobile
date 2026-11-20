@@ -1,7 +1,7 @@
 package com.blaze.assistant.ui
 
 /**
- * v0.24.9 rich replies (ChatGPT-style), pure part (RichRepliesTest): turns the Markdown of a Blaze reply into rich
+ * v0.24.9 rich replies (ChatGPT-style), pure part (RichRepliesTest): turns the Markdown of an Argus reply into rich
  * blocks on top of [AnswerCards]: step-flow cards, a section image beside its text, image groups (up to 3 side by
  * side, 4 or more as a tilted deck you swipe through with a card flip) and inline diagrams drawn by free, keyless
  * renderers (mermaid.ink for Mermaid, kroki.io for Graphviz / PlantUML / D2; since v0.26.3 Mermaid is drawn on the phone first,

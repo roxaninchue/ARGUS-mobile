@@ -25,8 +25,8 @@ import com.blaze.assistant.bank.BankModeLogic
 
 /**
  * v0.43.0 Settings › Bank mode: one switch, "Turn on by itself for banking apps", the list of apps that count as banks
- * (found on the phone, each with a switch, plus "Add an app"), and the honest note about what Blaze can't change.
- * Advanced mode also shows the optional adb command that lets Blaze switch phone control back on by itself.
+ * (found on the phone, each with a switch, plus "Add an app"), and the honest note about what Argus can't change.
+ * Advanced mode also shows the optional adb command that lets Argus switch phone control back on by itself.
  */
 @Composable
 fun BankModePage() {
@@ -75,7 +75,7 @@ fun BankModePage() {
     GroupHead("If a bank still says no", "")
     Text(BankModeLogic.STILL_BLOCKED + " If the bank showed a warning before Bank mode turned on, close the bank app and open it again.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-    // v0.45.0 (#24): say plainly what happens to phone control, and when Blaze stopped asking.
+    // v0.45.0 (#24): say plainly what happens to phone control, and when Argus stopped asking.
     var stopped by remember { mutableStateOf(BankMode.restoreIgnored() >= BankModeLogic.RESTORE_GIVE_UP) }
     if (simple && !BankMode.canRestoreA11y(ctx)) {
         Spacer(Modifier.height(18.dp))

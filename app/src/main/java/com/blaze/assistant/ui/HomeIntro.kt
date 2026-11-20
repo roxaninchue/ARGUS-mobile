@@ -126,7 +126,7 @@ object HomeIntroBus {
 }
 
 /**
- * Is the redesigned Home on? 0.50.0 (owner, 2026-11-01): OFF. Blaze is back to the original look from before the
+ * Is the redesigned Home on? 0.50.0 (owner, 2026-11-01): OFF. Argus is back to the original look from before the
  * sky-and-mountains Home (the 0.47-era chat with the Chat | Projects bar, Home board, themes and the full chat screen),
  * with the newer engineering (tiered memory, tool loop fixes, tool cards, follow-up chips, choice buttons) inside it.
  * The redesigned Home + chat over Home stay in the code behind this switch (screenshot tests set it themselves).
@@ -172,7 +172,7 @@ fun HomeRedesignScreen(
         chatBar = chatBar)
 }
 
-/** Sends play/pause to the active media session (Blaze Music when it is the one playing). */
+/** Sends play/pause to the active media session (Argus Music when it is the one playing). */
 private fun mediaPlayPause(ctx: Context) {
     try {
         val am = ctx.getSystemService(android.media.AudioManager::class.java) ?: return

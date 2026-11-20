@@ -8,7 +8,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * The memory graph's model (v0.19.0), a phone-sized port of Blaze Desktop's Memory view
+ * The memory graph's model (v0.19.0), a phone-sized port of Argus Desktop's Memory view
  * (frontend/dist/memory.js): memories are nodes, grouped by kind around a ring of anchors,
  * linked when they share a subject, name each other in `related`, mention each other's subject,
  * or came from the same turn. Pure Kotlin (no Android), so it's unit-tested on the JVM.

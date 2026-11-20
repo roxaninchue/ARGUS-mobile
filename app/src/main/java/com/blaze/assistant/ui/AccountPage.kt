@@ -46,7 +46,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 
-/** Settings › Account: the Blaze account shared with Blaze Desktop. */
+/** Settings › Account: the Argus account shared with Argus Desktop. */
 @Composable
 fun AccountPage(onOpen: (String) -> Unit = {}) {
     val c = LocalBlaze.current.mono

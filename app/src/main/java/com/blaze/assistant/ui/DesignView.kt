@@ -56,7 +56,7 @@ import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 
-/** Turns what Blaze passed (URL, ~/path, relative path, absolute path) into something WebView can load. */
+/** Turns what Argus passed (URL, ~/path, relative path, absolute path) into something WebView can load. */
 fun designUrl(target: String, home: File?): String {
     val t = target.trim()
     if (t.isEmpty()) return ""
@@ -140,13 +140,13 @@ private class RenderState {
 }
 
 /**
- * Design view: a live preview of what Blaze builds (HTML files, local servers, URLs), phone or
+ * Design view: a live preview of what Argus builds (HTML files, local servers, URLs), phone or
  * desktop width, with a one-line box to ask for changes without leaving. Exit is in the top bar.
  *
- * v0.23.3: designs in Blaze's home load from a virtual https origin ([DesignServe]); 3D pages report
+ * v0.23.3: designs in Argus's home load from a virtual https origin ([DesignServe]); 3D pages report
  * ready / errors through [DesignBridge]; when three.js can't start, the view retries with the WebGL1 build
  * and then draws the parts natively ([PartsSketchView]) with the real error and Retry, so a 3D design
- * always shows something. Errors go to ~/designs/.last_error.txt for Blaze's design tool.
+ * always shows something. Errors go to ~/designs/.last_error.txt for Argus's design tool.
  * [initialFailure] shows the fallback straight away (screenshots).
  */
 @SuppressLint("SetJavaScriptEnabled")
@@ -155,7 +155,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                            preview: Boolean = true, initialFailure: String? = null) {
     val c = LocalBlaze.current
     val fileUrl = remember(target, home) { designUrl(target, home) }
-    // v0.28.2: every page is served from the virtual origin (files outside Blaze's home too), so the WebView has no file access.
+    // v0.28.2: every page is served from the virtual origin (files outside Argus's home too), so the WebView has no file access.
     val url = remember(fileUrl, home) { DesignServe.servedUrl(fileUrl, home) }
     val appData = androidx.compose.ui.platform.LocalContext.current.applicationInfo?.dataDir?.let { File(it) }
     val extRoot = remember(fileUrl, home) { DesignServe.extRoot(fileUrl, home, appData) }
@@ -201,7 +201,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
         }
     }
 
-    // When Blaze finishes a turn, show its latest version.
+    // When Argus finishes a turn, show its latest version.
     var wasBusy by remember { mutableStateOf(busy) }
     androidx.compose.runtime.LaunchedEffect(busy) { if (wasBusy && !busy) restart(rs.forceGl1); wasBusy = busy }
     // A 3D page has READY_TIMEOUT_MS to say it's drawing (the test phone parses three.js slowly).
@@ -292,7 +292,7 @@ internal fun DesignPreview(target: String, busy: Boolean, onOpenInBrowser: (Stri
                                         "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}m.content='width=1280';})()", null)
                                 }
                             }
-                            // v0.26.1: a Mermaid file (also outside Blaze's home, where requests aren't served by us) is drawn as a picture.
+                            // v0.26.1: a Mermaid file (also outside Argus's home, where requests aren't served by us) is drawn as a picture.
                             val mmd = if (fileUrl.startsWith("file://")) mermaidFile(File(fileUrl.removePrefix("file://"))) else null
                             if (mmd != null) loadDataWithBaseURL(DesignServe.ORIGIN + "/", DesignServe.mermaidHtml(mmd, File(fileUrl).nameWithoutExtension), "text/html", "utf-8", null)
                             else loadUrl(loadUrl)
@@ -339,7 +339,7 @@ private fun FailBanner(error: String, sketch: Boolean, onRetry: () -> Unit, modi
 }
 
 /**
- * Answers a Design view request: the virtual origin (designs, Blaze's home, bundled three.js) and CDN three.js
+ * Answers a Design view request: the virtual origin (designs, Argus's home, bundled three.js) and CDN three.js
  * URLs from the APK (the build matching [engine]). Null = let the network have it.
  */
 fun serveDesign(ctx: android.content.Context, url: String, home: File?, engine: String?, ext: File? = null): android.webkit.WebResourceResponse? {
@@ -384,10 +384,10 @@ fun mermaidFile(f: File): String? = try {
 
 // ---------------- v0.35.0 Design studio ----------------
 
-/** The studio's four modes. Page and 3D draw what Blaze makes today; Motion and Audio land in phases 3 and 4. */
+/** The studio's four modes. Page and 3D draw what Argus makes today; Motion and Audio land in phases 3 and 4. */
 enum class StudioMode(val label: String) { PAGE("Page"), THREE_D("3D"), MOTION("Motion"), AUDIO("Audio") }
 
-/** Prompt chips per mode (they ask Blaze; the Page ones name the selected element when there is one). */
+/** Prompt chips per mode (they ask Argus; the Page ones name the selected element when there is one). */
 /** v0.45.6: what is open, so the chips fit it (no "Make the headline bigger" on a 3D model). */
 enum class Artifact { NONE, STUDIO_PAGE, WEB_PAGE, THREE_PAGE, MODEL_3D }
 
@@ -435,7 +435,7 @@ fun studioAsk(text: String, mode: StudioMode, element: DesignPage.El?): String {
  * check and zoom at the bottom), a contextual dock (layers in Page mode), prompt chips and the ask box.
  *
  * Page mode edits studio pages (kind canvas) natively: tap to select, drag to move, handles to resize, a colour wheel
- * with hex, text and format; each pause in editing saves a new version (Undo and Blaze's next edit see it). Other
+ * with hex, text and format; each pause in editing saves a new version (Undo and Argus's next edit see it). Other
  * pages, sites and 3D designs are previewed live as before ([DesignPreview]).
  */
 @Composable
@@ -466,7 +466,7 @@ fun DesignView(target: String, busy: Boolean, status: String, onAsk: (String) ->
     }
     var mode by remember(file) { mutableStateOf(StudioMode.PAGE) }
     androidx.compose.runtime.LaunchedEffect(is3d) { if (is3d) mode = StudioMode.THREE_D }
-    // Blaze finished a turn: show its latest version.
+    // Argus finished a turn: show its latest version.
     var wasBusy by remember { mutableStateOf(busy) }
     androidx.compose.runtime.LaunchedEffect(busy) { if (wasBusy && !busy) reload++; wasBusy = busy }
     // v0.45.6: the agent changed the design mid-turn: show it now, so its render check sees this version.

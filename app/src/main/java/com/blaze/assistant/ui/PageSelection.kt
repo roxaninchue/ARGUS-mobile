@@ -12,7 +12,7 @@ import android.webkit.WebView
 import android.widget.PopupMenu
 
 /**
- * v0.29.9: a web page's text selection, routed to Blaze's own selection pill (the same one the chat uses) instead of
+ * v0.29.9: a web page's text selection, routed to Argus's own selection pill (the same one the chat uses) instead of
  * the phone's floating Copy / Share bar.
  *
  * The WebView asks its view for an action mode when words are selected; [PillWebView] hands it a [PageSelectMode]
@@ -84,7 +84,7 @@ class PageSelectMode(private val host: View, val callback: ActionMode.Callback, 
     override fun getMenuInflater(): MenuInflater = MenuInflater(host.context)
 }
 
-/** A WebView whose text selection shows Blaze's selection pill ([onSelection] gets the live mode, or null when it ends). */
+/** A WebView whose text selection shows Argus's selection pill ([onSelection] gets the live mode, or null when it ends). */
 @SuppressLint("ViewConstructor")
 class PillWebView(ctx: Context, private val onSelection: (PageSelectMode?) -> Unit) : WebView(ctx) {
     var mode: PageSelectMode? = null

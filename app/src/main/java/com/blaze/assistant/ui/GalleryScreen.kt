@@ -189,7 +189,7 @@ private sealed class GDialog {
     data class DeleteAlbum(val album: AlbumStore.Album) : GDialog()
 }
 
-/** Everything Blaze made or downloaded, newest first. */
+/** Everything Argus made or downloaded, newest first. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GalleryScreen(onDismiss: () -> Unit) {

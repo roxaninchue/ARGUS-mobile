@@ -52,7 +52,7 @@ import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
 
-/** The studio's brand kit swatches (phase 1: the Blaze palette; phase 2 reads the project's brand kit). */
+/** The studio's brand kit swatches (phase 1: the Argus palette; phase 2 reads the project's brand kit). */
 val BrandSwatches = listOf("#111112", "#F6F5F1", "#1F4BD8", "#4DA8FF", "#FFC94D", "#F2F2F3")
 
 fun argbColor(argb: Long): Color = Color(argb.toInt())

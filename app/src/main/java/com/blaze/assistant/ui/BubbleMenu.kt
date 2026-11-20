@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Modifier
 
 /**
- * 0.45.20 (spec A): a bubble's actions on long-press, so only the latest Blaze reply keeps a small action row.
+ * 0.45.20 (spec A): a bubble's actions on long-press, so only the latest Argus reply keeps a small action row.
  * [items] = label to action (null action = shown disabled).
  */
 @Composable

@@ -250,7 +250,7 @@ fun RichSteps(steps: List<RichReplies.Step>, text: @Composable (String) -> Unit)
 }
 
 /**
- * An inline diagram. v0.26.3: Mermaid is drawn on the phone ([DiagramRenderer], bundled mermaid.js, Blaze's colours in
+ * An inline diagram. v0.26.3: Mermaid is drawn on the phone ([DiagramRenderer], bundled mermaid.js, Argus's colours in
  * light and dark, cached), so it works offline and in private chats; the web renderers are only the fallback. While it
  * draws, a quiet placeholder; if nothing can draw it, one plain line with "Show code" (the source is never the picture).
  * Copy keeps the source.

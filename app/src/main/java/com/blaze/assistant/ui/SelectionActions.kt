@@ -8,7 +8,7 @@ import java.net.URLEncoder
  * v0.27.2: what the black text-selection pill offers for the words you selected. Pure Kotlin (SelectionActionsTest),
  * so the rules live in one place and the chat and the page sheet show the same list.
  *
- * Order: Copy, Quote, Select all, then Search (or Open link for a URL), Ask Blaze, Translate, Define (1–3 words
+ * Order: Copy, Quote, Select all, then Search (or Open link for a URL), Ask Argus, Translate, Define (1–3 words
  * only), Read aloud, Share. Quote and Select all only show where the caller allows them.
  */
 object SelectionActions {
@@ -104,7 +104,7 @@ object SelectionActions {
         else -> action
     }
 
-    /** Where Search / Open link goes in Blaze's browser: the link itself, or a Google search for the words. */
+    /** Where Search / Open link goes in Argus's browser: the link itself, or a Google search for the words. */
     fun browserUrl(text: String): String {
         url(text)?.let { return it }
         val q = text.trim().replace(Regex("\\s+"), " ").take(MAX_SEARCH)

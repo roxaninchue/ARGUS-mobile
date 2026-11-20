@@ -8,8 +8,8 @@ import java.io.File
  *
  *  - Designs load from a virtual https origin ([ORIGIN]) instead of file://, so the page, its importmap and
  *    the bundled three.js modules are all same-origin (no opaque "null" origin, no CORS):
- *      /designs/…  → the designs folder in Blaze's home (~/designs)
- *      /home/…     → anything else in Blaze's home
+ *      /designs/…  → the designs folder in Argus's home (~/designs)
+ *      /home/…     → anything else in Argus's home
  *      /three/…    → three.js r170 bundled in assets/design/three (WebGL2)
  *      /three/r162/… → three.js r162 bundled in assets/design/three-r162 (the last build with WebGL1)
  *    CDN three.js URLs (jsDelivr, unpkg, cdnjs…) are still served from the APK as a fallback ([bundledThree]).
@@ -56,9 +56,9 @@ object DesignServe {
     }
 
     /**
-     * v0.28.2: the URL the Design view loads. Like [virtualUrl], and a file:// page outside Blaze's home is served
+     * v0.28.2: the URL the Design view loads. Like [virtualUrl], and a file:// page outside Argus's home is served
      * from the virtual origin too (/ext/<name>, with its own folder as the root, see [extRoot]), so the WebView
-     * never needs file access. A file inside the app's private data ([appData]) but outside Blaze's home is
+     * never needs file access. A file inside the app's private data ([appData]) but outside Argus's home is
      * not served (404).
      */
     fun servedUrl(fileUrl: String, home: File?): String {
@@ -102,7 +102,7 @@ object DesignServe {
     /** Caps what a page may hand the [DesignBridge] (it only updates the view's state). */
     fun bridgeText(s: String?, max: Int = 500): String = (s ?: "").take(max)
 
-    /** What a request to the virtual origin maps to: a file in Blaze's home or an APK asset. */
+    /** What a request to the virtual origin maps to: a file in Argus's home or an APK asset. */
     sealed class Target {
         abstract val mime: String
         data class Disk(val file: File, override val mime: String) : Target()

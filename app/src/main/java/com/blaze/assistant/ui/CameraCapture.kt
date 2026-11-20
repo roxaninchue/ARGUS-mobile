@@ -31,9 +31,9 @@ import java.io.File
 /**
  * v0.28.x camera-fix: chat "+ → Camera" on every phone ([CameraFlow] decides, this runs it).
  * Camera permission (asked, explained, or sent to Settings) → the phone's camera app with explicit URI grants →
- * Blaze's own CameraX camera → the photo picker. Every failure is logged with its real exception (CameraSupport.log
+ * Argus's own CameraX camera → the photo picker. Every failure is logged with its real exception (CameraSupport.log
  * → Settings → Device & diagnostics → crash report) and the toast says what actually happened.
- * The pending photo path survives Blaze being killed behind the camera app (common on low-RAM phones).
+ * The pending photo path survives Argus being killed behind the camera app (common on low-RAM phones).
  *
  * Returns the function to call from the + menu; [Dialogs] must be placed once in the screen.
  */

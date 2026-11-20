@@ -68,11 +68,11 @@ import kotlin.math.min
 
 /**
  * v0.26.1 visual answers, drawn: native Compose charts (bar, line, pie, scatter; tap for the value), tappable choice
- * buttons, small forms, live mini tools and compare cards. Rounded cards in the Blaze theme, solid classic Blaze blue,
+ * buttons, small forms, live mini tools and compare cards. Rounded cards in the Argus theme, solid classic Argus blue,
  * no gradients, no WebView. Pure parsing and maths live in [RichKit] / [Expr].
  */
 object RichSend {
-    /** How a tapped choice or a submitted form becomes the user's next message (null = read-only, e.g. while Blaze works). */
+    /** How a tapped choice or a submitted form becomes the user's next message (null = read-only, e.g. while Argus works). */
     val Local = staticCompositionLocalOf<((String) -> Unit)?> { null }
 }
 

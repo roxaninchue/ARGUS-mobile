@@ -58,8 +58,8 @@ import com.blaze.assistant.ui.space.SpaceTypeScale
 import com.blaze.assistant.ui.space.spaceLook
 
 /*
- * v0.19.0 visual parity: the small kit Blaze Desktop's pages are built from (frontend/dist/style.css:
- * .phead, .group, .rows, .pill, .btn, .empty), in the Blaze look: paper, ink, hairlines, one blue accent.
+ * v0.19.0 visual parity: the small kit Argus Desktop's pages are built from (frontend/dist/style.css:
+ * .phead, .group, .rows, .pill, .btn, .empty), in the Argus look: paper, ink, hairlines, one blue accent.
  * v0.24.8 "no square UI": every piece is rounded ([BlazeShapes]): grouped rows are rounded cards, buttons are pills in
  * sentence case (primary = the mascot's orange-to-blue gradient), inputs are filled pills, tags are pills, the switch is round.
  */
@@ -150,7 +150,7 @@ fun Tag(text: String, on: Boolean = false) {
 enum class Btn { ACCENT, INK, LINE, GHOST }
 
 /**
- * Desktop's .btn as a Blaze pill (v0.24.8), sentence case. ACCENT and INK are the primary pill, LINE a raised outlined
+ * Desktop's .btn as an Argus pill (v0.24.8), sentence case. ACCENT and INK are the primary pill, LINE a raised outlined
  * pill, GHOST plain text in a pill-shaped touch area. Unification: [SpaceInsets.CONTROL_DP] tall like every other control.
  */
 @Composable
@@ -163,7 +163,7 @@ fun KitButton(text: String, kind: Btn = Btn.LINE, modifier: Modifier = Modifier,
 enum class BtnKind { PRIMARY, SECONDARY, GHOST, DANGER }
 
 /**
- * The one Blaze button (v0.24.8): a pill, sentence case. PRIMARY = the one primary style ([PrimaryButton], the shell's
+ * The one Argus button (v0.24.8): a pill, sentence case. PRIMARY = the one primary style ([PrimaryButton], the shell's
  * SpacePillButton primary), SECONDARY = raised pill with a hairline, GHOST = text only, DANGER = warm outline.
  */
 @Composable
@@ -203,7 +203,7 @@ fun BlazeButton(text: String, modifier: Modifier = Modifier, kind: BtnKind = Btn
 }
 
 /**
- * The one Blaze text field (v0.24.8): a filled dark surface ([field]) with a soft outline that turns accent when focused.
+ * The one Argus text field (v0.24.8): a filled dark surface ([field]) with a soft outline that turns accent when focused.
  * Single line = a pill; multi-line = a 16dp card. No square outline anywhere.
  */
 @Composable
@@ -226,7 +226,7 @@ fun BlazeTextField(value: String, onChange: (String) -> Unit, hint: String, modi
     }
 }
 
-/** A rounded Blaze card (v0.24.8): raised surface, 16dp corners, soft hairline; [accent] outlines it in blue. */
+/** A rounded Argus card (v0.24.8): raised surface, 16dp corners, soft hairline; [accent] outlines it in blue. */
 @Composable
 fun BlazeCard(modifier: Modifier = Modifier, accent: Boolean = false, padding: androidx.compose.ui.unit.Dp = 14.dp,
               onClick: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
@@ -357,7 +357,7 @@ fun BlazeSwitchTrack(on: Boolean) {
     }
 }
 
-// ---------------- v0.24.5: Blaze dialog and menu (no Material defaults anywhere) ----------------
+// ---------------- v0.24.5: Argus dialog and menu (no Material defaults anywhere) ----------------
 
 /**
  * v0.31.2 theme fix: the surface for menus and pop-up lists whose text uses the theme's ink (the avatar menu, the "/"
@@ -430,7 +430,7 @@ object PrimaryButton {
 }
 
 /**
- * The shared Blaze dialog: the shell's solid card ([DialogColors], light or dark with the app) with a hairline and a
+ * The shared Argus dialog: the shell's solid card ([DialogColors], light or dark with the app) with a hairline and a
  * shadow, ink title, muted body, a primary pill button (or warm with [warm]) and an optional ghost secondary button.
  */
 @Composable
@@ -494,7 +494,7 @@ fun PillButton(text: String, primary: Boolean, warm: Boolean = false, modifier: 
     }
 }
 
-/** The shared Blaze menu (replaces Material's DropdownMenu): the shell's menu card in a popup. */
+/** The shared Argus menu (replaces Material's DropdownMenu): the shell's menu card in a popup. */
 @Composable
 fun BlazeMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<Pair<String, () -> Unit>>) {
     if (!expanded) return
@@ -551,7 +551,7 @@ fun ButtonText(text: String, color: Color = LocalBlaze.current.ink, size: androi
         style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = size, color = color))
 }
 
-/** v0.28.3: the back button's fill and outline (Material's surface-variant in the Blaze palette, the Kit's 1 dp hairline). */
+/** v0.28.3: the back button's fill and outline (Material's surface-variant in the Argus palette, the Kit's 1 dp hairline). */
 val BlazeColors.backFill: Color get() = if (dark) Color(0x1AFFFFFF) else Color(0xFFF0F0EE)
 val BlazeColors.backLine: Color get() = if (dark) Color(0x33FFFFFF) else Color(0x1A111110)
 

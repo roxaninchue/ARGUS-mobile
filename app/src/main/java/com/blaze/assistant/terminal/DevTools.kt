@@ -20,7 +20,7 @@ import java.net.URL
  * Developer tools for the agent, built so a weak model can't trip over shell quoting:
  * structured file read/write/edit/list/search, run_code with auto-installed runtimes,
  * job logs and stdin, a real HTTP client, downloads, export to the phone's Downloads,
- * and a terminal health check. Paths: "~/x" or "x" = Blaze home (also /root/phone in Linux),
+ * and a terminal health check. Paths: "~/x" or "x" = Argus home (also /root/phone in Linux),
  * "/root/..." or "linux:/..." = inside Alpine, anything else absolute = the phone path.
  */
 object DevTools {
@@ -244,7 +244,7 @@ object DevTools {
         return "Downloaded ${"%.1f".format(total / 1e6)} MB to ${show(f)}."
     }
 
-    /** Copy a file from Blaze's private home to the phone's Downloads/Blaze so the user (and other apps) can open it. */
+    /** Copy a file from Argus's private home to the phone's Downloads/Blaze so the user (and other apps) can open it. */
     private fun export(a: JSONObject): String {
         val f = resolve(a.optString("path"))
         if (!f.isFile) return "No such file: ${show(f)}"

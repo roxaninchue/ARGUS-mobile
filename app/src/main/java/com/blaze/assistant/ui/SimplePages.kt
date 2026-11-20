@@ -135,7 +135,7 @@ fun LookPage() {
     Text(tr("Makes everything in {0} smaller or bigger, text included.", BrandName.NAME), modifier = Modifier.padding(vertical = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(14.dp))
-    // 0.46.0 Blaze Stage: timers, music, quizzes and other live cards right on the chat (off = Blaze answers in chat / opens views).
+    // 0.46.0 Argus Stage: timers, music, quizzes and other live cards right on the chat (off = Argus answers in chat / opens views).
     var stageOn by remember { mutableStateOf(com.blaze.assistant.stage.StageStore.enabled) }
     ToggleRow("${BrandName.NAME} Stage", "Live cards right on the chat: timers, music, quizzes. Drag to move; back or Reset layout restores the chat", stageOn) {
         stageOn = !stageOn; com.blaze.assistant.agent.Settings.setBool("stage_on", stageOn)

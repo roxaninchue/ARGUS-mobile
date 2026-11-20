@@ -141,7 +141,7 @@ object AttachView {
      */
     fun fileChips(files: List<String>, media: List<String>): List<String> = if (media.isEmpty()) files else files.drop(media.size)
 
-    /** The placeholder text Blaze stores when you send pictures with no words: hidden under the thumbnails. */
+    /** The placeholder text Argus stores when you send pictures with no words: hidden under the thumbnails. */
     const val NO_TEXT = "Take a look at this."
     fun bubbleText(text: String, media: List<String>): String = if (media.isNotEmpty() && text.trim() == NO_TEXT) "" else text
 }
@@ -263,7 +263,7 @@ fun SentBubble(text: String, quoted: String, media: List<String>, files: List<St
     if (previewAt >= 0) ImagePager(media.take(12), previewAt) { previewAt = -1 }
 }
 
-/** "Open in Design?": the chip Blaze shows instead of switching views on its own. */
+/** "Open in Design?": the chip Argus shows instead of switching views on its own. */
 @Composable
 fun ViewOfferChip(label: String, onOpen: () -> Unit, onDismiss: () -> Unit) {
     val c = LocalBlaze.current

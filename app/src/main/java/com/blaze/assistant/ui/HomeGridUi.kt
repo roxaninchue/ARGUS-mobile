@@ -131,7 +131,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
  * transform from [HomeIntroClock] in draw / layer lambdas only, so a running intro never recomposes the grid per frame.
  */
 
-/** What Music shows (Blaze Music's player, read from Awareness). */
+/** What Music shows (Argus Music's player, read from Awareness). */
 @Immutable
 data class HomeMusicNow(val title: String, val artist: String, val posMs: Long, val durMs: Long, val playing: Boolean)
 

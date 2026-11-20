@@ -33,16 +33,16 @@ import kotlinx.coroutines.launch
 import kotlin.math.sin
 
 /*
- * v0.31.2 Halo x Blaze, the look.
- *  - The glassy drop (Blaze) now sits inside a golden halo ring (Halo), like the app icon.
- *  - When Blaze writes, the drop leaves the ring and rides the end of the text; the newest words shimmer BLUE behind it.
+ * v0.31.2 Halo x Argus, the look.
+ *  - The glassy drop (Argus) now sits inside a golden halo ring (Halo), like the app icon.
+ *  - When Argus writes, the drop leaves the ring and rides the end of the text; the newest words shimmer BLUE behind it.
  *  - When Halo writes, the ring leaves the drop and rides ahead of the text; the newest words shimmer GOLD behind it.
  *  - When the reply ends, one last band of that colour sweeps over the words and fades; the traveller glides home,
  *    the two join again and dim, and stay there waiting (on the newest reply only).
  * Everything is draw-only (no relayout), and nothing moves with Remove animations on.
  */
 
-/** Who is speaking in the reply being drawn (Blaze by default). */
+/** Who is speaking in the reply being drawn (Argus by default). */
 val LocalSpeaker = compositionLocalOf { Duo.Who.BLAZE }
 
 object DuoColors {
@@ -139,7 +139,7 @@ fun Modifier.duoShimmer(speaker: Duo.Who, tracking: Boolean, layout: () -> TextL
 }
 
 /**
- * v0.32.0 the Blaze icon everywhere in the app: the glass drop (Blaze) inside its gold halo (Halo), centred in a square of
+ * v0.32.0 the Argus icon everywhere in the app: the glass drop (Argus) inside its gold halo (Halo), centred in a square of
  * side [w]. [t] = clock for the wobble and the breathing ring (0 = a still picture).
  */
 fun DrawScope.drawDuoEmblem(center: Offset, w: Float, t: Float = 0f, alpha: Float = 1f) {
@@ -147,7 +147,7 @@ fun DrawScope.drawDuoEmblem(center: Offset, w: Float, t: Float = 0f, alpha: Floa
     drawArgusMark(center, w, t, alpha)
 }
 
-/** The new Blaze icon as a composable: still when idle, gently alive when [animate]. */
+/** The new Argus icon as a composable: still when idle, gently alive when [animate]. */
 @Composable
 fun DuoEmblem(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier, animate: Boolean = false) {
     val clock = if (animate && com.blaze.assistant.ui.MotionTokens.enabled) {

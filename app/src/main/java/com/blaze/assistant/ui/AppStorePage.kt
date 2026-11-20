@@ -45,7 +45,7 @@ import com.blaze.assistant.appstore.storeSize
 import kotlinx.coroutines.delay
 
 /**
- * 0.45.19 Blaze App Store (Settings page "appstore", open_view "apps"): open-source apps from their developers' own
+ * 0.45.19 Argus App Store (Settings page "appstore", open_view "apps"): open-source apps from their developers' own
  * releases, installed on this phone with Android's installer. Free, no ads, no gates. Every listing shows its license,
  * a Source repo button and [StorePolicy.NOTICE]. Get = confirm card (disclaimer) → download → SHA-256 + signer +
  * VirusTotal → Android's own install dialog. Installed apps show Open, or Update when a newer release is known.

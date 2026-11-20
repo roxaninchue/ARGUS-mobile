@@ -253,7 +253,7 @@ object Overlay {
     @Volatile private var cardUntil = 0L
 
     /**
-     * While Blaze works and you're in another app, a slim card pops up at the top for a few seconds
+     * While Argus works and you're in another app, a slim card pops up at the top for a few seconds
      * (step + Stop), then hides; the notification shade keeps the progress. Tap it to open the panel.
      */
     fun watchTasks(ctx: Context) {
@@ -269,7 +269,7 @@ object Overlay {
                 }
                 val busy = Agent.busyChats.value.isNotEmpty()
                 val now = System.currentTimeMillis()
-                // Pop up briefly when a task starts (or you leave Blaze mid-task), then get out of the way.
+                // Pop up briefly when a task starts (or you leave Argus mid-task), then get out of the way.
                 // The ongoing notification keeps showing progress and Stop.
                 if (busy && (!wasBusy || (wasFg && !Agent.inForeground))) {
                     cardUntil = now + 3500
@@ -305,7 +305,7 @@ object Overlay {
         cardOwner?.destroy(); cardView = null; cardOwner = null
     }
 
-    /** Open the chat panel over the current app: the assistant session if Blaze is the assistant, else an overlay. */
+    /** Open the chat panel over the current app: the assistant session if Argus is the assistant, else an overlay. */
     fun openPanel(ctx: Context, listen: Boolean) {
         // Account lock: no panel over other apps; the lock screen instead.
         if (com.blaze.assistant.connect.AccountGate.locked()) { try { ctx.startActivity(com.blaze.assistant.connect.AccountGate.lockIntent(ctx)) } catch (_: Exception) { }; return }
@@ -364,7 +364,7 @@ object Overlay {
 
 // ---------------- UI ----------------
 
-/** The round Blaze orb: pixel B in the middle, a ring that breathes while listening or working. */
+/** The round Argus orb: pixel B in the middle, a ring that breathes while listening or working. */
 @Composable
 fun OrbFace(size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
     val c = LocalBlaze.current
@@ -411,7 +411,7 @@ private fun Orb(
         .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }, onLongPress = { onLongPress() }) })
 }
 
-/** The orb bursting into Blaze's pixel particles, then gone. */
+/** The orb bursting into Argus's pixel particles, then gone. */
 @Composable
 private fun Scatter(size: androidx.compose.ui.unit.Dp, onGone: () -> Unit) {
     val c = LocalBlaze.current
@@ -481,7 +481,7 @@ private fun ParticleBin(shown: Boolean, hot: Boolean) {
     }
 }
 
-// v0.24.6: AssistPanel moved to ui/AssistPanel.kt (rounded Blaze look, icon buttons, mascot, edge particles).
+// v0.24.6: AssistPanel moved to ui/AssistPanel.kt (rounded Argus look, icon buttons, mascot, edge particles).
 
 @Composable
 private fun PanelButton(label: String, onClick: () -> Unit) {
@@ -494,7 +494,7 @@ private fun PanelButton(label: String, onClick: () -> Unit) {
 /** Where a swipe on the work banner sends it (v0.24.5). Pure (OverlayBannerTest / PointerTest). */
 enum class BannerSwipe { NONE, MINIMISE, OPEN }
 
-/** Up, left or right past [thresholdPx] minimises into the notification; down past it opens Blaze; a short drag springs back. */
+/** Up, left or right past [thresholdPx] minimises into the notification; down past it opens Argus; a short drag springs back. */
 fun bannerSwipe(dx: Float, dy: Float, thresholdPx: Float): BannerSwipe = when {
     dy > thresholdPx && dy > kotlin.math.abs(dx) -> BannerSwipe.OPEN
     dy < -thresholdPx || kotlin.math.abs(dx) > thresholdPx * 1.4f -> BannerSwipe.MINIMISE
@@ -502,9 +502,9 @@ fun bannerSwipe(dx: Float, dy: Float, thresholdPx: Float): BannerSwipe = when {
 }
 
 /**
- * The "Blaze is working" banner shown over other apps (v0.24.5 look): a fully rounded dark Blaze card with a subtle
+ * The "Blaze is working" banner shown over other apps (v0.24.5 look): a fully rounded dark Argus card with a subtle
  * border and shadow, the mascot inside a spinning ring, the status in brand colours, and Stop as a rounded pill.
- * Swipe up / left / right: it slides away and minimises into the ongoing notification. Swipe down or tap: opens Blaze.
+ * Swipe up / left / right: it slides away and minimises into the ongoing notification. Swipe down or tap: opens Argus.
  */
 @Composable
 fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}, step0: String? = null, tasks0: Int? = null) {
@@ -560,7 +560,7 @@ fun TaskCard(onOpen: () -> Unit, onStop: () -> Unit, onMinimise: () -> Unit = {}
         .clip(shape)
         .clickable(onClick = onOpen)
         .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        DuoEmblem(40.dp, animate = true) // v0.32.0: new Blaze icon
+        DuoEmblem(40.dp, animate = true) // v0.32.0: new Argus icon
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Text(if (tasks > 1) "${BrandName.NAME} \u00b7 $tasks tasks" else "${BrandName.NAME} is working", maxLines = 1,

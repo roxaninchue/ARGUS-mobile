@@ -220,7 +220,7 @@ private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
     var control by remember { mutableStateOf(Settings.phoneControl) }
     Spacer(Modifier.height(8.dp))
     ToggleRow("Phone control", "Open apps, tap, type and scroll for you", control) { control = !control; Settings.phoneControl = control }
-    // v0.24.5: the pointer is always shown while Blaze controls apps (no switch; the old show_pointer pref is ignored).
+    // v0.24.5: the pointer is always shown while Argus controls apps (no switch; the old show_pointer pref is ignored).
     Text(tr("{0}'s mascot pointer is always on screen while it controls your phone. It never blocks your taps or {1}'s. Tap the small Stop chip at the bottom-left to stop.", BrandName.NAME, BrandName.NAME),
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.weak))
     Spacer(Modifier.height(12.dp))
@@ -519,11 +519,11 @@ private fun PersonaSection() {
     Spacer(Modifier.height(6.dp))
     var dots by remember { mutableStateOf(Settings.particles) }
     ToggleRow("Background particles", "Drifting dots. Turn off for the smoothest, lightest feel", dots) { dots = !dots; Settings.particles = dots }
-    // 0.50.0: Blaze's edge particles while it controls the screen (ui/ScreenGlow)
+    // 0.50.0: Argus's edge particles while it controls the screen (ui/ScreenGlow)
     var glowOn by remember { mutableStateOf(Settings.bool("screen_glow", true)) }
     ToggleRow("Glow while ${BrandName.NAME} uses the screen", "Particles round the screen edges while ${BrandName.NAME} taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
     ToggleRow("Stream replies", "Words appear as ${BrandName.NAME} writes them", stream) { stream = !stream; Settings.streamReplies = stream }
-    // 0.51.0 BlazeQuery (Halo Persona Studio removed: Halo is part of Blaze now)
+    // 0.51.0 BlazeQuery (Halo Persona Studio removed: Halo is part of Argus now)
     var bqOn by remember { mutableStateOf(Settings.bool("blazequery", true)) }
     ToggleRow("BlazeQuery: fresh facts for every reply", "Checks trusted sources (official docs, registries, release notes; never Wikipedia) as you send, and gives ${BrandName.NAME} a short summary. Nothing is sent from private chats", bqOn) { bqOn = !bqOn; Settings.setBool("blazequery", bqOn) }
 }
@@ -630,7 +630,7 @@ private fun SecuritySection() {
 }
 
 
-/** More keys for the same provider: when one runs out, Blaze moves to the next with the same model. */
+/** More keys for the same provider: when one runs out, Argus moves to the next with the same model. */
 @Composable
 internal fun ExtraKeys(pid: String) {
     val c = LocalBlaze.current.mono

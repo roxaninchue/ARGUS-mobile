@@ -105,7 +105,7 @@ import kotlinx.coroutines.delay
 import com.blaze.assistant.ui.space.overlaySurface
 
 /*
- * Blaze 0.12 shell: a calm, messaging-app layout (Desktop 1.0 redesign, part A).
+ * Argus 0.12 shell: a calm, messaging-app layout (Desktop 1.0 redesign, part A).
  * Everything here is stateless so the screenshot tests can draw it with sample data.
  */
 
@@ -131,9 +131,9 @@ fun ShellTopBar(
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp).glass(RoundedCornerShape(26.dp), GlassIntensity.Low, shadow = false)) {
         Row(Modifier.fillMaxWidth().height(52.dp).padding(start = 10.dp, end = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             // v0.24.8: the mascot in a circle (was a square pixel "B").
-            // v0.43.0: it shows who you're talking to (orb = Blaze, halo = Halo, orb in its halo = All); a tap opens the picker arc.
+            // v0.43.0: it shows who you're talking to (orb = Argus, halo = Halo, orb in its halo = All); a tap opens the picker arc.
             Box(Modifier.size(40.dp).clip(CircleShape).clickable(onClick = onLogo)
-                .semantics { contentDescription = "${BrandName.NAME}" },   // 0.51.0 one persona: always Blaze's mark (no Halo picker)
+                .semantics { contentDescription = "${BrandName.NAME}" },   // 0.51.0 one persona: always Argus's mark (no Halo picker)
                 contentAlignment = Alignment.Center) { BrandMark(mood, 34.dp) }
             Spacer(Modifier.width(6.dp))
             // v0.29.0: the pill gets the room left over, and shrinks (then turns into icons) on narrow screens / big fonts.
@@ -511,8 +511,8 @@ fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long
     val count = if (n == 1) "1 step" else "$n steps"
     val time = if (startAt > 0 && end >= startAt) " · " + formatDuration(end - startAt) else ""
     val pulse = if (live) rememberInfiniteTransition(label = "p").animateFloat(0.35f, 1f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "a").value else 1f
-    // v0.24.0: inline with the thread, no outline: a soft rounded strip on Blaze's side; a live one gets an accent wash.
-    // v0.30.5: the same theme glass as Blaze's bubbles once done; a live one keeps its accent wash and edge.
+    // v0.24.0: inline with the thread, no outline: a soft rounded strip on Argus's side; a live one gets an accent wash.
+    // v0.30.5: the same theme glass as Argus's bubbles once done; a live one keeps its accent wash and edge.
     Column(Modifier.padding(end = 28.dp).widthIn(max = 340.dp).fillMaxWidth()
         // v0.31.0: a GlassCard-style tile; live = a slightly brighter frost.
         .then(if (live) Modifier.glass(RoundedCornerShape(18.dp), GlassIntensity.Medium, shadow = false)
@@ -567,7 +567,7 @@ fun WorkCard(steps: List<ChatMessage>, live: Boolean, startAt: Long, endAt: Long
     }
 }
 
-/** v0.41.0 Simple mode: the whole work view while Blaze works, one small quiet line ("Looking at your films…"). */
+/** v0.41.0 Simple mode: the whole work view while Argus works, one small quiet line ("Looking at your films…"). */
 @Composable
 fun SimpleWorkHint(text: String) {
     val c = LocalBlaze.current

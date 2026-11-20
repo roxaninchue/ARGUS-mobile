@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.SkillLibrary
 
 /**
- * Settings › Skill library (v0.19.0 look, Desktop's Settings › Skills): bundled skills (from Blaze Desktop)
+ * Settings › Skill library (v0.19.0 look, Desktop's Settings › Skills): bundled skills (from Argus Desktop)
  * and your own, grouped, searchable, a switch each; tap one for its description, Delete and Restore.
  * [rows0] and [open0] are for screenshots.
  */

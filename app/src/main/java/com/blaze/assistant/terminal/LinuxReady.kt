@@ -3,15 +3,15 @@ package com.blaze.assistant.terminal
 import com.blaze.assistant.terminal.LinuxPm.Pm
 
 /**
- * v0.45.26, pure (LinuxReadyTest): every Linux in Blaze's Terminal comes ready to use. Right after a Linux is installed
- * (and once for Linuxes installed before this version) Blaze refreshes its package lists, upgrades what's there and adds
+ * v0.45.26, pure (LinuxReadyTest): every Linux in Argus's Terminal comes ready to use. Right after a Linux is installed
+ * (and once for Linuxes installed before this version) Argus refreshes its package lists, upgrades what's there and adds
  * a small set of everyday tools, so nobody has to start with `apk update`, `apt update`, `pacman -Sy` or `dnf makecache`:
  * python3 + pip, curl, wget, git, ca-certificates and nano. The Blaze CLI is put on PATH as `blaze` too
  * ([cliAsset], checked against the published SHA256SUMS).
  *
  * A marker file in the rootfs ([MARKER], holding [stamp]) records that it's done, so it never runs again on each launch;
  * changing the package set or [VERSION] makes it run once more. When the phone is offline or a mirror fails, nothing is
- * marked: Blaze tries again later (no sooner than [RETRY_MS]), and the Terminal works meanwhile.
+ * marked: Argus tries again later (no sooner than [RETRY_MS]), and the Terminal works meanwhile.
  */
 object LinuxReady {
     /** Bump to make every installed Linux run the ready step once more. */

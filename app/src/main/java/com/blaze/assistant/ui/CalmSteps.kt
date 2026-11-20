@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.ChatMessage
 
 /**
- * Calm steps: while Blaze works, one shimmering plain-English line ("Searching the web for …").
+ * Calm steps: while Argus works, one shimmering plain-English line ("Searching the web for …").
  * When done, "Worked for 12s · 5 steps"; tap to see each step in plain words. Exact calls and
  * commands only show with Settings › "Show every step" (StepsGroup), never here.
  */

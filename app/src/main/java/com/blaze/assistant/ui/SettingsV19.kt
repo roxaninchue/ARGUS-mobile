@@ -41,7 +41,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
-/** Settings → Look & feel: the small things that make Blaze feel alive. */
+/** Settings → Look & feel: the small things that make Argus feel alive. */
 @Composable
 internal fun FeelPage() {
     var taps by remember { mutableStateOf(Settings.bool("show_taps", true)) }

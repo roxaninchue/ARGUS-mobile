@@ -37,7 +37,7 @@ import com.blaze.assistant.agent.Duo
 import com.blaze.assistant.agent.Role
 
 /*
- * v0.32.0 the Meeting room. When Blaze and Halo take on a task they work it out here first: proposals, critiques, code,
+ * v0.32.0 the Meeting room. When Argus and Halo take on a task they work it out here first: proposals, critiques, code,
  * which tools they're using (and the searches they run), until they both agree. The verdict lands in the main chat.
  * You can read along and drop in at any time; when they need you, they ask in the main chat and the room waits.
  */

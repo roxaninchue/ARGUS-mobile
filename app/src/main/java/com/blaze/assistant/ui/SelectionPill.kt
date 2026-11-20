@@ -61,7 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 /**
- * v0.27.2: Compose's text-selection menu, routed to Blaze's own pill. [onShow] gets the selection box and the
+ * v0.27.2: Compose's text-selection menu, routed to Argus's own pill. [onShow] gets the selection box and the
  * "copy" / "select all" callbacks Compose offers (copy also ends the selection).
  */
 class BlazeTextToolbar(val onShow: (Rect, (() -> Unit)?, (() -> Unit)?) -> Unit, val onHide: () -> Unit) : TextToolbar {
@@ -95,7 +95,7 @@ class CaptureClipboard(private val real: ClipboardManager) : ClipboardManager by
 
 /** The things the pill's actions do outside the chat (browser, share sheet, speech). */
 object SelectionDo {
-    /** Search or open a link in Blaze's own browser, in a new tab. */
+    /** Search or open a link in Argus's own browser, in a new tab. */
     fun openInBlazeBrowser(ctx: Context, text: String) {
         val url = SelectionActions.browserUrl(text)
         try {
@@ -127,7 +127,7 @@ object SelectionDo {
 }
 
 /**
- * v0.27.2: the black selection pill (Copy · Quote · Select all · Search · Ask Blaze · Translate · Define · Read aloud ·
+ * v0.27.2: the black selection pill (Copy · Quote · Select all · Search · Ask Argus · Translate · Define · Read aloud ·
  * Share). It is as wide as its actions up to the screen minus 12 dp each side, then scrolls sideways with a snapping
  * fling and a haptic tick on each settle. A fade + chevron on an edge says more is there; the first time it opens it
  * peeks the next actions once (never with Remove animations on). Draw it in a full-screen box; it does not block

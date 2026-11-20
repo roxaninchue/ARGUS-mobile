@@ -20,7 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Keeps background terminal jobs alive when Blaze is closed (a foreground service holds the
+ * Keeps background terminal jobs alive when Argus is closed (a foreground service holds the
  * process), enforces each job's time budget, and posts a notification when a job finishes or
  * fails, with the last lines of its output. Stops itself when no jobs are left.
  */

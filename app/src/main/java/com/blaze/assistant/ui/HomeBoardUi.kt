@@ -227,7 +227,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSky() {
 // ---------------------------------------------------------------- the screen
 
 /**
- * The Home tab. [onAsk] hands a plain-words request to Blaze (the main chat runs it with the home_widget_* tools).
+ * The Home tab. [onAsk] hands a plain-words request to Argus (the main chat runs it with the home_widget_* tools).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -266,7 +266,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
     // v0.30.5: looking at Home marks what's on it as seen (Home heads-ups only tell about things you haven't seen).
     LaunchedEffect(Unit) { com.blaze.assistant.home.HomeBoard.markSeen() }
     LaunchedEffect(toast) { if (toast.isNotBlank()) { delay(3_500); toast = "" } }
-    // v0.30.5: Blaze's browser at work → the live preview window.
+    // v0.30.5: Argus's browser at work → the live preview window.
     val busyChats by com.blaze.assistant.agent.Agent.busyChats.collectAsState()
     val liveStep by com.blaze.assistant.browser.BrowserLive.step.collectAsState()
     var liveNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -343,7 +343,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
                     HomeBoard.finishOnboarding(chosen, subs, typed, skipped = false); onboarded = true
                 }, onSkip = { HomeBoard.finishOnboarding(emptySet(), emptySet(), "", skipped = true); onboarded = true })
             } else if (redesign) {
-                // Lazy start: the new Home (splash, grid) is composed from the frame after Blaze's first frame; the sky is the first frame.
+                // Lazy start: the new Home (splash, grid) is composed from the frame after Argus's first frame; the sky is the first frame.
                 if (firstFrameShown()) HomeRedesignScreen(onAsk = { t -> onAsk(t); if (askToast) toast = "Asked ${BrandName.NAME}. The answer is in Chat." }, onOpenLink = { u -> open(u, null) },
                     onAllWidgets = { showBoard = true }, onPickInterests = { onboarded = false }, drawSky = false,
                     reserveBottom = false, chatBar = chatBar)
@@ -352,7 +352,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
                 val stacks = remember(widgets) { Stacks.build(widgets) }
                 LaunchedEffect(stacks) { stackState = stackState.prune(stacks) }
                 PullToRefreshBox(isRefreshing = refreshing, onRefresh = { HomeBoard.pullToRefresh() }, modifier = Modifier.fillMaxSize()) {
-                    // Lazy start: the cards are composed from the frame after Blaze's first frame (ui/FirstFrame.kt).
+                    // Lazy start: the cards are composed from the frame after Argus's first frame (ui/FirstFrame.kt).
                     if (firstFrameShown()) HomeBoardView(stacks, data, loading, offline, now, stackState,
                         stamp = Ago.of(maxOf(HomeBoard.lastRefresh, data.values.maxOfOrNull { it.fetched } ?: 0L), now),
                         onToggle = { stackState = stackState.toggle(it) },
@@ -373,10 +373,10 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             }
             if (toast.isNotBlank()) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp).navigationBarsPadding()) { HomeToast(toast) }
             glassUrl?.let { u -> GlassWindow(u, onClose = { glassUrl = null }, onOpenOutside = { openHomeLink(ctx, it) },
-                // v0.29.9: the selection pill on the page: Ask / Translate / Define go to Blaze, Quote goes into the chat box.
+                // v0.29.9: the selection pill on the page: Ask / Translate / Define go to Argus, Quote goes into the chat box.
                 onAsk = { t -> onAsk(t); toast = "Asked ${BrandName.NAME}. The answer is in Chat." },
                 onQuote = { t -> onQuote(t) }) }
-            // v0.30.5: while Blaze works in its browser, a fixed glass window previews the page (× hides it until the next task).
+            // v0.30.5: while Argus works in its browser, a fixed glass window previews the page (× hides it until the next task).
             if (glassUrl == null && onboarded && liveShowing && !liveHidden) BrowserLivePreview(onHide = { liveHidden = true })
 
             menuFor?.let { id ->
@@ -853,7 +853,7 @@ private fun WidgetBody(w: Widget, d: WidgetData, size: String, onLine: (WidgetLi
 
 // ---------------------------------------------------------------- long-press menu
 
-/** Move up / down, Resize S M L, Hide, Remove, Refresh, Ask Blaze to change. */
+/** Move up / down, Resize S M L, Hide, Remove, Refresh, Ask Argus to change. */
 @Composable
 fun WidgetMenuCard(w: Widget, onPick: (String) -> Unit) {
     val shape = RoundedCornerShape(24.dp)

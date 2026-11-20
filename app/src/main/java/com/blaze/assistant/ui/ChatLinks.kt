@@ -4,7 +4,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.AnnotatedString
 
 /**
- * v0.45.28: links in Blaze's chat replies. [Md] marks markdown links, <a href> links and bare web addresses with a
+ * v0.45.28: links in Argus's chat replies. [Md] marks markdown links, <a href> links and bare web addresses with a
  * "URL" annotation (underlined in the accent colour); a tap on one in a reply calls [LocalOpenLink], which the chat
  * screen points at the same glass window Home opens its links in ([GlassWindow]). Long-press still selects and copies.
  * Pure parts tested in ChatLinksTest.

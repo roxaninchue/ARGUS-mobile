@@ -86,7 +86,7 @@ object LinuxDesktopCleanup {
         else -> listOf("var/cache/apk")
     }
 
-    /** Files the desktop kept in Blaze's home (~). */
+    /** Files the desktop kept in Argus's home (~). */
     val HOME_FILES = listOf(".desktop_shot.png", ".desktop_apps.txt")
 
     /** Runs the one-time cleanup. Safe to call on every start: it returns at once when it is done. */

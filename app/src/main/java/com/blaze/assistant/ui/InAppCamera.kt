@@ -136,11 +136,11 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 
 /**
- * v0.28.x Blaze Camera (CameraX). Two jobs:
+ * v0.28.x Argus Camera (CameraX). Two jobs:
  *  1. The fallback for + → Camera when the phone's camera app can't be used (none installed / exported, blocked by
  *     a work profile, Secure Folder or policy, or it ignored EXTRA_OUTPUT): Origin.CHAT_ATTACH, one photo into the
  *     file the chat passed, no mode bar.
- *  2. Blaze Camera with a mode bar (Scan · Text · Ask · Photo · Translate · Document), opened from + → Blaze Camera,
+ *  2. Argus Camera with a mode bar (Scan · Text · Ask · Photo · Translate · Document), opened from + → Blaze Camera,
  *     Magic Hand, the blaze_camera tool, or a plain request ("read this sign"). Where a capture goes is
  *     [CameraModes.route]; [BlazeCamera.deliver] hands it over.
  * Preview, shutter, front/back flip only when both lenses exist, flash only when the lens has one, pinch-zoom and
@@ -325,7 +325,7 @@ private fun LiveCamera(start: Mode, origin: Origin, attachTo: File?, chat: Strin
                 imageCaptureTargetSize = CameraController.OutputSize(if (landscape) Size(long, short) else Size(short, long))
             }
             imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-            // Blaze handles pinch and tap itself (CameraPro): pinch has to run on past the lens's max into digital zoom,
+            // Argus handles pinch and tap itself (CameraPro): pinch has to run on past the lens's max into digital zoom,
             // and a tap shows the focus ring and exposure slider.
             isPinchToZoomEnabled = false
             isTapToFocusEnabled = false
@@ -735,7 +735,7 @@ private suspend fun readText(f: File): String = try {
 
 private fun flashMode(f: String) = when (f) { "on" -> ImageCapture.FLASH_MODE_ON; "auto" -> ImageCapture.FLASH_MODE_AUTO; else -> ImageCapture.FLASH_MODE_OFF }
 
-/** Gallery copy for open_camera outside a chat: Pictures/Blaze (Android 10+, no storage permission), else Blaze's own Pictures folder. */
+/** Gallery copy for open_camera outside a chat: Pictures/Blaze (Android 10+, no storage permission), else Argus's own Pictures folder. */
 private fun saveToGallery(ctx: Context, f: File): String? = try {
     if (Build.VERSION.SDK_INT >= 29) {
         val v = ContentValues().apply {
@@ -755,7 +755,7 @@ private fun saveToGallery(ctx: Context, f: File): String? = try {
     }
 } catch (e: Exception) { CameraSupport.log("gallery save failed", e); null }
 
-/** Text read by Blaze Camera as a .txt in Downloads/Blaze (Android 10+), else Blaze's own Documents folder. */
+/** Text read by Argus Camera as a .txt in Downloads/Blaze (Android 10+), else Argus's own Documents folder. */
 private fun saveText(ctx: Context, text: String): String? = try {
     val name = "blaze-text-${System.currentTimeMillis()}.txt"
     if (Build.VERSION.SDK_INT >= 29) {
@@ -904,7 +904,7 @@ private fun joinWifi(ctx: Context, w: CameraModes.Wifi) {
 }
 
 /**
- * Blaze Camera's controls over any preview (stateless, so ShotsTest draws it with a fake preview). Insets-aware for
+ * Argus Camera's controls over any preview (stateless, so ShotsTest draws it with a fake preview). Insets-aware for
  * gesture nav, 3-button nav, cut-outs and landscape. The mode bar is TalkBack tabs; motion follows Remove animations.
  */
 @Composable

@@ -95,7 +95,7 @@ private object Player {
     fun stop() { try { mp?.release() } catch (_: Exception) { }; mp = null; playing.value = "" }
 }
 
-/** Pictures and beats under a Blaze reply. */
+/** Pictures and beats under an Argus reply. */
 /**
  * v0.45.0 (#2): [paths] without the files that no longer exist, checked on a background thread when the row is first
  * drawn (shown as given until then). Replaces the File.exists per media path per message that ran at chat load.
