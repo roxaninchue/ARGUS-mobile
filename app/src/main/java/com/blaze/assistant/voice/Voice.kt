@@ -21,7 +21,7 @@ import com.blaze.assistant.voice.gemini.GeminiVoice
  * Speech in (Android's recognizer) and speech out. Main thread only.
  * v0.28.0: speech out goes through one route ([out]): the phone's TextToSpeech, or "My voice" (the user's own voice,
  * cloned on the phone by [MyVoice]) when they chose it. Every caller (voice replies, calls, Read aloud, proactive
- * notices) still just calls speak / speakPart / say, so all of Blaze's speech follows the choice.
+ * notices) still just calls speak / speakPart / say, so all of Argus's speech follows the choice.
  */
 object Voice {
     enum class State { IDLE, LISTENING, SPEAKING }
@@ -44,14 +44,14 @@ object Voice {
      */
     @Volatile var listenHandled = 0
 
-    /** Call Blaze: a full-screen voice call. While on, replies are always spoken and the mic reopens after each one. */
+    /** Call Argus: a full-screen voice call. While on, replies are always spoken and the mic reopens after each one. */
     @Volatile var inCall = false
     @Volatile var callMuted = false
     /** Bumped to ask the chat screen to open the call screen (launcher shortcut, "call Blaze"). */
     val callRequests = MutableStateFlow(0)
     /** Bumped when the caller ends the call by voice ("bye", "that's all"). */
     val callEnded = MutableStateFlow(0)
-    /** Call screen state, shared so Blaze can flip it by voice ("put me on loudspeaker", "mute"). */
+    /** Call screen state, shared so Argus can flip it by voice ("put me on loudspeaker", "mute"). */
     val callSpeaker = MutableStateFlow(true)
     val callMute = MutableStateFlow(false)
     fun shouldSpeak() = inCall || com.blaze.assistant.agent.Settings.speakReplies
@@ -176,7 +176,7 @@ object Voice {
 
     /**
      * Conversation mode: after a spoken answer, listen again. Ends on silence (twice), or on
-     * "thanks"/"that's all"; "stop"/"cancel" stops whatever Blaze is doing.
+     * "thanks"/"that's all"; "stop"/"cancel" stops whatever Argus is doing.
      */
     fun conversationListen() {
         com.blaze.assistant.agent.LlmClient.prewarm()   // keep the connection warm while we talk
@@ -312,7 +312,7 @@ object Voice {
         } catch (_: Exception) { }
     }
 
-    /** Blaze's voice, speed and pitch from settings. */
+    /** Argus's voice, speed and pitch from settings. */
     fun applyPrefs() {
         val t = tts ?: return
         if (!ttsReady) return

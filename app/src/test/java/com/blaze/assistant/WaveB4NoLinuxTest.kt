@@ -17,8 +17,8 @@ import java.io.File
 
 /**
  * Wave B-4 (HQ item 12): the on-phone Linux desktop (XFCE + TigerVNC under PRoot) is gone: no tool, prompt line,
- * view, settings page, chat card, BlazeOS app or service offers it. Blaze's Alpine terminal (run_shell linux=true,
- * run_code, git; PRoot + BusyBox in jniLibs) stays, and Blaze Desktop pairing (the PC app) is untouched. The desktop's
+ * view, settings page, chat card, BlazeOS app or service offers it. Argus's Alpine terminal (run_shell linux=true,
+ * run_code, git; PRoot + BusyBox in jniLibs) stays, and Argus Desktop pairing (the PC app) is untouched. The desktop's
  * saved settings and leftovers are cleaned once after the update ([LinuxDesktopCleanup]).
  */
 class WaveB4NoLinuxTest {
@@ -30,7 +30,7 @@ class WaveB4NoLinuxTest {
         assertFalse("the desktop package", File(main, "desktop").exists())
         listOf("ui/LinuxDesktopPage.kt", "ui/DesktopLiveCard.kt", "ui/DesktopTaskCard.kt", "ui/DesktopExtrasSection.kt", "ui/KeepDesktopRow.kt",
             "agent/DesktopRoute.kt").forEach { assertFalse(it, File(main, it).exists()) }
-        // Blaze Desktop (the PC app) pairing stays.
+        // Argus Desktop (the PC app) pairing stays.
         assertTrue(File(main, "link/DesktopLink.kt").exists()); assertTrue(File(main, "ui/DesktopPage.kt").exists())
         val all = main.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
         for (f in all) {
@@ -58,7 +58,7 @@ class WaveB4NoLinuxTest {
     @Test fun noScreenChipOrCommandOffersIt() {
         assertTrue(Views.all.none { it.id == "linux" })
         listOf("linux", "xfce", "vnc", "linux desktop", "view desktop").forEach { assertNull(it, Views.find(it)) }
-        assertTrue(Views.find("desktop") != null)   // Blaze Desktop pairing
+        assertTrue(Views.find("desktop") != null)   // Argus Desktop pairing
         assertFalse(Views.offerLabel("linux").contains("View desktop"))
         assertTrue(com.blaze.assistant.ui.settingsPages.none { it.id == "linux" })
         // 16 Nov 2026: the Jobs page left Settings and "/" commands are gone; an old "linux" page id lands on the root.

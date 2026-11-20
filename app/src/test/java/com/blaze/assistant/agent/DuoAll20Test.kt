@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** 0.45.20 feature batch items 9 (@all: Blaze does, Halo brief or quiet) and 10 (no voice filler). Strict 5/5. */
+/** 0.45.20 feature batch items 9 (@all: Argus does, Halo brief or quiet) and 10 (no voice filler). Strict 5/5. */
 class DuoAll20Test {
     private fun five(f: () -> Unit) = repeat(5) { f() }
 

@@ -12,7 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.45.29 (stale "Yes"): a short yes answers only the newest assistant message. The device case: Blaze offered to
+ * 0.45.29 (stale "Yes"): a short yes answers only the newest assistant message. The device case: Argus offered to
  * unsubscribe the user from a shop's emails; later Halo offered to add a song to their music; the user said "Yes" and
  * the unsubscribe was acted on and reported as done.
  */
@@ -85,7 +85,7 @@ class FollowUpBindTest {
         assertTrue(FollowUpBind.RULE.contains("unsubscribe") && FollowUpBind.RULE.contains("buy"))
     }
 
-    /** GoalPin read none of the main chat's messages: each starts with its "[m7] " id and was skipped as a Blaze note. */
+    /** GoalPin read none of the main chat's messages: each starts with its "[m7] " id and was skipped as an Argus note. */
     @Test fun userTextsReadTaggedMessages() {
         val h = JSONArray()
             .put(JSONObject().put("role", "user").put("content", "[m3] what's this song?"))
@@ -104,7 +104,7 @@ class FollowUpBindTest {
         assertEquals("open", ActionProof.unbacked("I opened Gmail for you.", emptyList(), "sure")?.id)
         // A verified tool backs it.
         assertNull(ActionProof.unbacked("You're unsubscribed from Shopify's emails.", listOf("browser_click"), "yes"))
-        // ClaimCheck: a bare "Done." with only failed results is unbacked; a booking claim is checked without Blaze Phone.
+        // ClaimCheck: a bare "Done." with only failed results is unbacked; a booking claim is checked without Argus Phone.
         val failed = listOf(ClaimCheck.Done("spotify_play", ToolVerify.Status.FAILED, "error"))
         assertTrue(ClaimCheck.review("Done.", failed, "yes") is ClaimCheck.Outcome.Unbacked)
         assertTrue(ClaimCheck.review("I've booked it.", emptyList(), "yes") !is ClaimCheck.Outcome.Ok)

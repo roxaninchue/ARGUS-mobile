@@ -7,7 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.46.4 Music revamp: nav, close-to-chat, cover mosaic, colour fallback, now-playing gestures, Blaze DJ plan + plain speech. */
+/** 0.46.4 Music revamp: nav, close-to-chat, cover mosaic, colour fallback, now-playing gestures, Argus DJ plan + plain speech. */
 class MusicRevampTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
     private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()

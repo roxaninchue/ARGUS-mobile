@@ -11,7 +11,7 @@ import java.io.File
 
 /**
  * 0.45.29 (user report, Mon 26 Oct 09:02): a user replied "I play guitar" from a heads-up and the notification then
- * showed "Playing guitar a little." under Blaze's name: an ack line, not an answer. Blaze shows only what the model
+ * showed "Playing guitar a little." under Argus's name: an ack line, not an answer. Argus shows only what the model
  * wrote; the user's inline reply shows as the user's own words until the real answer arrives.
  */
 class NoCannedRepliesTest {
@@ -27,10 +27,10 @@ class NoCannedRepliesTest {
         assertTrue(lines.last().fromUser)
         assertFalse(lines.first().fromUser)
         assertTrue(QuickReplies.forMessage("I play guitar", BlazeThread.Kind.USER).isEmpty())
-        // The real answer lands below it, as Blaze's.
+        // The real answer lands below it, as Argus's.
         val after = BlazeThread.push(thread, BlazeThread.Msg(3, "Nice! What do you like to play?", Notifier.replyKind("Nice! What do you like to play?", false)))
         assertEquals(listOf(false, true, false), after.map { it.fromUser })
-        // The same words from Blaze right after the user's are not merged into the user's line.
+        // The same words from Argus right after the user's are not merged into the user's line.
         val again = BlazeThread.push(ArrayDeque(listOf(BlazeThread.Msg(1, "ok", BlazeThread.Kind.USER))), BlazeThread.Msg(2, "ok", BlazeThread.Kind.REPLY))
         assertEquals(2, again.size)
     }

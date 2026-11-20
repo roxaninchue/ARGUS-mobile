@@ -188,7 +188,7 @@ class WakeWordService : Service() {
     /**
      * Our own mic loop (instead of Vosk's SpeechService) so we can notice when Android hands us
      * silence: a microphone service started from the background gets an all-zero stream on
-     * Android 11+. Then we ask the user to tap once to bring Blaze to the front.
+     * Android 11+. Then we ask the user to tap once to bring Argus to the front.
      */
     @Synchronized private fun startListening() {
         val m = model ?: return
@@ -280,7 +280,7 @@ class WakeWordService : Service() {
     }
 
     /**
-     * True when the wake phrase was heard (and Blaze was woken). The whole utterance must be the
+     * True when the wake phrase was heard (and Argus was woken). The whole utterance must be the
      * phrase (not buried in other speech), and every word must be recognised confidently.
      */
     private fun check(hyp: String?): Boolean {
@@ -305,9 +305,9 @@ class WakeWordService : Service() {
 
     private fun wake() {
         com.blaze.assistant.device.Sounds.wake()
-        // Best path: as the default assistant, open Blaze's assistant session over any app.
+        // Best path: as the default assistant, open Argus's assistant session over any app.
         if (BlazeInteractionService.showFromWake()) return
-        // Otherwise the overlay panel, if Blaze may draw over apps.
+        // Otherwise the overlay panel, if Argus may draw over apps.
         if (com.blaze.assistant.ui.Overlay.canDrawOverApps(this)) {
             android.os.Handler(mainLooper).post { com.blaze.assistant.ui.Overlay.openPanel(this, listen = true) }; return
         }

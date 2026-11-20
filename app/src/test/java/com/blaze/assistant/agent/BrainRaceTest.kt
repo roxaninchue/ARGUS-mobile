@@ -34,7 +34,7 @@ class BrainRaceTest {
     }
 
     @Test fun orderNeverWaitsOnACold() {
-        // 0.52.1 (gw061): tool turns ask Blaze Cloud before the Nous reserve (Owner 16 Nov 2026: no on-phone brain any more)
+        // 0.52.1 (gw061): tool turns ask Argus Cloud before the Nous reserve (Owner 16 Nov 2026: no on-phone brain any more)
         assertEquals(listOf(C, R), BrainRace.order(BrainRace.Kind.TASK, signedIn = true))
         assertEquals(listOf(C, R), BrainRace.order(BrainRace.Kind.CODING, true))
         // 0.46.6: chat keeps the standing order (Nous → gateway); speed never puts the gateway before Nous
@@ -58,7 +58,7 @@ class BrainRaceTest {
     }
 
     @Test fun haloAnswersWithinTwoSecondsWhileBlazeIsBusy() = runTest {
-        // Blaze's turn is busy (hanging); Halo's side reply has its own call. The brain is slow: the holding line shows at 2 s.
+        // Argus's turn is busy (hanging); Halo's side reply has its own call. The brain is slow: the holding line shows at 2 s.
         val shown = mutableListOf<Pair<Long, String>>()
         val blaze = backgroundScope.launch { delay(10 * 60_000) }   // the stuck main turn, untouched by Halo
         val r = BrainRace.haloReply(BrainRace.HALO_HOLD_MS, { BrainRace.haloHolding("check my GitLab tokens", "Reading 2 pages") }, { shown += testScheduler.currentTime to it }) { say ->

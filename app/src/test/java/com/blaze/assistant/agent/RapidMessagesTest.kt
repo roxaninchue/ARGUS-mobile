@@ -65,7 +65,7 @@ class RapidMessagesTest {
     }
 
     @Test fun chipsOnlyWhenTheQuotedMessageIsntRightAbove() {
-        // m1 asked, Blaze answered directly below: no chip
+        // m1 asked, Argus answered directly below: no chip
         val direct = listOf(m(1, Role.USER), m(2, Role.STEP), m(3, Role.BLAZE, replyTo = listOf(1)))
         assertTrue(RapidMessages.chipMap(direct).isEmpty())
         // m1, m2 then replies to each: the first is quoted (m2 sits between), the second too (a reply sits between)

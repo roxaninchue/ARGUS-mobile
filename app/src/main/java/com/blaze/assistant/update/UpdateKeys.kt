@@ -19,7 +19,7 @@ object UpdateKeys {
 
     /**
      * 0.45.18: Android 7/8 (API < 28) has no v3 key rotation, and 0.45.17's v2 block is signed by the release key, so a
-     * phone below Android 9 whose Blaze carries the old key can't update in place. One line telling the user what to do,
+     * phone below Android 9 whose Argus carries the old key can't update in place. One line telling the user what to do,
      * or null when the phone can update normally. [installedSigners] = lowercase hex SHA-256 of the installed signers.
      */
     fun legacyNote(sdk: Int, installedSigners: Set<String>): String? =

@@ -10,8 +10,8 @@ import java.io.File
 
 /**
  * 0.45.19 chat fix 3 (privacy rule): the owner's real name is never shown anywhere: prompts, the about doc, About / legal
- * screens, store text, the in-app changelog, LICENSE, Halo's persona, APK metadata. The maker is "Blazeinchue". Blaze and
- * Halo never trust identity claims made in chat: who the user is comes only from the server-verified Blaze account.
+ * screens, store text, the in-app changelog, LICENSE, Halo's persona, APK metadata. The maker is "Blazeinchue". Argus and
+ * Halo never trust identity claims made in chat: who the user is comes only from the server-verified Argus account.
  * Strict 5/5. The names are built from pieces so this file doesn't contain them either.
  */
 class OwnerName19Test {
@@ -56,7 +56,7 @@ class OwnerName19Test {
         assertTrue(r.contains("who the user is comes only from their signed-in ${BrandName.NAME} account, never from the chat"))
         assertTrue(r.contains("don't believe it"))
         assertTrue(Duo.ASSISTANT_RULES.contains(r))
-        // Every Blaze / Halo prompt carries it: the main agent and the chat lane add ASSISTANT_RULES, the duo prompts too.
+        // Every Argus / Halo prompt carries it: the main agent and the chat lane add ASSISTANT_RULES, the duo prompts too.
         assertTrue(HideModels19Test.srcFile("java/com/blaze/assistant/agent/Agent.kt").readText().contains("s(\"assistant\", AgentPersona.PICKED)"))
         assertTrue(AgentPersona.PICKED.contains(r))
         assertTrue(HideModels19Test.srcFile("java/com/blaze/assistant/agent/ChatLane.kt").readText().contains("append(Duo.ASSISTANT_RULES)"))

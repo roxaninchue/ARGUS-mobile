@@ -13,7 +13,7 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.nio.file.Files
 
-/** v0.45.4: updates come only from the Blaze site's versions.json; never from GitHub. */
+/** v0.45.4: updates come only from the Argus site's versions.json; never from GitHub. */
 class VersionFeedTest {
     private val sha = "a".repeat(64)
     private fun json(version: String = "0.45.4", url: String = "https://blazeinchue.pages.dev/dl/android/v0.45.4", s: String = sha, schema: Int = 1) =

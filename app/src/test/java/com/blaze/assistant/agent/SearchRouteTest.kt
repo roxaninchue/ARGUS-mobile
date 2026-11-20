@@ -11,7 +11,7 @@ import org.junit.Test
 
 /**
  * 0.50.0 (owner, 2026-11-01 16:32: 'what "/" commands do I have available?' searched the web and answered about Windows help
- * pages). No keyword-triggered web search: questions go to the model, questions about Blaze / the chat / the user's own data
+ * pages). No keyword-triggered web search: questions go to the model, questions about Argus / the chat / the user's own data
  * stay local, weather goes to the weather tool, and the quick lane runs only on an explicit "search…" request.
  */
 class SearchRouteTest {

@@ -6,7 +6,7 @@ import com.blaze.assistant.device.CameraModes.Mode
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** v0.28.x: plain requests open Blaze Camera in the right mode, with no model guess; everything else is left alone. */
+/** v0.28.x: plain requests open Argus Camera in the right mode, with no model guess; everything else is left alone. */
 class CameraIntentTest {
     private fun assertMode(m: Mode?, text: String) = assertEquals(text, m, CameraIntent.match(text))
 

@@ -6,7 +6,7 @@ import java.util.PriorityQueue
 import kotlin.random.Random
 
 /**
- * 0.45.19-speed perf harness: a simulated Blaze Phone page on a virtual clock. It answers the engine's page scripts
+ * 0.45.19-speed perf harness: a simulated Argus Phone page on a virtual clock. It answers the engine's page scripts
  * (recognised by their leading bz:name marker comment) from a page model, charges each call what it costs on a phone
  * (cost model below), and plays page events (navigation start/finish, fetches, re-renders) at their scheduled times,
  * so the real [PhoneEngine] code is timed exactly, run after run, with seeded jitter.

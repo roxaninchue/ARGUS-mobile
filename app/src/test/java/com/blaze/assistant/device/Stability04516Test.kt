@@ -50,7 +50,7 @@ class Stability04516Test {
 
     @Test fun everyStartupCallIsGuarded() {
         val body = src("BlazeApp.kt").readText().substringAfter("override fun onCreate()").substringBefore("override fun onTrimMemory")
-        // Top-level statements of onCreate (8-space indent) that call into Blaze must be guarded or be the crash log itself.
+        // Top-level statements of onCreate (8-space indent) that call into Argus must be guarded or be the crash log itself.
         val bare = body.lines().filter { it.startsWith("        ") && !it.startsWith("         ") }.map { it.trim() }
             .filter { (it.startsWith("com.blaze.assistant.") || it.startsWith("Agent.") || it.startsWith("Settings.")) &&
                 !it.startsWith("com.blaze.assistant.device.") }

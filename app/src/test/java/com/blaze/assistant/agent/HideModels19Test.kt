@@ -101,7 +101,7 @@ class HideModels19Test {
 }
 
 /**
- * The string literals the user can see: every Kotlin string in the UI packages (ui/, notify/, Blaze Phone's screens and
+ * The string literals the user can see: every Kotlin string in the UI packages (ui/, notify/, Argus Phone's screens and
  * status lines) and the agent files that write user-facing lines, plus every Android string resource. Comments are
  * skipped; the developer-only "What happened" sheet holds no names either, so nothing is excluded.
  */

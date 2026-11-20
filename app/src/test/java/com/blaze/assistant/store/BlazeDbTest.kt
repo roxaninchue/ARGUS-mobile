@@ -14,7 +14,7 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * blaze.db on the JVM (sqlite-jdbc): the schema is Blaze Desktop's internal/store v1 byte for byte, and the Go
+ * blaze.db on the JVM (sqlite-jdbc): the schema is Argus Desktop's internal/store v1 byte for byte, and the Go
  * store tests (store_test.go, shared_test.go) hold for the Kotlin port.
  */
 class BlazeDbTest {

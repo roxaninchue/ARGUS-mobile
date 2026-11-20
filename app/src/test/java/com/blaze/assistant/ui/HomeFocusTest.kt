@@ -73,7 +73,7 @@ class HomeFocusTest {
         rule.onAllNodesWithText("Researchers have discovered a faster way to compile").onLast().performClick()
         assertEquals("https://example.com/a", opened)
         assertTrue(f.isOpen)
-        // a Quick action asks Blaze and closes the card
+        // a Quick action asks Argus and closes the card
         rule.runOnIdle { f.close() }; rule.waitForIdle()
         rule.runOnIdle { f.open(HomeGrid.Card.QUICK) }; rule.waitForIdle()
         rule.onAllNodesWithText("Plan").onLast().performClick()

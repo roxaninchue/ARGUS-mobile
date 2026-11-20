@@ -54,7 +54,7 @@ class PhoneClaimGuardTest {
         // A tap whose own result looked verified, or the status line: not a phone_read.
         assertTrue(PhoneClaimGuard.review(claim, listOf("phone_act" to "page verified: Your reservation is confirmed"), true)!!.startsWith("Not booked yet"))
         assertTrue(PhoneClaimGuard.review(claim, listOf("phone_status" to "page not verified"), true)!!.startsWith("Not booked yet"))
-        // Nothing ran this turn but Blaze Phone has a task open (an earlier turn's read doesn't count).
+        // Nothing ran this turn but Argus Phone has a task open (an earlier turn's read doesn't count).
         assertTrue(PhoneClaimGuard.review(claim, emptyList(), true)!!.startsWith("Not booked yet"))
         // The newest read decides: confirmation lost / an error after it.
         assertTrue(PhoneClaimGuard.review(claim, listOf("phone_read" to "page verified: x", "phone_act" to "page not verified", "phone_read" to "page not verified"), true)!!.startsWith("Not booked yet"))
@@ -65,7 +65,7 @@ class PhoneClaimGuardTest {
         val fine = listOf("It's not booked yet: the page is still on the review step.", "I haven't booked anything; want me to tap Book?",
             "Shall I confirm the booking?", "The booking form is open and filled in.", "Once you approve, I'll book it.")[i]
         assertNull(fine, PhoneClaimGuard.review(fine, emptyList(), inPlay = true))
-        // Blaze Phone not in play this turn: not this guard's business (ClaimCheck covers other tools).
+        // Argus Phone not in play this turn: not this guard's business (ClaimCheck covers other tools).
         assertNull(PhoneClaimGuard.review(CLAIMS[i], emptyList(), inPlay = false))
         // The rest of the reply keeps its layout; the honest line takes the claim's place.
         val out = PhoneClaimGuard.review("Here's the update.\n${CLAIMS[i]}\nAnything else?", emptyList(), true)!!

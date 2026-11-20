@@ -6,7 +6,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.46.2 legal guard: Blaze ships, suggests and links no third-party provider repo or streaming site, and no anti-censorship
+ * 0.46.2 legal guard: Argus ships, suggests and links no third-party provider repo or streaming site, and no anti-censorship
  * tunnel. The only Vega link allowed anywhere is the vega-app source repo in THIRD_PARTY_NOTICES.md (Apache-2.0 attribution).
  */
 class MoviesLegalTest {

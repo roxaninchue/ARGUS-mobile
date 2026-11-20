@@ -11,8 +11,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 0.45.19 chat fix 4: the chat sweep. Blaze Phone's status pill was white on light grey; element refs ("Tapping e61")
- * reached the status line; Halo's bubble and Blaze's answer shared one group (Blaze's words under Halo's name, one action
+ * 0.45.19 chat fix 4: the chat sweep. Argus Phone's status pill was white on light grey; element refs ("Tapping e61")
+ * reached the status line; Halo's bubble and Argus's answer shared one group (Argus's words under Halo's name, one action
  * row); raw call text must never reach a bubble. Strict 5/5.
  */
 class ChatFixes19Test {
@@ -46,7 +46,7 @@ class ChatFixes19Test {
         )
         val items = buildItems(msgs, working = false)
         assertEquals(listOf(GroupPos.SINGLE, GroupPos.SINGLE, GroupPos.SINGLE), items.map { it.pos })
-        // Blaze's own ack and result still share one group: one timestamp / action row, on the last one.
+        // Argus's own ack and result still share one group: one timestamp / action row, on the last one.
         val ackThenResult = listOf(
             ChatMessage(1, Role.USER, "turn on dark mode", at = t),
             ChatMessage(2, Role.BLAZE, "Turning on dark mode.", meta = "ack", at = t + 2_100),

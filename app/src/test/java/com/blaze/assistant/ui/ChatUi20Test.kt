@@ -65,7 +65,7 @@ class ChatUi20Test {
         val electric = palette(0xFF1286FF, true); val amber = palette(0xFFF59E0B, true)
         assertTrue(BubblePalette.fill(electric, true) != BubblePalette.fill(amber, true))
         assertTrue(BubblePalette.fill(electric, false) == BubblePalette.fill(amber, false))
-        // Blaze's own greys and the theme accent, never WhatsApp's green.
+        // Argus's own greys and the theme accent, never WhatsApp's green.
         for (id in themes) for (dark in listOf(false, true)) for (mine in listOf(true, false)) {
             val f = BubblePalette.fill(palette(id, dark), mine)
             assertTrue("$id $dark $mine greenish", !(f.green > f.red + 0.08f && f.green > f.blue + 0.08f))

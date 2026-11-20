@@ -1,14 +1,14 @@
 package com.blaze.assistant.ui
 
 /**
- * 0.45.24: the live line while Blaze works (the step pill, or an acknowledged task's chip) sits beside the Blaze drop
+ * 0.45.24: the live line while Argus works (the step pill, or an acknowledged task's chip) sits beside the Argus drop
  * in one row, vertically centred, instead of above or below it, and goes away as soon as the reply's first words
  * stream in, not only when the reply is done. Pure (WaitRowTest).
  */
 object WaitRow {
     /**
-     * True while the live line may show: Blaze is working, nothing of the reply is on screen yet ([streaming] = a
-     * reply is streaming in; [replyAtEnd] = the newest thing in the thread is Blaze's text for this turn).
+     * True while the live line may show: Argus is working, nothing of the reply is on screen yet ([streaming] = a
+     * reply is streaming in; [replyAtEnd] = the newest thing in the thread is Argus's text for this turn).
      */
     fun showLine(working: Boolean, streaming: Boolean, replyAtEnd: Boolean): Boolean = working && !streaming && !replyAtEnd
 

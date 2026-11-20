@@ -50,7 +50,7 @@ class PhoneControlSweepTest {
         val still = "I tried to turn off alarm A2. " + ActCheck.notConfirmed("\u201cDemo app alarm (${BrandName.NAME} A2)\u201d still reads ON in the Clock app", "switch it off in the Clock app")
         val v = ToolVerify.classify("process", a("id" to "A2", "action" to "delete"), still)
         assertEquals(Status.UNVERIFIED, v.status); assertTrue(v.why, v.why.contains("still reads ON"))
-        // Blaze's own things (a routine) are still done by their own words.
+        // Argus's own things (a routine) are still done by their own words.
         assertEquals(Status.VERIFIED, ToolVerify.classify("process", a("id" to "R4", "action" to "delete"), "Deleted routine R4 \u201cGym\u201d.").status)
         // The final reply: "Alarm removed." is a claim now, and an unconfirmed delete can't back it.
         val done = listOf(ClaimCheck.Done("processes", Status.VERIFIED), ClaimCheck.Done("process", Status.UNVERIFIED, "the Clock app wasn't read back"))

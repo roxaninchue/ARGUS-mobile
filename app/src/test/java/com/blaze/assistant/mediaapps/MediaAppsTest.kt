@@ -9,7 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.30.1 Blaze Music / Video: queue, playlists, downloads, quality picks and YouTube parsing. */
+/** v0.30.1 Argus Music / Video: queue, playlists, downloads, quality picks and YouTube parsing. */
 class MediaLogicTest {
     @Test fun repeatCycles() {
         assertEquals(Repeat.ALL, Repeat.OFF.next())

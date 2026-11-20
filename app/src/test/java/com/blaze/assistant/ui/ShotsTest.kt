@@ -632,7 +632,7 @@ open class ShotsTest {
         }
     }
 
-    // v0.24.5: the "Leave private chat?" dialog in the Blaze dialog look (dark card, pill buttons), over a dimmed chat.
+    // v0.24.5: the "Leave private chat?" dialog in the Argus dialog look (dark card, pill buttons), over a dimmed chat.
     @Test fun privateLeaveDialog() = shot("46-private-leave-dialog", dark = true) {
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF26262A))) {
             Text("Private chat", Modifier.padding(24.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFFF0F0EE)))
@@ -643,7 +643,7 @@ open class ShotsTest {
         }
     }
 
-    // v0.24.5: the floating work banner (rounded dark card, mascot in a spinning ring, Stop pill) over a light and a dark app, and the Blaze menu.
+    // v0.24.5: the floating work banner (rounded dark card, mascot in a spinning ring, Stop pill) over a light and a dark app, and the Argus menu.
     @Test fun workBanner() = shot("47-work-banner") {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFFF4F4F4)).padding(top = 36.dp, start = 12.dp, end = 12.dp)) {
@@ -951,7 +951,7 @@ open class ShotsTest {
         }
     }
 
-    // ---------- v0.28.x Blaze Camera (fake preview: CameraX can't run in Robolectric) ----------
+    // ---------- v0.28.x Argus Camera (fake preview: CameraX can't run in Robolectric) ----------
     @Composable private fun FakePreview() {
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
             listOf(androidx.compose.ui.graphics.Color(0xFF3B4A5A), androidx.compose.ui.graphics.Color(0xFF8A7B63), androidx.compose.ui.graphics.Color(0xFF2E2A26))))) {

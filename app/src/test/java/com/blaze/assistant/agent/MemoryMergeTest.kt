@@ -158,7 +158,7 @@ class MemoryMergeTest {
         val st = open()
         st.save("person", "Mary", "Sister is Mary, a nurse in Kitwe", now = 1000)
         st.save("person", "Mary", "Prefers tea", now = 2000)
-        // Written by another device / an older Blaze, so the save-time dedupe never saw them together.
+        // Written by another device / an older Argus, so the save-time dedupe never saw them together.
         st.sql.exec("INSERT INTO memories(text, norm, category, created, updated) VALUES(?,?,?,?,?)",
             "Sister is Mary, a nurse in Kitwe hospital", BlazeDb.norm("Sister is Mary, a nurse in Kitwe hospital"), "person", 3, 3)
         assertEquals(3, st.all().size)

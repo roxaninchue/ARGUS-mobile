@@ -27,7 +27,7 @@ class DesignSafetyTest {
         assertNull(DesignServe.resolve("$O/ext/../x", home, root))
         assertNull(DesignServe.resolve("$O/ext/%2e%2e/x", home, root))
         assertNull(DesignServe.resolve("$O/ext/pic.png", home, null))
-        // Files in Blaze's home keep their paths; URLs pass through.
+        // Files in Argus's home keep their paths; URLs pass through.
         val d = File(home, "designs/a").apply { mkdirs() }; File(d, "index.html").writeText("x")
         assertEquals("$O/designs/a/index.html", DesignServe.servedUrl("file://" + File(d, "index.html").absolutePath, home))
         assertNull(DesignServe.extRoot("file://" + File(d, "index.html").absolutePath, home))

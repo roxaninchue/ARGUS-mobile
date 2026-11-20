@@ -42,7 +42,7 @@ class SimpleHomeTest {
 
     @Test fun talkToTags() {
         assertEquals("@halo hi there", SimpleHome.tagged("hi there", "halo"))
-        // v0.45.28: "all" is no longer a pick; an old saved "all" counts as Blaze.
+        // v0.45.28: "all" is no longer a pick; an old saved "all" counts as Argus.
         assertEquals("plan a trip", SimpleHome.tagged("plan a trip", "all"))
         assertEquals("hi", SimpleHome.tagged("hi", "blaze"))
         assertEquals("/music", SimpleHome.tagged("/music", "halo"))
@@ -59,7 +59,7 @@ class SimpleHomeTest {
         assertTrue(Duo.isTeamTask(story))
         assertEquals(story, SimpleHome.tagged(story, "halo"))
         assertEquals(Duo.Mode.TEAM, Duo.route(SimpleHome.tagged(story, "halo")).mode)
-        // Everything else: Halo alone when Halo is picked, Blaze alone otherwise.
+        // Everything else: Halo alone when Halo is picked, Argus alone otherwise.
         assertEquals("@halo set an alarm for 6", SimpleHome.tagged("set an alarm for 6", "halo"))
         assertEquals(Duo.Mode.BLAZE, Duo.route(SimpleHome.tagged("set an alarm for 6", "all")).mode)
         assertFalse(Duo.wantsBoth("open twitter"))

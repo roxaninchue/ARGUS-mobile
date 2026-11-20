@@ -40,7 +40,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * 0.46.0 Blaze Stage screenshots (CI's shots job, BLAZE_SHOTS=1): every hero and every widget in three themes x light / dark
+ * 0.46.0 Argus Stage screenshots (CI's shots job, BLAZE_SHOTS=1): every hero and every widget in three themes x light / dark
  * (build/shots/StageShotsTest/), each frame checked to be drawn (not blank), plus the timer card's Start button and labels.
  */
 @RunWith(AndroidJUnit4::class)

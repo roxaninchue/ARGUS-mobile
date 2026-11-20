@@ -148,7 +148,7 @@ class VaguePromptTest {
         assertEquals("a1", r.rec?.id)
         assertTrue(block, block.contains("in-app Browser"))
         assertTrue(block, block.contains("never switch"))
-        // and the guard stops a switch to Blaze Phone for that task
+        // and the guard stops a switch to Argus Phone for that task
         assertTrue(TaskMemory.surfaceGuard("phone_open", r.rec, "I signed you in", now)!!.startsWith("Not run"))
         assertEquals(null, TaskMemory.surfaceGuard("browser_read", r.rec, "I signed you in", now))
         assertEquals(null, TaskMemory.surfaceGuard("phone_open", r.rec, "use ${BrandName.NAME} Phone instead", now))

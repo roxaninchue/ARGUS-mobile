@@ -167,7 +167,7 @@ class ChatItemsSyncTest {
     }
 
     @Test fun olderBlazeWholeChatsStillMergeBothWays() {
-        // Phone C runs an older Blaze: it pushes whole chats with the old adapter.
+        // Phone C runs an older Argus: it pushes whole chats with the old adapter.
         val cDir = tmp.newFolder("c")
         val cChats = ChatAdapter({ cDir })
         var cState: String? = null

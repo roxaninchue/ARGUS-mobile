@@ -102,7 +102,7 @@ class SecurityP4Test {
         listOf("fun runDuo(", "fun duoAll(", "fun duoTeam(", "fun duoSay(", "fun duoType(").forEach { assertFalse(it, agent.contains(it)) }
     }
 
-    /** #8: every internal entry point Blaze builds is signed. */
+    /** #8: every internal entry point Argus builds is signed. */
     @Test fun internalIntentsAreSigned() {
         val src = mainSources().filter { it.name != "MainActivity.kt" && it.name != "IntentKey.kt" }
         val unsigned = src.flatMap { f ->

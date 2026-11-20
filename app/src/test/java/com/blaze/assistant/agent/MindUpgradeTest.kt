@@ -20,7 +20,7 @@ import java.io.File
 /**
  * v0.26.3 on the app's own start-up path (Robolectric's SQLite for the old mind.db, sqlite-jdbc standing in for
  * the bundled SQLite): the first launch backs up mind.db and moves the mind into blaze.db with nothing lost; the next
- * launch goes straight to blaze.db; a blaze.db that can't open, or one from a newer Blaze, leaves Blaze on mind.db
+ * launch goes straight to blaze.db; a blaze.db that can't open, or one from a newer Argus, leaves Argus on mind.db
  * with a plain line. Also: the same memories give the same prompt and tool output on both stores.
  */
 @RunWith(AndroidJUnit4::class)

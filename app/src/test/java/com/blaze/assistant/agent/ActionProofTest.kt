@@ -8,7 +8,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * v0.28.8: Blaze must never say it did something it didn't. Every row is (what the user asked, Blaze's final reply,
+ * v0.28.8: Argus must never say it did something it didn't. Every row is (what the user asked, Argus's final reply,
  * tools that succeeded this turn, the action that must be flagged or null). The first rows are real failures.
  */
 class ActionProofTest {

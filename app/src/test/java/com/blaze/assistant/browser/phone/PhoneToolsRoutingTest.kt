@@ -17,7 +17,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.45.19 Blaze Phone browser: which asks route to the phone tools, and how the agent's plumbing treats them. */
+/** 0.45.19 Argus Phone browser: which asks route to the phone tools, and how the agent's plumbing treats them. */
 class PhoneToolsRoutingTest {
     private val names = listOf("phone_open", "phone_read", "phone_act", "phone_screenshot", "phone_wait", "phone_handoff", "phone_status",
         "browser_open", "browser_read", "web_search", "add_calendar_event", "create_routine", "set_alarm", "open_app", "memory_search", "run_shell",
@@ -106,7 +106,7 @@ class PhoneToolsRoutingTest {
     }
 
     @Test fun bookedCheckOnlyOnPhoneTurns() {
-        // A turn that never used Blaze Phone keeps the old behaviour (no new claim check).
+        // A turn that never used Argus Phone keeps the old behaviour (no new claim check).
         assertEquals(Outcome.Ok, ClaimCheck.review("Booked!", listOf(Done("web_search", Status.VERIFIED)), "how do I book a table at Nando's"))
     }
 

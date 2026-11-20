@@ -26,7 +26,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * In-chat self-update. v0.45.4: reads the Blaze site's versions.json ([VersionFeed]), downloads android.url in the app
+ * In-chat self-update. v0.45.4: reads the Argus site's versions.json ([VersionFeed]), downloads android.url in the app
  * (resumable, [ApkDownload]), checks it against android.sha256 and the signing key, and installs it through
  * PackageInstaller. Prefs, keys and models live in app storage, so an update keeps them all.
  */
@@ -110,7 +110,7 @@ object Updater {
     val banner: StateFlow<Banner?> = _banner
 
     /**
-     * v0.45.4: at most once a day, on app open, a quiet look at versions.json. A newer Blaze shows a small banner the
+     * v0.45.4: at most once a day, on app open, a quiet look at versions.json. A newer Argus shows a small banner the
      * user can dismiss (that version then stays hidden). Offline or any error: nothing is shown and the day isn't used up.
      */
     fun checkInBackground(ctx: Context) {
@@ -238,7 +238,7 @@ object Updater {
                 catch (e: ApkDownload.Damaged) { f.delete(); throw UpdateError(e.message ?: VersionFeed.SHA_MISMATCH) }
                 f
             }
-            // Check it before Android sees it: same app, newer build, signed by the key this Blaze trusts.
+            // Check it before Android sees it: same app, newer build, signed by the key this Argus trusts.
             withContext(Dispatchers.IO) { verify(ctx, apk) }?.let { apk.delete(); return fail(it) }
             _state.value = State.Installing(version)
             withContext(Dispatchers.IO) { installApk(ctx, apk) }
@@ -276,10 +276,10 @@ object Updater {
     }
 
     /**
-     * 0.45.16: Blaze's signing key changed in 0.45.15 (the old key was public). A phone whose Blaze can't take the new
+     * 0.45.16: Argus's signing key changed in 0.45.15 (the old key was public). A phone whose Argus can't take the new
      * build in place is told the one fix: uninstall once and reinstall from the site. The site says the same.
      */
-    /** 0.45.18: the installed Blaze's signer fingerprints (lowercase hex SHA-256), empty when they can't be read. */
+    /** 0.45.18: the installed Argus's signer fingerprints (lowercase hex SHA-256), empty when they can't be read. */
     @Suppress("DEPRECATION")
     private fun installedSigners(ctx: Context): Set<String> = try {
         fun sha(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
@@ -310,14 +310,14 @@ object Updater {
         if (Build.VERSION.SDK_INT >= 28) {
             val si = info.signingInfo ?: return "That download isn't signed, so I didn't install it."
             trusted = mine.signingInfo.apkContentsSigners.map { sha(it.toByteArray()) }.toSet()
-            // A build signed with a newer key in Blaze's key lineage lists the old key in its history.
+            // A build signed with a newer key in Argus's key lineage lists the old key in its history.
             offered = (si.apkContentsSigners + (si.signingCertificateHistory ?: emptyArray())).map { sha(it.toByteArray()) }.toSet()
         } else {
             trusted = mine.signatures.map { sha(it.toByteArray()) }.toSet()
             offered = (info.signatures ?: emptyArray()).map { sha(it.toByteArray()) }.toSet()
         }
         if (trusted.isEmpty() || !offered.containsAll(trusted)) return KEY_CHANGED
-        // 0.45.15 key rotation: from now on every Blaze update is signed by the private release key (the old key is public and
+        // 0.45.15 key rotation: from now on every Argus update is signed by the private release key (the old key is public and
         // burned). On Android 9+ the download's current signer must be that key; the old key only counts as its history.
         if (Build.VERSION.SDK_INT >= 28) {
             val current = info.signingInfo?.apkContentsSigners?.map { sha(it.toByteArray()) }?.toSet().orEmpty()

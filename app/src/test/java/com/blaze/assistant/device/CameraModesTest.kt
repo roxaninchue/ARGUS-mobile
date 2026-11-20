@@ -12,7 +12,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.28.x Blaze Camera: where each mode's capture goes, from each place the camera opens. */
+/** v0.28.x Argus Camera: where each mode's capture goes, from each place the camera opens. */
 class CameraModesTest {
     @Test fun requestsAndToolCallsAnswerInTheChat() {
         Mode.values().forEach { m ->
@@ -27,7 +27,7 @@ class CameraModesTest {
             assertEquals(Route.DRAFT, CameraModes.route(Mode.ASK, o))
             assertEquals(Route.CARD, CameraModes.route(Mode.TEXT, o))
             assertEquals(Route.CARD, CameraModes.route(Mode.SCAN, o))
-            assertEquals(Route.SEND_TURN, CameraModes.route(Mode.TRANSLATE, o))   // Blaze translates (no on-device model)
+            assertEquals(Route.SEND_TURN, CameraModes.route(Mode.TRANSLATE, o))   // Argus translates (no on-device model)
             assertEquals(Route.DRAFT, CameraModes.route(Mode.DOCUMENT, o))
         }
         assertEquals(Route.GALLERY, CameraModes.route(Mode.PHOTO, Origin.STANDALONE))

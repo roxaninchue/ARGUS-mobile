@@ -9,7 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.25.0: every call goes to Blaze Cloud with a task hint; model-gone and busy errors retry quietly; no jargon. */
+/** v0.25.0: every call goes to Argus Cloud with a task hint; model-gone and busy errors retry quietly; no jargon. */
 class CloudTest {
     private fun user(text: String) = JSONArray().put(JSONObject().put("role", "user").put("content", text))
 

@@ -59,7 +59,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BlazeComposerHome(modifier: Modifier = Modifier, state: ComposerState = rememberComposerState(), barModifier: Modifier = Modifier,
                       onLeaveHome: () -> Unit = {}, onProfile: () -> Unit = {},
-                      /** RC4: what Blaze is waiting on (approvals, questions, secure forms…), shown under the chat over Home. */
+                      /** RC4: what Argus is waiting on (approvals, questions, secure forms…), shown under the chat over Home. */
                       cards: @Composable ColumnScope.() -> Unit = {},
                       content: @Composable () -> Unit) {
     Box(modifier.fillMaxSize()) {
@@ -156,7 +156,7 @@ fun Modifier.composerBlur(on: Boolean, radius: androidx.compose.ui.unit.Dp = 22.
 
 /**
  * 0.48.0: true where the Home blur is unavailable ([GlassTokens.blurSupported] false: low-RAM phones, API < 31, hot
- * phones). Chat and Spotlight then sit on a strong solid scrim and Blaze's bubble is opaque.
+ * phones). Chat and Spotlight then sit on a strong solid scrim and Argus's bubble is opaque.
  */
 val LocalComposerSolid = androidx.compose.runtime.compositionLocalOf { false }
 

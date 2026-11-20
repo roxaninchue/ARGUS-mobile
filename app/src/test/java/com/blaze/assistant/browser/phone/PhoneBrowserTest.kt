@@ -11,7 +11,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.45.19 Blaze Phone browser: the pure rules (PhonePolicy) the engine and the tools follow. */
+/** 0.45.19 Argus Phone browser: the pure rules (PhonePolicy) the engine and the tools follow. */
 class PhoneBrowserTest {
     // ------------------------------------------------------------------ sessions persist per site
     @Test fun oneProfilePerSiteAcrossSubdomainsAndRuns() {

@@ -9,7 +9,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.45.19 phone tasks: every Blaze message (check-ins, task results, replies) is one Blaze conversation: one builder,
+ * 0.45.19 phone tasks: every Argus message (check-ins, task results, replies) is one Argus conversation: one builder,
  * one channel that alerts, one avatar Person, one shortcut, quick replies that fit the message.
  */
 class BlazeThreadTest {

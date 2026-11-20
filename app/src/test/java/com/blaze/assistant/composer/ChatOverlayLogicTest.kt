@@ -72,7 +72,7 @@ class ChatOverlayLogicTest {
         // no other branding, never the forbidden model names, never "No results"
         assertFalse(Regex("(?i)\\b(hark|jarvis|nvidia|nemotron|system one|jev)\\b").containsMatchIn(all.lines().filterNot { it.trim().startsWith("*") || it.trim().startsWith("//") }.joinToString("\n")))
         assertFalse(all.contains("\"No results"))
-        // the chat bar: Message Blaze pill, send arrow inside it, + opens Spotlight
+        // the chat bar: Message Argus pill, send arrow inside it, + opens Spotlight
         val bar = src("ui/composer/ChatComposer.kt")
         assertTrue(bar.contains("tr(\"Message {0}\", BrandName.NAME)") && bar.contains("Icons.Rounded.ArrowUpward") && bar.contains("state.openSpotlight()"))
         // one cached blur, reduce motion respected

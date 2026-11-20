@@ -6,7 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.50.0: the edge particles show while Blaze acts on the screen, linger briefly, never stick, and stay on the edges. */
+/** 0.50.0: the edge particles show while Argus acts on the screen, linger briefly, never stick, and stay on the edges. */
 class ScreenWorkTest {
     @Test fun onWhileAStepRunsThenLingersThenOff() {
         val c = ScreenWork.Clock(linger = 1_000, max = 60_000)
@@ -33,7 +33,7 @@ class ScreenWorkTest {
     }
 
     @Test fun particlesStayOnTheEdges() {
-        // the glow reuses Blaze's edge particles (EdgePath): every dot sits within ~22 dp of an edge, the middle stays clear
+        // the glow reuses Argus's edge particles (EdgePath): every dot sits within ~22 dp of an edge, the middle stays clear
         val w = 1080f; val h = 2400f; val d = 2.75f
         for (i in 0..400) {
             val inset = 6f * d + (i % 11) / 10f * 10f * d

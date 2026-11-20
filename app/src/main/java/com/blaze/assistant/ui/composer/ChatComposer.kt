@@ -107,7 +107,7 @@ object ChatBarTokens {
 // ---------------------------------------------------------------- avatars
 
 /**
- * The user's avatar (the chat bar, their bubbles): the signed-in Blaze account's photo, else the initial of its name /
+ * The user's avatar (the chat bar, their bubbles): the signed-in Argus account's photo, else the initial of its name /
  * email (the same person as the profile button); a neutral person icon when signed out. 0.48.0 RC4: never a static "Y".
  */
 @Composable
@@ -136,7 +136,7 @@ fun MeAvatarView(av: ChatOverlayLogic.Avatar, size: Int = ChatBarTokens.AVATAR_D
 }
 
 /**
- * Blaze's avatar: the real Blaze logo, the same one as the launcher icon and BrandMark (the glass drop in its gold halo
+ * Argus's avatar: the real Argus logo, the same one as the launcher icon and BrandMark (the glass drop in its gold halo
  * on the dark disc). 0.49.0 (RC5 a): it was the white notification silhouette on a blue disc, which read as a blue droplet.
  * Drawn as vectors on a Canvas (no bitmap decode per bubble on a low-RAM phone).
  */
@@ -151,7 +151,7 @@ fun BlazeAvatar(size: Int = 30) {
 // ---------------------------------------------------------------- the chat bar
 
 /**
- * The chat bar that replaces the bottom Blaze button: profile avatar LEFT, the "Message Blaze" pill, "+" RIGHT.
+ * The chat bar that replaces the bottom Argus button: profile avatar LEFT, the "Message Blaze" pill, "+" RIGHT.
  * A send arrow shows inside the pill while there's text; "+" always opens Spotlight. The attachment
  * chips slide up above the pill on the first typed character or attachment.
  */
@@ -227,7 +227,7 @@ private fun SmallChip(label: String, desc: String, trailing: Boolean = false, cl
 // ---------------------------------------------------------------- chat over Home
 
 /**
- * The chat over the blurred widgets: user bubbles RIGHT with the user's avatar, Blaze LEFT with the Blaze logo
+ * The chat over the blurred widgets: user bubbles RIGHT with the user's avatar, Argus LEFT with the Argus logo
  * (typing dots, then the text types in), a centred timestamp, and a × that unblurs Home.
  */
 @Composable
@@ -248,8 +248,8 @@ fun ChatOverHome(state: ComposerState, modifier: Modifier = Modifier, bottom: @C
 
 /**
  * [ChatOverHome] on plain data (screenshots). 0.48.0 RC4: the only chat surface (the old full chat screen is gone):
- * a title for project / private chats, "Show earlier messages" for the whole thread, Blaze's replies with their rich
- * formatting (lists, tables, links, pictures), and [bottom] for what Blaze is waiting on (approvals, questions, secure
+ * a title for project / private chats, "Show earlier messages" for the whole thread, Argus's replies with their rich
+ * formatting (lists, tables, links, pictures), and [bottom] for what Argus is waiting on (approvals, questions, secure
  * forms, the listening strip), above the bar.
  */
 @Composable
@@ -318,7 +318,7 @@ fun ChatOverHomeContent(state: ComposerState, all: List<ChatMessage>, busy: Bool
                 com.blaze.assistant.ui.TaskPill(pillLine) } }
         }
         }
-        // Choice buttons and forms in replies answer only while Blaze is idle (like the old chat).
+        // Choice buttons and forms in replies answer only while Argus is idle (like the old chat).
         androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.RichSend.Local provides (if (!busy) onSend else null)) {
             // 0.49.0 (RC5 a): on-chat cards (browser card, timers, mini players) on the Stage around the chat, as in the old chat.
             val st by com.blaze.assistant.stage.StageStore.state.collectAsState()
@@ -359,7 +359,7 @@ private fun UserBubble(m: ChatMessage, lift: Boolean) {
     }
 }
 
-/** Blaze's line on the LEFT with the Blaze logo; a fresh reply types in (reduce motion: shown whole). */
+/** Argus's line on the LEFT with the Argus logo; a fresh reply types in (reduce motion: shown whole). */
 @Composable
 private fun BlazeBubble(m: ChatMessage, typeIn: Boolean) {
     val c = LocalBlaze.current
@@ -385,7 +385,7 @@ private fun BlazeBubble(m: ChatMessage, typeIn: Boolean) {
             else Text(if (shown >= m.text.length) m.text else m.text.take(shown), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink))
         }
     }
-    // Pictures, music and files Blaze made for this reply (tap to open), as in the old chat.
+    // Pictures, music and files Argus made for this reply (tap to open), as in the old chat.
     if (m.media.isNotEmpty() && shown >= m.text.length) Box(Modifier.padding(start = 38.dp, top = 6.dp)) { com.blaze.assistant.ui.MediaStrip(m.media) }
     }
 }

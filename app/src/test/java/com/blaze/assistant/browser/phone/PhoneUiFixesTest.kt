@@ -14,7 +14,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 /**
- * 0.45.19 Blaze Phone UI fixes 4 (picture-in-picture), 6 (Take control: only Hand back) and 9 (sweep), strict 5/5.
+ * 0.45.19 Argus Phone UI fixes 4 (picture-in-picture), 6 (Take control: only Hand back) and 9 (sweep), strict 5/5.
  * The window itself (floating, its buttons, tap to expand) needs a real phone; see PHONE_UI_FIXES.md.
  */
 @RunWith(AndroidJUnit4::class)
@@ -76,7 +76,7 @@ class PhoneUiFixesTest {
 
     @Test fun stopReallyCancelsTheDrivingTurn() = fiveTimes("pip stop") { run ->
         val stopped = mutableListOf<String>(); val cancelled = mutableListOf<String>()
-        // A main-chat turn drives Blaze Phone.
+        // A main-chat turn drives Argus Phone.
         PhoneBrowser.own("chat-$run", null)
         assertTrue(PhoneBrowser.stopTask({ stopped += it; true }, { cancelled += it }))
         assertEquals(listOf("chat-$run"), stopped); assertTrue(cancelled.isEmpty())

@@ -31,7 +31,7 @@ class SpecialistStoreTest {
         assertEquals("farm", o.getString("id")); assertEquals("web", o.getString("groups")); assertEquals("Advises farmers", o.getString("prompt"))
         assertEquals("# P", o.getString("playbook")); assertEquals("blaze", o.getString("made_by"))
         assertEquals(listOf(s), Specialists.parse(json))
-        // A spec without a playbook writes no playbook key (an older Blaze reads it exactly as before).
+        // A spec without a playbook writes no playbook key (an older Argus reads it exactly as before).
         assertFalse(JSONArray(Specialists.toJson(listOf(s.copy(playbook = "")))).getJSONObject(0).has("playbook"))
     }
 

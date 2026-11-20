@@ -7,7 +7,7 @@ import java.io.File
 
 /**
  * 0.45.29: BlazeOS ("Blaze Phone", the virtual phone on Home) is gone from the code, the manifest and the build, the
- * one-time cleanup runs at start, and the Blaze Phone browser engine (browser/phone) is kept.
+ * one-time cleanup runs at start, and the Argus Phone browser engine (browser/phone) is kept.
  */
 class BlazeOsRemovedTest {
     private fun file(rel: String): File = listOf(File(rel), File("app/$rel")).firstOrNull { it.exists() } ?: File("app/$rel")

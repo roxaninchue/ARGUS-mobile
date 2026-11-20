@@ -10,7 +10,7 @@ import android.widget.RemoteViews
 import com.blaze.assistant.R
 import com.blaze.assistant.ui.Overlay
 
-/** Home-screen widget: last reply, an Ask box and a mic button. Both open Blaze over your screen. */
+/** Home-screen widget: last reply, an Ask box and a mic button. Both open Argus over your screen. */
 class BlazeWidget : AppWidgetProvider() {
     companion object {
         const val ASK = "com.blaze.assistant.WIDGET_ASK"

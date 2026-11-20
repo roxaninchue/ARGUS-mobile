@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 /**
- * 0.46.3 benchmark: the OLD phone engine (Blaze's agent loop with read_screen / tap / type_text / scroll / press_button,
+ * 0.46.3 benchmark: the OLD phone engine (Argus's agent loop with read_screen / tap / type_text / scroll / press_button,
  * replayed with the real code's rules: read_screen's format and stable numbers, tapRaw's 700 ms click check and touch
  * fallback, screenAfter's 1200/200 ms settle and diff read, the switch want= check, no loop guard for taps) and the NEW
  * flash engine (FlashLoop with the real FlashTree / FlashParse / FlashVerify / FlashGuard) on the same fixture tasks.

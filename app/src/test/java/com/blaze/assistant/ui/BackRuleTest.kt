@@ -11,7 +11,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 0.45.19 Blaze Phone UI fix 7, strict 5/5: the system Back button returns to the Blaze chat from Blaze Phone and from
+ * 0.45.19 Argus Phone UI fix 7, strict 5/5: the system Back button returns to the Argus chat from Argus Phone and from
  * every other window / view / sheet / page, through ONE rule ([BackRule]). This enumerates every view id (Views.all),
  * every settings page, every overlay of the chat shell and every activity in the manifest, and checks Back lands on
  * the chat. BackRuleWindowTest drives real key events through the window interceptor.
@@ -125,7 +125,7 @@ class BackRuleTest {
         assertTrue(btc.contains("if (settingsPage != null && BackRule.settingsBack?.invoke() == true) return"))
         val sheet = src("ui/SettingsSheet.kt")
         assertTrue(sheet.contains("BackRule.settingsBack = {") && sheet.contains("onDispose { BackRule.settingsBack = null }"))
-        // Back from Chat no longer drops to Home (that loop made Back unable to leave Blaze).
+        // Back from Chat no longer drops to Home (that loop made Back unable to leave Argus).
         assertFalse(chat.contains("BackHandler(enabled = swipeMode && sheetP > 0.5f && nav.tab == ChatNav.CHAT && !nav.inProjectChat) { settleTo(0f) }"))
         // openView handles exactly the specials BackRule knows.
         val ov = chat.substringAfter("fun openView(v: BlazeView").substringBefore("\n    }\n")
@@ -133,7 +133,7 @@ class BackRuleTest {
         assertEquals(BackRule.SPECIAL_ACTIVITY.keys + BackRule.SPECIAL_SHELL, specials)
         // Back still arrives as a key event (no predictive-back opt-in that would bypass the interceptor).
         assertFalse(manifest().contains("enableOnBackInvokedCallback"))
-        // Blaze Phone and Video take their last step through ToChat.
+        // Argus Phone and Video take their last step through ToChat.
         assertTrue(src("browser/phone/PhoneBrowserActivity.kt").contains("BackRule.ToChat"))
         assertTrue(src("mediaapps/VideoActivity.kt").contains("BackRule.ToChat"))
     }
