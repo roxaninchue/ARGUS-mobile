@@ -31,7 +31,9 @@ object PolicyCalls {
                 val free = kind == CommandPolicy.Kind.SHELL && sandboxFree() && CommandPolicy.inSandbox(text)
                 val lvl = if (free) CommandPolicy.Level.SAFE else CommandPolicy.level(kind, text)
                 // owner 2026-11-20: a sandboxed shell command is local work in ARGUS's own terminal, never a card
-                return Classed(Policy.Call(tool, if (free) ActionClass.WRITE_LOCAL else CommandPolicy.actionClass(kind, text), sandbox = free), lvl, CommandPolicy.key(kind, text))
+                val byCmd = CommandPolicy.actionClass(kind, text)
+                // a sandboxed read stays READ (Plan mode keeps ls / cat); anything else sandboxed is local work
+                return Classed(Policy.Call(tool, if (free && byCmd != ActionClass.READ) ActionClass.WRITE_LOCAL else byCmd, sandbox = free), lvl, CommandPolicy.key(kind, text))
             }
         }
         val cls = ToolRegistry.classOf(tool) { k -> a.optString(k) } ?: ToolRegistry.UNDECLARED

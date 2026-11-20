@@ -129,6 +129,7 @@ Early look (not final, can change): Team, Agent chat, Life, Desk.
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
+- 2026-11-20 · Hark · 0.53.9 run 44700119083 red, 1 of the unit tests: ToolRegistryTest expects a sandboxed `ls -la` to stay READ, but PolicyCalls made every sandboxed command WRITE_LOCAL (Plan mode would have refused ls). Fixed in PolicyCalls: a sandboxed read stays READ, everything else sandboxed is WRITE_LOCAL. Rebuilt under the same owner "build".
 - 2026-11-20 · Hark · Rename Phase 1 done (docs and comments, owner: "only argus", "yes rename"), all [skip ci]: prose in root docs, docs/, the built-in about.md and READMEs plus ~1,500 Kotlin comment / KDoc lines say Argus; two docs renamed (ARGUSQUERY.md, argus-link-messages.md); historical docs got a note. Rename guard 17,856 → 15,994 occurrences (baseline ratcheted). No literals, identifiers, paths or ids touched. Owner also decided the install id changes before v1 (no upgrade path; recorded in docs/RENAME-ARGUS-PLAN.md §1). Next: Phase 2 (user-visible literals).
 - 2026-11-20 · Hark · 0.53.9 run 44698990408 red at the Rename guard (one new fully qualified package name in ToolRegistryTest, 7 → 8). Fixed and rebuilt under the same owner "build"; BUILDING.md gains the rename guard pre-flight row.
 - 2026-11-20 · Hark · Owner "build": 0.53.9 / vc 201 pushed without [skip ci] (version, CHANGELOG, STATUS, about.md, SpaceWiringTest pin). Next: watch CI, report the run id and artifacts.
