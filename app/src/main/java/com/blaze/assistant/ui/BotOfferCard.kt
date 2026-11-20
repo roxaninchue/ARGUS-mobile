@@ -31,14 +31,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun BotOfferCard(m: ChatMessage) {
     val p = remember(m.meta) { BotOffer.parse(m.meta) } ?: return
-    if (p.state == BotOffer.DECLINED) return
+    if (p.state == BotOffer.TURNED_DOWN) return
     val c = LocalBlaze.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var busy by remember(m.id) { mutableStateOf(false) }
     var error by remember(m.id) { mutableStateOf<String?>(null) }
     val tint = remember(p.color) { parse(p.color) }
-    val added = p.state == BotOffer.ADDED
+    val added = p.state == BotOffer.TAKEN
     val face = OrbFace.values().getOrElse(p.face) { OrbFace.ORBIT }
     Column(Modifier.widthIn(max = 360.dp).fillMaxWidth()
         .glass(GlassTokens.cardShape, GlassIntensity.Medium, shadow = false).padding(16.dp)

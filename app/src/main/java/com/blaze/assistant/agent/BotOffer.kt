@@ -26,7 +26,7 @@ import java.io.File
  */
 object BotOffer {
     const val CARD = "botoffer:"
-    const val OPEN = "open"; const val ADDED = "added"; const val DECLINED = "declined"
+    const val ASKING = "open"; const val TAKEN = "added"; const val TURNED_DOWN = "declined"
     const val THRESHOLD = 3
     const val MAX_BOTS = 4
     private const val DAY = 86_400_000L
@@ -36,7 +36,7 @@ object BotOffer {
 
     /** A bot Argus would suggest for one area of work. */
     data class Proposal(val area: String, val name: String, val label: String, val brief: String, val face: Int, val color: String,
-                        val count: Int = 0, val what: String = "", val state: String = OPEN, val botId: String = "") {
+                        val count: Int = 0, val what: String = "", val state: String = ASKING, val botId: String = "") {
         fun draft(): BotDraft = BotDraft(name = name, label = label, portfolio = brief, face = face, color = color,
             instructions = "You are $name, the user's ${label.lowercase()} bot. $brief")
         fun meta(): String = CARD + JSONObject().put("area", area).put("name", name).put("label", label).put("brief", brief).put("face", face)
@@ -82,8 +82,8 @@ object BotOffer {
         if (n < THRESHOLD) return null
         past[area]?.let { p ->
             when (p.state) {
-                ADDED -> return null
-                DECLINED -> if (now - p.at < DECLINE_QUIET) return null
+                TAKEN -> return null
+                TURNED_DOWN -> if (now - p.at < DECLINE_QUIET) return null
                 else -> if (now - p.at < OFFER_QUIET) return null
             }
         }
@@ -99,7 +99,7 @@ object BotOffer {
         return try {
             val o = JSONObject(meta.removePrefix(CARD))
             Proposal(o.getString("area"), o.getString("name"), o.optString("label"), o.optString("brief"), o.optInt("face"), o.optString("color", "#8b5cf6"),
-                o.optInt("count"), o.optString("what"), o.optString("state", OPEN), o.optString("bot"))
+                o.optInt("count"), o.optString("what"), o.optString("state", ASKING), o.optString("bot"))
         } catch (_: Exception) { null }
     }
 
@@ -143,7 +143,7 @@ object BotOffer {
                     val team = TeamGraph.get(ctx).store.roster()
                         .filterNot { BotRules.isManager(it) }.map { Member(it.name, it.label) }
                     val prop = decide(area, jobs, past, team, now)
-                    if (prop != null) past[area] = Past(OPEN, now)
+                    if (prop != null) past[area] = Past(ASKING, now)
                     write(ctx, jobs, past)
                     prop
                 } ?: return@launch
@@ -157,8 +157,8 @@ object BotOffer {
         val store = TeamGraph.get(ctx).store
         when (val r = TeamEdits(store).create(p.draft(), "user")) {
             is TeamStore.Result.Ok -> {
-                remember(ctx, p.area, ADDED)
-                withContext(Dispatchers.Main) { Agent.setCardMeta(msgId, p.copy(state = ADDED, botId = r.bot.id).meta()) }
+                remember(ctx, p.area, TAKEN)
+                withContext(Dispatchers.Main) { Agent.setCardMeta(msgId, p.copy(state = TAKEN, botId = r.bot.id).meta()) }
                 null
             }
             is TeamStore.Result.Refused -> r.why
@@ -167,8 +167,8 @@ object BotOffer {
 
     /** The card's No thanks: hidden, and no new suggestion for that area for 30 days. */
     fun decline(ctx: Context, msgId: Long, p: Proposal) {
-        Agent.setCardMeta(msgId, p.copy(state = DECLINED).meta())
-        scope.launch { remember(ctx, p.area, DECLINED) }
+        Agent.setCardMeta(msgId, p.copy(state = TURNED_DOWN).meta())
+        scope.launch { remember(ctx, p.area, TURNED_DOWN) }
     }
 
     private fun remember(ctx: Context, area: String, state: String) = synchronized(lock) {

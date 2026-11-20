@@ -30,10 +30,10 @@ class BotOfferTest {
     @Test fun oldJobsDoNotCount() = assertNull(BotOffer.decide("research", jobs(3, daysAgo = 6), emptyMap(), emptyList(), now))
 
     @Test fun declinedStaysQuietForThirtyDaysAndAddedForever() {
-        assertNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.DECLINED, now - 10 * day)), emptyList(), now))
-        assertNotNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.DECLINED, now - 31 * day)), emptyList(), now))
-        assertNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.ADDED, now - 300 * day)), emptyList(), now))
-        assertNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.OPEN, now - 2 * day)), emptyList(), now))
+        assertNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.TURNED_DOWN, now - 10 * day)), emptyList(), now))
+        assertNotNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.TURNED_DOWN, now - 31 * day)), emptyList(), now))
+        assertNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.TAKEN, now - 300 * day)), emptyList(), now))
+        assertNull(BotOffer.decide("research", jobs(5), mapOf("research" to BotOffer.Past(BotOffer.ASKING, now - 2 * day)), emptyList(), now))
     }
 
     @Test fun aTeamThatCoversItOrIsFullGetsNoCard() {
