@@ -156,6 +156,8 @@ object ToolRegistry {
         // ---------------- commands: per command (CommandPolicy.actionClass); base = local work ----------------
         all(WRITE_LOCAL, "run_shell", "termux_run")
         one("git", d(WRITE_LOCAL, "status" to READ, "log" to READ, "diff" to READ, "push" to WRITE_REMOTE))
+        // owner 2026-11-20 terminal checkpoints: save / rollback change ARGUS's own terminal folders; delete drops a checkpoint
+        one("terminal_checkpoint", d(WRITE_LOCAL, "list" to READ, "changes" to READ, "delete" to DELETE))
     }
 
     /**

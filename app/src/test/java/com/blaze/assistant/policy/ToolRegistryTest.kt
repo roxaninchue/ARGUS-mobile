@@ -105,7 +105,8 @@ class ToolRegistryTest {
     }
 
     @Test fun commandsAreClassedPerCommand() {
-        val rm = PolicyCalls.classify("run_shell", JSONObject().put("command", "rm -rf /root/old").toString())
+        // owner 2026-11-20: outside the terminal sandbox (shared storage) a delete is still a DELETE and RISKY
+        val rm = PolicyCalls.classify("run_shell", JSONObject().put("command", "rm -rf /sdcard/old").toString())
         assertEquals(ActionClass.DELETE, rm.call.cls)
         assertEquals(com.blaze.assistant.agent.CommandPolicy.Level.RISKY, rm.command)
         val ls = PolicyCalls.classify("run_shell", JSONObject().put("command", "ls -la").toString())
@@ -114,5 +115,9 @@ class ToolRegistryTest {
         assertEquals(ActionClass.WRITE_REMOTE, PolicyCalls.classify("git", JSONObject().put("action", "push").toString()).call.cls)
         assertEquals(ActionClass.READ, PolicyCalls.classify("git", JSONObject().put("action", "raw").put("args", "log -3").toString()).call.cls)
         assertEquals(ActionClass.WRITE_LOCAL, PolicyCalls.classify("run_shell", "not json").call.cls)
+        // inside the sandbox (terminal_free on by default) the same delete is local work with no card
+        val home = PolicyCalls.classify("run_shell", JSONObject().put("command", "rm -rf /root/old").toString())
+        assertEquals(ActionClass.WRITE_LOCAL, home.call.cls); assertTrue(home.call.sandbox)
+        assertEquals(com.blaze.assistant.agent.CommandPolicy.Level.SAFE, home.command)
     }
 }

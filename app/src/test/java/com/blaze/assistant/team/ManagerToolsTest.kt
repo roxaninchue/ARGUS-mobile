@@ -87,7 +87,7 @@ class ManagerToolsTest {
     @Test fun createsABotWithItsFields() {
         val r = t("agent_create", """{"name":"Orion","role":"Research","email":"orion@argus.ai","portfolio":"Market intel","instructions":"Be brief.",
             |"face":"Twin","color":"blue","reports_to":"Nova","effort":"max","mode":"teammate"}""".trimMargin())
-        assertEquals("Created Orion (id orion), reports to Nova, effort xhigh, teammate, with instructions.", r)
+        assertEquals("Created Orion (id orion), reports to Nova, effort xhigh, teammate, with instructions, tools: jobs, memory, web.", r)
         val b = team.get("orion")!!
         assertEquals(BotKind.CUSTOM, b.kind); assertEquals("Research", b.label); assertEquals("orion@argus.ai", b.email)
         assertEquals("Market intel", b.portfolio); assertEquals(4, b.avatar.face); assertEquals("#3b82f6", b.avatar.color)
@@ -96,7 +96,7 @@ class ManagerToolsTest {
         assertEquals("Be brief.", team.soul("orion"))
         assertEquals(listOf("orion"), changed)
         // defaults: reports to the Manager, next swatch by roster size, no soul
-        assertEquals("Created Lyra (id lyra), reports to $M.", t("agent_create", """{"name":"Lyra"}"""))
+        assertEquals("Created Lyra (id lyra), reports to $M, tools: jobs, memory, web.", t("agent_create", """{"name":"Lyra"}"""))
         assertEquals(BotDraft.COLORS[7], team.get("lyra")!!.avatar.color)   // roster: Manager, Tempo, Inbox, Nova, Atlas, Vega, Orion
         assertNull(team.soul("lyra"))
         // refusals

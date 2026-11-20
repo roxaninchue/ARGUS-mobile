@@ -113,24 +113,26 @@ class LocalEngineTest {
         val sys = llm.systems.single()
         assertEquals("You are Blaze.", sys[0])
         assertTrue(sys[1].contains("Name: Ledger (Money)") && sys[1].contains("Life area: money") && sys[1].contains("Careful with money."))
-        assertEquals(listOf("load_tools", "web_search", "bank_balance"), llm.toolLists.single())   // core + its group
+        assertEquals(listOf("load_tools", "web_search", "bank_balance", "run_shell"), llm.toolLists.single())   // core + its group + the terminal (owner 2026-11-20: every agent has it)
     }
 
     @Test fun aToolOutsideTheSubsetIsRefusedAsARow() = runBlocking {
-        val llm = FakeLlm(FakeLlm.Reply.Call("run_shell", "{\"cmd\":\"rm -rf /\"}"), FakeLlm.Reply.Say("I can't run commands; the Manager can."))
+        val llm = FakeLlm(FakeLlm.Reply.Call("browser_open", "{\"url\":\"https://bank.example\"}"), FakeLlm.Reply.Say("I can't use the browser; the Manager can."))
         val loop = FakeLoop(llm, all)
-        val rows = engine(loop).turn(bot(), TurnInput("t3", "bot:ledger", "clean my disk")) {}.toList()
+        val rows = engine(loop).turn(bot(), TurnInput("t3", "bot:ledger", "open my bank's site")) {}.toList()
             .filterIsInstance<TurnEvent.RowOut>().map { it.row }
         assertTrue(loop.ran.isEmpty())
         val refused = rows.single { it.kind == "tool-call" }
-        assertEquals("refused", body(refused)["state"]); assertEquals("run_shell", body(refused)["name"])
+        assertEquals("refused", body(refused)["state"]); assertEquals("browser_open", body(refused)["name"])
         assertTrue((body(refused)["output"] as String).startsWith("Error:"))
     }
 
     @Test fun grantsOverrideGroupsAndTheManagerKeepsEverything() {
         val b = bot(grants = mapOf("browser_open" to Rule.ASK, "bank_balance" to Rule.NEVER))
         val allow = ToolSubset.of(b) { groups[it] }!!
-        assertTrue(allow("browser_open")); assertFalse(allow("bank_balance")); assertTrue(allow("web_search")); assertFalse(allow("run_shell"))
+        assertTrue(allow("browser_open")); assertFalse(allow("bank_balance")); assertTrue(allow("web_search")); assertTrue(allow("run_shell"))   // owner 2026-11-20: every agent has the terminal
+        assertFalse(ToolSubset.of(bot(grants = mapOf("run_shell" to Rule.NEVER))) { groups[it] }!!("run_shell"))   // a NEVER grant still removes it
+        assertFalse(ToolSubset.of(bot()) { groups[it] }!!("browser_open"))
         assertNull(ToolSubset.of(bot(kind = BotKind.MANAGER), { groups[it] }))
         assertNull(ToolSubset.of(bot(groups = setOf(ToolSubset.ALL)), { groups[it] }))
     }
