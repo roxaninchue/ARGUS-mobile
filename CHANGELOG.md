@@ -1,3 +1,12 @@
+## 0.54.1 (versionCode 203, 2026-11-21): the "Unreleased" entries below down to 0.54.0
+
+## Unreleased: Argus suggests a bot for work you keep asking for
+
+2026-11-21 (Finn: "create bots/agents for work the user frequently does when it fits … a nice card … with the shape and color of the agent and their name and a short brief"). Bots were only made on an explicit "create a … bot".
+- **BotOffer** (`agent/BotOffer.kt`): every background run is counted by area (deep research and the researcher specialist are "research"; app builds and the coder "code"; writing, media, shopping, bookings, planning, inbox, design, study, phone). The third in 14 days pops a card in that chat, unless a bot on the team already covers it (by its label), the team already has 4 bots besides the Manager, the area was added before, declined in the last 30 days or offered in the last 7. Plain background agents don't count. Counts and answers live in filesDir/bot_offers.json; setting `bot_offers` (default on) turns it off.
+- **The card** (`ui/BotOfferCard.kt`, from ChatScreen): the bot in its own body shape and colour (BotOrb), its name (Nova for research, Forge for builds, Quill for writing…; the second name when the first is taken), its area as a tinted chip, a one-line brief, and why ("You've asked for deep research 3 times in two weeks."). Add creates it through TeamEdits (name, label, portfolio = the brief, face, colour, a short SOUL) and the card turns into "New on your team"; No thanks hides it; ignoring it changes nothing. The card is a chat row only (`Agent.postCard` / `setCardMeta`); the model never sees it, so the chat and the work carry on as usual.
+- Tests: BotOfferTest (5, new).
+
 ## Unreleased: background runs keep going and show exactly where they are
 
 2026-11-21 (Finn): a deep-research run (blueprint B1) gave no sign it was still working once Argus was left; its pill sat inside the collapsed "Worked" line, and nothing held the process, so Android could pause the run until Argus was reopened (it resumed from its saved state, but silently).
