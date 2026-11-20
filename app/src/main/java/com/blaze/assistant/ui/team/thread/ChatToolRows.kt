@@ -164,20 +164,37 @@ object ChatToolRows {
     /** Narration steps (Agent marks them [com.blaze.assistant.agent.Narration.META]). */
     fun isSay(m: Msg): Boolean = com.blaze.assistant.agent.Narration.isNarration(m.meta) && m.text.isNotBlank()
 
-    /** [run]'s messages as a flow: narration → [Seg.Say]; calls of one tool in a row → one [Seg.Tools]. Pure. */
+    /**
+     * [run]'s messages as a flow: narration → [Seg.Say]; between two narration lines, every call that reads the same
+     * ("Looked things up", "Read a file") → ONE [Seg.Tools], wherever it fell in that stretch. Pure.
+     * 2026-11-21 (owner screenshot 01:09: "Looked things up" ×6 and "Read a file" ×2 apart): one row per kind, not per
+     * streak. A row sits where its newest call is, so the call that's running stays at the bottom.
+     */
     fun flowOf(run: List<Msg>, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): List<Seg> {
         val out = ArrayList<Seg>()
-        var cur = ArrayList<Step>()
-        fun flush() { if (cur.isNotEmpty()) { out += Seg.Tools("run-${cur.first().key}", Run("run-${cur.first().key}", cur.toList())); cur = ArrayList() } }
+        val cur = ArrayList<Step>()
+        fun flush() {
+            if (cur.isEmpty()) return
+            out += groupRows(cur).map { g -> Seg.Tools("run-${g.first().key}", Run("run-${g.first().key}", g)) }
+            cur.clear()
+        }
         for (m in run) {
             if (isSay(m)) { flush(); out += Seg.Say("say-${m.id}", m.text.trim()); continue }
-            val st = stepOf(m, results, used, live) ?: continue
-            // 0.53.4 (owner): calls that read the same ("Used the browser" for open, read, click) share one row too
-            if (cur.isNotEmpty() && !sameRow(cur.last(), st)) flush()
-            cur += st
+            cur += stepOf(m, results, used, live) ?: continue
         }
         flush()
         return out
+    }
+
+    /** What makes two calls one row: the same words when done ("Looked things up"), else the same tool. */
+    fun rowKey(s: Step): String = s.done.ifBlank { "tool:" + s.tool }
+
+    /** [steps] (in call order) grouped by [rowKey]; groups ordered by their newest call, calls kept in order. */
+    fun groupRows(steps: List<Step>): List<List<Step>> {
+        val groups = LinkedHashMap<String, MutableList<Step>>()
+        val last = HashMap<String, Int>()
+        steps.forEachIndexed { i, st -> val k = rowKey(st); groups.getOrPut(k) { ArrayList() } += st; last[k] = i }
+        return groups.entries.sortedBy { last[it.key] ?: 0 }.map { it.value.toList() }
     }
 
     /** Two calls in a row share a row when they are the same tool or their rows would read the same. */

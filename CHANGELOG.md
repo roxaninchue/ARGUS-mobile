@@ -1,5 +1,9 @@
 ## 0.54.1 (versionCode 203, 2026-11-21): the "Unreleased" entries below down to 0.54.0
 
+## Unreleased: one row per kind of step
+
+2026-11-21 (Finn, screenshot 01:09: "Looked things up" six times and "Read a file" twice down one turn: "all looked things up, Read a file under one and just like that for the rest"). `ChatToolRows.flowOf` grouped only calls in a row. Now every call between two of the model's own lines that reads the same ("Looked things up", "Read a file", "Ran a command") is one row with its count, opened to each call; a row sits where its newest call is, so the running call stays at the bottom. Narration still splits the turn as before. Test: ChatToolRowsTest.sameKindCallsShareOneRowEvenApart.
+
 ## Unreleased: Argus suggests a bot for work you keep asking for
 
 2026-11-21 (Finn: "create bots/agents for work the user frequently does when it fits … a nice card … with the shape and color of the agent and their name and a short brief"). Bots were only made on an explicit "create a … bot".

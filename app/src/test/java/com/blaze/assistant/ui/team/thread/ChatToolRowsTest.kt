@@ -138,4 +138,21 @@ class ChatToolRowsTest {
         val one = ChatToolRows.flows(listOf(user(1, 0), step(2, "Searching", "web_search(query=x)", 5), reply(3, 9)), working = false).before[3L]!!
         assertFalse(ChatToolRows.folds(one))
     }
+
+    // 2026-11-21 (owner screenshot 01:09): every "Looked things up" in a stretch is one row, every "Read a file" another,
+    // even with other calls between them; the row sits where its newest call is.
+    @Test fun sameKindCallsShareOneRowEvenApart() {
+        val ms = listOf(user(1, 0),
+            step(2, "Reading a", "file_read(path=a.kt)", 5),
+            step(3, "Running ls", "$ ls", 6),
+            step(4, "Reading b", "file_read(path=b.kt)", 7),
+            step(5, "Running pwd", "$ pwd", 8),
+            step(6, "Reading c", "file_read(path=c.kt)", 9),
+            reply(7, 20))
+        val f = ChatToolRows.flows(ms, working = false).before[7L]!!
+        assertEquals(2, f.runs.size)
+        assertEquals(listOf(2, 3), f.runs.map { it.steps.size })
+        assertEquals("3", f.runs.last().count)
+        assertEquals(listOf("a.kt", "b.kt", "c.kt"), f.runs.last().steps.map { it.detail })
+    }
 }
