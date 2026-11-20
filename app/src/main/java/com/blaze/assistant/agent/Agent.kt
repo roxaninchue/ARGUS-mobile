@@ -1252,6 +1252,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** The newest system prompt's parts (sizes for the speed log and the token ledger). */
     @Volatile internal var lastPromptParts: List<PromptParts.Part> = emptyList()
 
+    /** Owner 2026-11-20: ARGUS's small chat kit (AgentKit), on unless switched off in Settings. */
+    private fun leanChat(): Boolean = try { Settings.bool(com.blaze.assistant.team.AgentKit.PREF_LEAN, true) } catch (_: Throwable) { true }
+
     private fun systemPrompt(userText: String, skipSkills: Set<String> = emptySet(), chatId: String = _chatId.value, fullAware: Boolean = true,
                              groups: Set<String> = emptySet(), viewRouted: Boolean = false, turnKey: Long = 0L): String {
         val now = SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date())
@@ -1282,6 +1285,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // 2026-11-14 harness gap: one consolidated core (HarnessPrompt) instead of ~20 stacked RULE lines (talk, self, remember,
             // again, yes, ask, pim, load_tools, weather, phone_save, leak, verify, ids, know, search, calls, autonomy, style).
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE)
+            if (leanChat() && sessions[chatId]?.agentId == null) s("agents", com.blaze.assistant.team.AgentKit.STEER)   // owner 2026-11-20
             s("format", AnswerStyle.FORMAT)   // v0.31.1: HTML tags, tables never in code fences, rich blocks open in glass windows
             if (Voice.lastTurnByVoice) s("voice", VoiceFiller.RULE)   // 0.45.20 (item 10): no filler on voice turns
             s("rapid", RapidMessages.PROMPT_RULE)   // v0.30.6: [m7] ids on user messages, [re:m7] markers on replies
@@ -3433,13 +3437,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // v0.45.9 (ToolTruth): every agent request carries the full registered list (gateway 0.8.2 drops calls to tools not in it).
                     // 0.45.29: a browser task's steps carry the browser tools (+ ask / search / memory); asking for another widens again.
                     if (!bulk && com.blaze.assistant.browser.BrowserFocus.active(synchronized(turnTools) { turnTools.toList() })) {
-                        val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
+                        val b = com.blaze.assistant.browser.BrowserFocus.subset(allTools, ToolPick.core(SimpleMode.simple, leanChat()) + widenNames); sizeLine = "tools browser ${b.length()} of ${allTools.length()}"; return b }
                     if (ToolTruth.full) { sizeLine = "tools all ${allTools.length()}"; return ToolTruth.forRequest(allTools) { allTools } }
                     // 2026-11-18: older turns hidden (summary / lookup rung) → this chat's read-back tools ride along (ToolPick.pinnedCues).
                     val pinned = ToolPick.pinnedCues(lastRung, ctxFrom); groupsOn += pinned
                     val diet = ToolRouter.select(allTools, groupsOn)
                     fun allNamesIn(g: Set<String>) = ToolPick.names(allTools).filter { ToolRouter.groupOf(it) in g }.toSet()
-                    val joinNames = widenNames + pinTools + ToolTruth.MUST + ToolPick.core(SimpleMode.simple) + ToolPick.cueNames(pinned)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
+                    val joinNames = widenNames + pinTools + ToolTruth.MUST + ToolPick.core(SimpleMode.simple, leanChat()) + ToolPick.cueNames(pinned)   // 0.52.1 + 2026-11-14: the harness core (web, terminal, files, browser, schedule, messages) and what the model asked for always join
                     val diet2 = JSONArray().apply {
                         val have = ToolPick.names(diet).toSet(); for (i in 0 until diet.length()) put(diet.opt(i))
                         val allNames = ToolPick.names(allTools)
