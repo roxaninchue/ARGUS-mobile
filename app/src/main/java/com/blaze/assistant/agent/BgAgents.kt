@@ -40,6 +40,8 @@ object BgAgents {
         val specialist: String = "",
         /** 0.52.0: its newest steps (up to [LOG_MAX]), for its work pill's expanded list. */
         val log: List<String> = emptyList(),
+        /** 0.54.1: a blueprint run's parts finished and parts in its plan (0 = no plan, a plain agent). */
+        val done: Int = 0, val total: Int = 0,
     ) {
         val live get() = status == QUEUED || status == RUNNING
         val seconds get() = (((if (ended > 0) ended else System.currentTimeMillis()) - (if (started > 0) started else created)) / 1000).coerceAtLeast(0)
@@ -93,7 +95,8 @@ object BgAgents {
                 Bg(it.getString("id"), it.optString("title"), it.optString("task"), it.optString("parent"), it.optString("chat"),
                     it.optBoolean("plan"), it.optString("status", DONE), it.optLong("created"), it.optLong("started"), it.optLong("ended"),
                     it.optInt("steps"), it.optString("last"), it.optString("result"), false, it.optBoolean("resume"), it.optString("follow_up"),
-                    it.optString("specialist"), it.optJSONArray("log")?.let { a -> (0 until a.length()).map { i -> a.optString(i) } } ?: emptyList())
+                    it.optString("specialist"), it.optJSONArray("log")?.let { a -> (0 until a.length()).map { i -> a.optString(i) } } ?: emptyList(),
+                    it.optInt("done"), it.optInt("total"))
             }
         }
     } catch (e: Exception) { android.util.Log.w("BgAgents", "load: ${e.message}"); emptyList() }
@@ -109,6 +112,7 @@ object BgAgents {
                     .put("steps", it.steps).put("last", it.last).put("result", it.result.take(20000)).put("resume", it.resume).put("follow_up", it.followUp)
                     .apply { if (it.specialist.isNotBlank()) put("specialist", it.specialist) }
                     .put("log", JSONArray(it.log.takeLast(LOG_MAX)))
+                    .apply { if (it.total > 0) put("done", it.done).put("total", it.total) }
             }).toString()
         } catch (e: Exception) { android.util.Log.w("BgAgents", "save: ${e.message}"); return }
         // 0.52.1 crash audit: never write on the caller's thread (runOne runs on Main). Only the newest snapshot is written.
@@ -183,6 +187,8 @@ object BgAgents {
         val next = queued[i]
         _all.value = _all.value.map { if (it.id == next.id) it.copy(status = RUNNING, started = if (it.started > 0) it.started else System.currentTimeMillis()) else it }
         save()
+        // 0.54.1: a foreground service + a specific ongoing notification keep the run alive (and visible) after Argus is left.
+        if (::app.isInitialized) AgentKeeper.start(app)
         return get(next.id)
     }
 
@@ -259,7 +265,8 @@ object BgAgents {
     private suspend fun runBlueprint(start: Bg) {
         update(start.id) { it.copy(resume = false, waiting = false, followUp = "") }
         val (ok, result) = try {
-            com.blaze.assistant.orchestra.OrchestraRuns.run(start) { line, n, log -> update(start.id, persist = false) { it.copy(steps = n, last = line.take(120), log = log) } }
+            com.blaze.assistant.orchestra.OrchestraRuns.run(start,
+                parts = { d, t -> update(start.id, persist = false) { it.copy(done = d, total = t) } }) { line, n, log -> update(start.id, persist = false) { it.copy(steps = n, last = line.take(120), log = log) } }
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) {
             false to ("The blueprint run stopped: " + (e.message ?: e.javaClass.simpleName))
         }

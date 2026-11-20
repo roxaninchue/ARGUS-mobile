@@ -393,6 +393,8 @@
             android:foregroundServiceType="dataSync" />
         <service android:name=".terminal.JobKeeper" android:exported="false"
             android:foregroundServiceType="dataSync" />
+        <service android:name=".agent.AgentKeeper" android:exported="false"
+            android:foregroundServiceType="dataSync" />
         <service android:name=".bank.BankModeService" android:exported="false"
             android:foregroundServiceType="dataSync" />
 

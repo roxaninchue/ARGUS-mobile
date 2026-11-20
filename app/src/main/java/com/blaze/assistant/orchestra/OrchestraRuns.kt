@@ -61,7 +61,7 @@ object OrchestraRuns {
             .put("required", JSONArray(listOf("goal")))))
 
     /** Runs blueprint [bg] to the end; returns the agent's reply (Markdown with its rich block). Throws on cancel. */
-    suspend fun run(bg: BgAgents.Bg, step: (String, Int, List<String>) -> Unit): Pair<Boolean, String> {
+    suspend fun run(bg: BgAgents.Bg, parts: (Int, Int) -> Unit = { _, _ -> }, step: (String, Int, List<String>) -> Unit): Pair<Boolean, String> {
         val ask = decode(bg.task)
         val root = "/root/phone/Blaze/blueprints/${bg.id.lowercase()}"
         val saved = file(bg.id)?.takeIf { it.exists() }?.let { f -> try { BlueprintStore.restore(JSONObject(withContext(Dispatchers.IO) { f.readText() })) } catch (_: Exception) { null } }
@@ -77,6 +77,8 @@ object OrchestraRuns {
                 is BpEvent.Failed -> if (e.final) "${store.node(e.node)?.title ?: e.node} couldn't finish" else null
                 else -> null
             }
+            // 0.54.1: parts finished / parts in the plan, for the run's notification ("Part 6 of 14"). The plan can grow (fixers).
+            try { val all = store.all(); parts(all.count { store.state(it.id) == NodeState.DONE }, all.size) } catch (_: Throwable) { }
             if (line != null) synchronized(log) { log += line.take(160); if (log.size > BgAgents.LOG_MAX) log.removeAt(0); step(line, count, log.toList()) }
         }
         val session = Agent.agentSession(bg)

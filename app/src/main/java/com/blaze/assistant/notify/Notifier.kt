@@ -82,7 +82,7 @@ object Notifier {
     )
 
     /** v0.28.3: opens Argus at [chatId] when it's a project chat (MainActivity → Agent.openFromLink → Projects). */
-    private fun openChat(chatId: String?): PendingIntent {
+    internal fun openChat(chatId: String?): PendingIntent {
         if (chatId.isNullOrBlank() || com.blaze.assistant.agent.Projects.of(chatId) == null) return openApp()
         return PendingIntent.getActivity(app, 7102, com.blaze.assistant.IntentKey.sign(app, Intent(app, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(EXTRA_OPEN_CHAT, chatId)), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)

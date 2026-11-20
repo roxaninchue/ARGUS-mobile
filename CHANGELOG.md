@@ -1,3 +1,12 @@
+## Unreleased: background runs keep going and show exactly where they are
+
+2026-11-21 (Finn): a deep-research run (blueprint B1) gave no sign it was still working once Argus was left; its pill sat inside the collapsed "Worked" line, and nothing held the process, so Android could pause the run until Argus was reopened (it resumed from its saved state, but silently).
+- **AgentKeeper** (`agent/AgentKeeper.kt`, new dataSync foreground service, like terminal/JobKeeper): starts when a run claims a slot, holds the process while any background agent or blueprint run is queued or running, and stops itself when none is left.
+- **The notification is specific** (`agent/AgentNote.kt`, pure): title names the run ("Deep research: How Anthropic was created"); body says "Part 6 of 14 · Searching: the 2021 OpenAI split" for a blueprint (parts finished of the parts in its plan; the plan can grow when a fixer is added), "Step 23 · Reading kayak.com" for an agent with no plan (no made-up total), "Waiting for you: open Argus and answer its card" when it needs a tap, and "Queued: starts when a slot frees (n running)". Real progress bar for blueprints, elapsed-time chronometer, Stop (cancels that run) and tap to open its chat. Several runs: "3 runs: 2 working, 1 queued" with one line each. Channel "Background runs", low importance, silent.
+- **Parts count**: `OrchestraRuns.run` reports done/total after every node event; `BgAgents.Bg` gains `done` / `total` (saved).
+- `Notifier.openChat` is now internal so the keeper can reuse it.
+- Tests: AgentNoteTest (4, new). Not built (no build until Finn says build).
+
 ## Unreleased: crash log always writes the crash line
 
 2026-11-20 report (0.54.0, Galaxy A12, Android 12): three memory trims, then "CRASH (previous run, crash)" with no description and no CRASH line from the handler, so nothing said what died.
