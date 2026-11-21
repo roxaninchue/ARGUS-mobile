@@ -1,3 +1,5 @@
+## 0.54.2 (versionCode 204, 2026-11-21): the "Unreleased" entries below down to 0.54.1
+
 ## Unreleased: teammates text first, quiet in their own chat, and a clean shade
 
 2026-11-21 (Finn's phone on 0.54.1, 08:00-08:17):
