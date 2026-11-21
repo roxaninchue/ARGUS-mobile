@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +61,9 @@ import com.blaze.assistant.ui.argus.icons.Lucide
  * action row (Cancel = glass, primary = ink or danger) when [primary] is set. Sheet glass (tint fallback: ModalBottomSheet
  * sits in its own window, so Haze has no source to blur there). Opens fully expanded; callers need no Material3 opt-in.
  */
+/** Closes the open [ArgusSheet] with its own slide-down (content that handles its own drags, like the model list). */
+val LocalSheetClose = androidx.compose.runtime.staticCompositionLocalOf<() -> Unit> { {} }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArgusSheet(
@@ -77,6 +81,8 @@ fun ArgusSheet(
 ) {
     val c = Argus.colors
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetScope = androidx.compose.runtime.rememberCoroutineScope()
+    val close: () -> Unit = { sheetScope.launch { state.hide() }.invokeOnCompletion { onDismiss() } }
     // Landscape overhaul: never taller than the window under the status bar (a phone on its side is ~360 dp), and the
     // body scrolls between the title and the pinned action row. [bodyMax] is the cap a sheet was designed with upright;
     // [scroll] = false for a body that scrolls itself (a list with a sticky search above it).
@@ -96,7 +102,7 @@ fun ArgusSheet(
             Box(Modifier.padding(top = 8.dp, bottom = 6.dp).size(KitSpec.Sheet.HANDLE_W.dp, KitSpec.Sheet.HANDLE_H.dp)
                 .clip(RoundedCornerShape(3.dp)).background(c.line2))
         },
-    ) {
+    ) { androidx.compose.runtime.CompositionLocalProvider(LocalSheetClose provides close) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
             if (!title.isNullOrBlank()) Text(tr(title), style = ArgusType.sheetTitle, color = c.ink,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).semantics { heading() })
@@ -115,7 +121,7 @@ fun ArgusSheet(
                 }
             }
         }
-    }
+    } }
 }
 
 /**

@@ -85,8 +85,11 @@ class BotThreads(
     private fun hello(botId: String) {
         runCatching {
             val b = team.get(botId)
-            if (b != null && Hello.due(b, rows(botId, limit = 1).isEmpty(), clock()))
-                post(botId, RowKind.MESSAGE, RowBodies.message(botId, Hello.line(b.name, b.label, b.portfolio)))
+            if (b != null && Hello.due(b, rows(botId, limit = 1).isEmpty(), clock())) {
+                val line = Hello.line(b.name, b.label, b.portfolio)
+                post(botId, RowKind.MESSAGE, RowBodies.message(botId, line))
+                greet(teamChatId(botId, rows.generation(botId) ?: 0), line)   // the thread screen draws the bot's chat, not these rows
+            }
         }
     }
 
@@ -247,6 +250,9 @@ class BotThreads(
     }
 
     companion object {
+        /** Puts a new bot's hello in its chat (set by [TeamGraph] to the agent loop's; a no-op in tests). */
+        @Volatile var greet: (chatId: String, text: String) -> Unit = { _, _ -> }
+
         /** Bot threads' chats (`team-<bot>-g<gen>`): kept by the agent loop like any chat, never listed as the user's. */
         const val TEAM_CHAT_PREFIX = "team-"
 

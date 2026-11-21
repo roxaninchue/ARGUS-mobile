@@ -108,17 +108,19 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
         val pickedDown = !choice.auto && ModelPick.isDown(choice.key)
         // 18 Nov 2026 (owner): the effort moved out of this sheet to its own chip on the composer ([ComposerTopRow]).
         if (rows.size > 6) ArgusSearch(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), placeholder = tr("Search models"))
-        // 2026-11-17 (owner): scrolling the list only scrolls it. A fling that reaches the top no longer pulls the sheet
-        // down; the sheet moves when the user drags the title or the search bar, or starts a new drag down while the
-        // list is already at the top.
+        // 2026-11-17 (owner): scrolling the list only scrolls it. 21 Nov (owner: "it starts to close on its own even if
+        // I'm not at the top", "it goes down in bits"): the list never hands a scroll or fling to the sheet any more, so
+        // the sheet can't follow the finger in jumps. The title, search bar and handle drag it as before; on the list, a
+        // pull or flick down that began with the list at the top closes it with the sheet's own smooth slide.
         val listScroll = rememberScrollState()
-        val atTopOnDown = remember { booleanArrayOf(true) }
-        val keepSheet = remember(listScroll) { ModelSheetScroll.connection { atTopOnDown[0] } }
+        val close = LocalSheetClose.current
+        val pullPx = with(androidx.compose.ui.platform.LocalDensity.current) { ModelSheetScroll.PULL_DP.dp.toPx() }
+        val keepSheet = remember(listScroll) { ModelSheetScroll.Hold({ listScroll.value == 0 }, pullPx) { close() } }
         androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth()
             .pointerInput(listScroll) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    atTopOnDown[0] = listScroll.value == 0
+                    keepSheet.down(listScroll.value == 0)
                 }
             }
             .nestedScroll(keepSheet)
@@ -148,15 +150,35 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
  * passes on to the sheet, so pulling down from the top still closes it.
  */
 internal object ModelSheetScroll {
-    fun leftoverForSheet(startedAtTop: Boolean, source: NestedScrollSource, available: Offset): Offset =
-        if (startedAtTop && source == NestedScrollSource.UserInput) Offset.Zero else available
+    /** How far a pull down from the top closes the sheet, and how fast a flick down does. */
+    const val PULL_DP = 72
+    const val FLICK_PX_S = 1500f
 
-    fun connection(startedAtTop: () -> Boolean): NestedScrollConnection = object : NestedScrollConnection {
-        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
-            leftoverForSheet(startedAtTop(), source, available)
-        // The sheet only moved if the drag began at the top; then it must settle itself, so its fling is left to it.
-        override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
-            if (startedAtTop()) Velocity.Zero else available
+    /** Whether the sheet closes: the drag began with the list at the top, it's still there, and it was pulled or flicked down far enough. */
+    fun closes(startedAtTop: Boolean, atTop: Boolean, pulled: Float, velocityY: Float, pullPx: Float): Boolean =
+        startedAtTop && atTop && (pulled >= pullPx || velocityY >= FLICK_PX_S)
+
+    /** The list's hold: it keeps every leftover scroll and fling (the sheet never moves under the finger) and calls [close] once. */
+    class Hold(private val atTop: () -> Boolean, private val pullPx: Float, private val close: () -> Unit) : NestedScrollConnection {
+        private var startedAtTop = true
+        private var pulled = 0f
+        private var closed = false
+
+        fun down(listAtTop: Boolean) { startedAtTop = listAtTop; pulled = 0f }
+
+        private fun maybeClose(velocityY: Float): Boolean {
+            if (closed || !closes(startedAtTop, atTop(), pulled, velocityY, pullPx)) return false
+            closed = true; close(); return true
+        }
+
+        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+            if (source == NestedScrollSource.UserInput) pulled = if (available.y > 0f && consumed.y == 0f) pulled + available.y else 0f
+            maybeClose(0f)
+            return available
+        }
+
+        override suspend fun onPreFling(available: Velocity): Velocity = if (maybeClose(available.y)) available else Velocity.Zero
+        override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
     }
 }
 

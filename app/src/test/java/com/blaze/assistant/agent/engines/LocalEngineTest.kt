@@ -152,11 +152,22 @@ class LocalEngineTest {
         assertEquals("", LocalEngine.identity(bot(kind = BotKind.MANAGER), null))
         assertEquals("Be ARGUS.", LocalEngine.identity(bot(kind = BotKind.MANAGER), "  Be ARGUS.  "))
         val long = LocalEngine.identity(bot(), "s".repeat(LocalEngine.SOUL_MAX + 100))
-        assertTrue(long.length < LocalEngine.SOUL_MAX + 200)
+        assertTrue(long.length < LocalEngine.SOUL_MAX + 900)   // the soul is capped; the role opening rides on top
         val llm = FakeLlm(FakeLlm.Reply.Say("Hello, I'm ARGUS."))
         engine(FakeLoop(llm, all), soul = null).turn(bot(kind = BotKind.MANAGER), TurnInput("t4", "main", "hi")) {}.toList()
         assertEquals(listOf("You are Blaze."), llm.systems.single())             // no identity block: today's chat, unchanged
         assertEquals(all, llm.toolLists.single())
+    }
+
+    /** 21 Nov 2026 (owner: "the agents still reply like Argus rather than their role"). */
+    @Test fun aBotSpeaksAsItsRoleNotAsTheManager() {
+        val r = LocalEngine.role("Researcher", "researcher", "", hasSoul = false)
+        assertTrue(r.startsWith("You are Researcher, the user's researcher bot on their team. You are not the Manager"))
+        assertTrue(r.contains("Your job: dig into a topic") && r.contains("never the Manager's full list"))
+        assertTrue(LocalEngine.role("Bo", "Sales", "Leads and follow-ups.", hasSoul = false).contains("Your job: Leads and follow-ups."))
+        assertFalse(LocalEngine.role("Ledger", "Money", "", hasSoul = true).contains("Your job"))   // the soul says it
+        assertTrue(LocalEngine.role("Zed", "", "", hasSoul = false).contains("the user's zed bot"))
+        assertTrue(LocalEngine.identity(bot(), "Careful with money.").startsWith("You are Ledger, the user's money bot"))
     }
 
     @Test fun readSoulReadsTheFileOrNull() {

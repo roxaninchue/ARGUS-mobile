@@ -1,3 +1,11 @@
+## Unreleased: teammates speak as themselves, their hello shows in their chat, and the model list stays put
+
+2026-11-21 (Finn's phone, 10:48-10:52: the Team list showed Researcher's hello but its chat was empty; Researcher answered "what can you help me with?" with Argus's full list; the model list closed by itself while scrolling back up, and closed "in bits").
+- **A new teammate's hello lands in its chat** (`BotThreads.greet` → `AgentSessionDriver.greet` → `Agent.greet`): the thread screen draws the bot's own chat, but the hello was only written to the team rows the list reads. It is now also the first message in the chat (and in its history, so the bot knows it said it). Bots made before this update keep their empty chat.
+- **Teammates speak as their role** (`LocalEngine.role`): a bot's identity now opens with who it is and that it is not the Manager ("You are Researcher, the user's researcher bot on their team…"), its job (its portfolio, else a line for common roles: research, writing, code, design, plans and travel, money, fitness, shopping, news, teaching), and that "what can you do?" is answered for that role in two or three lines, never the Manager's full list; work outside the role is offered to the Manager.
+- **The model list never moves the sheet** (`ModelSheetScroll.Hold`): every leftover scroll and fling stays with the list, so the sheet can't start closing mid-scroll or follow the finger in jumps. The title, search bar and handle drag it as before; on the list, a pull of 72 dp or a quick flick down that began with the list at the top closes it with the sheet's own slide (`LocalSheetClose`, a new `ArgusSheet` local).
+- Tests: LocalEngineTest.aBotSpeaksAsItsRoleNotAsTheManager, ModelSheetScrollTest (rewritten, 3).
+
 ## Unreleased: PDF, Word and PowerPoint in one step, and a turn can't end without the file you asked for
 
 2026-11-21 (Finn: the PDF of a deep-research run never came: "Send PDF" looped, Argus installed reportlab in the terminal and stopped twice on "Now let me write the full PDF-building script"; "fix it in a way that will not allow for similar slips"; then "can you make a docs and PowerPoint maker too?").

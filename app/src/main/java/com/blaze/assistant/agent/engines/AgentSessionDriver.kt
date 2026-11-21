@@ -36,6 +36,9 @@ object AgentSessionDriver : LocalEngine.Driver {
     override val maxContextTokens: Int get() = Agent.ctxWindow()
 
     /** The engine every LOCAL bot runs on. */
+    /** A new bot's hello into its own chat ([BotThreads.greet]). */
+    fun greet(chatId: String, text: String) = Agent.greet(chatId, text)
+
     val engine: LocalEngine by lazy { LocalEngine(this, groupOf = { ToolRouter.groupOf(it) }) }
 }
 

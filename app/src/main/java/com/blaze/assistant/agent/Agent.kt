@@ -829,6 +829,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     }
 
     internal fun teamSession(id: String): Session = sessions[id] ?: (load(id) ?: Session(id)).let { sessions.putIfAbsent(id, it) ?: it }   // P0-AG-01 (LocalEngine)
+    /** A new bot's hello also lands in its own chat (owner 21 Nov: the Team list showed it, the opened thread was empty). */
+    fun greet(chatId: String, text: String) { scope.launch { runCatching { val s = teamSession(chatId); val me = Role.valueOf("BLAZE"); if (s.msgs.none { it.role == Role.USER || it.role == me }) {
+        s.add(me, text); s.history.put(JSONObject().put("role", "assistant").put("content", text)); s.persist(force = true) } }.onFailure { android.util.Log.w("Agent", "greet", it) } } }
     /** Reads chat [id] from disk (the preloaded main chat when it is still fresh); null when there is no such chat. */
     private fun loadRaw(id: String): Session? {
         val p = takePreload(id) ?: (ChatStore.load(id) ?: return null).let { o -> parseChat(o) }

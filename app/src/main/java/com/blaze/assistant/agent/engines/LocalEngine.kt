@@ -91,6 +91,8 @@ class LocalEngine(
             val s = soul?.trim().orEmpty().let { if (it.length > SOUL_MAX) it.take(SOUL_MAX) else it }
             if (bot.kind == BotKind.MANAGER) return s
             val head = buildString {
+                // owner 21 Nov 2026: "the agents still reply like Argus rather than their role": the role comes first, in words
+                append(role(bot.name, bot.label, bot.portfolio, s.isNotEmpty())).append("\n\n")
                 append("Name: ").append(bot.name)
                 if (bot.label.isNotBlank() && bot.label != bot.name) append(" (").append(bot.label).append(")")
                 bot.domain?.takeIf { it.isNotBlank() }?.let { append("\nLife area: ").append(it) }
@@ -101,6 +103,29 @@ class LocalEngine(
                 if (bot.mode == "teammate") append("\nMode: teammate. You work alongside the other bots: take work they hand you, and save what the whole team should know with note_team.")
             }
             return if (s.isEmpty()) head else "$head\n\n$s"
+        }
+
+        private val ROLES = listOf(
+            "research" to "dig into a topic: search the web, read the sources, check the facts against each other, and report clear findings with their sources",
+            "writ" to "write and edit: drafts, rewrites, emails, posts and documents, in the user's voice",
+            "cod|dev|engineer|program" to "write, run, test and fix code in the terminal, and explain what changed",
+            "design" to "design: layouts, visuals, slides and the look of things",
+            "plan|travel|trip" to "plan: trips, schedules and step-by-step plans with real times, places and prices",
+            "money|financ|budget|account" to "money: budgets, spending, bills and the numbers behind a decision",
+            "fit|health|coach|gym" to "health and fitness: workouts, habits and progress",
+            "shop|buy|deal" to "shopping: find, compare and track things to buy",
+            "news|brief|digest" to "news: follow topics and sum up what changed",
+            "study|tutor|learn|teach" to "teaching: explain topics step by step and quiz the user")
+
+        /** The opening of a bot's identity: who it is, what its job is, and that it is not the Manager. Pure. */
+        fun role(name: String, label: String, portfolio: String, hasSoul: Boolean): String {
+            val l = label.trim().lowercase().takeUnless { it.isEmpty() || it == "bot" || it == name.trim().lowercase() } ?: name.trim().lowercase()
+            val job = portfolio.trim().replace(Regex("\\s+"), " ").take(300).trimEnd('.', ' ').ifEmpty {
+                if (hasSoul) "" else ROLES.firstOrNull { Regex(it.first).containsMatchIn(l) }?.second ?: "the $l work the user gives you" }
+            return "You are $name, the user's $l bot on their team. You are not the Manager: always speak as $name, in the first person." +
+                (if (job.isNotEmpty()) " Your job: $job." else "") +
+                " Asked who you are or what you can do, answer for this role in two or three lines, never the Manager's full list of abilities. " +
+                "Work outside your role: do it only if it is quick, otherwise say it fits the Manager better and offer to hand it over."
         }
 
         fun readSoul(bot: Bot): String? = try { File(bot.soulPath).takeIf { it.isFile }?.readText() } catch (_: Exception) { null }

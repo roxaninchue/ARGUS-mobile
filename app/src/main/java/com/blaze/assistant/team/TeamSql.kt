@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteProgram
 import com.blaze.assistant.agent.ChatNav
 import com.blaze.assistant.agent.ChatStore
+import com.blaze.assistant.agent.engines.AgentSessionDriver
 import com.blaze.assistant.store.Sql
 
 /**
@@ -77,8 +78,9 @@ object TeamGraph {
             runCatching { store.retireUnusedSeeds() }
             // 2026-11-17 (owner: bots open their own chat): every on-phone bot runs on the phone's agent loop. The Manager's
             // thread is the main Chat, so BotThreads never sends for it here.
+            BotThreads.greet = AgentSessionDriver::greet
             Graph(sql, store, BotThreads(sql, store, ChatStore.argus { ChatNav.MAIN }, engineFor = { b ->
-                if (b.engine.kind == com.blaze.assistant.team.EngineKind.LOCAL) com.blaze.assistant.agent.engines.AgentSessionDriver.engine else null }))
+                if (b.engine.kind == EngineKind.LOCAL) AgentSessionDriver.engine else null }))
         }.also { g = it }
     }
 }
