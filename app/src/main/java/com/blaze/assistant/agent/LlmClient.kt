@@ -133,9 +133,11 @@ object LlmClient {
         val pick = ModelRoute.task(Cloud.task(msgs, tools, liteTurn || (quickTurn && (tools == null || tools.length() == 0))),
             heavyTurn && lane != Lane.BACKGROUND, tools != null && tools.length() > 0, Cloud.textChars(msgs, ModelRoute.AGENT_MAX_CHARS + 1))
         val task = pick.task
-        // 0.54.5 Direct lane (gateway 0.9.35): a plain streaming chat turn tries the signed-ticket relay first (one model call,
-        // no routing waits). No first word within ~1.5 s, any error, or the lane switched off: the same turn goes down the
-        // normal route below, with one "Busy, retrying" status line.
+        // 0.54.5 Direct lane (gateway 0.9.35): a streaming main-lane turn tries the signed-ticket relay first (one model call,
+        // no routing waits). No first token in time (DirectLane.firstDeadline), any error, or the lane switched off: the same
+        // turn goes down the normal route below, with one "Busy, retrying" status line.
+        // 0.54.6: tool turns too, with the same tools the normal route would send (ToolTruth.cap / adapt / choice), and only
+        // when the ticket lets every one of them through (DirectLane.covers); else the normal route takes all of them.
         // 0.54.6 timing: every call books one TurnTiming.Call on the turn's CallState (lane, fallback, ticket, first token, size).
         val t0 = System.currentTimeMillis()
         val timing = CallState.current().timing
@@ -144,17 +146,20 @@ object LlmClient {
         val dTry = DirectLane.Try()
         var directMs = 0L
         fun firstFrom(): Long = CallState.current().firstTokenAt.let { if (it >= t0) it - t0 else -1L }
-        if (DirectLane.enabled() && DirectLane.eligible(task, onText != null, lane == Lane.MAIN, tools, msgs)) {
-            val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, null), onText!!, onThink, info = dTry)
+        if (DirectLane.enabled(task = task) && DirectLane.eligible(task, onText != null, lane == Lane.MAIN, tools, msgs)) {
+            val wire = tools?.takeIf { it.length() > 0 }?.let { tl -> ToolTruth.cap(msgs, tl).let { w -> try { ToolCalls.adapt(w, t.pid, t.model) } catch (_: Exception) { w } } }
+            val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, wire), onText!!, onThink, task = task, tools = wire,
+                toolChoice = wire?.let { ToolTruth.choice(msgs, it) }, info = dTry)
             if (direct != null) {
                 lastRoute = "${BrandName.NAME} Cloud · direct"
                 timing.call(TurnTiming.Call(TurnTiming.DIRECT, System.currentTimeMillis() - t0, firstFrom(), inChars, tools?.length() ?: 0, dTry.ticketMs, 0, "", kind))
                 return direct
             }
             directMs = System.currentTimeMillis() - t0
-            try { switchListener?.invoke(DirectLane.BUSY_LINE) } catch (_: Throwable) { }
-            CallState.current().errors.add("direct lane fell back: ${DirectLane.lastFallback}")
             dTry.fallback = dTry.fallback.ifBlank { DirectLane.lastFallback.ifBlank { "no answer" } }
+            // "Busy, retrying" only when a model was really asked; a refused or non-covering ticket just takes the normal route.
+            if (!dTry.fallback.startsWith("ticket")) try { switchListener?.invoke(DirectLane.BUSY_LINE) } catch (_: Throwable) { }
+            CallState.current().errors.add("direct lane fell back: ${dTry.fallback}")
         }
         var callOk = false
         try { return completeNormal(t, msgs, tools, onText, onThink, lane, pick, task).also { callOk = true } }
@@ -365,6 +370,8 @@ object LlmClient {
                     val b = (if (code in 200..299) c.inputStream else c.errorStream)?.use { it.readBytes() }
                     com.blaze.assistant.connect.AccountGate.report(code, b?.let { String(it) })   // account lock: a refused session
                 } catch (_: Exception) { }
+                // 0.54.6: the next tool turn's Direct lane ticket, while the user is still typing.
+                try { DirectLane.prewarm(tok) } catch (_: Throwable) { }
             }.start()
             return
         }

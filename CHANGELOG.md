@@ -1,3 +1,24 @@
+## Unreleased: tool turns on the Direct lane
+
+2026-11-22 (Finn: real turns almost never used the lane: the main chat always sends its core tools).
+- `DirectLane.eligible` now takes any streaming main-lane turn for a task the gateway tickets (`chat`, `agent`) with no
+  pictures, tools included (every name must be one a ticket can carry). Tool turns ask for an `agent` ticket with
+  `tools: true` and `device_tools` = the turn's tool names first, then names seen on earlier turns (body kept under the
+  gateway's 4 KB read), so one ticket serves the next turns too. Tickets are cached per task.
+- No tool is ever lost: the app decodes the ticket's own payload (`tools` + `dtools`) and goes direct only when it covers
+  EVERY tool it sends (`DirectLane.covers`); otherwise the turn takes the normal route with all its tools. The tools sent
+  direct are exactly the normal route's (`ToolTruth.cap`, `ToolCalls.adapt`, `ToolTruth.choice`). Tool calls come back to
+  the agent loop as before: phone tools run on the phone, the rest by their usual path, and the in-app confirms for send /
+  pay / delete / change are unchanged. Gateway check: the relay keeps an agent ticket's tools and streams tool calls through
+  untouched (gateway test added in 0.9.37); calls written as text are still read by the app's own gatekeeper.
+- The first-token fallback is no longer a fixed 1.5 s: `DirectLane.firstDeadline` uses the ticket model's measured p95
+  (gateway 0.9.37 `p95_ms`: p95 x 1.25 + 300 ms hop) or 1.5 s, plus 100 ms per 1,000 prompt tokens past 8k / 2k (a big
+  prompt legitimately takes longer to its first token), within 1-8 s. Thinking and tool-call chunks count as the first
+  token (a tool-call-only reply used to trip the text-only watchdog). Two timeouts in a row rest that task's lane for
+  2 minutes, so a slow lane can't make every turn slower. "Busy, retrying" shows only when a model was really asked.
+- `LlmClient.prewarm` also gets the next tool turn's ticket ready while the user types (`DirectLane.prewarm`).
+- Tests: DirectLaneTest 10 (was 6): tool-turn eligibility, covering tickets, ticket body, first-token wait, slow rest.
+
 ## Unreleased: per-turn timing (lane, ticket, first token, calls, tool round trips)
 
 2026-11-22 (Finn: make Argus replies start in about the model's own time; first, measure where a turn's time goes).
