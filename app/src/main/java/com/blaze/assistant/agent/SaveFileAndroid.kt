@@ -34,12 +34,12 @@ object SaveFileAndroid {
                     ?.use { c -> if (c.moveToFirst()) android.content.ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0)) else null }
             }.getOrNull()
             if (old != null) runCatching {
-                cr.openOutputStream(old, "wt")?.use { it.write(p.content.toByteArray(Charsets.UTF_8)) } ?: throw IllegalStateException("no output stream")
+                cr.openOutputStream(old, "wt")?.use { it.write(p.bytes ?: p.content.toByteArray(Charsets.UTF_8)) } ?: throw IllegalStateException("no output stream")
                 return SaveFile.savedLine("Downloads/$FOLDER/${p.name}")
             }
             val uri = cr.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v) ?: throw IllegalStateException("MediaStore refused the file")
             try {
-                cr.openOutputStream(uri)?.use { it.write(p.content.toByteArray(Charsets.UTF_8)) } ?: throw IllegalStateException("no output stream")
+                cr.openOutputStream(uri)?.use { it.write(p.bytes ?: p.content.toByteArray(Charsets.UTF_8)) } ?: throw IllegalStateException("no output stream")
                 cr.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
             } catch (e: Exception) { runCatching { cr.delete(uri, null, null) }; throw e }
             val shown = cr.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: p.name
@@ -49,11 +49,23 @@ object SaveFileAndroid {
         }
         return try {
             val dir = File(ctx.cacheDir, "save").apply { mkdirs() }
-            val f = File(dir, p.name).apply { writeText(p.content) }
+            val f = File(dir, p.name).apply { p.bytes?.let { writeBytes(it) } ?: writeText(p.content) }
             val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", f)
             ctx.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(p.mime).putExtra(Intent.EXTRA_STREAM, uri)
                 .putExtra(Intent.EXTRA_TITLE, p.name).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Save ${p.name}").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             "Opened the save / share sheet for ${p.name} (this Android version can't write to Downloads directly). Tell the user to pick Files or Drive there to keep it."
         } catch (e: Exception) { "Couldn't save ${p.name}: ${e.message}. Tell the user plainly; don't suggest a computer." }
     }
+
+    /** A text file Argus saved ("Downloads/<folder>/name.md", or an absolute path of its own), read back; null when gone. */
+    fun read(ctx: Context, path: String): String? = runCatching {
+        File(path).takeIf { it.isAbsolute && it.isFile }?.let { return@runCatching it.readText() }
+        if (Build.VERSION.SDK_INT < 29) return@runCatching null
+        val name = path.substringAfterLast('/')
+        ctx.contentResolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.MediaColumns._ID),
+            "${MediaStore.MediaColumns.DISPLAY_NAME} = ?", arrayOf(name), "${MediaStore.MediaColumns.DATE_MODIFIED} DESC")?.use { c ->
+            if (!c.moveToFirst()) null else ctx.contentResolver.openInputStream(android.content.ContentUris.withAppendedId(MediaStore.Downloads.EXTERNAL_CONTENT_URI, c.getLong(0)))
+                ?.use { it.readBytes().toString(Charsets.UTF_8) }
+        }
+    }.getOrNull()
 }

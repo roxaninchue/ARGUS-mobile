@@ -128,7 +128,7 @@ object LivingModel {
             n in browserTools -> Tool.BROWSER
             n in pageTools -> Tool.PAGE
             n in setOf("file_read", "read_file", "file_view") -> Tool.FILE_READ
-            n in setOf("file_write", "file_edit", "write_file", "edit_file", "save_file", "export_file") -> Tool.FILE_WRITE
+            n in setOf("file_write", "file_edit", "write_file", "edit_file", "save_file", "make_document", "export_file") -> Tool.FILE_WRITE
             else -> Tool.OTHER
         }
     }

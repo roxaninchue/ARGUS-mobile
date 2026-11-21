@@ -1380,7 +1380,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "DO IT, DON'T DIRECT: when something needs a permission or a setting, YOU fix it: ask with the tool that triggers Android's own pop-up, open the exact screen with blaze_self open, and when phone control is on, tap through it yourself (find the switch, flip it, come back). " +
                     "Never hand the user a numbered list of where to tap in Settings; only if you tried and truly can't, say the ONE thing they must tap. Never ask them to type terminal commands: run them yourself. " +
                     "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell) first; Termux only if the user asks for it. " +
-                    "generate_image is ONLY for art and photos; charts, graphs, tables, PDFs and documents are always made with run_code. If the terminal fails, say so plainly; never substitute an AI picture.")
+                    "generate_image is ONLY for art and photos; charts, graphs and tables are made with run_code; a PDF, Word document or PowerPoint deck is ONE make_document call (never a reportlab / python-pptx script). If the terminal fails, say so plainly; never substitute an AI picture.")
             } else turn("make", if (prof.simple) PromptProfile.MAKE_SIMPLE else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             tail("setup") { SelfSetup.promptLine(app) }
             tail("processes") { Processes.countLine().takeIf { it.isNotBlank() }?.let { "\nTracked now: $it (IDs via processes)." }.orEmpty() }
@@ -1465,6 +1465,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         if (Settings.longChat || Mind.ready) LongChat.tools().forEach { t.put(it) }
         com.blaze.assistant.memory.CacheTier.tools().forEach { t.put(it) }   // 0.49.0 cache tier
         t.put(PdfPages.tool())   // 2026-11-18: pages of a PDF from this chat, again
+        t.put(MakeDoc.tool())    // Unreleased after 0.54.1: PDF / Word / PowerPoint in one call, no terminal
         t.put(Flashcards.tool())
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
@@ -3979,7 +3980,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         // honest line with a Try again chip.
                         val phoneP = if (miss == null && synchronized(turnTools) { turnTools.isEmpty() }) ActionPromise.promises(textOut) else emptyList()
                         // Unreleased after 0.54.1: a final reply ending "Now let me write the PDF script…" (tools ran earlier) also gets one nudge.
-                        val promised = phoneP.ifEmpty { if (miss == null && !routine) listOfNotNull(ActionPromise.dangling(textOut)) else emptyList() }
+                        // …and a turn asked for a PDF / Word / PowerPoint file can't end without it (ActionPromise.owedFile).
+                        val owed = if (miss == null && !routine && phoneP.isEmpty()) ActionPromise.owedFile(lastUserText(), calledNames, savedPath, textOut) else null
+                        val promised = phoneP.ifEmpty { if (miss == null && !routine) listOfNotNull(owed?.let { ActionPromise.OWED + it } ?: ActionPromise.dangling(textOut)) else emptyList() }
                         if (promised.isNotEmpty()) {
                             if (!promiseNudged && nudgesLeft > 0 && step < maxSteps - 3) {
                                 promiseNudged = true
@@ -3990,7 +3993,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(if (phoneP.isEmpty()) ActionPromise.nextNudge(promised.first()) else ActionPromise.nudge(promised.first()), lastUserText())))
                                 continue
                             }
-                            if (phoneP.isNotEmpty()) { textOut = ActionPromise.honest(textOut, promised); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true }
+                            if (phoneP.isNotEmpty() || owed != null) { textOut = ActionPromise.honest(textOut, phoneP); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true }
                         }
                     }
                     // v0.45.13 verify-after-act: opening an app is step 1, never the goal. A "done" for a multi-step ask whose only
@@ -4327,7 +4330,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         }
                         if (ClaimGuard.succeeded(result) && verdict?.status != ToolVerify.Status.FAILED) { turnOk += ClaimGuard.Call(name, args); lastOkStep = msgs.lastOrNull { it.role == Role.STEP }?.text.orEmpty() }
                         turnToolCalls++
-                        if (name == SaveFile.TOOL) SaveFile.pathIn(result)?.let { savedPath = it }
+                        if (name == SaveFile.TOOL || name == MakeDoc.TOOL) SaveFile.pathIn(result)?.let { savedPath = it }
                         if (name == "set_alarm" || name == "set_timer" || name == "create_routine") turnSetResults += result
                         if (name == "run_plan" || name == "read_screen" || name == com.blaze.assistant.phone.SettingsJump.TOOL) groupsOn += "screen"
                         if (name in screenActions && !result.startsWith("Error") && !result.startsWith("Couldn't")) com.blaze.assistant.device.Haptics.tick(app)
@@ -5351,6 +5354,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 else -> when {
                     name in LongChat.names -> longChatTool(name, args)
+                    name == MakeDoc.TOOL -> { add(Role.STEP, MakeDoc.step(args))
+                        kotlinx.coroutines.withContext(Dispatchers.IO) { MakeDoc.run(app, args, MakeDoc.texts(history, msgs.filter { it.role != Role.USER && it.role != Role.STEP }.map { it.text })) } }
                     name == PdfPages.TOOL -> { add(Role.STEP, "Looking at the PDF again")
                         val (reply, pic) = PdfPages.show(app, args); if (pic != null) shots += pic; reply }
                     name in com.blaze.assistant.memory.CacheTier.names -> {
@@ -5689,7 +5694,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.24.4: a private chat's words never land in the notification shade.
             if (isPrivate) { Notifier.reply("${BrandName.NAME} answered in your private chat.", last.role == Role.ERROR, id); return }
             // A chat you left kept working: say which one finished.
-            Notifier.reply(if (this === curRef) last.text else "${title.ifBlank { "A chat" }}: ${last.text}", last.role == Role.ERROR, id)
+            Notifier.reply(if (this === curRef) last.text else "${title.ifBlank { "A chat" }}:\n${last.text}", last.role == Role.ERROR, id)   // own line: a "# Title" reply rendered, not "research: #"
         }
     }
 }

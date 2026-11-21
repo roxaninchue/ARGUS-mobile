@@ -95,6 +95,8 @@ object Pipelines {
         suspend fun exec(command: String): Pair<Int, String> = 0 to ""
         /** Saves the finished document; returns where (a path the doc card opens). */
         suspend fun saveDoc(title: String, markdown: String): String = ""
+        /** The document as a PDF (MakeDoc); its absolute path, or "" when it couldn't be made. */
+        suspend fun savePdf(title: String, markdown: String): String = ""
     }
 
     /** The first JSON object in [text] (a fenced block or bare), or null. */
@@ -175,7 +177,10 @@ object Pipelines {
                 val doc = ctx.inputs.values.lastOrNull().orEmpty()
                 val title = Regex("(?m)^#\\s+(.+)$").find(doc)?.groupValues?.get(1)?.trim() ?: ctx.store.goal.take(60)
                 val path = ops.saveDoc(title, doc)
-                NodeResult.ok(DocCard.block(title, path, doc))
+                // Unreleased after 0.54.1: every research / document run ends with its PDF too (the card opens the PDF), so a
+                // "send me the PDF" afterwards needs no script, and the Markdown copy stays in Downloads.
+                val pdf = ops.savePdf(title, doc)
+                NodeResult.ok(DocCard.block(title, pdf.ifBlank { path }, doc))
             }
             "rank" -> {
                 val out = ops.agent(ctx, prompt(ctx, RANK_FORMAT))

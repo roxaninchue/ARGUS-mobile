@@ -2,6 +2,7 @@ package com.blaze.assistant.agent
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,4 +43,16 @@ class ActionPromiseTest {
             "Done, the report is saved to Downloads.", "I'll build it if you want.").forEach { assertEquals(it, null, ActionPromise.dangling(it)) }
         assertTrue(ActionPromise.nextNudge("Now let me write the script").contains("Do it now"))
     }
+
+    /** Unreleased after 0.54.1: a turn asked for a PDF / Word / PowerPoint file can't end without it. */
+    @Test fun aTurnOwesTheFileItWasAskedFor() {
+        assertEquals("pdf", ActionPromise.owedFile("Send PDF", setOf("run_code"), null, "reportlab is ready. Now let me write the script."))
+        assertNull(ActionPromise.owedFile("Send PDF", setOf("make_document"), "Downloads/Argus/kwacha.pdf", "Here it is."))
+        assertNull(ActionPromise.owedFile("make it a pdf", setOf("run_code"), null, "Saved to /root/phone/kwacha.pdf."))
+        assertNull(ActionPromise.owedFile("research the kwacha and send a pdf", setOf("orchestrate"), null, "On it in the background."))
+        assertNull(ActionPromise.owedFile("make slides", emptySet(), null, "How many slides do you want?"))
+        assertEquals("pptx", ActionPromise.owedFile("make a deck from this", emptySet(), null, "Here's the outline."))
+        assertTrue(ActionPromise.nextNudge(ActionPromise.OWED + "pptx").contains("make_document(format=\"pptx\")"))
+    }
 }
+

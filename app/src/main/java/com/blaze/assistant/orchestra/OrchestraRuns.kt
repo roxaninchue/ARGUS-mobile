@@ -1,8 +1,7 @@
 package com.blaze.assistant.orchestra
 
 import android.content.Context
-import com.blaze.assistant.agent.Agent
-import com.blaze.assistant.agent.BgAgents
+import com.blaze.assistant.agent.*
 import com.blaze.assistant.composer.ModelChoice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -31,7 +30,8 @@ object OrchestraRuns {
     private lateinit var dir: File
     /** One background thread for snapshot writes (ordered, off the main thread). */
     private val writer = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "blaze-orchestra-io").apply { isDaemon = true } }
-    fun init(ctx: Context) { dir = File(ctx.applicationContext.filesDir, "orchestra").apply { mkdirs() } }
+    private var appCtx: Context? = null
+    fun init(ctx: Context) { appCtx = ctx.applicationContext; dir = File(ctx.applicationContext.filesDir, "orchestra").apply { mkdirs() } }
     private fun file(id: String): File? = if (::dir.isInitialized) File(dir, "$id.json") else null
 
     /** The task an orchestrate call is saved as (BgAgents.Bg.task). Pure. */
@@ -94,8 +94,11 @@ object OrchestraRuns {
             override suspend fun exec(command: String): Pair<Int, String> = exec0("cd '$root' && $command", 900)
             override suspend fun saveDoc(title: String, markdown: String): String {
                 val r = session.runNode("", "", "", saveDoc = markdown to title)
-                return com.blaze.assistant.agent.SaveFile.pathIn(r) ?: r.take(200)
+                return SaveFile.pathIn(r) ?: r.take(200)
             }
+            override suspend fun savePdf(title: String, markdown: String): String = appCtx?.let { c ->
+                withContext(Dispatchers.IO) { runCatching { MakeDoc.save(c, markdown, title).second }.getOrNull() }
+            }.orEmpty()
         }
         val cfg = Orchestrator.Config(maxParallel = try { BgAgents.cap() } catch (_: Throwable) { 2 })
         val outcome = try { Orchestrator(store, Pipelines.runner(ops), cfg, AgentBudget.escalation(root), save = { s ->

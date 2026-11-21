@@ -93,7 +93,7 @@ object ToolRegistry {
             "create_routine", "create_specialist", "create_task", "create_trigger", "delegate", "done_job", "download_file", "duo_workspace",
             "export_file", "file_edit", "file_write", "generate_image", "goal", "job_input", "media_download", "memory_merge", "memory_save",
             "memory_update", "message_agent", "movies", "note_team", "orchestrate", "post_notification", "post_update", "preview_server",
-            "read_aloud", "remember", "retry_job", "run_code", "run_skill", "save_file", "save_workflow", "schedule_command", "spawn_agent",
+            "read_aloud", "remember", "retry_job", "run_code", "run_skill", "save_file", "make_document", "save_workflow", "schedule_command", "spawn_agent",
             "stage_close", "stage_layout", "stage_move", "stage_show", "stage_update", "start_agent", "terminal_stop", "update_agent",
             "update_brief", "update_job", "update_task", "watch", "write_skill", "home_widget_add", "home_widget_update", "set_alarm", "set_timer",
             "beat_lab", "clip_studio", "video_ops", "music_ops")

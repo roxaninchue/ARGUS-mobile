@@ -137,6 +137,7 @@ object StepTool {
         "file_write" to l("Writing a file", "Wrote a file", Kind.EDIT, "pencil"),
         "file_delete" to l("Deleting a file", "Deleted a file", Kind.EDIT, "trash-2"),
         "save_file" to l("Saving a file", "Saved a file", Kind.EDIT, "download"),
+        "make_document" to l("Making the document", "Made the document", Kind.EDIT, "download"),
         "export_file" to l("Saving a file", "Saved a file", Kind.EDIT, "download"),
         "download_file" to l("Downloading a file", "Downloaded a file", Kind.EDIT, "download"),
         "file_read" to l("Reading a file", "Read a file", Kind.READ, "scroll-text"),

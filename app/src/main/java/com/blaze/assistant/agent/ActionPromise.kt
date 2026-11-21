@@ -73,9 +73,30 @@ object ActionPromise {
         return last.takeIf { nextRx.containsMatchIn(it) }
     }
 
-    fun nextNudge(said: String): String = "[${BrandName.NAME} check] Your reply ended with \u201c${said.take(160)}\u201d and the turn stopped there, so that " +
+    fun nextNudge(said: String): String = if (said.startsWith(OWED)) fileNudge(said.removePrefix(OWED)) else "[${BrandName.NAME} check] Your reply ended with \u201c${said.take(160)}\u201d and the turn stopped there, so that " +
         "step never happened. Do it now with the real tool calls and carry on until the user's ask is finished and delivered (for a file: made, " +
         "saved and shared). Don't announce the next step again; act, then report what is done."
+
+    // Unreleased after 0.54.1 (owner: fix it "in a way that will not allow for similar slips"). Whatever the reply says, a turn
+    // whose ask was a PDF / Word / PowerPoint file can't end without that file: [owedFile] names the format still owed (nothing
+    // of that type was saved or named this turn, no background agent took the job, and the reply isn't a question back).
+    const val OWED = "\u0000owed:"
+    private val handedOff = setOf("orchestrate", "spawn_agent", "start_agent", "delegate", "agent_delegate", "message_agent", "ask_user")
+
+    /** The format ("pdf", "docx", "pptx") the user asked for and didn't get this turn, else null. Pure. */
+    fun owedFile(ask: String, called: Set<String>, vararg said: String?): String? {
+        val f = DocFiles.wantsFile(ask) ?: return null
+        if (called.any { it in handedOff }) return null
+        if (said.lastOrNull()?.trim()?.endsWith("?") == true) return null
+        return f.takeUnless { DocFiles.madeIn(f, *said) }
+    }
+
+    private val formatName = mapOf("pdf" to "PDF", "docx" to "Word document", "pptx" to "PowerPoint deck")
+
+    /** The nudge for a turn that ended without the file it owes (from [owedFile]): one call does it. */
+    fun fileNudge(format: String): String = "[${BrandName.NAME} check] The user asked for a ${formatName[format] ?: format} and the turn ended without " +
+        "one. Make it now with ONE call: make_document(format=\"$format\") turns the newest document in this chat into it (or pass markdown " +
+        "with the full content). Don't write a script or install anything. Then reply with the card it returns."
 
     const val HONEST = "I haven't actually done that yet. Say \u201ctry again\u201d and I'll do it."
 

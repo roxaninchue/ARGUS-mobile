@@ -55,7 +55,7 @@ object ToolScheduler {
             "read_artifact", "read_turn", "find_skill", "terminal_status", "terminal_jobs", "classroom_courses", "classroom_coursework", "processes",
             "generate_image", "phone_status", "ask_pc")
         /** Tools that write a path (the key is the path arg). */
-        val fileWrite = setOf("file_write", "file_edit", "file_delete", "save_file", "export_file", "download_file", "skill_file", "write_skill")
+        val fileWrite = setOf("file_write", "file_edit", "file_delete", "save_file", "make_document", "export_file", "download_file", "skill_file", "write_skill")
         val fileRead = setOf("file_read", "file_list", "file_search")
         /** Each call is its own terminal session unless it names one. */
         val terminal = setOf("run_shell", "termux_run", "run_code", "linux_install", "terminal_stop", "preview_server", "job_input", "process")

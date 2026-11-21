@@ -28,7 +28,7 @@ class AgentKitTest {
     }
 
     @Test fun chatKitIsSmallAndKeepsTheWayOut() {
-        assertTrue(AgentKit.CHAT_CORE.size <= 40)
+        assertTrue(AgentKit.CHAT_CORE.size <= 41)   // 41 since make_document (PDF / Word / PowerPoint in one call) rides every turn
         assertTrue("the skill shelf's reader rides with it", "use_skill" in AgentKit.CHAT_CORE)
         assertTrue("run_shell" in AgentKit.CHAT_CORE && "agent_watch" in AgentKit.CHAT_CORE)
         assertTrue("load_tools" in AgentKit.CHAT_CORE && "find_tool" in AgentKit.CHAT_CORE && "agent_create" in AgentKit.CHAT_CORE && "web_search" in AgentKit.CHAT_CORE)

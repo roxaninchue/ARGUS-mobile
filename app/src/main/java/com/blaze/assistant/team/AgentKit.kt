@@ -17,7 +17,7 @@ object AgentKit {
         // 2026-11-20 skill shelf: the SKILLS list rides every turn, so the tool that reads one does too (run_skill / find_skill load on use).
         "load_tools", "find_tool", "ask_user", "memory_search", "memory_save", "remember", "use_skill",
         "web_search", "fetch_page", "browser_open", "browser_read", "browser_click", "browser_type",
-        "open_app", "read_screen", "device_status", "blaze_now", "open_view", "get_weather", "save_file",
+        "open_app", "read_screen", "device_status", "blaze_now", "open_view", "get_weather", "save_file", "make_document",
         "calendar_events", "set_alarm", "set_timer", "message_contact", "request_secret", "blaze_self",
         "agents_list", "agent_create", "agent_update", "add_job", "agent_delegate", "agent_status", "agent_watch",
         // owner 2026-11-20: ARGUS has the terminal too (sandboxed commands need no card; checkpoints are the safety net)

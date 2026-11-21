@@ -121,7 +121,8 @@ object SaveFile {
             .put("content", JSONObject().put("type", "string").put("description", "What to save; leave out to save the last code block in the chat"))
             .put("language", JSONObject().put("type", "string").put("description", "Language of content, e.g. html, python (optional)")))))
 
-    data class Plan(val name: String, val mime: String, val content: String)
+    /** [bytes] set = a binary file (make_pdf); else [content] is written as UTF-8 text. */
+    data class Plan(val name: String, val mime: String, val content: String, val bytes: ByteArray? = null)
 
     /** What to save for [args], given the chat's assistant texts (newest last); null = nothing to save. */
     fun plan(args: JSONObject, assistantTexts: List<String>): Plan? {

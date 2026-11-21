@@ -29,7 +29,7 @@ object ToolPick {
 
     /** Always sent, whatever the request. */
     val ESSENTIAL = setOf("load_tools", "find_tool", "ask_user", "memory_search", "memory_save", "remember", "web_search", "fetch_page",
-        "open_app", "run_plan", "read_screen", "search_in_app", "device_status", "blaze_now", "call_control", "open_view", "get_weather", "save_file",
+        "open_app", "run_plan", "read_screen", "search_in_app", "device_status", "blaze_now", "call_control", "open_view", "get_weather", "save_file", "make_document",
         // round 5 (shelf cost, step 2): delegate's description is where every specialist is listed, so it rides every turn
         "delegate")
 
