@@ -160,11 +160,15 @@ fun GatewayAppsSection(apps0: List<App>? = null, query: String = SettingsSearch.
                             if (app.oauth && app.oauthReady) {
                                 Note2(tr("{0} opens {1} in your browser. Approve, and it shows here as connected.", BrandName.NAME, app.name))
                                 KitButton("Connect ${app.name}", Btn.ACCENT, enabled = !working) { run { ArgusApps.connectOAuth(ctx, app.id) } }
-                                if (app.pastes) { Spacer(Modifier.height(10.dp)); Label(tr("Or paste a key"), size = 9.sp, color = c.weak, modifier = Modifier.padding(bottom = 8.dp)) }
+                                // 2026-11-21 one-tap connect: with browser sign-in ready, the key box stays folded away
+                                if (app.pastes && inputs["${app.id}:keys"] != "1") {
+                                    Spacer(Modifier.height(10.dp))
+                                    KitButton("Use a key instead", Btn.GHOST, enabled = !working) { inputs["${app.id}:keys"] = "1" }
+                                } else if (app.pastes) { Spacer(Modifier.height(10.dp)); Label(tr("Or paste a key"), size = 9.sp, color = c.weak, modifier = Modifier.padding(bottom = 8.dp)) }
                             } else if (app.oauth && !app.pastes) {
                                 Note2(tr("Browser sign-in for {0} isn't switched on in your gateway yet.", app.name))
                             }
-                            if (app.pastes) {
+                            if (app.pastes && (!(app.oauth && app.oauthReady) || inputs["${app.id}:keys"] == "1")) {
                                 if (app.tokenLabel.isNotEmpty()) Field(app.tokenLabel, inputs["${app.id}:token"].orEmpty(), { inputs["${app.id}:token"] = it }, if (app.tokenOptional) "Optional" else "Paste it here", secret = true)
                                 app.fields.forEach { f ->
                                     Field(f.label, inputs["${app.id}:${f.key}"].orEmpty(), { inputs["${app.id}:${f.key}"] = it }, if (f.optional) "Optional" else f.label, secret = f.secret)

@@ -57,6 +57,22 @@ object ArgusAppsModel {
         val ready: Boolean get() = connected || (none && enabled)
     }
 
+    /**
+     * 2026-11-21 one-tap connect: where argus-connect sends the browser after an OAuth approval
+     * (`isAllowedReturnTo` on the server accepts exactly argusagents://connect). It adds `app` and `status`.
+     */
+    const val RETURN_TO = "argusagents://connect"
+
+    /** argusagents://connect?app=notion&status=ok → ("notion", true); anything else → null. */
+    fun returnLink(u: String): Pair<String, Boolean>? {
+        val t = u.trim()
+        if (!t.startsWith("$RETURN_TO?", ignoreCase = true) && !t.equals(RETURN_TO, ignoreCase = true) && !t.startsWith("$RETURN_TO/", ignoreCase = true)) return null
+        val q = t.substringAfter('?', "").substringBefore('#')
+        val kv = q.split('&').mapNotNull { p -> p.split('=', limit = 2).takeIf { it.size == 2 }?.let { it[0] to java.net.URLDecoder.decode(it[1], "UTF-8") } }.toMap()
+        val app = kv["app"].orEmpty().takeIf { Regex("^[a-z0-9_]{1,64}$").matches(it) } ?: return null
+        return app to (kv["status"] == "ok")
+    }
+
     fun parse(json: String): List<App> {
         if (json.isBlank()) return emptyList()
         val root = runCatching { JSONObject(json) }.getOrNull() ?: return emptyList()

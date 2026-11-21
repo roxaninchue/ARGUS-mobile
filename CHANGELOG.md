@@ -8,6 +8,7 @@
 - `request_app_connection` now counts apps connected on the Apps page; the two tools belong to the `connectors` group (Inbox manager and bots with that group); `ArgusApps.call` is shared and a refresh drops cached action lists.
 - Docs: docs/APP-SHELF.md (new), MODEL-FIRST.md round 7, AGENTS.md, about.md (feature map and "new in the next build").
 - Tests: AppShelfTest (10, new), ModelFirstTest.connectedAppsAreAShelfNotAGuess.
+- **One-tap connect** (owner: "connections all seem manual right now, how can we add oauth like composio does?"): argus-connect already had the full OAuth flow; the live gateway just had no OAuth client per provider, so every row fell back to pasting a key. Clients are now added in gateway admin › OAuth clients (GitHub, GitLab first). In the app: Connect sends `return_to=argusagents://connect`, so after approving the browser comes straight back to Argus (new intent filter on MainActivity, `ArgusApps.onReturn`, `ArgusAppsModel.returnLink`); with browser sign-in ready the key box folds behind "Use a key instead". Tests: ArgusAppsModelTest +2.
 
 ## 0.54.4 (versionCode 206, 2026-11-21): the "Unreleased" entry below (view shelf)
 

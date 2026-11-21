@@ -97,4 +97,20 @@ class ArgusAppsModelTest {
         assertTrue(ArgusAppsModel.preview.size >= 3)
         assertTrue(ArgusAppsModel.preview.all { it.id in ArgusAppsModel.BUNDLED })
     }
+
+    // 2026-11-21 one-tap connect: the browser's way back after an OAuth approval
+    @Test fun returnLinkReadsTheAppAndOutcome() {
+        assertEquals("notion" to true, ArgusAppsModel.returnLink("argusagents://connect?app=notion&status=ok"))
+        assertEquals("github" to false, ArgusAppsModel.returnLink("argusagents://connect?status=error&app=github"))
+        assertEquals(null, ArgusAppsModel.returnLink("argusagents://connect?app=../x&status=ok"))
+        assertEquals(null, ArgusAppsModel.returnLink("argusagents://connected?app=notion&status=ok"))
+        assertEquals(null, ArgusAppsModel.returnLink("https://evil.example/connect?app=notion&status=ok"))
+        assertEquals(null, ArgusAppsModel.returnLink("argusagents://connect"))
+        assertEquals("argusagents://connect", ArgusAppsModel.RETURN_TO)
+    }
+
+    @Test fun manifestTakesTheReturnLink() {
+        val m = File("src/main/AndroidManifest.xml").takeIf { it.exists() } ?: File("app/src/main/AndroidManifest.xml")
+        assertTrue(m.readText().contains("android:scheme=\"argusagents\" android:host=\"connect\""))
+    }
 }

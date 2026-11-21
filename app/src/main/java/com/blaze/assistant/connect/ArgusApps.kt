@@ -90,7 +90,7 @@ object ArgusApps {
 
     /** OAuth: opens the provider in the browser, then watches for the connection for up to three minutes. */
     suspend fun connectOAuth(ctx: Context, id: String): String {
-        val (code, body) = withContext(Dispatchers.IO) { call("POST", "/v1/me/apps/$id/oauth/start", JSONObject()) }
+        val (code, body) = withContext(Dispatchers.IO) { call("POST", "/v1/me/apps/$id/oauth/start", JSONObject().put("return_to", ArgusAppsModel.RETURN_TO)) }
         val url = if (code in 200..299) runCatching { JSONObject(body).optString("url") }.getOrDefault("") else ""
         if (!url.startsWith("https://")) return errorText(code, body).also { status(id, it) }
         runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
@@ -102,6 +102,16 @@ object ArgusApps {
             if (app(id)?.connected == true) return "Connected".also { status(id, it) }
         }
         return "Not connected yet. Approve in the browser, then pull to refresh.".also { status(id, it) }
+    }
+
+    /**
+     * 2026-11-21 one-tap connect: the browser came back to the app (argusagents://connect?app=..&status=..) after an
+     * approval. Says so on the app's row; [connectOAuth]'s watch (or the next refresh) shows it connected.
+     */
+    fun onReturn(link: String): Boolean {
+        val (id, ok) = ArgusAppsModel.returnLink(link) ?: return false
+        status(id, if (ok) "Approved. Checking\u2026" else "The browser sign-in didn't finish. Tap Connect to try again.")
+        return true
     }
 
     /** Pasted key and/or fields. Blank values keep what the server already has. */

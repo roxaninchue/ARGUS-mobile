@@ -178,7 +178,8 @@ Shelf ≈ 110–190 tokens for a typical 2–6 apps, cached with the rest of the
 3. **Retire the legacy on-phone Connectors** once everyone has moved to the Apps page: their prompt line and tools then go,
    and `request_app_connection` checks only the account's list.
 4. **Desktop and CLI**: the same shelf and two tools against the same endpoints, so every client uses apps the same way.
-5. **Skills from argus-connect** (`/v1/me/skills`, the Argus originals) onto the skill shelf.
+5. **One-tap connect** (started 21 Nov): OAuth clients per provider in gateway admin, `return_to=argusagents://connect`, the key box folded when browser sign-in is ready. Left: Google (consent-screen review; Gmail's restricted scopes need Google's security assessment), Microsoft publisher verification, Slack distribution, Notion public integration, Spotify's user cap; and letting the chat's Connect card start the sign-in directly.
+6. **Skills from argus-connect** (`/v1/me/skills`, the Argus originals) onto the skill shelf.
 
 ## 9. Code map
 

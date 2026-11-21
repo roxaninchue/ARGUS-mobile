@@ -169,10 +169,19 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         return true
     }
 
+    /** 2026-11-21 one-tap connect: an app approved in the browser comes back as argusagents://connect?app=..&status=.. . */
+    private fun connectLink(i: android.content.Intent): Boolean {
+        val u = i.data?.toString() ?: return false
+        if (i.action != android.content.Intent.ACTION_VIEW || !com.blaze.assistant.connect.ArgusApps.onReturn(u)) return false
+        i.data = null; i.action = null
+        return true
+    }
+
     /** Assistant button, wake word, quick tile → listen. Share sheet → ask about the shared text. */
     private fun handle(i: android.content.Intent?) {
         i ?: return
         if (authLink(i)) return
+        if (connectLink(i)) return
         // Account lock: nothing an intent asks for (listen, call, share, open a chat) happens while locked; the lock screen shows.
         if (com.blaze.assistant.connect.AccountGate.locked()) {
             i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)

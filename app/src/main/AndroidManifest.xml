@@ -299,6 +299,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="blaze" android:host="auth" android:path="/cb" />
             </intent-filter>
+            <!-- 2026-11-21 one-tap connect: argus-connect sends the browser back here after an app's OAuth approval. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="argusagents" android:host="connect" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
