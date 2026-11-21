@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.54.3: Argus makes a PDF, Word document or PowerPoint deck in one step on the phone (no terminal), research runs end with the PDF, and a reply can't end without the file you asked for; a new teammate's hello shows in its chat, teammates answer as their role instead of as Argus; the model list no longer closes while you scroll it.
 - New in 0.54.2: a new teammate texts you first; no notification from the agent whose chat you have open; swiping the message notification away starts the next one fresh; an agent you add from a suggestion shows up on My team at once; Argus no longer stops on "now let me write…" without doing it.
 - New in 0.54.1: background research, builds and agents keep running when you leave Argus, with a notification that says exactly where they are ("Part 6 of 14 · Searching: …", elapsed time, Stop) and another when they finish or stop, naming any part that didn't finish; after the third job of one kind in two weeks, Argus suggests a bot for it in a card (its shape, colour, name and brief) that you can add, turn down or ignore.
 - New in 0.54.0: each agent's chat looks and works like your main chat (Living view, model and effort, attachments, the mic, Continue), with its jobs and cards in an Activity view; agents' replies are saved in full; fixed a crash right after picking your agent's Linux during onboarding.

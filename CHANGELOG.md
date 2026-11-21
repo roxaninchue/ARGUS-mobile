@@ -1,3 +1,5 @@
+## 0.54.3 (versionCode 205, 2026-11-21): the "Unreleased" entries below down to 0.54.2
+
 ## Unreleased: teammates speak as themselves, their hello shows in their chat, and the model list stays put
 
 2026-11-21 (Finn's phone, 10:48-10:52: the Team list showed Researcher's hello but its chat was empty; Researcher answered "what can you help me with?" with Argus's full list; the model list closed by itself while scrolling back up, and closed "in bits").
