@@ -154,6 +154,8 @@ object Notifier {
     /** The app came to the front (true) or went to the background (false). */
     /** 0.54.1: true while Argus is on screen (AgentKeeper skips its end notification then). */
     fun isVisible(): Boolean = appVisible
+    /** Unreleased after 0.54.1: the bot thread open on screen (its chat id); its own answers never notify while you read it. */
+    @Volatile var watching: String? = null
 
     fun visible(v: Boolean) { appVisible = v; if (v) clearThread(); refresh() }
 
@@ -449,7 +451,7 @@ class ActionReceiver : BroadcastReceiver() {
         /** v0.25.0: the ongoing Magic Hand notification's "Stop Magic Hand" button. */
         const val STOP_HAND = "com.blaze.assistant.STOP_HAND"
         /** Unreleased after 0.54.1: the message thread was swiped away, so the next message starts alone. */
-        const val THREAD_GONE = "com.blaze.assistant.THREAD_GONE"
+        const val THREAD_GONE = "argus.notify.THREAD_GONE"
         const val EXTRA_CHAT = "reply_chat"
         const val EXTRA_CONTEXT = "reply_context"
     }

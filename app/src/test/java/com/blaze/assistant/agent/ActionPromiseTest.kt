@@ -32,4 +32,14 @@ class ActionPromiseTest {
         assertEquals(ActionPromise.HONEST, out)
         assertTrue(ActionPromise.nudge("Opening accessibility settings").contains("blaze_self action=open target=accessibility"))
     }
+
+    /** Unreleased after 0.54.1 (owner's phone, 21 Nov 08:12): the turn ended on "Now let me write…" twice and no PDF came. */
+    @Test fun aReplyEndingOnItsNextStepIsCaught() {
+        listOf("reportlab is ready. Now let me write the full PDF-building script with all the data",
+            "I've got sources tied to every figure now. Building the cited PDF with reportlab next.",
+            "I'll build the PDF now with reportlab, citing every figure.").forEach { assertTrue(it, ActionPromise.dangling(it) != null) }
+        listOf("It's still running. I'll wait for it to finish, then compile the PDF.", "Here's your PDF. Want me to make a shorter version?",
+            "Done, the report is saved to Downloads.", "I'll build it if you want.").forEach { assertEquals(it, null, ActionPromise.dangling(it)) }
+        assertTrue(ActionPromise.nextNudge("Now let me write the script").contains("Do it now"))
+    }
 }

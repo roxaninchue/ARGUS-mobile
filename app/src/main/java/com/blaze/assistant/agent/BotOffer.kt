@@ -158,6 +158,8 @@ object BotOffer {
         when (val r = TeamEdits(store).create(p.draft(), "user")) {
             is TeamStore.Result.Ok -> {
                 remember(ctx, p.area, TAKEN)
+                // Unreleased after 0.54.1: My team showed no Nova until something else refreshed it; say so at once (also posts its hello).
+                runCatching { TeamGraph.get(ctx).threads.rosterChanged(r.bot.id) }
                 withContext(Dispatchers.Main) { Agent.setCardMeta(msgId, p.copy(state = TAKEN, botId = r.bot.id).meta()) }
                 null
             }

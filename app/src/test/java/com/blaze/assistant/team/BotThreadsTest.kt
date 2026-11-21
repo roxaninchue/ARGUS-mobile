@@ -247,4 +247,12 @@ class BotThreadsTest {
         assertTrue(argus.list().none { BotThreads.isTeamChat(it.id) })
         assertEquals(listOf("main"), BotThreads.userChats(listOf("main", threads.thread("tempo")!!.chatId!!).map { ChatMeta(it, "", 0, false, "") }).map { it.id })
     }
+
+    /** Unreleased after 0.54.1: a new teammate texts first ([Hello]). */
+    @Test fun aNewBotSaysWhoItIsAndAsks() {
+        assertEquals("Hi, I'm Nova, your research bot. Digs into a topic across many sources. What should I start on?",
+            Hello.line("Nova", "Research", "Digs into a topic across many sources."))
+        assertEquals("Hi, I'm Ann, new on your team. What should I start on?", Hello.line("Ann", "", ""))
+        assertEquals("Hi, I'm Bo, your sales bot. Leads and follow-ups. What should I start on?", Hello.line("Bo", "Sales", "Leads and follow-ups"))
+    }
 }

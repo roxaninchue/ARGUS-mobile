@@ -1,3 +1,13 @@
+## Unreleased: teammates text first, quiet in their own chat, and a clean shade
+
+2026-11-21 (Finn's phone on 0.54.1, 08:00-08:17):
+- **Swiping the message notification starts fresh** (`notify/Notifier.kt`): the Argus thread kept every line since Argus was last opened, so each new message came stacked under all the earlier ones. A swipe now clears it (delete intent `THREAD_GONE`); the next message comes alone. Opening Argus still clears it too.
+- **No notification from the bot whose thread you're reading** (`Notifier.watching`, set by `BotThreadScreen`; `Agent.announce` skips it).
+- **New teammates text first** (`Hello` in `team/BotThreads.kt`, `BotThreads.rosterChanged`): a bot made in the last 10 minutes with an empty thread opens it with "Hi, I'm Nova, your research bot. … What should I start on?", counted unread. Covers the editor, the team tools and the suggestion card.
+- **Nova showed up late on My team**: the suggestion card's Add now tells the team screen at once (`BotOffer.accept` → `rosterChanged`).
+- **The turn that stops on its next step** (`ActionPromise.dangling` / `nextNudge`): "reportlab is ready. Now let me write the full PDF-building script…" ended the turn twice and the PDF never came. A final reply whose last sentence only announces the next step (let me / I'll / Building … now or next, not "I'll wait…" or "if you want") now gets one nudge to do it.
+- Tests: BotThreadsTest.aNewBotSaysWhoItIsAndAsks, ActionPromiseTest.aReplyEndingOnItsNextStepIsCaught.
+
 ## 0.54.1 (versionCode 203, 2026-11-21): the "Unreleased" entries below down to 0.54.0
 
 ## Unreleased: one row per kind of step

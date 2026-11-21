@@ -3977,7 +3977,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         // 0.49.0 (RC5 a): "I'll open the accessibility settings now." / "Opening it for you now." with NO tool call this
                         // turn: nothing happened on the phone. Re-ask once with the tools (the nudge names the right one), then the
                         // honest line with a Try again chip.
-                        val promised = if (miss == null && synchronized(turnTools) { turnTools.isEmpty() }) ActionPromise.promises(textOut) else emptyList()
+                        val phoneP = if (miss == null && synchronized(turnTools) { turnTools.isEmpty() }) ActionPromise.promises(textOut) else emptyList()
+                        // Unreleased after 0.54.1: a final reply ending "Now let me write the PDF script…" (tools ran earlier) also gets one nudge.
+                        val promised = phoneP.ifEmpty { if (miss == null && !routine) listOfNotNull(ActionPromise.dangling(textOut)) else emptyList() }
                         if (promised.isNotEmpty()) {
                             if (!promiseNudged && nudgesLeft > 0 && step < maxSteps - 3) {
                                 promiseNudged = true
@@ -3985,10 +3987,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 nudgesLeft--
                                 if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                                 add(Role.STEP, "Doing what I said")
-                                history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(ActionPromise.nudge(promised.first()), lastUserText())))
+                                history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(if (phoneP.isEmpty()) ActionPromise.nextNudge(promised.first()) else ActionPromise.nudge(promised.first()), lastUserText())))
                                 continue
                             }
-                            textOut = ActionPromise.honest(textOut, promised); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true
+                            if (phoneP.isNotEmpty()) { textOut = ActionPromise.honest(textOut, promised); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true }
                         }
                     }
                     // v0.45.13 verify-after-act: opening an app is step 1, never the goal. A "done" for a multi-step ask whose only
@@ -5683,6 +5685,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             }
             if (!isPrivate) try { com.blaze.assistant.widget.BlazeWidget.update(app, last.text.take(240)) } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeWidget.u", e) }
             if (this === curRef && (inForeground || overlayOpen)) return
+            if (inForeground && id == Notifier.watching) return   // you are reading this bot's thread
             // v0.24.4: a private chat's words never land in the notification shade.
             if (isPrivate) { Notifier.reply("${BrandName.NAME} answered in your private chat.", last.role == Role.ERROR, id); return }
             // A chat you left kept working: say which one finished.

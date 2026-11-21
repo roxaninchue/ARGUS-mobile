@@ -60,6 +60,23 @@ object ActionPromise {
         "app_permissions, notification_access, battery or a ${BrandName.NAME} settings page; open_settings for any other phone settings page; open_app " +
         "for apps; browser_open / web_search for the web. Then tell the user what to switch on. If no tool can do it, say plainly that you couldn't."
 
+    // Unreleased after 0.54.1 (owner's phone, 21 Nov 08:12): after installing reportlab the reply ended "reportlab is ready. Now let
+    // me write the full PDF-building script with all the data" and the turn stopped, twice, so no PDF ever came. Tools had run,
+    // so [promises] (no-tool turns, phone things only) never looked. [dangling] reads only the LAST sentence of a final reply.
+    private val nextRx = Regex("""^(?:(?:ok(?:ay)?|right|great|now|next|so|then|alright)[,!.\s—-]*)*(?:(?:let me|i'?ll|i will|i'?m going to|i am going to|going to)\s+(?:now\s+|just\s+|go ahead and\s+)?(?:build|write|compile|make|create|generate|run|draft|put together|assemble|export|render|save|finish|start|fix|install|search|read|pull|fetch|turn|convert|format)\b|(?:building|writing|compiling|making|creating|generating|exporting|rendering|drafting|assembling|putting together|starting on|moving on to|on to)\b)""", ic)
+    private val notNext = Regex("""\b(?:if you|once you|when you|after you|would you|do you|want me|shall i|should i|later|tomorrow|wait|waiting|once it|when it|as soon as)\b""", ic)
+
+    /** The last sentence of [reply] when it only announces the next step ("Now let me write the script…"), else null. Pure. */
+    fun dangling(reply: String): String? {
+        val last = sentences(reply.replace(Regex("""<<\s*(?:done|continue)\s*>>""", ic), "")).lastOrNull() ?: return null
+        if (last.endsWith("?") || last.length > 220 || notNext.containsMatchIn(last)) return null
+        return last.takeIf { nextRx.containsMatchIn(it) }
+    }
+
+    fun nextNudge(said: String): String = "[${BrandName.NAME} check] Your reply ended with \u201c${said.take(160)}\u201d and the turn stopped there, so that " +
+        "step never happened. Do it now with the real tool calls and carry on until the user's ask is finished and delivered (for a file: made, " +
+        "saved and shared). Don't announce the next step again; act, then report what is done."
+
     const val HONEST = "I haven't actually done that yet. Say \u201ctry again\u201d and I'll do it."
 
     /** The reply with its unbacked "doing it now" sentences replaced by one honest line. */

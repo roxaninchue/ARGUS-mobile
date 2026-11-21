@@ -76,7 +76,19 @@ class BotThreads(
     val changes: SharedFlow<Change> = _changes.asSharedFlow()
 
     /** P1-TM-04: tells listeners the roster changed (the editor and the team tools call it after a save or delete). */
-    fun rosterChanged(botId: String) { _changes.tryEmit(Change.Roster(botId)) }
+    fun rosterChanged(botId: String) {
+        _changes.tryEmit(Change.Roster(botId))
+        hello(botId)
+    }
+
+    /** A bot that just joined texts first ([Hello]): one message in its own thread, counted unread. Never throws. */
+    private fun hello(botId: String) {
+        runCatching {
+            val b = team.get(botId)
+            if (b != null && Hello.due(b, rows(botId, limit = 1).isEmpty(), clock()))
+                post(botId, RowKind.MESSAGE, RowBodies.message(botId, Hello.line(b.name, b.label, b.portfolio)))
+        }
+    }
 
     private val locks = ConcurrentHashMap<String, Mutex>()
     private val running = ConcurrentHashMap.newKeySet<String>()
@@ -304,5 +316,26 @@ object ArgusBridge {
             out += Row(BotRules.MANAGER_ID, generation, s, s, kind, body, at)
         }
         return out
+    }
+}
+
+/**
+ * Unreleased after 0.54.1 (owner, 21 Nov 08:15: "I'd like new teammates to text first"): a bot that has just joined the
+ * team opens its own thread with one hello, so it reads like a new contact saying hi. Pure (BotThreadsTest).
+ */
+object Hello {
+    /** A bot counts as new for this long after it was made (an edit to an old, never-used bot gets no hello). */
+    const val NEW_MS = 10 * 60_000L
+
+    fun due(bot: Bot, threadEmpty: Boolean, now: Long): Boolean =
+        threadEmpty && bot.id != BotRules.MANAGER_ID && bot.enabled && now - bot.createdAt in 0..NEW_MS
+
+    /** "Hi, I'm Nova, your research bot. Digs into a topic… What should I start on?" */
+    fun line(name: String, label: String, portfolio: String): String {
+        val who = label.trim().lowercase().let { if (it.isEmpty() || it == "bot") "Hi, I'm $name, new on your team." else "Hi, I'm $name, your $it bot." }
+        val what = portfolio.trim().replace(Regex("\\s+"), " ").take(240).let { p ->
+            if (p.isEmpty()) "" else " " + (if (p.endsWith(".") || p.endsWith("!")) p else "$p.")
+        }
+        return "$who$what What should I start on?"
     }
 }

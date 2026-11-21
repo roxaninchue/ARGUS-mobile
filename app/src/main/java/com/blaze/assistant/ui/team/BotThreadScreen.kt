@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blaze.assistant.agent.engines.AgentSessionDriver
+import com.blaze.assistant.notify.Notifier
 import com.blaze.assistant.agent.engines.TurnEvent
 import com.blaze.assistant.team.Bot
 import com.blaze.assistant.team.BotRules
@@ -133,6 +134,8 @@ fun BotThreadScreen(botId: String, store: com.blaze.assistant.team.TeamStore, th
         threads.changes.collect { ch -> if (ch.botId == botId) reload() }
     }
     DisposableEffect(botId) { onDispose { BotThreadUi.turns.launch { runCatching { threads.open(null) } } } }
+    // Unreleased after 0.54.1: while this thread is on screen its answers don't notify (owner: "they notify even when I'm in their chat").
+    DisposableEffect(chat) { val c = chat; Notifier.watching = c; onDispose { if (Notifier.watching == c) Notifier.watching = null } }
 
     fun sendText(text: String, byVoice: Boolean) {
         val b = bot ?: return
@@ -141,7 +144,7 @@ fun BotThreadScreen(botId: String, store: com.blaze.assistant.team.TeamStore, th
         if (t.isEmpty() && files.isEmpty()) return
         pending = emptyList()
         // attachments ride this turn (staged for the bot's own chat; the driver takes them for the user's message)
-        chat?.let { com.blaze.assistant.agent.engines.AgentSessionDriver.files.stage(it, files) }
+        chat?.let { AgentSessionDriver.files.stage(it, files) }
         BotThreadUi.turns.launch {
             runCatching {
                 threads.send(botId, Trigger.User(t.ifEmpty { "Take a look at this." }, byVoice = byVoice)).collect { e -> if (e is TurnEvent.Failed) ArgusToasts.show(e.error) }
