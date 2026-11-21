@@ -1,3 +1,8 @@
+## 0.54.6 (versionCode 208, 2026-11-22): the two "Unreleased" entries below (tool turns on the Direct lane, per-turn timing)
+Needs gateway 0.9.35+ with `direct_lane` on (live); the per-model first-token wait uses gateway 0.9.37's `p95_ms` once
+that is deployed (until then the size-aware bound). Phone check: "set an alarm for 7" answers with route "· direct" and
+the alarm is set (confirm cards unchanged); "speed stats" lists the lane, ticket, first token, calls and tool times.
+
 ## Unreleased: tool turns on the Direct lane
 
 2026-11-22 (Finn: real turns almost never used the lane: the main chat always sends its core tools).

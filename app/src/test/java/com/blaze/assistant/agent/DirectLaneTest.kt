@@ -85,9 +85,9 @@ class DirectLaneTest {
         DirectLane.resetForTests()
         assertFalse(DirectLane.noteSlow("agent", 1_000))
         assertTrue(DirectLane.noteSlow("agent", 2_000))
-        assertFalse(DirectLane.enabled(2_000 + DirectLane.SLOW_REST_MS - 1, "agent"))
-        assertTrue(DirectLane.enabled(2_000 + DirectLane.SLOW_REST_MS, "agent"))
-        assertTrue(DirectLane.enabled(2_000, "chat"))
+        assertTrue(DirectLane.resting("agent", 2_000 + DirectLane.SLOW_REST_MS - 1))
+        assertFalse(DirectLane.resting("agent", 2_000 + DirectLane.SLOW_REST_MS))
+        assertFalse(DirectLane.resting("chat", 2_000))
         DirectLane.resetForTests()
     }
 
@@ -132,7 +132,7 @@ class DirectLaneTest {
         val dir = File(root, if (File(root, "app/src/main").isDirectory) "app/src/main/java" else "src/main/java").walk().first { it.name == "DirectLane.kt" }.parentFile
         val llm = File(dir, "LlmClient.kt").readText()
         val dl = File(dir, "DirectLane.kt").readText()
-        val hook = llm.substringAfter("DirectLane.enabled() && DirectLane.eligible(").substringBefore("var trimmed = false")
+        val hook = llm.substringAfter("DirectLane.enabled(task = task) && DirectLane.eligible(").substringBefore("var trimmed = false")
         assertTrue(hook.contains("DirectLane.tryChat("))
         assertTrue(hook.contains("DirectLane.BUSY_LINE"))
         assertEquals("Busy, retrying", DirectLane.BUSY_LINE)

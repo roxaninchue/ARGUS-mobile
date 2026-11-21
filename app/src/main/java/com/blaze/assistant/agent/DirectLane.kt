@@ -81,7 +81,10 @@ object DirectLane {
 
     /** Settings "direct_lane" (default on; the gateway's own switch decides) and not switched off / resting for [task]. */
     fun enabled(now: Long = System.currentTimeMillis(), task: String = ""): Boolean =
-        now >= offUntil && now >= (restUntil[task] ?: 0L) && try { Settings.bool("direct_lane", true) } catch (_: Throwable) { false }
+        !resting(task, now) && try { Settings.bool("direct_lane", true) } catch (_: Throwable) { false }
+
+    /** Switched off (404) or [task] resting after a refusal or two slow tries (pure: no Settings). */
+    fun resting(task: String, now: Long = System.currentTimeMillis()): Boolean = now < offUntil || now < (restUntil[task] ?: 0L)
 
     /**
      * A streaming turn on the main lane, for a task the gateway tickets, with no pictures; tools are fine when every name
