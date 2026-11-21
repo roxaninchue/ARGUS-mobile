@@ -48,7 +48,8 @@ object ArgusApps {
 
     private fun token(): String = BlazeAccount.sessionToken()
 
-    private fun call(method: String, path: String, body: JSONObject? = null): Pair<Int, String> {
+    /** One call to argus-connect with the account's session token (also used by ConnectedApps). Blocking: call it off the main thread. */
+    internal fun call(method: String, path: String, body: JSONObject? = null): Pair<Int, String> {
         val t = token()
         if (t.isBlank()) return 401 to ""
         return try {
@@ -75,6 +76,7 @@ object ArgusApps {
         if (code in 200..299) {
             val list = ArgusAppsModel.parse(body)
             Settings.setSecret(CACHE, body)
+            ConnectedApps.invalidate()   // app shelf: a connection may have changed, so action lists are read again
             _view.value = View(apps = list, loading = false, error = "", loadedAt = System.currentTimeMillis())
             ""
         } else {

@@ -87,6 +87,10 @@ object ToolRegistry {
         one("ask_user", Decl(READ, selfCard = true))
         // 2026-11-18: a PDF from this chat shown again (PdfPages); the Ask sheet's page tools (PageAgent) read like browser_*.
         all(READ, "pdf_page", "page_read", "page_find", "page_scroll", "page_wait", "page_back")
+        // 2026-11-21 app shelf (docs/APP-SHELF.md): app_tools only reads. app_run takes its action's class (PolicyCalls.classify
+        // with AppShelf.classOf: reads READ, sends SEND, deletes DELETE, the rest WRITE_REMOTE); this base is the fallback.
+        all(READ, "app_tools")
+        one("app_run", Decl(WRITE_REMOTE))
 
         // ---------------- WRITE_LOCAL: ARGUS's own data on this phone ----------------
         all(WRITE_LOCAL, "add_job", "agent_create", "agent_delegate", "agent_progress", "agent_update", "cancel_agent", "cover_art",

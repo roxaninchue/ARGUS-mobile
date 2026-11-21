@@ -74,7 +74,9 @@ object ToolPick {
     fun core(simple: Boolean): Set<String> = ESSENTIAL + (if (simple) HARNESS - TERMINAL_CORE else HARNESS)
 
     /** Owner 2026-11-20: with the lean chat kit on, ARGUS's own core is [com.blaze.assistant.team.AgentKit.CHAT_CORE]. */
-    fun core(simple: Boolean, lean: Boolean): Set<String> = if (lean) ESSENTIAL + com.blaze.assistant.team.AgentKit.CHAT_CORE else core(simple)
+    fun core(simple: Boolean, lean: Boolean): Set<String> =
+        (if (lean) ESSENTIAL + com.blaze.assistant.team.AgentKit.CHAT_CORE else core(simple)) +
+            AppShelf.turnNames()   // 2026-11-21 app shelf: app_tools / app_run ride every turn while the account is signed in
 
     data class Cue(val id: String, val about: String, val names: Set<String>, val match: Regex)
 

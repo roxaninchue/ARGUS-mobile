@@ -68,7 +68,7 @@ object Modes {
         "notion_search", "slack_read", "slack_channels", "spotify_now_playing",
         "file_read", "file_list", "file_search", "terminal_status", "terminal_jobs",
         "processes", "list_routines", "list_triggers", "use_skill", "find_skill", "skill_file",
-        "find_tool", "load_tools", "ask_user", "get_location", "get_weather",
+        "find_tool", "load_tools", "ask_user", "get_location", "get_weather", "app_tools",
         "list_agents", "check_agent", "open_view", "about_blaze", "blaze_now", "blaze_docs_search", "blaze_docs_read", "project_docs_search", "project_docs_read",
         // checked by action below
         "git", "clipboard", "call_control", "blaze_self", "process", "gallery",
@@ -115,6 +115,7 @@ object Modes {
     fun planBlock(name: String, args: JSONObject): String {
         // MCP tools: only those that declare readOnlyHint (Desktop's ReadOnly rule).
         if (com.blaze.assistant.connect.Mcp.handles(name)) return if (com.blaze.assistant.connect.Mcp.readOnly(name)) "" else "$name can change things"
+        if (name == AppShelf.RUN) return args.optString("tool").let { t -> if (AppShelf.readOnlyOf(t) == true) "" else "${t.ifBlank { name }} can change things" }
         if (name !in planTools) return "$name can change things"
         actionReadOnly[name]?.let { ok ->
             val a = args.optString("action").ifBlank { if (name == "gallery") "list" else "" }
@@ -139,7 +140,8 @@ object Modes {
             for (i in 0 until all.length()) {
                 val t = all.getJSONObject(i)
                 val n = t.optJSONObject("function")?.optString("name").orEmpty()
-                if (n in planTools || (com.blaze.assistant.connect.Mcp.handles(n) && com.blaze.assistant.connect.Mcp.readOnly(n))) put(t)
+                // 2026-11-21 app shelf: app_run stays in Plan; planBlock lets only actions the catalogue marks read-only through
+                if (n in planTools || n == AppShelf.RUN || (com.blaze.assistant.connect.Mcp.handles(n) && com.blaze.assistant.connect.Mcp.readOnly(n))) put(t)
             }
         }
     }

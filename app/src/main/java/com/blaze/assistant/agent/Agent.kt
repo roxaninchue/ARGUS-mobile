@@ -1,6 +1,7 @@
 package com.blaze.assistant.agent
 
 
+import com.blaze.assistant.connect.ConnectedApps
 import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.notify.Notifier
@@ -1329,6 +1330,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             slow("skills", SkillShelf.promptBlock())
             slow("specialists", SpecialistShelf.promptBlock())
             slow("connectors", com.blaze.assistant.connect.Connectors.promptBlock())
+            // 2026-11-21 app shelf: the apps the user connected in Apps & connectors, one line each (byte-stable, cached)
+            slow("apps", ConnectedApps.promptBlock())
             // 2026-11-14 harness gap: one consolidated core (HarnessPrompt) instead of ~20 stacked RULE lines (talk, self, remember,
             // again, yes, ask, pim, load_tools, weather, phone_save, leak, verify, ids, know, search, calls, autonomy, style).
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE)
@@ -1503,6 +1506,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         TeamHooks.toolDefs().forEach { t.put(JSONObject(it)) }   // P1-TM-05: job tools (add_job, done_job, …)
         if (com.blaze.assistant.link.DesktopLink.paired) t.put(com.blaze.assistant.link.DesktopLink.tool())
         com.blaze.assistant.connect.Connectors.tools().forEach { t.put(it) }
+        // 2026-11-21 app shelf (docs/APP-SHELF.md): the account's connected apps, through two tools (signed in only)
+        if (ConnectedApps.on()) AppShelf.toolDefs().forEach { t.put(it) }
         try { com.blaze.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
         if (Settings.phoneControl) t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "run_plan")
             .put("description", "FASTEST way to do anything in an app or settings page. Give the whole script at once; ${BrandName.NAME} runs it on-device in a few seconds, finding things by their visible text (no element numbers, no need to read the screen first), checking each step on the phone, and only comes back when done or stuck. Steps can open a settings page by intent (do=open_settings page=… app=…).")
@@ -5419,6 +5424,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         kotlinx.coroutines.withContext(Dispatchers.IO) { Seller.run(args) } }
                     name == Flashcards.TOOL -> { add(Role.STEP, if (args.optString("action") == "add") "Making flashcards" else "Checking your flashcards")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { Flashcards.run(args) } }
+                    name == AppShelf.LIST -> { add(Role.STEP, args.optString("app").trim().let { a -> if (a.isEmpty()) "Checking your apps" else "Checking what ${ConnectedApps.app(a)?.name ?: a} can do" })
+                        ConnectedApps.list(args.optString("app")) }
+                    name == AppShelf.RUN -> { add(Role.STEP, ConnectedApps.step(args.optString("tool")))
+                        ConnectedApps.run(args.optString("tool"), args.optJSONObject("arguments") ?: JSONObject()) }
                     com.blaze.assistant.connect.Mcp.handles(name) -> mcpCall(name, args)
                     com.blaze.assistant.connect.Connectors.handles(name) -> { add(Role.STEP, com.blaze.assistant.connect.Connectors.describe(name)); com.blaze.assistant.connect.Connectors.run(app, name, args) }
                     else -> { add(Role.STEP, PhoneTools.describe(name, args)); PhoneTools.run(app, name, args) }

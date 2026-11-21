@@ -5,6 +5,7 @@ import com.blaze.assistant.agent.ConfirmGate
 import com.blaze.assistant.agent.Modes
 import com.blaze.assistant.agent.SecretVault
 import com.blaze.assistant.agent.TeamHooks
+import com.blaze.assistant.connect.ConnectedApps
 import com.blaze.assistant.connect.Mcp
 import com.blaze.assistant.connect.McpConfig
 import com.blaze.assistant.store.Sql
@@ -220,7 +221,11 @@ object PolicyRuntime {
         val bot = ts?.get(botId)
         val autopilot = Modes.autopilot
         val mcp = if (ToolRegistry.isMcp(tool)) Mcp.find(tool) else null
-        val c = PolicyCalls.classify(tool, args, mcp?.let { it.tool.readOnly to it.tool.destructive })
+        // 2026-11-21 app shelf: app_run is classed by the action it runs (reads READ, sends SEND, deletes DELETE)
+        val appCls = if (tool != ConnectedApps.RUN) null else try {
+            ConnectedApps.classOf(org.json.JSONObject(args.ifBlank { "{}" }).optString("tool"))
+        } catch (e: CancellationException) { throw e } catch (_: Throwable) { null }
+        val c = PolicyCalls.classify(tool, args, mcp?.let { it.tool.readOnly to it.tool.destructive }, appCls)
         val chain = origin.chain.mapNotNull { id -> ts?.get(id) }.map { PolicyCalls.permsOf(it, autopilot) }
         val allowed = c.commandKey?.let { k -> k in Agent.cmdGrants.chat(chatId) || k in Agent.cmdGrants.always() } ?: false
         val perms = PolicyCalls.permsOf(bot, autopilot)
@@ -257,8 +262,17 @@ object PolicyRuntime {
 
     /** Is [app] connected now (Connectors by id or name; "Gmail" / "Calendar" / "Drive" are Google). */
     fun connected(app: String): Boolean {
+        // 2026-11-21 app shelf: an app connected in Apps & connectors (argus-connect) counts, by id or name
+        if (runCatching { argusReady(app) }.getOrDefault(false)) return true
         val id = connectorFor(app) ?: return false
         return runCatching { com.blaze.assistant.connect.Connectors.connected(id) }.getOrDefault(false)
+    }
+
+    /** [app] ("Notion", "google_calendar", "Google Calendar") is connected (or keyless and on) in the account's Apps & connectors list. */
+    private fun argusReady(app: String): Boolean {
+        val a = app.trim().lowercase()
+        if (a.isEmpty()) return false
+        return ConnectedApps.apps().any { x -> x.ready && (x.id == a || x.name.lowercase() == a || x.id == a.replace(' ', '_')) }
     }
 
     private fun notify(c: Card) {

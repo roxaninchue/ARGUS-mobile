@@ -163,6 +163,24 @@ Design, examples and cost: **[VIEW-SHELF.md](VIEW-SHELF.md)**. Which view a turn
   works" → Design (a 3D model), while "remember to pay ZESCO every month" got no view at all, nor did a message in Bemba or Nyanja (the cues are English).
 - Guard: `ModelFirstTest.viewsAreAShelfNotAGuess`; `ViewShelfTest`.
 
+## Round 7: connected apps by the model, the app shelf (21 Nov 2026)
+
+Design, user flows and approvals: **[APP-SHELF.md](APP-SHELF.md)**. The apps the user connects in Apps & connectors
+(argus-connect, the account's own connections) now reach the model, and nothing guesses from the words which app a
+message is about.
+
+- **Every turn sends the app shelf** (`ConnectedApps.promptBlock()` → `AppShelf.promptBlock`, SLOW tier): one line per
+  connected, switched-on app (`id — what it holds`), one line naming the keyless apps, one line that more can be
+  connected. Nothing connected → it says so, so the model can offer `request_app_connection` itself. Signed out → nothing.
+- **Two tools, every turn while signed in** (`ToolPick.core` + `AppShelf.turnNames()`): `app_tools` (an app's actions with
+  their arguments and reads / changes, or the catalogue) and `app_run` (one action through `/v1/me/execute`). Not the
+  434 actions as functions: the 60 KB request limit, the 48-tool cap and the prompt cache all say no.
+- **Approvals by structure:** `app_run` takes its action's class (`AppShelf.classOf`: read-only per the catalogue → READ,
+  a sending verb in the action's own name → SEND with a real draft card, a deleting verb → DELETE, else WRITE_REMOTE).
+  It reads the catalogue's names, never the user's words. Plan mode lets only read-only actions through.
+- **Kept / changed:** `request_app_connection` now also sees apps connected on the Apps page.
+- Guard: `ModelFirstTest.connectedAppsAreAShelfNotAGuess`; `AppShelfTest`.
+
 ## Still to retire (owner to schedule; don't add more)
 
 - **`VisualRoute.inChat` → `VisualRoute.HINT`** still adds an in-chat-diagram hint from the message's words. Next candidate (VIEW-SHELF.md §9): the view shelf's head and `RichReplies.PROMPT` already say it. Skills (round 4), specialists (round 5) and views (round 6) are done.

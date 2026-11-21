@@ -1,5 +1,6 @@
 package com.blaze.assistant.policy
 
+import com.blaze.assistant.agent.AppShelf
 import com.blaze.assistant.agent.CommandPolicy
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.team.ActionClass
@@ -20,8 +21,10 @@ object PolicyCalls {
     /** The class of one call, and for shell / git its CommandPolicy level. */
     data class Classed(val call: Policy.Call, val command: CommandPolicy.Level? = null, val commandKey: String? = null)
 
-    fun classify(tool: String, argsJson: String, mcp: Pair<Boolean, Boolean>? = null): Classed {
+    fun classify(tool: String, argsJson: String, mcp: Pair<Boolean, Boolean>? = null, app: ActionClass? = null): Classed {
         val a = try { JSONObject(argsJson.ifBlank { "{}" }) } catch (_: Exception) { JSONObject() }
+        // 2026-11-21 app shelf: an app_run call is classed by the action it runs ([app] = AppShelf.classOf, from ConnectedApps)
+        if (tool == AppShelf.RUN && app != null) return Classed(Policy.Call(tool, app))
         if (ToolRegistry.isMcp(tool)) {
             val cls = mcp?.let { ActionClasses.mcpClass(it.first, it.second) } ?: ActionClass.WRITE_REMOTE
             return Classed(Policy.Call(tool, cls))

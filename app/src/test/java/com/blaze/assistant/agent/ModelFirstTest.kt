@@ -84,6 +84,16 @@ class ModelFirstTest {
         assertTrue(File(root(), "docs/MODEL-FIRST.md").readText().contains("VIEW-SHELF.md"))
     }
 
+    /** Round 7 (21 Nov 2026, docs/APP-SHELF.md): the account's connected apps reach the model as a shelf plus two tools. */
+    @Test fun connectedAppsAreAShelfNotAGuess() {
+        val src = agentSrc()
+        assertTrue(src.contains("slow(\"apps\", ConnectedApps.promptBlock())"))
+        assertTrue(src.contains("name == AppShelf.RUN ->") && src.contains("name == AppShelf.LIST ->"))
+        val shelf = File(root(), "app/src/main/java/" + AppShelf::class.java.name.replace('.', '/') + ".kt").readText()
+        assertFalse("the shelf never reads the message", shelf.contains("userText"))
+        assertTrue(File(root(), "docs/MODEL-FIRST.md").readText().contains("APP-SHELF.md"))
+    }
+
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
         val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }

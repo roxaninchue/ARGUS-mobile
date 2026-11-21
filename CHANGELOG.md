@@ -1,3 +1,14 @@
+## Unreleased: the apps you connect work in the chat (the app shelf)
+
+2026-11-21 (owner: "find a feature or a specific part of the app that needs work… in depth reasoning about the design, how it will work for users… don't overengineer the way the models work… make them aware of what's there… update the Argus docs"). MODEL-FIRST round 7; design, user flows and approvals in docs/APP-SHELF.md.
+- **The gap:** Settings › Apps & connectors lists the account's 70 apps from argus-connect and connects them, but nothing in the agent read that list: the model never saw a connected app, had no tool for it, and `request_app_connection` couldn't tell when one was connected. Only the five legacy on-phone accounts reached the prompt.
+- **The app shelf** (`agent/AppShelf.kt`, new, pure; `connect/ConnectedApps.kt`, new): every turn while signed in, one SLOW-tier block lists each connected, switched-on app (`id — what it holds`, sorted, ≤ 90 chars a line, ≤ 30 lines), names the keyless apps on one line, and says more can be connected. Nothing connected → it says so. Read from the cached list (no network on send); a list older than 30 minutes refreshes in the background.
+- **Two tools** (ride every turn while signed in, via `ToolPick.core`): `app_tools` (an app's actions from argus-connect's MCP `tools/list?apps=<id>`, with each argument, `*` for required, enum values and reads / changes; cached 10 minutes; no app = the catalogue) and `app_run` (one action through `POST /v1/me/execute` with the account's session token; JSON back, cut at 12k chars; plain errors that name `request_app_connection` when an app isn't connected).
+- **Approvals by the action, not the words:** `app_run` takes the class of the action it runs (`AppShelf.classOf` in `PolicyCalls.classify`): read-only per the catalogue → READ (no card), a sending verb in the action's name → SEND (a real draft card: recipients and body come from the action's own arguments, Edit writes back there), a deleting verb → DELETE (always a card), else WRITE_REMOTE. Plan mode lets only read-only actions through. `app_tools` is READ.
+- `request_app_connection` now counts apps connected on the Apps page; the two tools belong to the `connectors` group (Inbox manager and bots with that group); `ArgusApps.call` is shared and a refresh drops cached action lists.
+- Docs: docs/APP-SHELF.md (new), MODEL-FIRST.md round 7, AGENTS.md, about.md (feature map and "new in the next build").
+- Tests: AppShelfTest (10, new), ModelFirstTest.connectedAppsAreAShelfNotAGuess.
+
 ## 0.54.4 (versionCode 206, 2026-11-21): the "Unreleased" entry below (view shelf)
 
 ## Unreleased: ARGUS decides which view work goes in (the view shelf)

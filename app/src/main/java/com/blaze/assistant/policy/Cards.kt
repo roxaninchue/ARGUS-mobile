@@ -1,5 +1,6 @@
 package com.blaze.assistant.policy
 
+import com.blaze.assistant.agent.AppShelf
 import com.blaze.assistant.orchestra.KeyedLocks
 import com.blaze.assistant.orchestra.ToolScheduler
 import com.blaze.assistant.team.ActionClass
@@ -79,7 +80,11 @@ object Cards {
 
     /** The draft a SEND call carries: recipients (cc / bcc marked), subject and body, read from its JSON args. */
     fun draftOf(tool: String, argsJson: String): Draft {
-        val a = obj(argsJson)
+        val outer = obj(argsJson)
+        // 2026-11-21 app shelf: app_run carries the action's own arguments in "arguments"; the draft is that action's
+        if (tool == AppShelf.RUN) outer.optJSONObject("arguments")?.let { inner ->
+            return draftOf(outer.optString("tool").ifBlank { tool }, inner.toString()) }
+        val a = outer
         val rec = LinkedHashSet<String>()
         for (k in RECIPIENT_KEYS) if (a.has(k)) strings(a.opt(k)).forEach { rec += if (k == "cc" || k == "bcc") "$k: $it" else it }
         val body = BODY_KEYS.firstNotNullOfOrNull { k -> a.optString(k).takeIf { a.has(k) && it.isNotBlank() } }.orEmpty()
@@ -97,6 +102,8 @@ object Cards {
     /** The same call with [body] in place of the draft's text (what Edit asks the bot to send). */
     fun withBody(tool: String, argsJson: String, body: String): String {
         val a = obj(argsJson)
+        if (tool == AppShelf.RUN) a.optJSONObject("arguments")?.let { inner ->
+            return a.put("arguments", obj(withBody(a.optString("tool"), inner.toString(), body))).toString() }
         val k = BODY_KEYS.firstOrNull { a.has(it) } ?: "text"
         return a.put(k, body).toString()
     }
