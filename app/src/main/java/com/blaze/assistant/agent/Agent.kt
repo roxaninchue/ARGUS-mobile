@@ -3506,6 +3506,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 turnAppsCard = null
                 val turnThink = StringBuilder()
                 val turnStart = System.currentTimeMillis()
+                CallState.current().timing.clear()   // 0.54.6 TurnTiming: this turn's calls and tools only
                 thinking = ""
                 var gateLeft = 2
                 var actedThisTurn = false
@@ -4155,12 +4156,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             PromptParts.cacheLine(LlmClient.lastUsage),
                             // v0.45.2: verification time this turn, local vs model checks (speed_stats shows it).
                             turnBook.let { b -> if (VerifyPolicy.plainTurn(synchronized(turnTools) { turnTools.toList() })) b.stats.skipped++; b.stats.line() }).filter { it.isNotBlank() }.joinToString(" · ")
+                        val timingSnap = CallState.current().timing.snapshot(System.currentTimeMillis() - turnStart)   // 0.54.6 TurnTiming
                         SpeedLog.add(SpeedLog.Entry(turnStart, firstMs.coerceAtLeast(0), System.currentTimeMillis() - turnStart, step + 1,
                             tools.length(), req.toString().length + tools.toString().length, LlmClient.lastRoute, timer.line() + (if (extra.isNotBlank()) " · $extra" else ""),
                             shownMs = (if (shownAt > 0) shownAt else System.currentTimeMillis()) - (msgs.firstOrNull { it.id == turnFrom }?.at?.takeIf { it in 1..turnStart } ?: turnStart), headersMs = hdrMs,
-                            visibleMs = (if (agentId == null) StartTrace.take()?.visibleMs else null) ?: -1, wireMs = (if (agentId == null) StartTrace.take()?.wireMs else null) ?: -1))
+                            visibleMs = (if (agentId == null) StartTrace.take()?.visibleMs else null) ?: -1, wireMs = (if (agentId == null) StartTrace.take()?.wireMs else null) ?: -1,
+                            timing = timingSnap.line()))
                         if (agentId == null) StartTrace.take()?.let { m -> try { android.util.Log.i("BlazeSpeed", StartTrace.line(m)) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeSpeed start line", e) } }
-                        try { android.util.Log.i("BlazeSpeed", "turn ${step + 1} steps, ${LlmClient.lastRoute}: ${timer.line()}" + (if (extra.isNotBlank()) " · $extra" else "")) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: android.util.Log.iBlazeSpeed turn step 1", e) }
+                        try { android.util.Log.i("BlazeSpeed", "turn ${step + 1} steps, ${LlmClient.lastRoute}: ${timer.line()}" + (if (extra.isNotBlank()) " · $extra" else "") + " · timing: " + timingSnap.line()) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: android.util.Log.iBlazeSpeed turn step 1", e) }
                         val idsBefore = ids.get()
                         addReply(liveId, textOut, turnThink.toString(), pendingFollowups,
                             if (Settings.showRoute) "☁ " + listOf(LlmClient.lastRoute.ifBlank { "${BrandName.NAME} Cloud" }.replace(" · ", " / "),
@@ -4173,7 +4176,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 TurnTrace.toJson(TurnTrace.build(st.gw, LlmClient.lastRoute.ifBlank { "${BrandName.NAME} Cloud" }, if (ct != null) "cloud run" else if (liteNow) "chat lane" else "agent",
                                     st.requestIds.toList(), if (shownAt > 0) shownAt - turnStart else LlmClient.lastFirstTextMs, hdrMs, System.currentTimeMillis() - turnStart, step + 1,
                                     logNow.map { e -> TurnTrace.Tool(e.tool, e.args, e.result, e.status != ToolVerify.Status.FAILED) }, st.errors.toList(), LlmClient.lastMaxGapMs,
-                                    if (agentId == null) StartTrace.take() else null, ToolTruth.names(tools)))
+                                    if (agentId == null) StartTrace.take() else null, ToolTruth.names(tools), timingSnap))
                             } catch (_: Throwable) { "" })
                         // v0.45.0 (#36): the quiet receipt line under the reply ("✓ Sent to Mum · ⚠ Couldn't confirm: Wi-Fi on").
                         Receipt.line(logNow).takeIf { it.isNotBlank() }?.let { line -> msgs.lastOrNull { it.role == Role.BLAZE }?.let { addMeta(it.id, line) } }
@@ -4669,7 +4672,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             MemoryLoop.gate(name, user, memoryLookups, songResolved.ifBlank { MemoryLoop.concrete(user).orEmpty() })?.let { add(Role.STEP, "Skipping another memory check"); return it }
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
-            val out = com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) }   // P1-TM-05 job tools; P2-SF-01 policy
+            val toolT0 = System.currentTimeMillis()
+            val out = try { com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) } }   // P1-TM-05 job tools; P2-SF-01 policy
+                finally { CallState.current().timing.tool(name, System.currentTimeMillis() - toolT0) }   // 0.54.6 TurnTiming: tool round trip (confirm waits included)
             if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out)); ToolTrail.result(id, Friendly.exact(name, args)) { SecretVault.scrub(out) }   // M4 tool rows
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out

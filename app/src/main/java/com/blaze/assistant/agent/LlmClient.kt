@@ -92,11 +92,11 @@ object LlmClient {
         lastFit = fit.bytesBefore to fit.bytesAfter
         val clean = fit.messages
         @Suppress("NAME_SHADOWING") val tools = fit.tools
-        return try { completeRaw(clean, tools, onText, onThink, lane) }
+        return try { completeRaw(clean, tools, onText, onThink, lane, fit.bytesAfter) }
         catch (e: LlmException) {
             if (!ToolCalls.isShapeError(e)) throw e
             lastHealed = e.message.orEmpty()
-            try { completeRaw(ToolCalls.flatten(clean), tools, onText, onThink, lane).also { lastRoute = "$lastRoute · healed" } }
+            try { completeRaw(ToolCalls.flatten(clean), tools, onText, onThink, lane, fit.bytesAfter).also { lastRoute = "$lastRoute · healed" } }
             catch (e2: LlmException) { throw LlmException(if (e2.code == 400) Cloud.BUSY else e2.message.orEmpty(), e2.code, e2.retryAfterSec) }
         }
     }
@@ -122,13 +122,13 @@ object LlmClient {
      * is trimmed once. The user's old provider / model / key prefs are ignored (kept on disk, never used or sent).
      */
     private suspend fun completeRaw(messages: JSONArray, tools: JSONArray?, onText: ((String) -> Unit)?,
-                         onThink: ((String) -> Unit)?, lane: Lane): JSONObject {
+                         onThink: ((String) -> Unit)?, lane: Lane, bytes: Int = -1): JSONObject {
         val token = Settings.gatewayToken()
         // Brains (BrainRace.order): the gateway's Nous reserve and Argus Cloud. Owner 16 Nov 2026: the on-device backup brain
         // was removed, so signed out there is nothing to ask.
         if (token.isBlank()) throw LlmException(Cloud.SIGNED_OUT, 401)
         val t = Target(Providers.GATEWAY, Providers.GATEWAY_BASE, token, Cloud.MODEL)
-        var msgs = messages
+        val msgs = messages
         // v0.44.0: an action turn asks for the strong (agent) lineup with the weak routes last (ModelRoute).
         val pick = ModelRoute.task(Cloud.task(msgs, tools, liteTurn || (quickTurn && (tools == null || tools.length() == 0))),
             heavyTurn && lane != Lane.BACKGROUND, tools != null && tools.length() > 0, Cloud.textChars(msgs, ModelRoute.AGENT_MAX_CHARS + 1))
@@ -136,12 +136,38 @@ object LlmClient {
         // 0.54.5 Direct lane (gateway 0.9.35): a plain streaming chat turn tries the signed-ticket relay first (one model call,
         // no routing waits). No first word within ~1.5 s, any error, or the lane switched off: the same turn goes down the
         // normal route below, with one "Busy, retrying" status line.
+        // 0.54.6 timing: every call books one TurnTiming.Call on the turn's CallState (lane, fallback, ticket, first token, size).
+        val t0 = System.currentTimeMillis()
+        val timing = CallState.current().timing
+        val inChars = if (bytes >= 0) bytes else msgs.toString().length + (tools?.toString()?.length ?: 0)   // RequestBudget's measured size
+        val kind = lane.name.lowercase()
+        val dTry = DirectLane.Try()
+        var directMs = 0L
+        fun firstFrom(): Long = CallState.current().firstTokenAt.let { if (it >= t0) it - t0 else -1L }
         if (DirectLane.enabled() && DirectLane.eligible(task, onText != null, lane == Lane.MAIN, tools, msgs)) {
-            val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, null), onText!!, onThink)
-            if (direct != null) { lastRoute = "${BrandName.NAME} Cloud · direct"; return direct }
+            val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, null), onText!!, onThink, info = dTry)
+            if (direct != null) {
+                lastRoute = "${BrandName.NAME} Cloud · direct"
+                timing.call(TurnTiming.Call(TurnTiming.DIRECT, System.currentTimeMillis() - t0, firstFrom(), inChars, tools?.length() ?: 0, dTry.ticketMs, 0, "", kind))
+                return direct
+            }
+            directMs = System.currentTimeMillis() - t0
             try { switchListener?.invoke(DirectLane.BUSY_LINE) } catch (_: Throwable) { }
             CallState.current().errors.add("direct lane fell back: ${DirectLane.lastFallback}")
+            dTry.fallback = dTry.fallback.ifBlank { DirectLane.lastFallback.ifBlank { "no answer" } }
         }
+        var callOk = false
+        try { return completeNormal(t, msgs, tools, onText, onThink, lane, pick, task).also { callOk = true } }
+        finally {
+            timing.call(TurnTiming.Call(TurnTiming.NORMAL, System.currentTimeMillis() - t0, firstFrom(), inChars, tools?.length() ?: 0,
+                dTry.ticketMs, directMs, if (callOk) dTry.fallback else listOf(dTry.fallback, "normal route failed").filter { it.isNotBlank() }.joinToString(", "), kind))
+        }
+    }
+
+    /** The routed gateway path (BrainRace / HedgeRace over Nous and Argus Cloud); [completeRaw] tries the Direct lane first. */
+    private suspend fun completeNormal(t: Target, messages: JSONArray, tools: JSONArray?, onText: ((String) -> Unit)?,
+                                       onThink: ((String) -> Unit)?, lane: Lane, pick: ModelRoute.Pick, task: String): JSONObject {
+        var msgs = messages
         var trimmed = false
         val cloudLabel = { "${BrandName.NAME} Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + if (trimmed) " · trimmed" else "" }
         val gateway: suspend (String, JSONArray, JSONArray?, ((String) -> Unit)?, ((String) -> Unit)?) -> JSONObject = { reserve, m, tl, txt, thk ->

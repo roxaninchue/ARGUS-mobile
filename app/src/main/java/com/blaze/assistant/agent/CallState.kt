@@ -59,6 +59,8 @@ class CallState(val parent: CallState? = null) {
     /** v0.45.5: every X-Request-Id this turn got, and the errors / retries along the way. */
     val requestIds = java.util.concurrent.CopyOnWriteArrayList<String>()
     val errors = java.util.concurrent.CopyOnWriteArrayList<String>()
+    /** 0.54.6: this turn's call and tool timings (lane, ticket, first token, tool round trips); forks share it (TurnTiming). */
+    @Volatile var timing: TurnTiming = TurnTiming()
 
     /** A chunk arrived: this state and every parent see it (an outer watchdog must not cut a call that is talking). */
     fun beat(at: Long = System.currentTimeMillis()) {
@@ -67,7 +69,7 @@ class CallState(val parent: CallState? = null) {
     }
 
     /** A child for one call: same turn flags and route pin, its own results. */
-    fun fork(): CallState = CallState(this).also { it.lite = lite; it.quick = quick; it.heavy = heavy; it.turnModel = turnModel; it.raceKind = raceKind; it.family = family }
+    fun fork(): CallState = CallState(this).also { it.lite = lite; it.quick = quick; it.heavy = heavy; it.turnModel = turnModel; it.raceKind = raceKind; it.family = family; it.timing = timing }
 
     /** Hands this call's results to its parent (the turn reads them after the call, as it read the globals before). */
     fun publish() {

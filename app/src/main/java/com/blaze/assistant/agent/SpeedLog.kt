@@ -17,7 +17,9 @@ object SpeedLog {
                      /** v0.45.3: Send → the first words on screen (the reply bubble appeared), and the gateway's time to answer headers; -1 = unknown. */
                      val shownMs: Long = -1, val headersMs: Long = -1,
                      /** v0.45.8: Send tap → working state on screen, and → the request on the wire (monotonic); -1 = unknown. */
-                     val visibleMs: Long = -1, val wireMs: Long = -1)
+                     val visibleMs: Long = -1, val wireMs: Long = -1,
+                     /** 0.54.6: TurnTiming's line (lane direct / normal, fallback, ticket, first token, calls, tool round trips, size sent). */
+                     val timing: String = "")
 
     private const val KEY = "speed_log"
     private const val MAX = 50
@@ -26,7 +28,7 @@ object SpeedLog {
         val a = try { JSONArray(Settings.str(KEY, "[]")) } catch (_: Exception) { JSONArray() }
         a.put(JSONObject().put("at", e.at).put("first", e.firstMs).put("total", e.totalMs).put("steps", e.steps)
             .put("tools", e.tools).put("chars", e.promptChars).put("route", e.route).put("phases", e.phases)
-            .put("shown", e.shownMs).put("hdr", e.headersMs).put("vis", e.visibleMs).put("wire", e.wireMs))
+            .put("shown", e.shownMs).put("hdr", e.headersMs).put("vis", e.visibleMs).put("wire", e.wireMs).put("tm", e.timing))
         while (a.length() > MAX) a.remove(0)
         Settings.setStr(KEY, a.toString())
     } catch (_: Exception) { }
@@ -35,7 +37,7 @@ object SpeedLog {
         val a = JSONArray(Settings.str(KEY, "[]"))
         (0 until a.length()).map { a.getJSONObject(it) }.map {
             Entry(it.optLong("at"), it.optLong("first"), it.optLong("total"), it.optInt("steps"), it.optInt("tools"), it.optInt("chars"), it.optString("route"), it.optString("phases"),
-                it.optLong("shown", -1), it.optLong("hdr", -1), it.optLong("vis", -1), it.optLong("wire", -1))
+                it.optLong("shown", -1), it.optLong("hdr", -1), it.optLong("vis", -1), it.optLong("wire", -1), it.optString("tm"))
         }
     } catch (_: Exception) { emptyList() }
 
@@ -69,6 +71,30 @@ object SpeedLog {
         fun med(xs: List<Long>) = xs.sorted()[xs.size / 2]
         return "\nSend \u2192 " + listOfNotNull(vis.takeIf { it.isNotEmpty() }?.let { "working ${med(it)} ms" },
             wire.takeIf { it.isNotEmpty() }?.let { "on the wire ${med(it)} ms" }).joinToString(", ") + " (median of ${maxOf(vis.size, wire.size)})"
+    }
+
+    private const val DIRECT_LINE = "lane direct \u00b7"
+    private const val NORMAL_LINE = "lane normal \u00b7"
+
+    /**
+     * 0.54.6: the timing part of "speed stats": the newest turns' TurnTiming lines (lane, fallback, ticket, first token,
+     * calls, tool round trips, size sent) and how many went direct. Copy the reply to share it.
+     */
+    fun timingLines(n: Int = 5): String = timingLines(all().takeLast(20), n)
+
+    fun timingLines(l: List<Entry>, n: Int = 5): String {
+        val t = l.filter { it.timing.isNotBlank() }
+        if (t.isEmpty()) return ""
+        val direct = t.count { it.timing.startsWith(DIRECT_LINE) }
+        val fell = t.count { it.timing.contains("fell back") }
+        fun med(xs: List<Long>) = xs.sorted()[xs.size / 2]
+        val firstOf = { e: Entry -> Regex("first ([0-9.]+) (ms|s)").find(e.timing)?.let { m -> val v = m.groupValues[1].toDouble(); (if (m.groupValues[2] == "s") v * 1000 else v).toLong() } }
+        val dFirst = t.filter { it.timing.startsWith(DIRECT_LINE) }.mapNotNull(firstOf)
+        val nFirst = t.filter { it.timing.startsWith(NORMAL_LINE) }.mapNotNull(firstOf)
+        return "\nLane (last ${t.size}): direct $direct, fell back $fell" +
+            (if (dFirst.isNotEmpty()) "; first token direct ${TurnTiming.fmt(med(dFirst))}" else "") +
+            (if (nFirst.isNotEmpty()) "; normal ${TurnTiming.fmt(med(nFirst))}" else "") + " (median)" +
+            t.takeLast(n).reversed().joinToString("") { e -> "\n\u2022 " + java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(e.at)) + " " + e.timing }
     }
 
     /** v0.41.0: the newest turn's phase line, so "speed_stats" says where the time went. */

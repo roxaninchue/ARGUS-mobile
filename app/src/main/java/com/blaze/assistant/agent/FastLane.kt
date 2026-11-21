@@ -334,7 +334,7 @@ object FastLane {
         "flashlight", "wifi", "bluetooth", "mobile_data", "do_not_disturb", "airplane_mode" ->
             Skills.run(ctx, "device_setting", JSONObject().put("setting", if (name == "airplane_mode") "airplane" else name)
                 .put("value", if (a.optString("state", "on") == "off") "off" else "on"))
-        "speed_stats" -> SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } + SpeedLog.screenLine()
+        "speed_stats" -> SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } + SpeedLog.timingLines() + SpeedLog.screenLine()
         "tool_stats" -> ToolStats.report()
         "list_processes" -> Processes.list(status = "live")
         "toggle_setting" -> Skills.run(ctx, "device_setting", JSONObject().put("setting", a.optString("setting"))

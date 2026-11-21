@@ -1,3 +1,18 @@
+## Unreleased: per-turn timing (lane, ticket, first token, calls, tool round trips)
+
+2026-11-22 (Finn: make Argus replies start in about the model's own time; first, measure where a turn's time goes).
+- `agent/TurnTiming.kt` (new, pure): every model call of a turn books which lane served it (`direct` / `normal`), why a
+  direct try fell back, the ticket fetch, request to first token (text, thinking or a tool call, ticket included), the
+  whole call, what the failed direct try cost, request size (chars, ~tokens) and tool schemas sent; every tool run books
+  its round trip (`Agent.runTool`, confirm waits included). One instance per turn on its `CallState` (forks share it, other
+  turns and background agents never mix in). `LlmClient.completeRaw` now books the call and hands the routed path to
+  `completeNormal` (same code as before); `DirectLane.tryChat` reports its ticket time and fallback reason (`DirectLane.Try`)
+  and starts the call's own first-token clock.
+- Where to read it on the phone: say or type **"speed stats"** (answered on the phone, no model): it now ends with
+  "Lane (last N): direct …, fell back …; first token direct … / normal … (median)" and the newest 5 turns' timing lines
+  (copy the reply to share). Also in the reply's "What happened" sheet (developer builds, Copy button) and logcat `BlazeSpeed`.
+- Tests: TurnTimingTest (7).
+
 ## 0.54.5 (versionCode 207, 2026-11-21, not built): Direct lane client
 Gateway 0.9.35 (Blaze-agent, docs/DIRECT-LANE.md) adds signed turn tickets and a one-call relay, shipped off.
 - `agent/DirectLane.kt` (new): a plain streaming chat turn on the main lane (no tools, no pictures) asks `POST /v1/ticket`

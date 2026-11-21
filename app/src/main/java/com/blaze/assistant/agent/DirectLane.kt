@@ -34,6 +34,9 @@ object DirectLane {
 
     data class Ticket(val token: String, val exp: Long, val routes: List<String>, val task: String)
 
+    /** 0.54.6 timing: what one direct try cost (TurnTiming): the ticket fetch (-1 = a cached ticket or none) and why it fell back. */
+    class Try { @Volatile var ticketMs = -1L; @Volatile var fallback = "" }
+
     @Volatile private var ticket: Ticket? = null
     @Volatile private var restUntil = 0L
     /** Diagnostics: why the last direct try fell back ("" = it answered). */
@@ -104,21 +107,23 @@ object DirectLane {
      * A stream that showed some words and then broke also returns null: the normal route's reply replaces them.
      */
     suspend fun tryChat(messages: JSONArray, maxTokens: Int, onText: (String) -> Unit, onThink: ((String) -> Unit)?,
-                        firstMs: Long = FIRST_MS_DEFAULT): JSONObject? = withContext(Dispatchers.IO) {
+                        firstMs: Long = FIRST_MS_DEFAULT, info: Try = Try()): JSONObject? = withContext(Dispatchers.IO) {
         val token = try { Settings.gatewayToken() } catch (_: Throwable) { "" }
         if (token.isBlank() || !enabled()) return@withContext null
         val dev = deviceId()
         try {
             val now = System.currentTimeMillis()
             val t = ticket?.takeIf { fresh(it, now) }
-                ?: newTicket(token, dev, (messages.toString().length / 4).coerceAtMost(1_000_000))?.also { ticket = it }
-                ?: return@withContext null
+                ?: newTicket(token, dev, (messages.toString().length / 4).coerceAtMost(1_000_000)).also { info.ticketMs = System.currentTimeMillis() - now }?.also { ticket = it }
+                ?: run { info.fallback = lastFallback; return@withContext null }
             val conn = UrlSafety.open("${base()}/direct")
             conn.requestMethod = "POST"; conn.connectTimeout = 4_000; conn.readTimeout = 30_000; conn.doOutput = true
             conn.setRequestProperty("X-Argus-Ticket", t.token)
             conn.setRequestProperty("X-Argus-Device", dev)
             conn.setRequestProperty("Content-Type", "application/json")
             val body = JSONObject().put("stream", true).put("messages", messages).put("max_tokens", maxTokens)
+            // 0.54.6 timing: this call's clock (LlmClient.readSse marks the first token on the turn's CallState).
+            CallState.current().let { st -> st.callStart = System.currentTimeMillis(); st.gotFirst = false; st.firstTokenMs = 0; st.firstTokenAt = 0; st.headersMs = 0; st.firstTextMs = 0; st.firstTextAt = 0 }
             val gotWord = java.util.concurrent.atomic.AtomicBoolean(false)
             val out = coroutineScope {
                 // The first-word deadline: past it, the socket closes and the read below throws (we fall back).
@@ -140,15 +145,16 @@ object DirectLane {
                 } finally { watchdog.cancel() }
             }
             if (out != null) {
-                if (!gotWord.get() && out.optJSONArray("tool_calls") == null && out.optString("content").isBlank()) { lastFallback = "empty"; return@withContext null }
+                if (!gotWord.get() && out.optJSONArray("tool_calls") == null && out.optString("content").isBlank()) { lastFallback = "empty"; info.fallback = lastFallback; return@withContext null }
                 lastFallback = ""
                 LlmClient.lastServedBy = "direct"
-            }
+            } else info.fallback = lastFallback
             out
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
             lastFallback = (e.message ?: e.javaClass.simpleName).take(120)
+            info.fallback = lastFallback
             null
         }
     }
