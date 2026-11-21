@@ -1,3 +1,5 @@
+## 0.54.4 (versionCode 206, 2026-11-21): the "Unreleased" entry below (view shelf)
+
 ## Unreleased: ARGUS decides which view work goes in (the view shelf)
 
 2026-11-21 (owner: "find a feature or a part of the app that needs work… don't overengineer the way the models work, build around them but make them aware of what's there"). MODEL-FIRST round 6; design and reasoning in docs/VIEW-SHELF.md.
