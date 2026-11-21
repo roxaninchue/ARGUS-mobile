@@ -15,7 +15,7 @@ android {
         targetSdk = 34
         versionCode = 207
         versionName = "0.54.5"
-        // Build round (owner said "build", 2026-11-15 16:44 CAT, retried 17:20): CI test build of 903ec9dc + d533ba46 + 1769ffc5 (harness musts), no version bump.
+        // Build round (owner said "yes please" to the build, 2026-11-21 23:50 CAT): 0.54.5 (207), Direct lane client (e7b7c0a7 + a6b3d8ec).
         // v0.30.1 Music Store: Jamendo client_id, from the environment or -Pjamendo.clientId at build time. Never hard-coded;
         // empty = "not configured" (the user can paste one in the Music Store instead).
         buildConfigField("String", "JAMENDO_CLIENT_ID", "\"" + (System.getenv("JAMENDO_CLIENT_ID") ?: (project.findProperty("jamendo.clientId") as String?) ?: "").replace("\"", "") + "\"")
