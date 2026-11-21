@@ -82,14 +82,14 @@ class ReliabilityP2Test {
 
     @Test fun advancedPromptOnlyCarriesWhatTheTurnNeeds() {
         val plain = PromptProfile.plan(simple = false, userText = "what's the weather in Ndola")
-        assertFalse(plain.terminal); assertFalse(plain.views); assertFalse("blaze-coding-workflow" in plain.core)
+        assertFalse(plain.terminal); assertFalse("blaze-coding-workflow" in plain.core)
         assertTrue("blaze-specialists" in plain.core)
         val code = PromptProfile.plan(simple = false, userText = "fix the bug in my python script")
         assertTrue(code.terminal); assertTrue("blaze-coding-workflow" in code.core)
         assertTrue(PromptProfile.plan(false, "hi", setOf("terminal")).terminal)
-        assertTrue(PromptProfile.plan(false, "hi", viewRouted = true).views)
-        val short = PromptProfile.viewsShort(listOf("Notes", "Design"))
-        assertTrue(short.length < 400 && short.contains("open_view"))
+        // 2026-11-21: the views are a shelf every turn (ViewShelfTest), not a block switched on by a routed view.
+        val shelf = ViewShelf.promptBlock(stageOn = true)
+        assertTrue(shelf.length < ViewShelf.BUDGET_CHARS && shelf.contains("open_view"))
         assertTrue(PromptProfile.MAKE_SHORT.length + PromptProfile.TERMINAL_SHORT.length < 900)
     }
 

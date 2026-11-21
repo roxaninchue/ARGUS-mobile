@@ -9,7 +9,7 @@ import org.json.JSONObject
  * rocket… view it in the design section", then "I've updated the design to show the engine" and "I've
  * opened the design view", with no design ever made.
  *
- * A final reply that says it created, updated or opened something in a view ([ViewRouter.specs]) is
+ * A final reply that says it created, updated or opened something in a view ([ViewShelf.specs]) is
  * checked against the tool calls that SUCCEEDED this turn. With no backing call the agent re-prompts once
  * ([nudge]); if it still isn't done, the claim sentences are replaced with an honest line ([honest]).
  * Pure Kotlin, unit-tested in ClaimGuardTest.
@@ -71,7 +71,7 @@ object ClaimGuard {
     }
 
     /** Does a succeeded call put something in [spec]'s view? */
-    fun backs(spec: ViewRouter.Spec, c: Call): Boolean {
+    fun backs(spec: ViewShelf.Spec, c: Call): Boolean {
         if (c.name == "open_view") return c.args.optString("view").lowercase().let { it == spec.id || (spec.id == "archive" && it == "chats") }
         return when (spec.id) {
             "design" -> c.name == Designs.TOOL || c.name == "preview_server" ||
@@ -86,10 +86,14 @@ object ClaimGuard {
         }
     }
 
+    /** The views whose tools the model called this turn ([names] = the tool names, in any order), by [backs]. */
+    fun viewsTried(names: Collection<String>): Set<String> =
+        names.toSet().flatMap { n -> ViewShelf.specs.filter { s -> backs(s, Call(n)) }.map { it.id } }.toSet()
+
     /** The first view the reply claims to have changed with no succeeded call backing it, or null. */
-    fun unbacked(reply: String, ok: List<Call>): ViewRouter.Spec? {
+    fun unbacked(reply: String, ok: List<Call>): ViewShelf.Spec? {
         if (reply.isBlank()) return null
-        for (s in ViewRouter.specs) {
+        for (s in ViewShelf.specs) {
             if (s.id == "archive") continue
             if (claims(reply, s.id).isEmpty()) continue
             if (ok.none { backs(s, it) }) return s
@@ -102,22 +106,23 @@ object ClaimGuard {
      * do the work there. "show me your memories" answered with "Opened the solar panel diagram in Design" is not a
      * reason to go and open Design; the stray claim is dropped instead ([drop]).
      */
-    fun relevant(spec: ViewRouter.Spec, userText: String, turnView: String? = null): Boolean {
-        if (turnView == spec.id) return true
-        if (ViewRouter.route(userText)?.id == spec.id) return true
+    fun relevant(spec: ViewShelf.Spec, userText: String, tried: Set<String> = emptySet()): Boolean {
+        // 2026-11-21 view shelf: the views the model itself reached for this turn (a tool it called, whether or not it
+        // worked) replace ViewRouter's guess from the words.
+        if (spec.id in tried) return true
         val n = nouns[spec.id] ?: return false
         return Regex("""\b(?:$n)\b""", ic).containsMatchIn(userText)
     }
 
     /** [reply] with the claim sentences about [spec] taken out ("" when nothing else was said). */
-    fun drop(reply: String, spec: ViewRouter.Spec): String {
+    fun drop(reply: String, spec: ViewShelf.Spec): String {
         val bad = claims(reply, spec.id).toSet()
         val rest = sentences(reply).filterNot { it in bad }.joinToString(" ").trim()
         return if (rest.length < 12) "" else rest
     }
 
     /** The one re-prompt: do it for real now. */
-    fun nudge(spec: ViewRouter.Spec, current: Designs.Current?): String = "[${BrandName.NAME} check] Your reply says you made, changed or opened something in ${spec.name}, " +
+    fun nudge(spec: ViewShelf.Spec, current: Designs.Current?): String = "[${BrandName.NAME} check] Your reply says you made, changed or opened something in ${spec.name}, " +
         "but no ${spec.name} tool succeeded this turn, so nothing is there. Do it for real now: " + when (spec.id) {
             "design" -> if (current != null) "the current design is \u201c${current.title}\u201d (${current.kind}, ${current.path}); change it with design action=update " +
                 "(3D: set_parts/remove_parts; pages: edits or html), or design action=open to show it, or design action=create for something new. "
@@ -134,7 +139,7 @@ object ClaimGuard {
         } + "Then reply in one or two lines about what the tool actually did (its real result: 2D or 3D, what it shows). If it can't be done, say so plainly."
 
     /** The claim sentences swapped for an honest line (the rest of the reply is kept). */
-    fun honest(reply: String, spec: ViewRouter.Spec): String {
+    fun honest(reply: String, spec: ViewShelf.Spec): String {
         val bad = claims(reply, spec.id).toSet()
         val rest = sentences(reply).filterNot { it in bad }.joinToString(" ").trim()
         val line = "I didn't manage to " + when (spec.id) {

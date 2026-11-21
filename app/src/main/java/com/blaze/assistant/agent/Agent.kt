@@ -1297,7 +1297,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     private fun leanChat(): Boolean = try { Settings.bool(com.blaze.assistant.team.AgentKit.PREF_LEAN, true) } catch (_: Throwable) { true }
 
     private fun systemPrompt(userText: String, chatId: String = _chatId.value, fullAware: Boolean = true,
-                             groups: Set<String> = emptySet(), viewRouted: Boolean = false, turnKey: Long = 0L): String {
+                             groups: Set<String> = emptySet(), turnKey: Long = 0L): String {
         val now = SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date())
         val name = Settings.greetName()
         val control = Settings.phoneControl
@@ -1305,7 +1305,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             "You are ${BrandName.NAME}, an AI assistant on the user's Android phone. " + Settings.customPersona
         else Personas.byId(Settings.personaId).prompt
         // v0.45.0 (#13, #16): Simple users get no terminal / coding content; turn-specific blocks only when the turn needs them.
-        val prof = PromptProfile.plan(SimpleMode.simple, userText, groups, viewRouted = viewRouted)
+        val prof = PromptProfile.plan(SimpleMode.simple, userText, groups)
         val memBlock = Memory.promptBlock(userText)
         val parts = PromptParts.Builder()
         // v0.45.1 speed: named parts with a stability tier (PromptParts). The text of every part is what it always was;
@@ -1348,10 +1348,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             }
             turn("core_skills", CoreSkills.promptBlock(HarnessPrompt.pinned(prof.core)))
             turn("build", BuildMode.block(userText))   // 2026-11-14 build / craft mode: plan, design system, self-review, one improvement round
-            // v0.23.0: the VIEWS block. v0.45.0 (#16): in full only when a view is routed this turn; else one line.
-            turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
+            // 2026-11-21 view shelf (docs/VIEW-SHELF.md): every view, one line each, every turn; the model decides whether work
+            // belongs in one. Byte-stable for the same Stage switch, so it stays in the cached prefix.
+            val stageOn = com.blaze.assistant.stage.StageStore.enabled
+            s("views", ViewShelf.promptBlock(stageOn))
             // 0.46.0 Argus Stage: in place first; plain Q&A stays chat; "study 30 min" is a timer card with Start.
-            if (com.blaze.assistant.stage.StageStore.enabled) s("stage", com.blaze.assistant.stage.StageTools.RULE)
+            if (stageOn) s("stage", com.blaze.assistant.stage.StageTools.RULE)
             // v0.44.0: every tool result carries [verified=…]; success may only be claimed on verified=true (ToolVerify).
             s("tool_verify", ToolVerify.PROMPT_RULE)
             // v0.24.9 rich replies / v0.26.1 visual answers. Static text, so it stays in the cached prefix; left out only when Visual answers is off.
@@ -1633,8 +1635,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val turnTools = java.util.Collections.synchronizedList(mutableListOf<String>())
         /** v0.33.3: the ```apps card of this turn's last list_apps (added to the reply when it says it shows a list). */
         @Volatile var turnAppsCard: String? = null
-        /** v0.23.0: the view this turn must use (keyword classifier). */
-        @Volatile var turnView: ViewRouter.Spec? = null
         /** Skills the model read (use_skill) or replayed (run_skill) for the current request: What Argus is holding. */
         @Volatile var skillsRead: List<String> = emptyList()
         /** v0.23.2: tool calls that succeeded this turn (the claim guard checks replies against them). */
@@ -1707,7 +1707,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         @Volatile var resumeGoal: GoalPin.Goal? = null
         /** v0.23.2: the last turn made, changed or opened a design (so a short edit next is a follow-on). */
         @Volatile var lastTurnDesign = false
-        /** v0.23.2: the follow-on hint for this turn ("" = none). */
+        /** 2026-11-21 view shelf: the CURRENT DESIGN fact for this turn ("" = no design is current). */
         @Volatile var turnDesignNote = ""
         val history = JSONArray()
         val historyMark = HashMap<Long, Int>()
@@ -3064,13 +3064,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // below (Kotlin reads `if … else a + … + block` as the else's sum), so a specialist turn never had it.
                     "\n" + TurnContextSource.block(lastUserText())
                 else systemPrompt(lastUserText(), id, awareFull,
-                    promptGroups, turnView != null || turnDesignNote.isNotEmpty(), promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
+                    promptGroups, promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
                 cacheBlock +
                 GoalPin.block(turnGoal) + FollowUpBind.block(turnBind) + TaskMemory.block(turnRef) + (if (agentId == null) TaskMemory.SURFACE_RULE else "") +
                 (agentId?.let { "\nYou are background agent $it, not the main chat. Work alone and finish with the result only." } ?: BgAgents.leadLine()) +
-                (turnDesignNote.ifEmpty { turnView?.let { ViewRouter.hint(it) } ?: "" }) +
+                turnDesignNote +
                 // v0.27.x: "how do I install X" → lead with the action and end with one concrete offer to do it.
                 AnswerStyle.turnHint(lastUserText()) +
                 // 0.53.6: the user said to stop and answer: answer from what was found (WrapUp)
@@ -3078,7 +3078,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // v0.28.4: "take me to the blaze-agent repo" / "what version are you": look it up in Argus's docs, never guess.
                 (if (BlazeDocs.isAboutBlaze(lastUserText())) BlazeDocs.TURN_HINT else "") +
                 // v0.26.1: an in-chat diagram / chart is drawn in the reply itself (no files, preview or use_skill).
-                (if (turnView == null && turnDesignNote.isEmpty() && Settings.bool("rich_replies", true) && VisualRoute.inChat(lastUserText())) VisualRoute.HINT else "") +
+                (if (turnDesignNote.isEmpty() && Settings.bool("rich_replies", true) && VisualRoute.inChat(lastUserText())) VisualRoute.HINT else "") +
                 // v0.31.2 Halo x Argus: both know the other exists; on "@halo" turns the agent speaks as Halo.
                 (if (agentId == null) OnePersona.awareness() else "") +   // 0.51.0: no partner line
                 // 0.51.0 BlazeQuery evidence pack (automatic, judged, compact) + terminal-first route hint
@@ -3283,7 +3283,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             turnModel?.let { tm -> if (TurnModel.current === tm) TurnModel.current = null }
             // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
             cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
-            lastTurnDesign = ViewRouter.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
+            lastTurnDesign = ViewShelf.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
             if (agentId == null) com.blaze.assistant.phone.Pointer.done()
             try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
             thinking = ""
@@ -3389,15 +3389,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 timer.mark("tools"); if (agentId == null) StartTrace.stage("tools")
                 // 0.45.19: every bubble's final sanitizer knows this app's tool names (CallScan).
                 try { CallScan.learn(ToolCalls.names(allTools0)) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("CallScan.learn", e) }
-                // v0.23.0 views + skills: the view this request needs (its tools on) and the skills that match it,
-                // looked up before the first model call with no extra model call. Shown on the work card.
-                // v0.23.2 follow-on edits: right after a design (or from the Design view's own box), "show engine" edits that design.
+                // v0.23.2 follow-on edits: right after a design, while the Design view is open, or within 30 minutes of a change,
+                // a design is "current" (structure, not words).
                 val curDesign = dDesign.await()
-                val followOn = !routine && agentId == null && curDesign != null &&
-                    (lastTurnDesign || com.blaze.assistant.ui.Views.showing.value == "design" || Designs.recent())
-                turnView = if (bulk) null else ViewRouter.route(userNow, followOn)
-                turnDesignNote = if (followOn && curDesign != null && turnView?.id == "design" && ViewRouter.route(userNow)?.id != "design")
-                    ViewRouter.followOnHint(curDesign.title, curDesign.kind, curDesign.path) else ""
+                val designShowing = com.blaze.assistant.ui.Views.showing.value == "design"
+                val followOn = !routine && agentId == null && curDesign != null && (lastTurnDesign || designShowing || Designs.recent())
+                // 2026-11-21 view shelf: no view is picked from the words. While a design is current (structure above), the
+                // turn gets one fact line naming it, and the model decides whether this message is about it.
+                turnDesignNote = if (followOn && curDesign != null && !bulk) ViewShelf.currentDesign(curDesign.title, curDesign.kind, curDesign.path,
+                    ViewShelf.why(lastTurnDesign, designShowing)) else ""
                 turnOk.clear()
                 turnDone.clear()
                 turnCards.clear(); richRepaired = false
@@ -3437,7 +3437,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var lastOkStep = ""
                 var savedPath: String? = null   // v0.45.9: a save_file this turn; the final answer names its path
                 var turnToolCalls = 0   // v0.45.9: tools run this turn (ScheduleTruth checks only answers made from the [context] block)
-                turnView?.let { groupsOn += it.groups }
                 // 2026-11-20 skill shelf / round 5 specialist shelf: no skills or specialists are guessed from the words; the
                 // model sees both shelves and picks. skillsRead is what the model actually read (What Argus is holding).
                 skillsRead = emptyList()
@@ -3445,7 +3444,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val lateSteps = ArrayList<String>()   // v0.45.3: optional look-ups that missed their PreBudget
                 // v0.44.0 fewer tools per turn: ToolRouter's groups, then ToolPick (core split into cues, capped).
                 val usedNames = ToolPick.usedNames(history)
-                if (turnView != null) groupsOn += "make"
                 var sizeLine = ""
                 // v0.45.0 context: once the model asks for a tool it wasn't sent (or one that doesn't exist), the rest of the
                 // turn gets the full tool set instead of a guessed subset.
@@ -3885,7 +3883,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         if (bad != null) {
                             // v0.27.x: only a claim about what the user asked for is worth doing for real; a stray claim about
                             // another view ("show me your memories" → "Opened the solar diagram in Design") is dropped, never acted on.
-                            val related = ClaimGuard.relevant(bad, lastUserText(), turnView?.id)
+                            val related = ClaimGuard.relevant(bad, lastUserText(), ClaimGuard.viewsTried(synchronized(turnTools) { turnTools.toList() }))
                             val rest = if (related) "" else ClaimGuard.drop(shown, bad)
                             if (!related && rest.isNotEmpty()) {
                                 textOut = rest
@@ -3915,7 +3913,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                     claimNudged = true
                                     nudgeCount++
                                     nudgesLeft--
-                                    ViewRouter.byId("stage")?.let { groupsOn += it.groups }
+                                    ViewShelf.byId("stage")?.let { groupsOn += it.groups }
                                     if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                                     add(Role.STEP, RetryGuard.label(RetryGuard.Kind.CLAIM, "Stage"))
                                     history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(ClaimGuard.cardNudge(card), lastUserText())))

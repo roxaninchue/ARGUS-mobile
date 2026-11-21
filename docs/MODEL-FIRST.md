@@ -105,7 +105,7 @@ The fix is what the model receives. Nothing detects "exam", "completed" or "fini
 - **Open:** the remote `https://blazeinchue.pages.dev/persona.json` (1.0.7) should be replaced with this core, or retired.
   The app ignores it until it publishes a version above 2.0.0.
 
-- 2026-11-18: the Learn safety net (`ViewRouter.shouldConvert` / `cardsFrom` turning a text reply into a deck, plus its re-prompt) is gone from the turn; `ViewRouter`'s helpers stay only for their old tests.
+- 2026-11-18: the Learn safety net (`ViewRouter.shouldConvert` / `cardsFrom` turning a text reply into a deck, plus its re-prompt) is gone from the turn; `ViewRouter`'s helpers stay only for their old tests. (2026-11-21: deleted with the rest of `ViewRouter`, round 6.)
 
 ## Round 4: skills by the model, the skill shelf (20 Nov 2026)
 
@@ -143,9 +143,29 @@ message's words either.
   shelves out of the cache (uncached chars 55,642 → 76,823 in the bench).
 - Guard: `ModelFirstTest.specialistsAreAShelfNotAGuess`; `SpecialistShelfTest`, `ShelfBenchTest`.
 
+## Round 6: views by the model, the view shelf (21 Nov 2026)
+
+Design, examples and cost: **[VIEW-SHELF.md](VIEW-SHELF.md)**. Which view a turn uses no longer depends on the message's words.
+
+- **Every turn sends the view shelf** (`ViewShelf.promptBlock(stageOn)`, STATIC tier, 1,481 chars): every view, one line
+  each (`id — what it holds — the tool that writes there`), with one head line that plain answers stay in chat. The model
+  decides whether work belongs in a view and calls that view's tool.
+- **A current design is a fact, not a guess.** While a design is current (by structure: the last turn made or changed
+  it, Design is showing, or it changed in the last 30 minutes), the turn carries one `CURRENT DESIGN: …` line and the
+  model decides whether the message is about it (`ViewShelf.currentDesign`).
+- **Gone:** `agent/ViewRouter.kt` (`route` and its ten cues, `hint` / "REQUIRED VIEW THIS TURN", the 3,890-char `PROMPT`
+  with its HARD RULE, `isFollowOnEdit` / `followOnHint`, `routeAll`, the Learn safety net helpers), `Session.turnView`
+  and the tool groups it switched on, `PromptProfile.views` / `viewRouted` / `viewsShort`.
+- **Kept, by structure:** `ClaimGuard` reads `ViewShelf.specs`; whether a false claim is about the request now asks what
+  the model reached for this turn (`ClaimGuard.viewsTried(turnTools)`) instead of `route()`.
+- Seen with the shipped `route()` before the change: "remind me what we decided about the logo" → Schedule ("create a
+  routine"), "how much does it cost to fix the deck at my house?" → Learn (10-25 flashcards), "show me how a car engine
+  works" → Design (a 3D model), while "remember to pay ZESCO every month" got no view at all, nor did a message in Bemba or Nyanja (the cues are English).
+- Guard: `ModelFirstTest.viewsAreAShelfNotAGuess`; `ViewShelfTest`.
+
 ## Still to retire (owner to schedule; don't add more)
 
-- **`ViewRouter.route`** still picks a view from the message's words (it adds the `make` / `extras` groups). Next candidate: the model already has the view tools (SKILL-SHELF.md §12). Skills (round 4) and specialists (round 5) are done.
+- **`VisualRoute.inChat` → `VisualRoute.HINT`** still adds an in-chat-diagram hint from the message's words. Next candidate (VIEW-SHELF.md §9): the view shelf's head and `RichReplies.PROMPT` already say it. Skills (round 4), specialists (round 5) and views (round 6) are done.
 - **The loop guards in `runLoop`** (RetryGuard, ClaimGuard, EchoGuard, ToolTruth.NUDGE / refusal, AutoContinue…). These are HARNESS MUSTS #4, the "Plain harness" toggle.
 - **Small guesses:** `ThinkBudget.quick` (thinking budget from cue words), `Ack.wants`, `StopResume.isResume` ("continue"), `ToolTruth.directPhone`, `TurnContext.scheduleAsk`, and the Halo side lane (`sideSend`), which is unreachable from `send()` now.
 - **The `BusyRoute` / `LookupLane` / `SmallTalk` / `ChatLane.fits` objects.** These are now unused by the chat turn. `LookupLane` is still used by BlazeQuery (`QueryRuntime`). Delete each one when nothing else needs it.

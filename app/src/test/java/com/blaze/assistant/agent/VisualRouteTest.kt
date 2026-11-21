@@ -22,8 +22,9 @@ class VisualRouteTest {
     @Test fun inChatVisualsStayInChat() {
         for (t in inChat) {
             assertTrue(t, VisualRoute.inChat(t))
-            assertNull(t, ViewRouter.route(t))   // no REQUIRED VIEW: Design
         }
+        // 2026-11-21 view shelf: no REQUIRED VIEW is ever injected; the shelf itself says a quick diagram stays in chat.
+        assertTrue(ViewShelf.HEAD.contains("a quick diagram or chart in the reply stay in chat"))
         assertFalse(VisualRoute.inChat("what's the capital of Zambia?"))
         assertFalse(VisualRoute.inChat("/design flowchart"))
     }
@@ -32,11 +33,8 @@ class VisualRouteTest {
         for (t in listOf("make a flowchart of the login process and save it as a PNG", "export the diagram as svg", "make a diagram file I can download",
             "draw a flowchart on a poster for the class", "make a website with a chart of sales", "make a 3D chart of the solar system", "edit the diagram file"))
             assertFalse(t, VisualRoute.inChat(t))
-        assertEquals("design", ViewRouter.route("make a flowchart of the login process and save it as a PNG")?.id)
-        assertEquals("design", ViewRouter.route("make a poster with a diagram of the water cycle")?.id)
-        assertEquals("design", ViewRouter.route("design a landing page with a chart")?.id)
-        // Non-visual Design work is untouched.
-        assertEquals("design", ViewRouter.route("make me a tall modern 3D rocket")?.id)
+        // Design's shelf line is about work to keep, change or export (the model picks it; nothing routes by words).
+        assertTrue(ViewShelf.byId("design")!!.holds.startsWith("visual work to keep, change or export"))
     }
 
     /** Round 5: the diagrams / data-analysis skills stay on the shelf (no word filter hides them); the turn hint stays. */
@@ -57,7 +55,7 @@ class VisualRouteTest {
         assertTrue(File(root, "data-analysis/SKILL.md").readText().contains("In chat: a chart is a ```chart block"))
         val views = File(root, "blaze-views/SKILL.md").readText()
         assertTrue(CoreSkills.pinned(views).any { it.contains("```mermaid") && it.contains("no Design") })
-        assertTrue(ViewRouter.PROMPT.contains("draw it inline in the reply"))
+        assertTrue(ViewShelf.promptBlock(stageOn = true).contains("a quick diagram or chart in the reply stay in chat"))
     }
 
     @Test fun mermaidFilesAreDetected() {

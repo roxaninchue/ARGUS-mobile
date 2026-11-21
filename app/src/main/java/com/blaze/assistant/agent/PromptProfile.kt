@@ -1,7 +1,6 @@
 package com.blaze.assistant.agent
 
 
-import com.blaze.assistant.BrandName
 /**
  * v0.45.0 (#13, #16) what goes into the system prompt, by who is asking and what the turn needs.
  *
@@ -16,8 +15,8 @@ import com.blaze.assistant.BrandName
  * #16 the prompt was ~40k characters on every full call. Blocks that only matter for some turns now go only then:
  *  - TERMINAL / MAKE THINGS in full only when the turn is about code, files or making content ([coding]) or the
  *    terminal / make groups are on; otherwise one pointer line ([TERMINAL_SHORT]);
- *  - the full VIEWS block only when a view is routed this turn (or a design follow-on); otherwise one line naming the
- *    views ([viewsShort]);
+ *  - (2026-11-21: the VIEWS block no longer depends on the turn. The view shelf, ViewShelf.promptBlock, rides every
+ *    turn in the cached prefix; docs/VIEW-SHELF.md.)
  *  - the coding core skill only on coding turns.
  * Everything else (rules about honesty, asking, background-first, verification) stays every turn. Pure; PromptProfileTest.
  */
@@ -30,8 +29,6 @@ object PromptProfile {
         val terminal: Boolean,
         /** Full MAKE THINGS paragraph (else the short line for the kind). */
         val make: Boolean,
-        /** Full VIEWS block (else [viewsShort]). */
-        val views: Boolean,
         /** Core skills to pin, in CoreSkills order. */
         val core: List<String>,
     ) {
@@ -51,7 +48,7 @@ object PromptProfile {
     fun coding(userText: String, groups: Set<String> = emptySet()): Boolean =
         groups.any { it in TECH_GROUPS } || CODING.containsMatchIn(userText)
 
-    fun plan(simple: Boolean, userText: String, groups: Set<String> = emptySet(), viewRouted: Boolean = false,
+    fun plan(simple: Boolean, userText: String, groups: Set<String> = emptySet(),
              names: List<String> = CoreSkills.NAMES): Plan {
         val code = coding(userText, groups)
         val core = names.filter { n ->
@@ -61,7 +58,7 @@ object PromptProfile {
                 else -> true
             }
         }
-        return Plan(kind(simple), terminal = !simple && code, make = !simple && code, views = viewRouted, core = core)
+        return Plan(kind(simple), terminal = !simple && code, make = !simple && code, core = core)
     }
 
     /**
@@ -94,8 +91,4 @@ object PromptProfile {
 
     const val TERMINAL_SHORT = "\nTERMINAL: for files, code, data or servers load the terminal tools (load_tools terminal) and follow the coding skill (use_skill blaze-coding-workflow)."
 
-    /** One line instead of the full VIEWS block when no view is routed this turn. */
-    fun viewsShort(viewNames: List<String>): String =
-        "\nVIEWS: output that fits a ${BrandName.NAME} view (" + viewNames.joinToString(", ") + ") is created in that view with its tool and opened with open_view; " +
-            "the chat reply is one or two lines. Never claim you made or opened something in a view unless its tool succeeded this turn."
 }

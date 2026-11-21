@@ -10,112 +10,24 @@ import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 
-/** v0.23.0 views + skills: view routing, the Learn safety net, skill matching and disabled-skill exclusion. */
+/** v0.23.0 views + skills: the views exist, the deck tool, skill matching and disabled-skill exclusion. */
 class ViewsSkillsTest {
 
-    // ---------------- view routing ----------------
+    // ---------------- views (2026-11-21: the view shelf replaced view routing; ViewShelfTest) ----------------
 
-    @Test fun routesRequestsToTheirView() {
-        assertEquals("learn", ViewRouter.route("Make me flashcards on photosynthesis")?.id)
-        assertEquals("learn", ViewRouter.route("quiz me on the OSI layers")?.id)
-        assertEquals("learn", ViewRouter.route("help me study for my CIT102 exam")?.id)
-        assertEquals("learn", ViewRouter.route("Flash cards for French verbs please")?.id)
-        assertEquals("schedule", ViewRouter.route("remind me to call mum at 6")?.id)
-        assertEquals("schedule", ViewRouter.route("every morning send me the weather")?.id)
-        assertEquals("design", ViewRouter.route("design a landing page for my lamp store")?.id)
-        assertEquals("design", ViewRouter.route("make a slide deck about our launch")?.id)   // not Learn
-        assertEquals("gallery", ViewRouter.route("generate an image of a sunset over Lusaka")?.id)
-        assertEquals("skills", ViewRouter.route("save this as a skill")?.id)
-        assertEquals("memory", ViewRouter.route("remember that I take my coffee black")?.id)
-        assertEquals("archive", ViewRouter.route("what did we say in our old chats about the logo?")?.id)
-        assertEquals("projects", ViewRouter.route("start a new project for the HomeGlow store")?.id)
-        assertEquals("browser", ViewRouter.route("log in to the portal at https://school.example.com")?.id)
-    }
-
-    @Test fun plainChatHasNoView() {
-        assertNull(ViewRouter.route("hi"))
-        assertNull(ViewRouter.route("what's the capital of Zambia?"))
-        assertNull(ViewRouter.route("this is a case study about Zambia's copper"))
-        assertNull(ViewRouter.route("/learn"))
-        assertNull(ViewRouter.route("[Scheduled routine: flashcards review]"))
-    }
-
-    @Test fun everyRoutedViewExistsAndIsInThePrompt() {
-        for (s in ViewRouter.specs) {
-            // Archive is search only since v0.24.0 (no chat list screen); every other routed view has a screen.
-            if (s.id == "archive") assertTrue(ViewRouter.hint(s).contains("search_chat") && !ViewRouter.hint(s).contains("open_view"))
-            // 0.46.0: the Stage is the chat itself (no separate screen); its cards each have "Open in full view".
-            else if (s.id == "stage") assertTrue(ViewRouter.hint(s).contains("stage_show"))
-            else assertTrue("no view ${s.id}", Views.find(s.id) != null)
-            assertTrue("prompt misses ${s.name}", ViewRouter.PROMPT.contains("${s.name} (${s.id})"))
-            assertTrue(ViewRouter.hint(s).startsWith("\nREQUIRED VIEW THIS TURN: ${s.name}"))
+    @Test fun everyShelfViewExists() {
+        for (s in ViewShelf.specs) {
+            // Archive is search only since v0.24.0 (no chat list screen); the Stage is the chat itself (0.46.0).
+            if (s.id == "archive" || s.id == "stage") continue
+            assertTrue("no view ${s.id}", Views.find(s.id) != null)
         }
-        assertTrue(ViewRouter.PROMPT.contains("HARD RULE"))
-        assertTrue(ViewRouter.PROMPT.contains("flashcards action=add"))
         assertEquals("projects", Views.find("project")?.id)
     }
 
-    @Test fun learnHintNamesTheDeckTool() {
-        val h = ViewRouter.hint(ViewRouter.byId("learn")!!)
-        assertTrue(h.contains("flashcards action=add")); assertTrue(h.contains("open_view view=learn")); assertTrue(h.contains("Do NOT"))
-    }
-
-    // ---------------- Learn safety net ----------------
-
-    @Test fun parsesQAndATextIntoCards() {
-        val text = """
-            Here are your flashcards:
-            1. **Q:** What is photosynthesis?
-               **A:** How plants turn light, water and CO2 into glucose and oxygen.
-            2. Q: Where does it happen?
-               A: In the chloroplasts.
-            3. Question: What pigment absorbs light?
-               Answer: Chlorophyll
-        """.trimIndent()
-        val c = ViewRouter.cardsFrom(text)
-        assertEquals(3, c.size)
-        assertEquals("What is photosynthesis?", c[0].first)
-        assertEquals("In the chloroplasts.", c[1].second)
-        assertEquals("Chlorophyll", c[2].second)
-    }
-
-    @Test fun parsesFrontBackTablesAndBoldTerms() {
-        val table = "| Front | Back |\n|---|---|\n| Layer 3 | Network |\n| Layer 4 | Transport |\n| Layer 7 | Application |"
-        assertEquals(listOf("Layer 3" to "Network", "Layer 4" to "Transport", "Layer 7" to "Application"), ViewRouter.cardsFrom(table))
-        val terms = "- **Mitosis** – cell division into two identical cells\n- **Meiosis** – division into four sex cells\n- **Gamete** – a sex cell"
-        assertEquals(3, ViewRouter.cardsFrom(terms).size)
-        assertEquals("Mitosis", ViewRouter.cardsFrom(terms)[0].first)
-        assertTrue(ViewRouter.cardsFrom("Photosynthesis is how plants make food - it needs light.").isEmpty())
-    }
-
-    @Test fun decidesConvertRepromptOrNothing() {
-        val cards = "Q: 2+2?\nA: 4\nQ: 3+3?\nA: 6"
-        assertEquals(ViewRouter.Fix.CONVERT, ViewRouter.shouldConvert("make flashcards on sums", cards, calledFlashcards = false, alreadyNudged = false))
-        assertEquals(ViewRouter.Fix.NONE, ViewRouter.shouldConvert("make flashcards on sums", cards, calledFlashcards = true, alreadyNudged = false))
-        assertEquals(ViewRouter.Fix.REPROMPT, ViewRouter.shouldConvert("make flashcards on sums", "Sure! What topic exactly?", false, false))
-        assertEquals(ViewRouter.Fix.NONE, ViewRouter.shouldConvert("make flashcards on sums", "Sure! What topic exactly?", false, alreadyNudged = true))
-        // An interactive quiz (one question at a time) is allowed in chat.
-        assertEquals(ViewRouter.Fix.NONE, ViewRouter.shouldConvert("quiz me on sums", "First one: what's 7 × 8?", false, false))
-        // Not a Learn turn at all.
-        assertEquals(ViewRouter.Fix.NONE, ViewRouter.shouldConvert("what is 2+2", cards, false, false))
-    }
-
-    @Test fun deckNamesComeFromTheRequest() {
-        assertEquals("Photosynthesis", ViewRouter.deckName("make me flashcards on photosynthesis"))
-        assertEquals("The French revolution", ViewRouter.deckName("Flashcards about the French revolution please"))
-        assertEquals("CIT102 loops", ViewRouter.deckName("quiz me on CIT102 loops"))
-        assertEquals("Cards", ViewRouter.deckName("make flashcards"))
-    }
-
-    @Test fun convertedCardsLandInALearnDeck() {
+    @Test fun theDeckToolMakesALearnDeck() {
         Flashcards.fileOverride = File(Files.createTempDirectory("learn").toFile(), "cards.json"); Flashcards.reset()
-        val pairs = ViewRouter.cardsFrom("Q: 2+2?\nA: 4\nQ: 3+3?\nA: 6")
-        val n = Flashcards.add(ViewRouter.deckName("flashcards on sums"), pairs)
-        assertEquals(2, n)
-        assertEquals("Sums", Flashcards.decks().single().name)
-        assertTrue(ViewRouter.converted("Sums", n, pairs.size).contains("Sums"))
-        // The deck tool itself (create a Learn deck with front/back cards) still works as before.
         assertTrue(Flashcards.run(JSONObject("""{"action":"add","deck":"Sums","cards":[{"front":"4+4?","back":"8"}]}""")).startsWith("Added 1 card"))
+        assertEquals("Sums", Flashcards.decks().single().name)
         Flashcards.fileOverride = null; Flashcards.reset()
     }
 

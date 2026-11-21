@@ -15,7 +15,7 @@ import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 
-/** v0.23.2 "design everything": routing, follow-on edits, the design tool, the claim guard and token stripping. */
+/** v0.23.2 "design everything": the view shelf, the current-design fact, the design tool, the claim guard and token stripping. */
 class DesignEverythingTest {
 
     private lateinit var dir: File
@@ -28,45 +28,25 @@ class DesignEverythingTest {
 
     @After fun tearDown() { Designs.rootOverride = null; dir.deleteRecursively() }
 
-    // ---------------- routing ----------------
+    // ---------------- the view shelf and the current design (2026-11-21; routing by words retired) ----------------
 
-    @Test fun threeDAndVisualRequestsGoToDesign() {
-        for (t in listOf("make me a tall modern 3D rocket", "can you build a 3d model of a house", "render a car", "design a mobile app UI for a bakery",
-            // v0.26.1: plain diagram / chart asks are drawn inline in chat (VisualRouteTest); file asks still go to Design.
-            "make a diagram of the water cycle and save it as a PNG", "draw a flowchart of the login process on a poster", "export a chart of my spending by category", "show me a 3D scene of a room",
-            "build a rocket", "create a floor plan for a 2 bedroom house", "mockup of a product box", "make a prototype of a todo app", "make a poster for the show"))
-            assertEquals(t, "design", ViewRouter.route(t)?.id)
-    }
-
-    @Test fun nonDesignStaysWhereItWas() {
-        assertEquals("gallery", ViewRouter.route("generate an image of a sunset over Lusaka")?.id)
-        assertEquals("gallery", ViewRouter.route("make a picture of a red car")?.id)
-        assertEquals("schedule", ViewRouter.route("remind me to service my car every week")?.id)
-        assertNull(ViewRouter.route("what's the best car to buy in Zambia?"))
-        assertNull(ViewRouter.route("switch to a faster model"))
-        assertNull(ViewRouter.route("show engine"))   // not without a design just before
-    }
-
-    @Test fun followOnEditsGoToDesign() {
-        for (t in listOf("show engine", "add fins", "make it taller", "open it for me so I can see", "now make it red", "can you hide the boosters?", "rotate it"))
-            assertEquals(t, "design", ViewRouter.route(t, followOn = true)?.id)
-        // A different request after a design is still itself.
-        assertNull(ViewRouter.route("what's the weather today?", followOn = true))
-        assertNull(ViewRouter.route("show my calendar", followOn = true))
-        assertEquals("schedule", ViewRouter.route("remind me at 6 to check it", followOn = true)?.id)
-        assertFalse(ViewRouter.isFollowOnEdit("tell me a long story about rockets and why they fly so high into space and beyond the moon"))
-        val h = ViewRouter.followOnHint("Tall rocket", "3d", "/x/index.html")
-        assertTrue(h.contains("design action=update") && h.contains("set_parts") && h.contains("Tall rocket"))
-    }
-
-    @Test fun promptAndToolSayDesignIsForEverything() {
-        val p = ViewRouter.PROMPT
-        assertTrue(p.contains("3D") && p.contains("diagrams") && p.contains("design action=update"))
-        assertTrue(p.contains("Never say you created, updated or opened"))
+    @Test fun theShelfSaysDesignIsForAllVisualWork() {
+        val p = ViewShelf.promptBlock(stageOn = true)
+        for (w in listOf("3D models", "2D art", "pages", "UI mockups", "posters", "slides", "floor plans", "games")) assertTrue(w, p.contains(w))
+        assertTrue(p.contains("- design \u2014") && p.contains("\u2014 design\n"))
         val d = Designs.tool().getJSONObject("function").getString("description")
         for (w in listOf("3D", "UI mockups", "diagrams", "charts", "posters", "slides", "floor plans", "follow-on")) assertTrue(w, d.contains(w))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("design")!!).contains("kind=3d"))
-        assertTrue(Designs.TOOL in ViewRouter.byId("design")!!.tools)
+        assertTrue(Designs.TOOL in ViewShelf.byId("design")!!.tools)
+    }
+
+    @Test fun aCurrentDesignIsAFactNotAnOrder() {
+        val three = ViewShelf.currentDesign("Tall rocket", "3d", "/x/index.html", ViewShelf.why(lastTurn = true, showing = false))
+        assertTrue(three.contains("Tall rocket") && three.contains("design action=update") && three.contains("set_parts") && three.contains("last turn"))
+        assertTrue("the model decides whether the message is about it", three.contains("If the user is talking about it"))
+        assertFalse(three.contains("REQUIRED") || three.contains("Don't start"))
+        val page = ViewShelf.currentDesign("Lamp store", "page", "/x/page.html", ViewShelf.why(lastTurn = false, showing = true))
+        assertTrue(page.contains("edits=[{find, replace}]") && page.contains("open in Design") && !page.contains("set_parts"))
+        assertTrue(ViewShelf.why(lastTurn = false, showing = false).contains("30 minutes"))
     }
 
     // ---------------- the design tool ----------------
@@ -164,7 +144,7 @@ class DesignEverythingTest {
     // ---------------- claim guard ----------------
 
     @Test fun claimsWithoutABackingToolAreCaught() {
-        val design = ViewRouter.byId("design")!!
+        val design = ViewShelf.byId("design")!!
         val lies = listOf(
             "I'm on that tall modern 3D rocket! You can view it in the design section.",
             "I've updated the design to show the engine.",
@@ -191,7 +171,7 @@ class DesignEverythingTest {
         assertNull(ClaimGuard.unbacked("I've set up a reminder for 6 pm.", listOf(ClaimGuard.Call("create_routine"))))
         assertNull(ClaimGuard.unbacked("I've made a deck of 12 flashcards for you.", listOf(ClaimGuard.Call("flashcards"))))
         // Every routed view except read-only Archive has claim words.
-        for (s in ViewRouter.specs) if (s.id != "archive") assertTrue(s.id, ClaimGuard.claims("I've updated the ${s.name.lowercase()}.", s.id).isNotEmpty() || s.id in setOf("browser", "memory"))
+        for (s in ViewShelf.specs) if (s.id != "archive") assertTrue(s.id, ClaimGuard.claims("I've updated the ${s.name.lowercase()}.", s.id).isNotEmpty() || s.id in setOf("browser", "memory"))
     }
 
     @Test fun honestTextIsNotAClaim() {
@@ -205,7 +185,7 @@ class DesignEverythingTest {
     }
 
     @Test fun nudgeThenHonestLine() {
-        val d = ViewRouter.byId("design")!!
+        val d = ViewShelf.byId("design")!!
         val n = ClaimGuard.nudge(d, Designs.Current("/x/index.html", "3d", "Rocket", 2, 0))
         assertTrue(n.contains("design action=update") && n.contains("Rocket"))
         assertTrue(ClaimGuard.nudge(d, null).contains("design action=create"))

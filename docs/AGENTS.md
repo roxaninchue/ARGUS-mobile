@@ -122,6 +122,20 @@ nested run; parallel cap; restore; orphan deps; events), `PipelinesTest` (resear
   10 words after the dash, 80 chars). A thin line is fixed in the description, not in code: write a first sentence that
   fits the cap whole (bump the skill's version and its index.json sha256).
 
+## Views: the view shelf (round 6, 2026-11-21, [VIEW-SHELF.md](VIEW-SHELF.md))
+
+- **What the model sees:** `ViewShelf.promptBlock(stageOn)` (STATIC tier, 1,481 chars with the Stage on): every view that
+  holds work, one line each (`id — what it holds — the tool that writes there`), plus one head line that plain answers stay
+  in chat. The Stage line is left out while the Stage is switched off.
+- **Nothing guesses:** `ViewRouter` is gone (no per-message view, no "REQUIRED VIEW THIS TURN", no tool groups switched on
+  by words). The view tools are already in the turn (core / harness / always-on groups) or one `load_tools` away.
+- **One fact by structure:** while a design is current, the turn gets `ViewShelf.currentDesign(…)` (title, kind, path,
+  why it's current); the model decides whether the message is about it.
+- **Claims:** `ClaimGuard` checks view claims against `ViewShelf.specs`; `viewsTried(turnTools)` says which views the model
+  reached for this turn.
+- **Changing a view:** edit its `Spec` in `agent/ViewShelf.kt` (keep `holds` a short "use when" phrase, the writing tool
+  first in `tools`) and keep the shelf under `ViewShelf.BUDGET_CHARS` (ViewShelfTest).
+
 ## Specialists: the specialist shelf (round 5, 2026-11-20, [SKILL-SHELF.md](SKILL-SHELF.md) §13)
 
 - **What the model sees:** `delegate`'s description lists every specialist, one line each (`id — use when …`, built-ins
