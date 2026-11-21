@@ -1,3 +1,17 @@
+## 0.54.5 (versionCode 207, 2026-11-21, not built): Direct lane client
+Gateway 0.9.35 (Blaze-agent, docs/DIRECT-LANE.md) adds signed turn tickets and a one-call relay, shipped off.
+- `agent/DirectLane.kt` (new): a plain streaming chat turn on the main lane (no tools, no pictures) asks `POST /v1/ticket`
+  once per ~5 minutes (cached until 30 s before expiry; bound to this account and a random per-install device id), then
+  streams from `POST /v1/direct` (X-Argus-Ticket, X-Argus-Device). No first word within 1.5 s, any error, an empty reply or
+  a refused ticket returns null and `LlmClient.completeRaw` sends the same turn down the normal route with one
+  "Busy, retrying" status line (never "unreachable"). The gateway's kill switch (404) rests the lane 10 minutes; other
+  refusals 30 s. Settings `direct_lane` (default on) turns the client side off.
+- Tool turns, action (agent) turns, pictures and background lanes keep the normal route, its `/v1/me/execute` path and the
+  in-app confirmations; no tool schema is ever sent direct.
+- Tests: DirectLaneTest (6: eligibility, ticket parsing and reuse, rests, device id, wiring), run with kotlinc 2.0.21 +
+  JDK 17 against stubs; not compiled with Gradle (no APK build asked).
+- Not in this step: certificate pinning, OpenRouter per-user keys (true direct) and its usage beacon.
+
 ## 0.54.4 (versionCode 206, 2026-11-21): the "Unreleased" entry below (view shelf)
 
 ## Unreleased: ARGUS decides which view work goes in (the view shelf)

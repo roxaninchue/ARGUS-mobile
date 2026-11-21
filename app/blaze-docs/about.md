@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.54.5: short chat replies can start faster through the Direct lane (once it is switched on); if it is slow or busy, Argus quietly uses the normal route.
 - New in 0.54.4: Argus decides which view work goes in from a short list of every view and what it holds (no guessing from your words, so "remind me what we decided about the logo" stays a chat answer and Bemba or Nyanja requests reach the right view); while a 3D design is current Argus knows which one, so "the fins look wrong" changes it.
 - New in 0.54.3: Argus makes a PDF, Word document or PowerPoint deck in one step on the phone (no terminal), research runs end with the PDF, and a reply can't end without the file you asked for; a new teammate's hello shows in its chat, teammates answer as their role instead of as Argus; the model list no longer closes while you scroll it.
 - New in 0.54.2: a new teammate texts you first; no notification from the agent whose chat you have open; swiping the message notification away starts the next one fresh; an agent you add from a suggestion shows up on My team at once; Argus no longer stops on "now let me write…" without doing it.
