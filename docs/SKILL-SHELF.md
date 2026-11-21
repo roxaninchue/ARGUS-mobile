@@ -208,7 +208,7 @@ store are untouched.
 
 1. ~~**Specialists the same way.**~~ Done in round 5 (§13): `SpecialistMatch`, `SkillIntent` and `SkillGuard.unnamed`
    are gone.
-2. **Views:** `ViewRouter.route` still picks a view by words; the model already has the view tools.
+2. ~~**Views:**~~ Done in round 6 ([VIEW-SHELF.md](VIEW-SHELF.md)): `ViewRouter` is gone; the view shelf rides every turn.
 3. **Desktop / CLI shelf:** render the same block from their stores so every client chooses skills the same way.
 
 ## 13. Round 5 and shelf cost (20 Nov 2026)

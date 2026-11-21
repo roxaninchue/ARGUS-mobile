@@ -38,15 +38,13 @@ class IntentHonestyTest {
             assertFalse(t, MemoryIntent.isListRequest(t))
     }
 
-    @Test fun memoryPhrasingRoutesToMemoryNotDesign() {
-        // Even right after a design (follow-on mode), "show me your memories" is not a design edit.
-        assertFalse(ViewRouter.isFollowOnEdit("show me your memories"))
-        assertEquals("memory", ViewRouter.route("show me your memories", followOn = true)?.id)
-        assertEquals("memory", ViewRouter.route("show me your memories")?.id)
-        assertEquals("memory", ViewRouter.route("what do you know about me", followOn = true)?.id)
-        assertTrue(ViewRouter.hint(ViewRouter.byId("memory")!!).contains("query=all"))
-        // Follow-on design edits still work.
-        assertEquals("design", ViewRouter.route("show the engine", followOn = true)?.id)
+    @Test fun memoryIsOnTheShelfAndDesignIsOnlyAFact() {
+        // 2026-11-21 view shelf: "show me your memories" right after a design is the model's call. It sees Memory on the
+        // shelf with its tool, and the current design only as a fact that says "if the user is talking about it".
+        val shelf = ViewShelf.promptBlock(stageOn = true)
+        assertTrue(shelf.contains("- memory \u2014") && shelf.contains("\u2014 memory_save\n"))
+        val fact = ViewShelf.currentDesign("Rocket", "3d", "/x/index.html", ViewShelf.why(lastTurn = true, showing = false))
+        assertTrue(fact.contains("If the user is talking about it"))
     }
 
     @Test fun memoriesAreGroupedPlainlyWithAManageHint() {
@@ -83,17 +81,19 @@ class IntentHonestyTest {
         // A lookup doesn't back an action claim.
         assertTrue(FakeCall.looksFake("I installed the TTS model for you.", tools, acted = false, userText = "get me a tts model", looked = true))
         // Showing memories is backed by a memory lookup.
-        assertTrue(ClaimGuard.backs(ViewRouter.byId("memory")!!, ClaimGuard.Call("recall_memory")))
-        assertTrue(ClaimGuard.backs(ViewRouter.byId("memory")!!, ClaimGuard.Call("memory_search")))
+        assertTrue(ClaimGuard.backs(ViewShelf.byId("memory")!!, ClaimGuard.Call("recall_memory")))
+        assertTrue(ClaimGuard.backs(ViewShelf.byId("memory")!!, ClaimGuard.Call("memory_search")))
     }
 
     @Test fun aRetryStaysOnTheLatestRequest() {
-        val design = ViewRouter.byId("design")!!
+        val design = ViewShelf.byId("design")!!
         // A claim about Design is not a reason to go and work in Design when the user asked about memories.
         assertFalse(ClaimGuard.relevant(design, "show me your memories"))
         assertTrue(ClaimGuard.relevant(design, "make a 3D rocket"))
         assertTrue(ClaimGuard.relevant(design, "open the design again"))
-        assertTrue(ClaimGuard.relevant(design, "show engine", turnView = "design"))
+        // The model reached for Design this turn (a design call, worked or not): its own claim about Design is about the request.
+        assertTrue(ClaimGuard.relevant(design, "show engine", tried = ClaimGuard.viewsTried(listOf("design", "web_search"))))
+        assertFalse(ClaimGuard.relevant(design, "show engine", tried = ClaimGuard.viewsTried(listOf("web_search"))))
         val stray = "You take your coffee black and live in Ndola. I've opened the Solar Panel Working diagram in Design."
         assertEquals("design", ClaimGuard.unbacked(stray, emptyList())?.id)
         val kept = ClaimGuard.drop(stray, design)

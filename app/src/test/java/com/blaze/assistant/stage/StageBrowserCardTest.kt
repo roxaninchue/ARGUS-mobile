@@ -4,9 +4,10 @@ package com.blaze.assistant.stage
 import com.blaze.assistant.BrandName
 import com.blaze.assistant.agent.ClaimGuard
 import com.blaze.assistant.agent.InAppRoute
-import com.blaze.assistant.agent.ViewRouter
+import com.blaze.assistant.agent.ViewShelf
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -55,7 +56,9 @@ class StageBrowserCardTest {
             assertEquals(t, InAppRoute.Route.View("browser"), InAppRoute.match(t))
         // Not a bare "open the browser": the model takes it (with the Stage hint for card words).
         assertNull(InAppRoute.match("open the browser and search for flights to Lusaka"))
-        assertEquals("stage", ViewRouter.route("can you pull up the browser card and look up the weather")?.id)
+        // 2026-11-21 view shelf: the Stage line names the browser card and stage_show, and only while the Stage is on.
+        assertTrue(ViewShelf.promptBlock(stageOn = true).let { it.contains("- stage \u2014") && it.contains("the browser \u2014 stage_show") })
+        assertFalse(ViewShelf.promptBlock(stageOn = false).contains("- stage \u2014"))
     }
 
     @Test fun openClaimWithNoCardIsCaught() {

@@ -5,8 +5,8 @@ package com.blaze.assistant.agent
  * Mermaid file and opened the Design preview, which showed the raw source and took minutes. A diagram, chart or other
  * visual asked for in chat is drawn INLINE in the reply (a ```mermaid / ```chart block, see RichReplies.PROMPT): no
  * files, no Design view or preview_server, no use_skill. The file route is only for asks to save, export, download,
- * edit or make a file (or a page, poster, slides…). Pure (VisualRouteTest); used by [ViewRouter.route] and the
- * in-chat turn hint. Round 5 (20 Nov 2026): `filter` / `skipSkill`, which hid the diagrams and data-analysis skills on
+ * edit or make a file (or a page, poster, slides…). Pure (VisualRouteTest); used by the in-chat turn hint (ViewRouter,
+ * its other caller, was retired for the view shelf on 2026-11-21; this hint is the next word guess to retire, VIEW-SHELF.md §9). Round 5 (20 Nov 2026): `filter` / `skipSkill`, which hid the diagrams and data-analysis skills on
  * such turns, are gone; every skill stays on the shelf and the model chooses.
  */
 object VisualRoute {

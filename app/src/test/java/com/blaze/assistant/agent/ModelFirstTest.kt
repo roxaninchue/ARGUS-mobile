@@ -71,6 +71,19 @@ class ModelFirstTest {
         assertTrue(src.contains("slow(\"specialists\", SpecialistShelf.promptBlock())"))
     }
 
+    /** 2026-11-21 view shelf (docs/VIEW-SHELF.md): no view is picked from the message's words or ordered as REQUIRED. */
+    @Test fun viewsAreAShelfNotAGuess() {
+        val src = agentSrc()
+        for (gone in listOf("ViewRouter.", "turnView", "REQUIRED VIEW THIS TURN", "viewRouted", "isFollowOnEdit("))
+            assertFalse(gone, src.contains(gone))
+        assertTrue(src.contains("s(\"views\", ViewShelf.promptBlock("))
+        val shelfFile = File(root(), "app/src/main/java/" + ViewShelf::class.java.name.replace('.', '/') + ".kt")
+        assertFalse("ViewRouter.kt is gone", File(shelfFile.parentFile, "ViewRouter.kt").exists())
+        val shelf = shelfFile.readText()
+        assertFalse("the shelf never reads the message", shelf.contains("userText") || shelf.contains("Regex("))
+        assertTrue(File(root(), "docs/MODEL-FIRST.md").readText().contains("VIEW-SHELF.md"))
+    }
+
     @Test fun noShoutingRulesInTheChatPrompt() {
         val shouts = listOf("Answer EVERY user message", "never leave one out", "answer every one of them")
         val files = listOf("RapidMessages.kt", "ChatBurst.kt", "ChatLane.kt").map { File(root(), "app/src/main/java/com/blaze/assistant/agent/$it").readText() }

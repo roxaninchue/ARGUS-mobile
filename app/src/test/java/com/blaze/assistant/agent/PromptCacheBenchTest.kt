@@ -55,8 +55,8 @@ class PromptCacheBenchTest {
     private class Live(val t: Int, val screen: Int, val turn: Int)
 
     /** The parts in Agent.systemPrompt's written order and tiers (checked against the source below). */
-    private fun parts(userText: String, groups: Set<String>, viewRouted: Boolean, live: Live): List<PromptParts.Part> {
-        val prof = PromptProfile.plan(false, userText, groups, viewRouted = viewRouted)
+    private fun parts(userText: String, groups: Set<String>, live: Live): List<PromptParts.Part> {
+        val prof = PromptProfile.plan(false, userText, groups)
         return PromptParts.build {
             s("persona", Personas.byId("blaze").prompt + " ")
             s("name", "The user's name is Sam. ")
@@ -72,7 +72,7 @@ class PromptCacheBenchTest {
             s("control", HarnessPrompt.phone(true, false) + "\n" + Orient.RULE + FastActions.RULE); s("secrets", "\n" + SecretRules.PROMPT)
             s("followups", lit("s", "followups")); s("docs", BlazeDocs.PROMPT_LINE)
             turn("core_skills", core(HarnessPrompt.pinned(prof.core)))
-            turn("views", if (prof.views) ViewRouter.PROMPT else PromptProfile.viewsShort(ViewRouter.specs.map { it.name }))
+            s("views", ViewShelf.promptBlock(stageOn = true))   // 2026-11-21 view shelf: every turn, same bytes
             s("stage", com.blaze.assistant.stage.StageTools.RULE)   // 0.46.0
             s("tool_verify", ToolVerify.PROMPT_RULE)
             s("rich", com.blaze.assistant.ui.RichReplies.PROMPT)
@@ -88,17 +88,17 @@ class PromptCacheBenchTest {
         }
     }
 
-    private class Turn(val name: String, val text: String, val groups: Set<String>, val views: Boolean)
+    private class Turn(val name: String, val text: String, val groups: Set<String>)
     private val turns = listOf(
-        Turn("phone task", "open whatsapp and text mum I'm running late", setOf("screen", "device", "comms"), false),
-        Turn("coding", "write a python script that renames my photos by date", setOf("terminal"), false),
-        Turn("view", "show me a chart of my spending this month", setOf("make"), true),
+        Turn("phone task", "open whatsapp and text mum I'm running late", setOf("screen", "device", "comms")),
+        Turn("coding", "write a python script that renames my photos by date", setOf("terminal")),
+        Turn("view", "show me a chart of my spending this month", setOf("make")),
     )
 
     @Test fun everyPartInTheSourceIsBenchmarked() {
         val inSrc = Regex("""\b(s|slow|turn|tail)\("([a-z_]+)"""").findAll(sysSrc).map { it.groupValues[2] }.toSet()
         // Core skills are pinned only on coding turns, so cover every bench turn, not just the first.
-        val here = turns.withIndex().flatMap { (i, t) -> parts(t.text, t.groups, t.views, Live(0, 0, i)).map { it.name } }.toSet() +
+        val here = turns.withIndex().flatMap { (i, t) -> parts(t.text, t.groups, Live(0, 0, i)).map { it.name } }.toSet() +
             setOf("simple", "terminal", "processes", "in_call", "goals", "setup", "frequent", "desktop", "project", "voice", "build", "assistant", "servers", "agents")   // empty / off in this phone's state
         assertEquals(emptySet<String>(), inSrc - here)
     }
@@ -117,8 +117,8 @@ class PromptCacheBenchTest {
         // the same text for every kind of turn, and inside the prefix any two turns share
         val specs = SpecialistShelf.pointer(Specialists.builtIn)
         for (i in turns.indices) for (j in turns.indices) if (i < j) {
-            val x = PromptParts.assemble(parts(turns[i].text, turns[i].groups, turns[i].views, Live(0, 0, i)))
-            val y = PromptParts.assemble(parts(turns[j].text, turns[j].groups, turns[j].views, Live(3, 1, j)))
+            val x = PromptParts.assemble(parts(turns[i].text, turns[i].groups, Live(0, 0, i)))
+            val y = PromptParts.assemble(parts(turns[j].text, turns[j].groups, Live(3, 1, j)))
             val end = x.indexOf(specs) + specs.length
             assertTrue(x.indexOf(shelf) in 0 until end && end > specs.length)
             assertTrue("${turns[i].name} → ${turns[j].name}", PromptParts.commonPrefix(x, y) >= end)
@@ -138,14 +138,14 @@ class PromptCacheBenchTest {
     @Test fun measure() {
         val sb = StringBuilder("Prompt cache benchmark (chars; tokens ≈ chars/4). Before = v0.45.0 order + live data every step; after = v0.45.1.\n\n")
         // 1. System prompt size by tier and biggest parts.
-        val p0 = parts(turns[0].text, turns[0].groups, false, Live(0, 0, 0))
+        val p0 = parts(turns[0].text, turns[0].groups, Live(0, 0, 0))
         sb.append("System prompt (phone task): ").append(PromptParts.line(p0)).append("\nBiggest parts: ").append(PromptParts.rank(p0, 8)).append("\n\n")
 
         // 2. Across turns of different kinds: the system prompt's common prefix (what a new turn can reuse).
         sb.append("Across turns (system prompt common prefix):\n")
         var b2 = 0; var a2 = 0
         for (i in turns.indices) for (j in turns.indices) if (i < j) {
-            val x = parts(turns[i].text, turns[i].groups, turns[i].views, Live(0, 0, i)); val y = parts(turns[j].text, turns[j].groups, turns[j].views, Live(3, 1, j))
+            val x = parts(turns[i].text, turns[i].groups, Live(0, 0, i)); val y = parts(turns[j].text, turns[j].groups, Live(3, 1, j))
             val before = PromptParts.commonPrefix(PromptParts.legacy(x), PromptParts.legacy(y))
             val after = PromptParts.commonPrefix(PromptParts.assemble(x), PromptParts.assemble(y))
             b2 += before; a2 += after
@@ -166,7 +166,7 @@ class PromptCacheBenchTest {
         var order = emptyList<String>(); val snap = PromptParts.LiveSnap<List<PromptParts.Part>>(); var liveBuilds = 0
         for (step in 0 until 5) {
             val live = Live(step, step, 0)
-            val ps = parts(t.text, t.groups, false, live)
+            val ps = parts(t.text, t.groups, live)
             val toolsNow = if (step < 2) pick0 else pick2
             val before = req(toolsNow, PromptParts.legacy(ps), history)
             // After: the live tail is kept for the turn (same key all turn here), the tools keep their order.

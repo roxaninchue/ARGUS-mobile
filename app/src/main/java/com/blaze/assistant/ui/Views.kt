@@ -129,7 +129,7 @@ object Views {
             .put("reason", JSONObject().put("type", "string").put("description", "one short line: why switch")))
             .put("required", JSONArray(listOf("view")))))
 
-    /** Kept for older callers; the full VIEWS block is agent/ViewRouter.PROMPT since v0.23.0. */
+    /** Kept for older callers; the views reach the model as the view shelf (agent/ViewShelf.promptBlock) since 2026-11-21. */
     const val PROMPT_LINE = "\nVIEWS: when a task is visual (a 3D scene, website, page, UI mockup, diagram, chart, poster, art), make it with the design tool (it opens Design), or call open_view view=design with the file or URL as target, without asking. " +
         "For other views, set ask=true unless the user asked for that view."
 

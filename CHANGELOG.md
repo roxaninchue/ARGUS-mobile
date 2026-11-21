@@ -1,3 +1,15 @@
+## 0.54.4 (versionCode 206, 2026-11-21): the "Unreleased" entry below (view shelf)
+
+## Unreleased: ARGUS decides which view work goes in (the view shelf)
+
+2026-11-21 (owner: "find a feature or a part of the app that needs work… don't overengineer the way the models work, build around them but make them aware of what's there"). MODEL-FIRST round 6; design and reasoning in docs/VIEW-SHELF.md.
+- **The view shelf** (`agent/ViewShelf.kt`, new): every turn the prompt lists every view that holds work, one line each (`id — what it holds — the tool that writes there`: stage, learn, design, schedule, gallery, memory, skills, projects, browser, archive), with one head line that plain answers, explanations and quick diagrams stay in chat. 1,481 chars, STATIC tier (cached); the Stage line only while the Stage is on. The model decides whether a request belongs in a view.
+- **ViewRouter is gone** (`agent/ViewRouter.kt` deleted): no regex picks a view from the message's words, no "REQUIRED VIEW THIS TURN" order, no 3,890-char VIEWS block with its HARD RULE on routed turns, no tool groups switched on by a guess. With the shipped router, "remind me what we decided about the logo" was ordered into a routine, "how much does it cost to fix the deck at my house?" into 10-25 flashcards and "show me how a car engine works" into a 3D model, while "remember to pay ZESCO every month" and messages in Bemba or Nyanja got no view at all.
+- **The current design is a fact** (`ViewShelf.currentDesign`): while a design is current (the last turn made or changed it, Design is showing, or it changed in the last 30 minutes) the turn says which one, with how to change it, and the model decides whether the message is about it. Replaces the edit-verb regex (`isFollowOnEdit`), so "the fins look wrong, can they be swept back?" now reaches a model that knows the rocket exists.
+- **ClaimGuard** reads the views from `ViewShelf`; whether a false "I've updated the design" is about the request now asks which views the model reached for this turn (`ClaimGuard.viewsTried`), not the router.
+- `PromptProfile.views` / `viewsShort` removed; the views core skill v4 (calm wording, a Stage row, CURRENT DESIGN; index.json sha); about.md, README, docs/AGENTS.md, MODEL-FIRST.md (round 6), SKILL-SHELF.md §12.
+- Tests: ViewShelfTest (5, new), ModelFirstTest.viewsAreAShelfNotAGuess; route-based checks in ViewsSkillsTest, DesignEverythingTest, IntentHonestyTest, CoreSkillsTest, VisualRouteTest, StageBrowserCardTest, ReliabilityP2Test and PromptCacheBenchTest now check the shelf and the fact line. Rename guard ratcheted 16,080 → 16,074.
+
 ## 0.54.3 (versionCode 205, 2026-11-21): the "Unreleased" entries below down to 0.54.2
 
 ## Unreleased: teammates speak as themselves, their hello shows in their chat, and the model list stays put

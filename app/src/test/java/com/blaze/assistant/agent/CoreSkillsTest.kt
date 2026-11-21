@@ -80,16 +80,13 @@ class CoreSkillsTest {
 
     // ---------------- views: flashcards go to Learn ----------------
 
-    @Test fun flashcardsRouteToLearn() {
-        assertEquals("learn", ViewRouter.route("make flashcards on cell biology")?.id)
-        assertEquals("learn", ViewRouter.route("quiz me on the OSI model")?.id)
-        val textCards = "Q: What is a cell?\nA: The basic unit of life\nQ: What holds DNA?\nA: The nucleus\nQ: Powerhouse?\nA: Mitochondria"
-        assertEquals(ViewRouter.Fix.CONVERT, ViewRouter.shouldConvert("make flashcards on cell biology", textCards, false, false))
-        assertEquals(3, ViewRouter.cardsFrom(textCards).size)
-        // The skills view takes workflows too, and save_workflow backs a Skills claim.
-        assertEquals("skills", ViewRouter.route("save this as a workflow")?.id)
-        assertTrue("save_workflow" in ViewRouter.byId("skills")!!.tools)
-        assertTrue(ClaimGuard.backs(ViewRouter.byId("skills")!!, ClaimGuard.Call("save_workflow")))
+    @Test fun flashcardsAndWorkflowsAreOnTheViewShelf() {
+        // 2026-11-21 view shelf: Learn and Skills are on the shelf every turn with the tool that writes there.
+        val shelf = ViewShelf.promptBlock(stageOn = true)
+        assertTrue(shelf.contains("- learn \u2014") && shelf.contains("\u2014 flashcards\n"))
+        assertTrue(shelf.contains("- skills \u2014") && shelf.contains("\u2014 save_workflow\n"))
+        assertTrue("save_workflow" in ViewShelf.byId("skills")!!.tools)
+        assertTrue(ClaimGuard.backs(ViewShelf.byId("skills")!!, ClaimGuard.Call("save_workflow")))
     }
 
     // ---------------- workflow builder ----------------

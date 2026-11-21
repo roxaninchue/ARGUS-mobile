@@ -1,7 +1,7 @@
 package com.blaze.assistant.stage
 
 import com.blaze.assistant.agent.ToolRouter
-import com.blaze.assistant.agent.ViewRouter
+import com.blaze.assistant.agent.ViewShelf
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -9,7 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.46.0 Stage tools: parsing, definitions, routing (Stage first, plain Q&A stays chat, "study 30 min" = timer card). */
+/** 0.46.0 Stage tools: parsing, definitions, the Stage on the view shelf (Stage first, plain Q&A stays chat, "study 30 min" = timer card). */
 class StageToolsTest {
     private fun j(s: String) = JSONObject(s)
 
@@ -74,19 +74,13 @@ class StageToolsTest {
         assertTrue(r.length < 1300)   // 0.46.2: + movies on the video card
     }
 
-    @Test fun routingStageFirst() {
-        assertEquals("stage", ViewRouter.route("study 30 min")?.id)
-        assertEquals("stage", ViewRouter.route("start a 25 minute focus session")?.id)
-        assertEquals("stage", ViewRouter.route("let's play some music")?.id)
-        assertEquals("stage", ViewRouter.route("pomodoro please")?.id)
-        assertEquals("stage", ViewRouter.route("set a timer for 10 minutes")?.id)
-        assertEquals("learn", ViewRouter.route("help me study for my CIT102 exam")?.id)
-        assertNull(ViewRouter.route("what's the capital of Zambia?"))
-        assertNull(ViewRouter.route("how does photosynthesis work"))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("stage")!!).contains("kind=timer"))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("stage")!!).contains("Don't make a reminder"))
-        assertTrue(ViewRouter.hint(ViewRouter.byId("learn")!!).contains("stage_show kind=flashcards"))
-        assertTrue(ViewRouter.PROMPT.contains("STAGE FIRST"))
+    @Test fun stageIsFirstOnTheViewShelf() {
+        // 2026-11-21 view shelf: no word routing; the Stage is the first view on the shelf while it's on, and the timer /
+        // "not a reminder" guidance lives in StageTools.RULE (above) and stage_show's own description.
+        val shelf = ViewShelf.promptBlock(stageOn = true)
+        assertTrue(shelf.lines().first { it.startsWith("- ") }.startsWith("- stage \u2014 live cards on the chat itself: a timer or pomodoro, music"))
+        assertTrue(shelf.contains("\u2014 stage_show\n"))
+        assertTrue(ViewShelf.specs.first().id == "stage" && "stage_show" in ViewShelf.specs.first().tools)
     }
 
     @Test fun toolDietKeepsStageShowAndLoadsTheRest() {
