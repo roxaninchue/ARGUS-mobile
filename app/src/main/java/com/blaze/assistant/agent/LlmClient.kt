@@ -109,7 +109,7 @@ object LlmClient {
 
     /** The model the gateway says answered last ("provider · model"), for the details sheet / diagnostics only. */
     var lastServedBy: String get() = CallState.current().servedBy; set(v) { CallState.current().servedBy = v }
-    /** v0.26.2: the gateway route of the last call as "provider/model" (what blaze_avoid names); "" when unknown. */
+    /** v0.26.2: the gateway route of the last call as "provider/model" (what the avoid list names); "" when unknown. */
     var lastServedKey: String get() = CallState.current().servedKey; set(v) { CallState.current().servedKey = v }
 
     /** The last gateway failure, raw (diagnostics only; people see [Cloud.friendly]). */
@@ -133,6 +133,15 @@ object LlmClient {
         val pick = ModelRoute.task(Cloud.task(msgs, tools, liteTurn || (quickTurn && (tools == null || tools.length() == 0))),
             heavyTurn && lane != Lane.BACKGROUND, tools != null && tools.length() > 0, Cloud.textChars(msgs, ModelRoute.AGENT_MAX_CHARS + 1))
         val task = pick.task
+        // 0.54.5 Direct lane (gateway 0.9.35): a plain streaming chat turn tries the signed-ticket relay first (one model call,
+        // no routing waits). No first word within ~1.5 s, any error, or the lane switched off: the same turn goes down the
+        // normal route below, with one "Busy, retrying" status line.
+        if (DirectLane.enabled() && DirectLane.eligible(task, onText != null, lane == Lane.MAIN, tools, msgs)) {
+            val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, null), onText!!, onThink)
+            if (direct != null) { lastRoute = "${BrandName.NAME} Cloud · direct"; return direct }
+            try { switchListener?.invoke(DirectLane.BUSY_LINE) } catch (_: Throwable) { }
+            CallState.current().errors.add("direct lane fell back: ${DirectLane.lastFallback}")
+        }
         var trimmed = false
         val cloudLabel = { "${BrandName.NAME} Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + if (trimmed) " · trimmed" else "" }
         val gateway: suspend (String, JSONArray, JSONArray?, ((String) -> Unit)?, ((String) -> Unit)?) -> JSONObject = { reserve, m, tl, txt, thk ->
@@ -419,11 +428,11 @@ object LlmClient {
             }
             if (t.pid == Providers.GATEWAY) Cloud.tag(this, task ?: Cloud.task(messages, tools, liteTurn))
             // 0.47 chat composer: the model family picked on the composer's chip (Auto sends nothing). Read-only hint; the brain
-            // order (Nous / gateway) is unchanged and the gateway strips every blaze_* field before a provider.
+            // order (Nous / gateway) is unchanged and the gateway strips its own hint fields before a provider.
             // 0.51.0: a call can carry its own family (BlazeQuery's judge uses the tier the user picked, Auto → Flare).
             if (t.pid == Providers.GATEWAY) (CallState.current().family?.let { it.ifBlank { null } } ?: com.blaze.assistant.composer.ModelChoice.wire())?.let { put("blaze_family", it) }
             // v0.45.3: a hint for short / plain turns that the first visible word matters more than long reasoning. The
-            // gateway strips every blaze_* field before a provider sees it, so this is safe today; a gateway that reads it can
+            // gateway strips its own hint fields before a provider sees them, so this is safe today; a gateway that reads it can
             // map it to each provider's own setting (e.g. reasoning_effort "low" for gpt-oss). Not sent on action turns.
             if (t.pid == Providers.GATEWAY && (liteTurn || quick) && !heavyTurn && (tools == null || tools.length() == 0)) put("blaze_reasoning", "low")
             // v0.26.2: routes that just came back empty or broke mid-stream; the gateway tries its next model.
