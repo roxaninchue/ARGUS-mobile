@@ -261,6 +261,8 @@ object Notifier {
             .setContentTitle(BlazeThread.title(kind, urgent))
             .setContentText(lastBlaze)
             .setAutoCancel(true)
+            // Swiping the thread away forgets it: the next message comes alone, not stacked under every earlier one.
+            .setDeleteIntent(broadcast(ActionReceiver.THREAD_GONE))
             .setOnlyAlertOnce(quiet)
             .setSilent(quiet)
             .setContentIntent(tap ?: openChat(chatId))
@@ -446,6 +448,8 @@ class ActionReceiver : BroadcastReceiver() {
         const val DO = "com.blaze.assistant.DO"
         /** v0.25.0: the ongoing Magic Hand notification's "Stop Magic Hand" button. */
         const val STOP_HAND = "com.blaze.assistant.STOP_HAND"
+        /** Unreleased after 0.54.1: the message thread was swiped away, so the next message starts alone. */
+        const val THREAD_GONE = "com.blaze.assistant.THREAD_GONE"
         const val EXTRA_CHAT = "reply_chat"
         const val EXTRA_CONTEXT = "reply_context"
     }
@@ -457,6 +461,7 @@ class ActionReceiver : BroadcastReceiver() {
         when (intent.action) {
             STOP -> Notifier.stopEverything()
             STOP_HAND -> com.blaze.assistant.phone.MagicHand.stop()
+            THREAD_GONE -> Notifier.clearThread()
             DO -> intent.getStringExtra("prompt")?.let { p ->
                 Notifier.clearReplies()
                 Agent.doFromHeadsUp(intent.getStringExtra(EXTRA_CHAT), intent.getStringExtra(EXTRA_CONTEXT), p)
