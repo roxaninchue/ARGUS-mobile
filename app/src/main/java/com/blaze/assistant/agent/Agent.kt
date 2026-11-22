@@ -4242,8 +4242,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         break
                     }
                     // Text that came with tool calls is narration, shown as a step; its reasoning joins the turn's.
-                    // 0.53.6: self-talk ("Let me…", "I need to…") isn't shown as a chat line (Narration.selfTalk).
-                    val narr = ReplyParts.split(textOut).let { it.copy(text = Friendly.narration(RapidMessages.display(it.text))) }.let { if (Narration.selfTalk(it.text)) it.copy(text = "") else it }
+                    // 0.53.6 / 0.55.9: only a short status line is shown; self-talk and long reasoning go to Thoughts (Narration.gate).
+                    val narr = ReplyParts.split(textOut).let { it.copy(text = Friendly.narration(RapidMessages.display(it.text))) }.let(Narration::gate)
                     if (narr.thinking.isNotEmpty()) { if (turnThink.isNotEmpty()) turnThink.append("\n\n"); turnThink.append(narr.thinking) }
                     thinking = turnThink.toString()
                     // v0.41.0: it turned out to be narration: stop any of it being read out, the reply comes later.

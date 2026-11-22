@@ -13,6 +13,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * no longer read; cloud sync may still carry them, harmlessly.
  */
 object LookLogic {
+    /**
+     * 0.55.9 auto fit (Finn: "make the app adjust proportionally to the device scale"). ARGUS is designed on a 360 dp
+     * wide phone. A phone whose SMALLEST side is narrower than that (a small phone, or Display size turned up, which
+     * shrinks the dp the phone reports) gets every dp scaled down by smallest / 360 so each screen keeps its proportions
+     * instead of clipping; a bigger phone is never blown up (1.0, it just gets more room). The smallest side does not
+     * change when the phone turns, so the scale is the same upright and on its side, and nothing jumps on rotation.
+     * Never below [FIT_FLOOR], so text stays readable. Text (sp) scales with it, so type and layout stay in step.
+     */
+    const val FIT_DESIGN_DP = 360f
+    const val FIT_FLOOR = 0.85f
+    fun fitScale(smallestWidthDp: Float, designDp: Float = FIT_DESIGN_DP, floor: Float = FIT_FLOOR): Float =
+        if (smallestWidthDp <= 0f || designDp <= 0f) 1f else (smallestWidthDp / designDp).coerceIn(floor, 1f)
+
     /** Mixes [a] toward [b] by [k] (0..1), per channel, alpha kept from [a]. Colours are ARGB longs. */
     fun mix(a: Long, b: Long, k: Float): Long {
         val kk = k.coerceIn(0f, 1f)
@@ -56,6 +69,8 @@ object Look {
     /** 0.52.4: the app's size factor (Settings › Appearance › Size); BlazeTheme scales density and fonts by it. */
     val scale = MutableStateFlow(LookLogic.parseScale(s("look_scale", "")))
     fun setScale(v: Float) { val k = LookLogic.snapScale(v); scale.value = k; try { com.blaze.assistant.agent.Settings.setStr("look_scale", k.toString()) } catch (_: Throwable) { } }
+    /** 0.55.9 auto fit (LookLogic.fitScale) is on unless the setting look_fit is "off". */
+    fun fitOn(): Boolean = s("look_fit", "on") != "off"
     /** Cloud sync brought Look & feel from another phone. */
     fun reload() { accent.value = s("look_accent", ""); scale.value = LookLogic.parseScale(s("look_scale", "")) }
 }

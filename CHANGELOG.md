@@ -1,3 +1,19 @@
+## Unreleased (on main, not built)
+- Reasoning no longer spills into the chat: words a model writes beside its tool calls stay a chat line only when they read
+  like a short status (one paragraph, at most 200 characters, two sentences, no tool names, not about "the user");
+  anything longer moves into the turn's Thoughts fold (`Narration.gate`).
+- Scrolling: your own drag always lets go of the end of the chat, so a streaming reply no longer cancels your fling and
+  pulls you back down; letting go at the end picks it up again. Swipe to quote only takes a clearly rightward drag
+  (`QuoteSwipe`), so diagonal and leftward swipes on a bubble scroll the chat.
+- Sheets: the height cap is measured from the real window in the app's own dp (it mixed the phone's dp with Settings ›
+  Size), so the model picker's X no longer sits on the battery icon.
+- Status bar: Music, Video, Browser and Argus Phone sync the clock / battery icons with ARGUS's light / dark
+  (`BlazeTheme(statusBars = true)`); they were white on light pages.
+- Landscape: the rail adds a side navigation bar (3-button nav) and the cutout outside its 52 dp, which used to clip the
+  icons on one landscape side; the shell column pads the same (`sideInsets`).
+- Auto fit: a phone whose smallest side is under 360 dp (a small phone, or a large Display size) scales every dp down
+  to match, never below 0.85, the same upright and on its side (`LookLogic.fitScale`; setting `look_fit` = "off" turns it off).
+
 ## 0.55.8 (versionCode 217, 2026-11-22): model picker, calmer and landscape-ready
 - Jake 23:13, after the 0.55.7 phone check ("not liking how square it feels"; landscape showed two rows; reference: a list
   with no boxes):

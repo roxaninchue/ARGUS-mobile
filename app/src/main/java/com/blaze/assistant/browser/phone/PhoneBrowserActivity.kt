@@ -94,7 +94,7 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
         if (!PhoneBrowser.hasPage()) { PhoneBrowser.openForUser(this); take() }
         else if (intent?.getBooleanExtra(EXTRA_CONTROL, false) == true) take()
         else if (PhoneBrowser.live.value.mode == PhonePolicy.Mode.USER) take()   // re-host the WebView in this window
-        setContent { BlazeTheme {
+        setContent { BlazeTheme(statusBars = true) {
             if (pip.value) PhonePipView()
             else PhoneScreen(control.value, onTake = { take() }, onHandBack = { handBack() }, onExit = { backToChat() })
         } }

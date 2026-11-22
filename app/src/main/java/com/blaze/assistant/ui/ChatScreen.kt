@@ -1334,8 +1334,12 @@ internal fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Str
     // 0.52.4: only YOUR drag lets go of the end. isScrollInProgress is also true for the list's own follow scrolls, so
     // a thinking / steps bubble growing mid-scroll used to drop follow and flash the jump arrow.
     val dragging by state.interactionSource.collectIsDraggedAsState()
-    LaunchedEffect(dragging) { if (dragging) follow = atBottom }
-    LaunchedEffect(atBottom) { if (atBottom) follow = true }
+    // 0.55.9 (Finn: "sometimes the screen stops reading my swipes"): a drag that started at the end used to keep follow on
+    // (follow = atBottom), so the next streamed word's scrollBy cancelled the fling and pulled the list back down: during a
+    // long task the swipe looked ignored. Now any drag of yours lets go of the end; letting go AT the end (or scrolling
+    // back to it) picks it up again.
+    LaunchedEffect(dragging) { if (dragging) follow = false else if (atBottom) follow = true }
+    LaunchedEffect(atBottom) { if (atBottom && !dragging) follow = true }
 
     suspend fun toEnd(animated: Boolean) {
         if (animated) state.animateScrollToItem(total - 1) else state.scrollToItem(total - 1)
@@ -1355,7 +1359,7 @@ internal fun MessageList(mood: Mood, onQuote: (String) -> Unit, onFollowup: (Str
     val lastLen = rememberUpdatedState(messages.lastOrNull()?.text?.length ?: 0)
     LaunchedEffect(state) {
         // 0.52.4: also when a row grows or shrinks without new text (thinking / steps bubbles animating), so the end stays put.
-        snapshotFlow { lastLen.value to state.canScrollForward }.collect { (_, more) -> if (follow && more && !dragging) state.scrollBy(100_000f) }
+        snapshotFlow { lastLen.value to state.canScrollForward }.collect { (_, more) -> if (follow && more && !dragging && !state.isScrollInProgress) state.scrollBy(100_000f) }
     }
     // Your own new message always brings you down.
     val lastUser = messages.lastOrNull { it.role == Role.USER }?.id

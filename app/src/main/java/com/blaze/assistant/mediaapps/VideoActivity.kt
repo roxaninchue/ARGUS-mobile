@@ -404,7 +404,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
             }
         })
         StoragePermission.asker = null; StoragePermission.notifAsker = null
-        setContent { BlazeTheme { VideoApp(this) } }
+        setContent { BlazeTheme(statusBars = true) { VideoApp(this) } }
     }
 
     override fun onNewIntent(intent: Intent) {

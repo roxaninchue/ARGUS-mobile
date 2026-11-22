@@ -2,7 +2,9 @@ package com.blaze.assistant.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -17,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -51,23 +54,46 @@ fun SwipeToQuote(enabled: Boolean, onQuote: () -> Unit, content: @Composable () 
         Box(Modifier.fillMaxWidth()
             .offset { IntOffset(x.value.roundToInt(), 0) }
             .pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragStart = { armed[0] = false },
-                    onDragEnd = {
-                        if (armed[0] && on) quote()
-                        armed[0] = false
-                        scope.launch { x.animateTo(0f, spring()) }
-                    },
-                    onDragCancel = { armed[0] = false; scope.launch { x.animateTo(0f, spring()) } },
-                ) { change, drag ->
-                    if (!on) return@detectHorizontalDragGestures
-                    val next = (x.value + drag * 0.6f).coerceIn(0f, max)   // a little resistance, like WhatsApp
-                    if (next == x.value) return@detectHorizontalDragGestures
-                    change.consume()
-                    if (!armed[0] && next >= threshold) { armed[0] = true; com.blaze.assistant.device.Haptics.tick(ctx) }
-                    else if (armed[0] && next < threshold) armed[0] = false
-                    scope.launch { x.snapTo(next) }
+                // 0.55.9 (Finn: "sometimes the screen stops reading my swipes"): detectHorizontalDragGestures claimed ANY
+                // gesture whose sideways movement crossed the touch slop first, leftward or diagonal included, and
+                // consumed it, so the chat list never got that swipe. Now the bubble only takes a drag that is clearly
+                // rightward (more sideways than down); everything else is left untouched for the list to scroll.
+                val slop = viewConfiguration.touchSlop
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    if (!on) return@awaitEachGesture
+                    var dx = 0f
+                    var dy = 0f
+                    while (true) {
+                        val ch = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: return@awaitEachGesture
+                        if (!ch.pressed || ch.isConsumed) return@awaitEachGesture   // lifted, or the list / an inner scroller took it
+                        val d = ch.positionChange()
+                        dx += d.x; dy += d.y
+                        if (QuoteSwipe.claims(dx, dy, slop)) { ch.consume(); break }
+                        if (QuoteSwipe.notOurs(dx, dy, slop)) return@awaitEachGesture
+                    }
+                    armed[0] = false
+                    val done = horizontalDrag(down.id) { change ->
+                        val next = (x.value + change.positionChange().x * 0.6f).coerceIn(0f, max)   // a little resistance, like WhatsApp
+                        change.consume()
+                        if (next != x.value) {
+                            if (!armed[0] && next >= threshold) { armed[0] = true; com.blaze.assistant.device.Haptics.tick(ctx) }
+                            else if (armed[0] && next < threshold) armed[0] = false
+                            scope.launch { x.snapTo(next) }
+                        }
+                    }
+                    if (done && armed[0] && on) quote()
+                    armed[0] = false
+                    scope.launch { x.animateTo(0f, spring()) }
                 }
             }) { content() }
     }
+}
+
+/** 0.55.9: when a swipe on a bubble is a quote swipe (pure, QuoteSwipeTest). [dx] / [dy] = movement since the press. */
+object QuoteSwipe {
+    /** Not a quote swipe (checked after [claims]): it moved past the slop up or down (the list scrolls), or leftward. */
+    fun notOurs(dx: Float, dy: Float, slop: Float): Boolean = kotlin.math.abs(dy) > slop || dx < -slop
+    /** The bubble's: rightward past the slop and clearly more sideways than down (1.5 : 1). */
+    fun claims(dx: Float, dy: Float, slop: Float): Boolean = dx > slop && dx > kotlin.math.abs(dy) * 1.5f
 }

@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -80,8 +81,12 @@ fun LivingRail(
 ) {
     val dark = LocalBlaze.current.dark
     val p = remember(dark) { LivingSpec.palette(dark) }
-    Box(modifier.fillMaxHeight().windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Start))
-        .width(LivingSpec.RAIL_DP.dp).background(Color(p.canvas)).statusBarsPadding().navigationBarsPadding()) {
+    // 0.55.9 (Finn: on a friend's phone in landscape "the icons on the left just wouldn't show up well"): with 3-button
+    // navigation the nav bar sits on the LEFT in one landscape direction. navigationBarsPadding() inside the fixed-width
+    // rail then ate ~48 of its 52 dp and clipped every icon. Now the side insets (cutout or nav bar) are added OUTSIDE the
+    // rail's width, painted in the canvas colour, and only the bottom nav bar pads inside.
+    Box(modifier.fillMaxHeight().background(Color(p.canvas)).windowInsetsPadding(railSides())
+        .width(LivingSpec.RAIL_DP.dp).statusBarsPadding().windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom))) {
         BoxWithConstraints(Modifier.fillMaxHeight()) {
             val top = LivingSpec.SHELL_MODES.size + (if (chat) 1 + (if (livingShown) 1 else 0) else 0)
             val bottom = 3 + (if (privateOn) 1 else 0)
@@ -130,13 +135,21 @@ private fun RailAvatar(initial: String, p: LivingSpec.Palette, onMe: () -> Unit,
     }
 }
 
+/** 0.55.9: what takes the sides of a phone on its side: the camera cutout and a side navigation bar (3-button nav). */
+@Composable
+fun sideInsets(): WindowInsets = WindowInsets.displayCutout.union(WindowInsets.navigationBars).only(WindowInsetsSides.Horizontal)
+
+/** The rail's own side: the start part of [sideInsets]. */
+@Composable
+private fun railSides(): WindowInsets = WindowInsets.displayCutout.union(WindowInsets.navigationBars).only(WindowInsetsSides.Start)
+
 /**
  * The shell column's padding (0.2.3): the display cutout's sides, once for every page under it (their own cutoutSafe()
  * then pads nothing), plus the rail's width when [rail] is on.
  */
 @Composable
 fun shellPad(rail: Boolean): Modifier =
-    Modifier.windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal))
+    Modifier.windowInsetsPadding(sideInsets())
         .then(if (rail) Modifier.padding(start = LivingSpec.RAIL_DP.dp) else Modifier)
 
 /** The composer in landscape outside Living (0.2.3): in the column, centred, at most [LivingSpec.FLOAT_COMPOSER_MAX_DP] wide. */

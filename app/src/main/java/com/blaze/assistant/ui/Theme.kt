@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.blaze.assistant.R
 import com.blaze.assistant.agent.Mood
+import com.blaze.assistant.ui.space.SpaceIcons
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -164,7 +165,15 @@ object ThemeMode {
 }
 
 @Composable
-fun BlazeTheme(content: @Composable () -> Unit) {
+fun BlazeTheme(
+    /**
+     * 0.55.9 (Finn: "on browser, music I cannot see the battery"): a window of its own (Music, Video, Browser, Argus
+     * Phone) sets true so its status bar icons follow ARGUS's light / dark ([SyncSystemBarIcons]), as MainActivity does.
+     * False for themed views inside another window (overlays), which must not touch that window's bars.
+     */
+    statusBars: Boolean = false,
+    content: @Composable () -> Unit,
+) {
     // v0.45.7: the reply language picks Inter or the system font (FontPick), read once per theme host.
     androidx.compose.runtime.remember { FontPick.refresh(); 0 }
     // v0.31.0: the glass UI is dark-first: "system" means dark; light only when picked in the menu.
@@ -181,12 +190,17 @@ fun BlazeTheme(content: @Composable () -> Unit) {
         // 0.52.4: Settings › Appearance › Size scales every dp and sp by one factor (1.0 leaves the phone's own density).
         val scale by Look.scale.collectAsState()
         val base = androidx.compose.ui.platform.LocalDensity.current
-        val density = androidx.compose.runtime.remember(base, scale) {
-            if (scale == 1f) base else androidx.compose.ui.unit.Density(base.density * scale, base.fontScale * scale)
+        // 0.55.9 auto fit: a phone narrower than the 360 dp design scales every dp down to match (WindowLayout.fitScale);
+        // Settings key look_fit = "off" turns it off. It multiplies with Appearance › Size.
+        val sw = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp.toFloat()
+        val fit = androidx.compose.runtime.remember(sw) { if (Look.fitOn()) LookLogic.fitScale(sw) else 1f }
+        val density = androidx.compose.runtime.remember(base, scale, fit) {
+            if (scale == 1f && fit == 1f) base else androidx.compose.ui.unit.Density(base.density * scale * fit, base.fontScale * scale)
         }
         // Owner 2026-11-14: right-to-left languages (Arabic) lay the whole app out right to left
         val rtl = com.blaze.assistant.i18n.AppLang.lang(com.blaze.assistant.i18n.AppLang.code.value).rtl
         androidx.compose.runtime.LaunchedEffect(com.blaze.assistant.i18n.AppLang.code.value) { FontPick.refresh() }
+        if (statusBars) SyncSystemBarIcons(dark)
         CompositionLocalProvider(LocalBlaze provides c, androidx.compose.ui.platform.LocalDensity provides density,
             androidx.compose.ui.platform.LocalLayoutDirection provides if (rtl) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr,
             content = content)
@@ -218,15 +232,15 @@ object BlazeShapes {
  */
 object BlazeIconStyle {
     // Unification: the sizes and the tint strength are the shell's tokens (SpaceIcons), so both systems draw one tile.
-    val tile = com.blaze.assistant.ui.space.SpaceIcons.TILE_DP.dp
-    val tileIcon = com.blaze.assistant.ui.space.SpaceIcons.TILE_ICON_DP.dp
-    val small = com.blaze.assistant.ui.space.SpaceIcons.SMALL_DP.dp
-    val smallIcon = com.blaze.assistant.ui.space.SpaceIcons.SMALL_ICON_DP.dp
-    val rowIcon = com.blaze.assistant.ui.space.SpaceIcons.ROW_ICON_DP.dp
-    val buttonIcon = com.blaze.assistant.ui.space.SpaceIcons.BUTTON_ICON_DP.dp
-    val gap = com.blaze.assistant.ui.space.SpaceIcons.GAP_DP.dp
+    val tile = SpaceIcons.TILE_DP.dp
+    val tileIcon = SpaceIcons.TILE_ICON_DP.dp
+    val small = SpaceIcons.SMALL_DP.dp
+    val smallIcon = SpaceIcons.SMALL_ICON_DP.dp
+    val rowIcon = SpaceIcons.ROW_ICON_DP.dp
+    val buttonIcon = SpaceIcons.BUTTON_ICON_DP.dp
+    val gap = SpaceIcons.GAP_DP.dp
     val shape = androidx.compose.foundation.shape.CircleShape
-    fun fillAlpha(dark: Boolean): Float = com.blaze.assistant.ui.space.SpaceIcons.fillAlpha(dark)
+    fun fillAlpha(dark: Boolean): Float = SpaceIcons.fillAlpha(dark)
 }
 
 /** Primary buttons: the classic Argus blue, solid (v0.25.2; the v0.24.8 orange-to-blue gradient is gone). */

@@ -170,7 +170,7 @@ class MusicActivity : ComponentActivity() {
             if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
                 runCatching { notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS) }
         }
-        setContent { BlazeTheme { MusicApp(controller.value, tab.value, { tab.value = it }, onClose = { BackToChat.go(this) }) } }
+        setContent { BlazeTheme(statusBars = true) { MusicApp(controller.value, tab.value, { tab.value = it }, onClose = { BackToChat.go(this) }) } }
     }
 
     override fun onNewIntent(intent: Intent) {

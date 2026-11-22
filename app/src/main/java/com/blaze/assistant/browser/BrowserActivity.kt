@@ -173,7 +173,7 @@ class BrowserActivity : androidx.fragment.app.FragmentActivity(), com.blaze.assi
         BrowserUi.authenticate = { reason, ok -> authenticate(reason, ok) }
         handle(intent)
         if (BrowserEngine.tabs.isEmpty()) BrowserEngine.newTab(this)
-        setContent { BlazeTheme { BrowserScreen(onClose = { finish() }, onImport = { try { importer.launch(arrayOf("*/*")) } catch (_: Exception) { } },
+        setContent { BlazeTheme(statusBars = true) { BrowserScreen(onClose = { finish() }, onImport = { try { importer.launch(arrayOf("*/*")) } catch (_: Exception) { } },
             onPopOut = { w, h -> popOut(w, h) }, onVoice = { listen() }) } }
     }
 

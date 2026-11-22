@@ -37,19 +37,31 @@ object WindowUi {
     @Composable
     fun short(): Boolean = WindowLayout.isShort(LocalConfiguration.current.screenHeightDp.toFloat())
 
+    /**
+     * 0.55.9: the window's real height in the dp the app draws with. Configuration.screenHeightDp is in the PHONE's dp
+     * and leaves out bars differently by Android version, while Settings › Appearance › Size (and the auto fit) change
+     * the app's own dp: with the two mixed, a sheet capped at "screen minus status bar" still reached the top of a
+     * scaled-up app, so the model picker's X sat on the battery icon. Measured from the window itself, in LocalDensity.
+     */
+    @Composable
+    fun windowHeightDp(): Float {
+        val view = androidx.compose.ui.platform.LocalView.current
+        val d = androidx.compose.ui.platform.LocalDensity.current
+        val px = view.rootView.height
+        return if (px > 0) px / d.density else LocalConfiguration.current.screenHeightDp.toFloat()
+    }
+
+    /** The status bar's height in the app's dp. */
+    @Composable
+    fun statusTopDp(): Float = WindowInsets.statusBars.asPaddingValues().calculateTopPadding().value
+
     /** The tallest a bottom sheet may be on this window ([WindowLayout.sheetMaxHeight]). */
     @Composable
-    fun sheetMaxHeight(): Dp {
-        val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding().value
-        return WindowLayout.sheetMaxHeight(LocalConfiguration.current.screenHeightDp.toFloat(), top).dp
-    }
+    fun sheetMaxHeight(): Dp = WindowLayout.sheetMaxHeight(windowHeightDp(), statusTopDp()).dp
 
     /** A sheet body designed at [designed] tall, shrunk on a short window ([WindowLayout.sheetBodyMax]). */
     @Composable
-    fun sheetBody(designed: Dp): Dp {
-        val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding().value
-        return WindowLayout.sheetBodyMax(designed.value, LocalConfiguration.current.screenHeightDp.toFloat(), top).dp
-    }
+    fun sheetBody(designed: Dp): Dp = WindowLayout.sheetBodyMax(designed.value, windowHeightDp(), statusTopDp()).dp
 
     /**
      * [content] gets the side gutter that centres it at [max] wide in the space it is given (never under [min]).

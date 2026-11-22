@@ -17,6 +17,7 @@
 - **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT. CI run 45066197518 (commit `a4cbe9d9`) green at 22:47 CAT; artifact argus-debug-signed-a4cbe9d9 (49.5 MB). Phone check: pending.
 - **Bug, high priority: switching accounts keeps the old account's data** (found 2026-11-22 23:31 CAT). Sign-out only clears the token; chats, memory and settings stay, and the sign-in sync can push the old skills and MCP list into the new account. Jake chose one space per account. The plan is in docs/overhaul/account-spaces-plan.md (**not started**; it has open questions for Jake).
 - **0.55.8 (versionCode 217)**: model picker polish (CHANGELOG 0.55.8), from `feat/model-picker-polish`, built on Jake's word 2026-11-22 23:44 CAT; CI result in its history entry.
+- **Unreleased on `main` (2026-11-23, Hark, `[skip ci]`)**: Finn's phone fixes, see CHANGELOG "Unreleased" (reasoning to Thoughts, chat scroll / swipe-to-quote, sheet height, status bar in Music / Video / Browser, landscape rail insets, auto fit). Not compiled here; CI is the first compile when Finn says build. Phone check after: a long tool task (only short status lines in the chat, the rest under Thoughts), swipe up mid-stream, open the model picker, Music in light mode, Living in landscape with 3-button nav.
 - Version pins: `app/build.gradle.kts` versionName "0.55.8" / versionCode 217; `SpaceWiringTest.theVersionIs0558` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
