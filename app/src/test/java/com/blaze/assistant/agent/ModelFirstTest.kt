@@ -36,10 +36,10 @@ class ModelFirstTest {
                 "ChatLane.fits(", "ToolTruth.toolShaped(", "Duo.kindFor(", "private suspend fun runLookup(",
                 "ViewRouter.shouldConvert(", "ViewRouter.cardsFrom("))
             assertFalse(gone, src.contains(gone))
-        // 0.55.0 (PhoneReadout): fast-lane rules only when no model is reachable, except the phone's own readouts
-        // ("speed stats", "tool stats", "what's running"), which answer on the phone online too.
-        assertTrue("fast-lane rules only offline (+ readouts)", src.contains("if ((offline || readout) && single && attachments.isEmpty() && !routine"))
-        assertTrue(src.contains("val readout = !offline && PhoneReadout.match(shown) != null"))
+        // 0.55.1 (Finn: no trigger words): fast-lane rules only when no model is reachable; the 0.55.0 phrase-matched
+        // readouts ("speed stats", "tool stats", "what's running") are gone (Settings > Developer and the speed_stats tool).
+        assertTrue("fast-lane rules only offline", src.contains("if (offline && single && attachments.isEmpty() && !routine"))
+        for (gone in listOf("PhoneReadout.match(", "FastLane.readout(", "val readout =")) assertFalse(gone, src.contains(gone))
         assertTrue(src.contains("var lite = false"))
     }
 

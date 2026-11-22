@@ -59,6 +59,7 @@ import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.agent.ModelCatalog
 import com.blaze.assistant.agent.Providers
 import com.blaze.assistant.agent.Quota
+import com.blaze.assistant.agent.PhoneReadout
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -143,6 +144,11 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     com.blaze.assistant.ui.space.SpaceProfile.FEEDBACK_PAGE -> com.blaze.assistant.ui.space.SpaceFeedbackPage(version)
                     "permissions" -> { PermissionsPage { page = it }; ControlPage(a11yOn, onOpenAccessibility) }
                     "updates" -> UpdatesPage()
+                    "developer" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
+                        com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
+                        com.blaze.assistant.ui.argus.kit.SettingsGroup(listOf(com.blaze.assistant.ui.argus.kit.SettingsItem("list-checks", "Speed stats", onClick = { page = "speed" })))
+                    }
+                    "speed" -> SpeedStatsPage()
                     "about" -> AboutPage()
                     // 0.52.3: one brain, picked automatically. The page is only its status (no switches, no model).
                     "ai" -> BrainCard { page = "account" }
@@ -211,6 +217,18 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
             }
         }
     }
+    }
+}
+
+/** 0.55.1: Settings > Developer > Speed stats: the speed readout (PhoneReadout, the same text the speed_stats tool returns). */
+@Composable
+private fun SpeedStatsPage() {
+    val c = LocalBlaze.current.mono
+    var text by remember { mutableStateOf(PhoneReadout.speedStats()) }
+    Spacer(Modifier.height(8.dp))
+    Text(text, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.body))
+    Row(Modifier.fillMaxWidth().hairline(c.hair).clickable { text = PhoneReadout.speedStats() }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(tr("Refresh"), modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.accent))
     }
 }
 

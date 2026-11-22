@@ -151,7 +151,7 @@ object LlmClient {
             val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, wire), onText!!, onThink, task = task, tools = wire,
                 toolChoice = wire?.let { ToolTruth.choice(msgs, it) }, info = dTry)
             if (direct != null) {
-                lastRoute = "${BrandName.NAME} Cloud · direct" + LeanTurn.tag()   // 0.55.0: "· lean" on a lean turn
+                lastRoute = "${BrandName.NAME} Cloud · direct" + (if (dTry.loop) " \u00b7 loop" else "") + LeanTurn.tag()   // 0.55.0: "· lean" on a lean turn; 0.55.1 "· loop"
                 timing.call(TurnTiming.Call(TurnTiming.DIRECT, System.currentTimeMillis() - t0, firstFrom(), inChars, tools?.length() ?: 0, dTry.ticketMs, 0, "", kind))
                 return direct
             }

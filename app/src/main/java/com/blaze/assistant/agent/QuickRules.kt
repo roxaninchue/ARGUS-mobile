@@ -76,13 +76,7 @@ object QuickRules {
             }
         }
 
-        // Speed readout and the process registry work offline too.
-        if (Regex("^(?:show |give me |what are |check )?(?:my |your |the )?(?:speed|latency) ?(?:stats|statistics|report|numbers|test)?$|^how fast (?:are you|is (?:argus|blaze))$").matches(t))
-            return "speed_stats" to JSONObject()
-        if (Regex("^(?:show |give me |check )?(?:my |your |the )?tool ?(?:call )?(?:stats|statistics|report|errors|health)$").matches(t))
-            return "tool_stats" to JSONObject()
-        if (Regex("^(?:what'?s|what is|show|list|show me)(?: me)? (?:running|active|tracked|my processes|processes|everything you (?:set|made|created))$|^(?:my )?processes$").matches(t))
-            return "list_processes" to JSONObject()
+        // 0.55.1: no phrase readouts ("speed stats", "tool stats", "what's running"): Settings > Developer and the speed_stats tool.
 
         // Volume
         when {

@@ -1517,6 +1517,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
         // 0.55.0 lean harness (LeanTurn): the two catalog tools, and the phone's own tool rows in the blaze.db catalog.
         t.put(LeanTurn.findDef()); t.put(LeanTurn.loadSkillDef())
+        t.put(PhoneReadout.def())   // 0.55.1: speed_stats, a catalog tool (not core) the model may choose to call
         t.put(com.blaze.assistant.phone.CallControl.tool())
         if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.blaze.assistant.orchestra.OrchestraRuns.tool()) }
         TeamHooks.toolDefs().forEach { t.put(JSONObject(it)) }   // P1-TM-05: job tools (add_job, done_job, …)
@@ -2455,12 +2456,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val offline = !FastLane.online(app)
                 // Plan mode and background agents skip the fast lane: it acts on the phone without the tool gate.
                 // 2026-11-16 model-first: the fast lane's rules only run offline, when no model can be reached; online the model reads every message.
-                // 0.55.0 (PhoneReadout): readouts the phone holds ("speed stats", "tool stats", "what's running") answer here online too.
-                val readout = !offline && PhoneReadout.match(shown) != null
-                if ((offline || readout) && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && notificationContext.isNullOrBlank()) {
+                // 0.55.1: no text-matched readouts any more (Finn: no trigger words). Speed stats live in Settings > Developer,
+                // each reply's What happened sheet, and the speed_stats tool the model may call (PhoneReadout).
+                if (offline && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && notificationContext.isNullOrBlank()) {
                     mood = Mood.THINKING
-                    val fast = try { kotlinx.coroutines.withContext(ConfirmGate.Direct) { if (readout) FastLane.readout(app, shown, key = turnUser) { t, d, a -> confirm(t, d, a) }
-                        else FastLane.tryHandle(app, shown, offline, key = turnUser) { t, d, a -> confirm(t, d, a) } } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+                    val fast = try { kotlinx.coroutines.withContext(ConfirmGate.Direct) { FastLane.tryHandle(app, shown, offline, key = turnUser) { t, d, a -> confirm(t, d, a) } } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
                     if (fast != null) {
                         history.put(JSONObject().put("role", "assistant").put("content", fast.reply))
                         addReply(-1, fast.reply, "", meta = if (fast.ms < 60) "⚡ instant · ${fast.ms} ms" else "⚡ on-device · ${fast.ms} ms")
@@ -3069,6 +3069,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     LeanTurn.top(ToolStats.counts(), DirectLane.toolNames(LeanTurn.lastAll).toSet())
                 }
             } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: LeanTurn.begin", e); null }
+            // 0.55.1 cloud tool loop (CloudLoop / PhoneBatch): the main chat's tool runner (approval cards included) and its
+            // step lines, for a signed phone batch the gateway sends mid-call. Background agents and specialists never get it.
+            CallState.current().let { st ->
+                if (agentId == null && specialist == null) { st.phoneTool = { n, a -> runTool(n, a, mutableListOf()) }; st.stepLine = { line -> add(Role.STEP, line) } }
+                else { st.phoneTool = null; st.stepLine = null }
+            }
             if (lean == null) return systemPrompt(ask, id, awareFull, promptGroups, promptTurn)
             LeanCatalog.syncSoon()   // background, at most every 6 h; a turn never waits for it
             return leanSystemPrompt(ask)
@@ -4739,6 +4745,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         LeanCatalog.store()?.let { s -> { q: String, n: Int -> s.search(q, n) } }, LeanTurn.current()) }
                 LeanTurn.LOAD -> { turnTools.add(name); add(Role.STEP, "Reading skill \u201c${args.optString("name").take(40)}\u201d")
                     return loadSkill(args) }
+                PhoneReadout.TOOL -> { turnTools.add(name); add(Role.STEP, "Checking the speed log"); return PhoneReadout.speedStats() }
             }
             // 0.45.29 (stale "Yes"): on a short-yes turn, an outbound / destructive tool the newest offer didn't name asks first,
             // Autopilot or not (FollowUpBind.toolGate). The card always shows (always = true).

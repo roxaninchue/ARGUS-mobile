@@ -30,6 +30,9 @@ val topPages = listOf(
     SettingsPage("permissions", "Permissions", "Phone control, notifications, mic, overlay"),
     SettingsPage("account", "Profile", "${BrandName.NAME} account and connected apps"),
     SettingsPage("updates", "Updates", "Check for a newer ${BrandName.NAME}; updates run in the background"),
+    // 0.55.1: Developer > Speed stats (the readout that "speed stats" used to answer by phrase; no trigger words now).
+    SettingsPage("developer", "Developer", "Speed stats and other diagnostics"),
+    SettingsPage("speed", "Speed stats", "Where the time of recent replies went: first token, model calls, cloud and phone tools"),
     SettingsPage("about", "About", "Version, licences and what ${BrandName.NAME} keeps on this phone"),
     // Unreleased after 0.52.3: pinned facts, this chat's summary, the current task, the skills in use (HoldingPage).
     SettingsPage("holding", "What ${BrandName.NAME} is holding", "Pinned facts, this chat's summary, the current task and skills"),

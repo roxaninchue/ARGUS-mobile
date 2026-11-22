@@ -109,7 +109,29 @@ class TurnTimingTest {
         val agent = File(dir, "Agent.kt").readText()
         assertTrue(agent.contains("CallState.current().timing.tool(name"))
         assertTrue(agent.contains("timing = timingSnap.line()"))
-        assertTrue(File(dir, "FastLane.kt").readText().contains("SpeedLog.timingLines()"))
+        assertTrue(File(dir, "PhoneReadout.kt").readText().contains("SpeedLog.timingLines()"))
         assertTrue(File(dir, "SelfControl.kt").readText().contains("SpeedLog.timingLines()"))
+    }
+
+    /** 0.55.1: cloud-loop tools and phone round trips are told apart in the sheet and the speed line. */
+    @Test fun cloudVsPhoneRoundTrips() {
+        val t = TurnTiming().apply {
+            call(direct(1_000, 600, 100)); cloudTool("web_search", 400); cloudTool("fetch_page", 300); cloudModel(); cloudModel()
+            tool("set_alarm", 50); roundTrip(TurnTiming.LOCAL_END)
+        }
+        val s = t.snapshot(2_000)
+        assertEquals(listOf("web_search", "fetch_page"), s.cloudTools.map { it.name })
+        assertEquals(listOf("set_alarm"), s.phoneTools.map { it.name })
+        assertEquals("cloud 2 \u00b7 phone 1 (1 local end)", s.tripsLine())
+        val rows = s.rows().toMap()
+        assertEquals("1: set_alarm 50 ms", rows["Tool round trips"])
+        assertTrue(rows["Cloud tools"]!!.contains("(2 model calls on the gateway)"))
+        assertEquals("cloud 2 \u00b7 phone 1 (1 local end)", rows["Cloud vs phone"])
+        assertTrue(s.line().contains("cloud tools 2 (web_search 400 ms, fetch_page 300 ms)"))
+        val back = TurnTiming.Snap.fromJson(s.toJson())!!
+        assertEquals(s.tripsLine(), back.tripsLine())
+        assertEquals(2, back.cloudModels)
+        // a turn without the loop reads as before
+        assertEquals("", TurnTiming().apply { tool("x", 1) }.snapshot(1).tripsLine())
     }
 }

@@ -234,7 +234,7 @@ class SpaceLogicTest {
     }
 
     @Test fun theSettingsTreeIsDecluttered() {
-        assertEquals(listOf("look", "language", "voice", "permissions", "updates"), SpaceSettings.SYSTEM_ROWS.map { it.first })
+        assertEquals(listOf("look", "language", "voice", "permissions", "updates", "developer"), SpaceSettings.SYSTEM_ROWS.map { it.first })   // 0.55.1 Developer (Speed stats)
         for ((p, _) in SpaceSettings.SYSTEM_ROWS) assertEquals(SpaceProfile.SYSTEM_PAGE, SpaceSettings.parentOf(p))
         assertEquals("account", SpaceSettings.parentOf("plan"))
         assertEquals("account", SpaceSettings.parentOf("sync"))
