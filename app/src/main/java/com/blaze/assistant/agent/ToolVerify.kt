@@ -31,6 +31,10 @@ object ToolVerify {
         val self: String get() = "com.blaze.assistant"
         /** (hour, minute) of the next alarm the system knows about. */
         suspend fun nextAlarm(): Pair<Int, Int>? = null
+        /** 0.55.1: when the system's next alarm rings (AlarmManager.nextAlarmClock, epoch ms); null = none / can't tell. */
+        suspend fun nextAlarmAt(): Long? = null
+        /** 0.55.1: the clock the alarm check works out "the next 07:00" from (tests set it). */
+        fun now(): Long = System.currentTimeMillis()
         /** Size in bytes of a file Argus wrote (-1 = missing, null = can't tell). */
         fun fileSize(path: String): Long? = null
         /** v0.45.0 (#4): the setting read back from the system (wifi, bluetooth, airplane, do_not_disturb, mobile_data); null = can't tell. */
@@ -50,6 +54,20 @@ object ToolVerify {
     }
 
     object NoProbes : Probes
+
+    /** 0.55.1: a verdict [why] that starts with this: the tool itself reported success, only the read-back is missing. */
+    const val REPORTED = "the app reported it done"
+    fun reportedDone(why: String): Boolean = why.startsWith(REPORTED)
+
+    /** set_alarm's result when the Clock app accepted ACTION_SET_ALARM (PhoneTools: "Alarm set for 07:00, label …"). */
+    fun alarmAccepted(result: String): Boolean = result.trimStart().startsWith("Alarm set for")
+
+    /** When the next [h]:[m] after [now] is (local time): today if still ahead, else tomorrow. */
+    fun nextAt(h: Int, m: Int, now: Long, tz: java.util.TimeZone = java.util.TimeZone.getDefault()): Long {
+        val c = java.util.Calendar.getInstance(tz).apply { timeInMillis = now; set(java.util.Calendar.HOUR_OF_DAY, h); set(java.util.Calendar.MINUTE, m); set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0) }
+        if (c.timeInMillis <= now) c.add(java.util.Calendar.DAY_OF_YEAR, 1)
+        return c.timeInMillis
+    }
 
     private val ic = setOf(RegexOption.IGNORE_CASE)
 
@@ -224,10 +242,17 @@ object ToolVerify {
         "set_alarm" -> {
             val h = args.optInt("hour", -1); val m = args.optInt("minute", 0)
             val pid = Regex("""\[ID (A\d+)]""").find(result)?.groupValues?.get(1)
+            val accepted = alarmAccepted(result)
             if (poll(waitMs) { p.nextAlarm() == (h to m) }) Verdict(Status.VERIFIED, "the system lists the next alarm at %02d:%02d".format(h, m))
+            // 0.55.1 (Finn's phone: "alarm at 7am tomorrow" was set, yet the reply said it wasn't confirmed): the Clock app
+            // accepted ACTION_SET_ALARM and the system's next alarm rings at or before ours, so an earlier alarm hides it.
+            else if (accepted && p.nextAlarmAt()?.let { it <= nextAt(h, m, p.now()) + 60_000L } == true)
+                Verdict(Status.VERIFIED, "the Clock app took the alarm for %02d:%02d (an earlier alarm rings first)".format(h, m))
             // v0.45.13: an earlier alarm hides this one from nextAlarmClock; read the Clock app's list instead.
             else if (pid != null && p.clockAlarmOn(pid, "%02d:%02d".format(h, m)) == true) Verdict(Status.VERIFIED, "the Clock app lists alarm $pid at %02d:%02d, switched on".format(h, m))
-            else Verdict(Status.UNVERIFIED, "the Clock app didn't list an alarm at %02d:%02d as the next one".format(h, m))
+            // The Clock app took it but the system can't be read: the tool's own success stands, with a soft note (never "I couldn't confirm" first).
+            else if (accepted && p.nextAlarmAt() == null) Verdict(Status.UNVERIFIED, "$REPORTED; the system's alarm list couldn't be read")
+            else Verdict(Status.UNVERIFIED, "the Clock app didn't list an alarm at %02d:%02d".format(h, m))
         }
         "set_timer" -> when (p.timerRunning()) {
             null -> null

@@ -44,7 +44,11 @@ You are ${com.blaze.assistant.BrandName.NAME}, an AI assistant that runs on the 
 HOW YOU WORK: you have a few core tools now. For anything else (phone settings like Bluetooth or Wi-Fi, the screen, apps, files, the terminal, the browser, music, GitHub, email, your own settings and more) call $FIND with what you need in plain words; the tools it finds are yours from your next step. For work with known steps (essays, flashcards, slides, code review, research, designs) call $FIND or $LOAD and follow the skill. Never say you can't do something before $FIND came back empty.
 Alarms, timers and messages: call set_alarm, set_timer or message_contact straight away.
 Act, then report what the tool results say. Claim success only from a result that says so. Ask with ask_user only when a real choice is the user's (which contact, which account); check facts yourself.
-Reply in the user's language, short and plain, no filler. Never show tool names, JSON or code unless asked.
+VOICE: a sharp, warm friend: contractions, answer first, plain words, no filler or stock lines ("How can I help?"). Fit the length to the ask: a line for chat, more for research and how-tos.
+GREETINGS: "hi", "hey", "good morning" get a warm hello (by name when you know it) plus one specific, useful thing: what's next today from the [context] block, or an offer that fits what they've been doing. Never answer a greeting with a bare "Hi".
+TIME: the CURRENT LOCAL TIME line below is exact. Plan from it: never offer a time today that has already passed as if it were still ahead.
+WHO SAID WHAT: only the user's own messages are what they said or chose. Memory, the [context] block and suggestions (yours or reply chips) are not their words: never say "you chose" or "you said" from those.
+Reply in the user's language. Never show tool names, JSON or code unless asked.
 """.trim()
 
     const val PROMPT_MAX = 4_000
@@ -107,7 +111,7 @@ Reply in the user's language, short and plain, no filler. Never show tool names,
     // ---------------- the live tail and the whole message ----------------
 
     /** The lean system message: [PROMPT] first (cached prefix), then the stable rules the app adds, then the live tail. */
-    fun system(persona: String, rules: String, name: String?, lang: String, memory: String, skillsHint: String = ""): String = buildString {
+    fun system(persona: String, rules: String, name: String?, lang: String, memory: String, skillsHint: String = "", now: String = "", extra: String = ""): String = buildString {
         if (persona.isNotBlank()) append(persona.trim()).append('\n')
         append(PROMPT)
         if (rules.isNotBlank()) append('\n').append(rules.trim())
@@ -116,9 +120,24 @@ Reply in the user's language, short and plain, no filler. Never show tool names,
         if (!name.isNullOrBlank()) append("\nThe user's name is ").append(name.trim()).append('.')
         if (lang.isNotBlank()) append('\n').append(lang.trim())
         if (memory.isNotBlank()) append('\n').append(memory.trim().take(MEMORY_MAX))
+        // 0.55.1 (Finn, 11:05: "optimal time to study?" got 9:00-12:00): the exact local time, zone and locale every turn,
+        // as the full prompt's CURRENT LOCAL TIME tail had it, after everything cacheable. (The [context] block with today's
+        // schedule follows this message, added by Agent.requestMessages for every turn, lean or not.)
+        if (now.isNotBlank()) append('\n').append(now.trim())
+        if (extra.isNotBlank()) append('\n').append(extra.trim().take(EXTRA_MAX))
     }
 
     const val MEMORY_MAX = 1_500
+    const val EXTRA_MAX = 400
+
+    private val nowFmt = java.time.format.DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm", java.util.Locale.ENGLISH)
+
+    /** "CURRENT LOCAL TIME: Sunday 22 November 2026, 11:05, Africa/Lusaka (UTC+02:00); locale en-ZM. …" (pure; tests pass a clock). */
+    fun nowLine(now: java.time.ZonedDateTime, locale: java.util.Locale = java.util.Locale.getDefault()): String {
+        val off = now.offset.id.let { if (it == "Z") "+00:00" else it }
+        return "CURRENT LOCAL TIME: ${now.format(nowFmt)}, ${now.zone.id} (UTC$off); locale ${locale.toLanguageTag()}. " +
+            "This is exact: answer any time, date or day question from it and plan the rest of today from it."
+    }
 
     // ---------------- find_tools ----------------
 

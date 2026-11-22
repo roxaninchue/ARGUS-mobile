@@ -12,10 +12,12 @@ class ToolVerifyTest {
     private fun a(vararg kv: Pair<String, Any>) = JSONObject().apply { kv.forEach { put(it.first, it.second) } }
 
     private class Fake(val fg: String? = null,
-                       val alarm: Pair<Int, Int>? = null, val size: Long? = null) : ToolVerify.Probes {
+                       val alarm: Pair<Int, Int>? = null, val size: Long? = null, val alarmAt: Long? = null, val clock: Long = 0L) : ToolVerify.Probes {
         override suspend fun foreground() = fg
         override val self = "com.blaze.assistant"
         override suspend fun nextAlarm() = alarm
+        override suspend fun nextAlarmAt() = alarmAt
+        override fun now() = clock
         override fun fileSize(path: String) = size
     }
     private val noWait: suspend (Long, suspend () -> Boolean) -> Boolean = { _, ok -> ok() }
@@ -59,6 +61,41 @@ class ToolVerifyTest {
     @Test fun alarmMustBeListed() {
         assertEquals(Status.VERIFIED, check("set_alarm", a("hour" to 7, "minute" to 0), "Alarm set. [ID A3]", Fake(alarm = 7 to 0)).status)
         assertEquals(Status.UNVERIFIED, check("set_alarm", a("hour" to 7, "minute" to 0), "Alarm set. [ID A3]", Fake(alarm = 6 to 30)).status)
+    }
+
+    /** 0.55.1 (Finn's phone): an earlier alarm hides a 07:00 alarm the Clock app took; that is set, not "couldn't confirm". */
+    @Test fun anEarlierAlarmNoLongerHidesASetAlarm() {
+        val tz = java.util.TimeZone.getDefault()
+        val now = java.util.Calendar.getInstance(tz).apply { set(2026, 10, 22, 22, 30, 0); set(java.util.Calendar.MILLISECOND, 0) }.timeInMillis
+        val target = ToolVerify.nextAt(7, 0, now)
+        assertEquals(8.5 * 3_600_000, (target - now).toDouble(), 1.0)   // 22:30 → 07:00 tomorrow
+        val ok = "Alarm set for 07:00, label \u201c(Argus A12)\u201d. [ID A12]"
+        val args = a("hour" to 7, "minute" to 0)
+        // the system's next alarm is an earlier one (06:00 tomorrow): ours is hidden behind it
+        val v = check("set_alarm", args, ok, Fake(alarm = 6 to 0, alarmAt = target - 3_600_000, clock = now))
+        assertEquals(Status.VERIFIED, v.status)
+        assertTrue(v.why, v.why.contains("an earlier alarm rings first"))
+        // the next alarm is LATER than ours: ours really isn't there
+        val bad = check("set_alarm", args, ok, Fake(alarm = 9 to 0, alarmAt = target + 2 * 3_600_000, clock = now))
+        assertEquals(Status.UNVERIFIED, bad.status)
+        assertFalse(ToolVerify.reportedDone(bad.why))
+        // the Clock app didn't take it at all: never verified
+        assertEquals(Status.UNVERIFIED, check("set_alarm", args, "No app on this phone can do that.", Fake(alarm = 6 to 0, alarmAt = target - 1, clock = now)).status)
+        // the system list can't be read: the tool's own success stands (soft note, see UnconfirmedEcho)
+        val unread = check("set_alarm", args, ok, Fake(clock = now))
+        assertTrue(ToolVerify.reportedDone(unread.why))
+    }
+
+    @Test fun aToolThatReportedSuccessIsNeverPrefixedWithCouldntConfirm() {
+        val done = listOf(ClaimCheck.Done("set_alarm", Status.UNVERIFIED, ToolVerify.REPORTED + "; the system's alarm list couldn't be read"))
+        for (reply in listOf("Alarm set for 7:00 tomorrow.", "Done, alarm's set for 7.", "Started setting an alarm for 7 am tomorrow.")) {
+            val out = UnconfirmedEcho.fix(reply, done)
+            assertTrue(out, out.startsWith(reply.trim()))
+            assertFalse(out, out.startsWith("I couldn't confirm"))
+        }
+        // a real failure still gets the honest line
+        val real = listOf(ClaimCheck.Done("set_alarm", Status.UNVERIFIED, "the Clock app didn't list an alarm at 07:00"))
+        assertTrue(UnconfirmedEcho.fix("Alarm set for 7.", real).startsWith("I couldn't confirm"))
     }
 
     @Test fun filesAreReadBack() {

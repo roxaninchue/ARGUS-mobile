@@ -182,4 +182,33 @@ class LeanTurnTest {
 }
 
 /** Tool names the gateway's ticket accepts (ticket.ts TOOL_NAME_RE; DirectLane.TOOL_NAME_RE), without loading DirectLane here. */
-private object DirectLaneNames { fun ok(n: String) = Regex("^[A-Za-z0-9_.:-]{1,128}$").matches(n) }
+private object DirectLaneNames { fun ok(n: String) = Regex("^[A-Za-z0-9_.:-]{1,128}$").matches(n) 
+    /** 0.55.1 (Finn: "Hi" got only "Hi"): the lean prompt keeps the voice and greeting guidance; the [context] block rides in the live tail. */
+    @Test fun greetingsGetAWarmUsefulReply() {
+        assertTrue(LeanTurn.PROMPT.contains("GREETINGS:"))
+        assertTrue(LeanTurn.PROMPT.contains("Never answer a greeting with a bare \"Hi\""))
+        assertTrue(LeanTurn.PROMPT.contains("VOICE: a sharp, warm friend"))
+        assertTrue(LeanTurn.PROMPT.contains("You are "))
+        assertTrue(LeanTurn.PROMPT.length < LeanTurn.PROMPT_MAX)
+        val s = LeanTurn.system("", "RULES", "Rhea", "", "", now = "CURRENT LOCAL TIME: x")
+        assertTrue(s.startsWith(LeanTurn.PROMPT + "\nRULES"))
+        assertTrue(s.contains("CURRENT LOCAL TIME: x"))
+    }
+
+    /** 0.55.1 (Finn, 11:05: "optimal time to study?" got 9:00-12:00): the lean prompt always carries "now", after the cached prefix. */
+    @Test fun theLeanPromptCarriesTheCurrentTime() {
+        val now = java.time.ZonedDateTime.of(2026, 11, 22, 11, 5, 0, 0, java.time.ZoneId.of("Africa/Lusaka"))
+        val line = LeanTurn.nowLine(now, java.util.Locale.forLanguageTag("en-ZM"))
+        assertEquals("CURRENT LOCAL TIME: Sunday 22 November 2026, 11:05, Africa/Lusaka (UTC+02:00); locale en-ZM. " +
+            "This is exact: answer any time, date or day question from it and plan the rest of today from it.", line)
+        val a = LeanTurn.system("", "RULES", "Finn", "Reply in English.", "memory", now = line)
+        assertTrue(a.contains("11:05, Africa/Lusaka (UTC+02:00)"))
+        assertTrue("the time is after the cached prefix", a.indexOf("CURRENT LOCAL TIME") > a.indexOf(LeanTurn.PROMPT) + LeanTurn.PROMPT.length)
+        val b = LeanTurn.system("", "RULES", "Finn", "Reply in English.", "memory", now = LeanTurn.nowLine(now.plusMinutes(1), java.util.Locale.forLanguageTag("en-ZM")))
+        assertEquals("the prefix stays byte-identical", a.substringBefore("CURRENT LOCAL TIME"), b.substringBefore("CURRENT LOCAL TIME"))
+        assertTrue(LeanTurn.PROMPT.contains("WHO SAID WHAT:"))
+        // Agent wires it into every lean turn
+        val agent = listOf("src/main/java/com/blaze/assistant/agent/Agent.kt", "app/src/main/java/com/blaze/assistant/agent/Agent.kt").map(::java.io.File).first { it.exists() }.readText()
+        assertTrue(agent.contains("now = LeanTurn.nowLine(java.time.ZonedDateTime.now())"))
+    }
+}

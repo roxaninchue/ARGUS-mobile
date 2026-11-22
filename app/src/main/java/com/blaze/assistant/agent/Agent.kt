@@ -1310,7 +1310,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
         val rules = RapidMessages.PROMPT_RULE + ToolVerify.PROMPT_RULE + "\n" + SecretRules.PROMPT + TurnContext.RULE + Duo.IDENTITY_RULES
         val mem = try { Memory.promptBlock(userText) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: lean memory", e); "" }
-        return LeanTurn.system(persona, rules, Settings.greetName(), ReplyLanguage.line(ReplyLanguage.current()), mem)
+        // 0.55.1: the per-turn lines the full prompt had in its live tail: the exact local time + zone + locale, and the
+        // tracked-processes count (the [context] block itself is added after this message by requestMessages).
+        val extra = try { Processes.countLine().takeIf { it.isNotBlank() }?.let { "Tracked now: $it (IDs via processes)." }.orEmpty() } catch (_: Throwable) { "" }
+        return LeanTurn.system(persona, rules, Settings.greetName(), ReplyLanguage.line(ReplyLanguage.current()), mem,
+            now = LeanTurn.nowLine(java.time.ZonedDateTime.now()), extra = extra)
     }
 
     private fun systemPrompt(userText: String, chatId: String = _chatId.value, fullAware: Boolean = true,

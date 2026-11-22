@@ -133,6 +133,12 @@ object UnconfirmedEcho {
     fun fix(reply: String, done: List<ClaimCheck.Done>): String {
         val act = openAct(done) ?: return reply
         val why = act.why.ifBlank { "the phone didn't read it back" }
+        // 0.55.1 (Finn: "I couldn't confirm it: … Started setting an alarm"): when the tool itself reported success and only
+        // the read-back is missing, the reply is never replaced or prefixed; at most one soft note goes under it.
+        if (ToolVerify.reportedDone(why)) {
+            if (HONEST.containsMatchIn(reply)) return reply
+            return reply.trimEnd() + "\n\n(" + readable(why.removePrefix(ToolVerify.REPORTED).trimStart(';', ' ')).replaceFirstChar { it.uppercase() } + ".)"
+        }
         // 0.53.6 (Finn's screenshot: a restaurant answer came out as only "I couldn't confirm it: not checked yet."): an answer
         // (long, several lines) or a reply about something else stays the model's; the honest note goes under it.
         val r = reply.trim()

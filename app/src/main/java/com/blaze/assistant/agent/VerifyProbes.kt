@@ -21,6 +21,10 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
         am.nextAlarmClock?.triggerTime?.let { t -> Calendar.getInstance().apply { timeInMillis = t }.let { it.get(Calendar.HOUR_OF_DAY) to it.get(Calendar.MINUTE) } }
     } catch (_: Throwable) { null }
 
+    override suspend fun nextAlarmAt(): Long? = try {
+        (ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager).nextAlarmClock?.triggerTime
+    } catch (_: Throwable) { null }
+
     override suspend fun settingOn(setting: String): Boolean? = try {
         when (setting) {
             "wifi" -> (ctx.applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager).isWifiEnabled

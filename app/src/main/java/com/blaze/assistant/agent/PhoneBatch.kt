@@ -133,7 +133,18 @@ object PhoneBatch {
     }
 
     /** The local confirmation of an all-final batch: each tool's own result, first line, as the tool wrote it. */
-    fun confirmation(o: Outcome): String = o.done.joinToString("\n") { d ->
-        d.result.trim().lineSequence().firstOrNull { it.isNotBlank() }.orEmpty().removePrefix("Done: ").trim()
-    }.ifBlank { "Done." }
+    fun confirmation(o: Outcome): String = o.done.joinToString("\n") { d -> clean(d.result) }.ifBlank { "Done." }
+
+    /**
+     * One tool result as a user-facing line: its first line, without the registry id ("[ID A12]") or the internal alarm
+     * label ("label “(Argus A12)”"): "Alarm set for 07:00, label “(Argus A12)”. [ID A12]" → "Alarm set for 07:00."
+     */
+    fun clean(result: String): String {
+        var t = result.trim().lineSequence().firstOrNull { it.isNotBlank() }.orEmpty().removePrefix("Done: ").trim()
+        t = t.replace(Regex("""\s*\[ID [A-Za-z0-9]+]"""), "")
+        t = t.replace(Regex(""",\s*label\s*\u201c\([^)]*\b[A-Z]\d+\)\u201d"""), "")
+        t = t.replace(Regex("""\s+\(\w+ [A-Z]\d+\)(?=\u201d)"""), "")
+        t = t.trim().trimEnd('.').trim()
+        return if (t.isEmpty()) "" else "$t."
+    }
 }
