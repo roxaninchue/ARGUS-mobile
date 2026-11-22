@@ -14,7 +14,7 @@
   **0.55.6 is unreleased; its CI artifact is not to be sent to anyone** until Finn says.
 - Earlier today: 0.55.4 (`4fce5a88`, run 45052241481) and the first 0.55.5 build commit (`b1620608`, run 45054828990)
   went red; 0.55.3 (`7fcc7f02`, run 45047633588) was green.
-- **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT; CI result in its history entry.
+- **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT. CI run 45066197518 (commit `a4cbe9d9`) green at 22:47 CAT; artifact argus-debug-signed-a4cbe9d9 (49.5 MB). Phone check: pending.
 - Version pins: `app/build.gradle.kts` versionName "0.55.7" / versionCode 216; `SpaceWiringTest.theVersionIs0557` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
