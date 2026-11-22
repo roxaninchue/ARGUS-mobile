@@ -230,6 +230,18 @@ object FastLane {
         }
     }
 
+    /**
+     * 0.55.0: an on-phone readout ("speed stats", "tool stats", "what's running"; [PhoneReadout]) answered here ONLINE too,
+     * with no model. Only readouts: no IntentCache, no on-device model, nothing that acts on the phone. Null = not one.
+     */
+    suspend fun readout(ctx: Context, text: String, key: Long? = null, confirm: suspend (String, String, String) -> Boolean): Result? {
+        val (n, a) = PhoneReadout.match(text) ?: return null
+        if (key != null && !Once.claim(key)) return null
+        val t0 = System.currentTimeMillis()
+        val r = OneCommand { n2, a2 -> execute(ctx, n2, a2, confirm) }.run(n, a) ?: return null
+        return Result(r, System.currentTimeMillis() - t0, n)
+    }
+
     /** The messages (by id) the shortcut already handled, so a re-sent turn never runs its command twice. */
     object Once {
         private val seen = java.util.Collections.synchronizedSet(java.util.LinkedHashSet<Long>())
