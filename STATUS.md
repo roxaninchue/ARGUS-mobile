@@ -15,6 +15,8 @@
 - Earlier today: 0.55.4 (`4fce5a88`, run 45052241481) and the first 0.55.5 build commit (`b1620608`, run 45054828990)
   went red; 0.55.3 (`7fcc7f02`, run 45047633588) was green.
 - **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT. CI run 45066197518 (commit `a4cbe9d9`) green at 22:47 CAT; artifact argus-debug-signed-a4cbe9d9 (49.5 MB). Phone check: pending.
+- **Model picker polish (after the 0.55.7 phone check)**, on branch `feat/model-picker-polish` (`c5f59930`, [skip ci], not merged, not compiled): no group boxes or dividers (a shared logo/name grid), a pill search, a landscape two-pane layout, no swipe-down to close (`ArgusSheet(dragToClose = false)`), and soft edge fades. Jake is still adding changes. Build it as 0.55.8 / 217 only on his word.
+- **Bug, high priority: switching accounts keeps the old account's data** (found 2026-11-22 23:31 CAT). Sign-out only clears the token; chats, memory and settings stay, and the sign-in sync can push the old skills and MCP list into the new account. Jake chose one space per account. The plan is in docs/overhaul/account-spaces-plan.md (**not started**; it has open questions for Jake).
 - Version pins: `app/build.gradle.kts` versionName "0.55.7" / versionCode 216; `SpaceWiringTest.theVersionIs0557` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)

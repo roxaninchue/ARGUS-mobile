@@ -33,6 +33,7 @@ Note: every `.md` file under this folder is bundled into the app's built-in help
 
 | File | What it is |
 |---|---|
+| [overhaul/account-spaces-plan.md](overhaul/account-spaces-plan.md) | Account spaces (2026-11-22, plan only): one data space per account; fixes the account-switch data leak |
 | [overhaul/living-ui-0.3.0-plan.md](overhaul/living-ui-0.3.0-plan.md) | Living UI 0.3.0 plan (2026-11-22, not started) |
 | [overhaul/overhaul.md](overhaul/overhaul.md) | Living UI design direction (2026-11-14) and mockups |
 | [overhaul/BUILDING.md](overhaul/BUILDING.md) | Owner rule (2026-11-13): checklist to build clean on the first try |
