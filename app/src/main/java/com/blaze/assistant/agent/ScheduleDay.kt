@@ -50,7 +50,7 @@ object ScheduleDay {
 
     /** One resolved item on a date. [from]/[to] are local times (null = all day / no time). */
     data class Item(val title: String, val kind: String, val from: LocalTime?, val to: LocalTime? = null,
-                    val note: String = "") {
+                    val note: String = "", val twice: Boolean = false) {
         /** [quoted] (the [context] block): the title in quotes, so a time inside it ("Church 9:00–12:30") stays part of it. */
         fun label(quoted: Boolean = false, passed: Boolean = false): String = buildString {
             if (from != null) { append(hm(from)); if (to != null && to != from) append("\u2013").append(hm(to)); append(' ') }
@@ -58,6 +58,7 @@ object ScheduleDay {
             if (quoted) append('"').append(title).append('"') else append(title)
             if (kind == "alarm") append(" (alarm)")
             if (note.isNotBlank()) append(" (").append(note).append(')')
+            if (twice) append(" (listed twice)")
             if (passed) append(" (passed)")
         }
 
@@ -125,7 +126,17 @@ object ScheduleDay {
                 }
             }
         }
-        return out.sortedWith(compareBy<Item>({ it.from != null }, { it.from }, { it.title }))
+        return markTwice(out.sortedWith(compareBy<Item>({ it.from != null }, { it.from }, { it.title })))
+    }
+
+    /**
+     * 0.55.2 (Finn 18:08: "Pack for COM102 exam" 20:00–21:00 and 20:00–20:15 on one day, and Argus didn't flag it): items
+     * with the same title (case and spaces ignored) starting at the same time are marked, so the label says "(listed twice)".
+     */
+    fun markTwice(items: List<Item>): List<Item> {
+        fun key(i: Item) = i.title.trim().lowercase().replace(Regex("\\s+"), " ") + "@" + i.from
+        val counts = items.filter { it.from != null }.groupingBy(::key).eachCount()
+        return items.map { if (it.from != null && (counts[key(it)] ?: 0) > 1) it.copy(twice = true) else it }
     }
 
     private fun spanOn(e: Entry, s: ZonedDateTime, end: ZonedDateTime, allDay: Boolean, date: LocalDate): Item? {

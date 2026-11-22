@@ -1,3 +1,16 @@
+## 0.55.2 (versionCode 211, 2026-11-22): what used to work works again (weather, alarms you really have, duplicates flagged)
+Works with gateway 0.9.39 (live since 2026-11-22 12:35 CAT).
+- Weather: "What's the weather like" web-searched weather.com and said it couldn't confirm. The lean core had dropped
+  get_weather (and get_location, create_routine, device_status, read_screen, call_control), which the full list always
+  sent. They ride every lean turn again, and the prompt says weather comes from get_weather, never web search.
+- No more silent drops: `LeanTurn.BEHIND_FIND` lists the always-sent tools lean leaves behind find_tools on purpose;
+  LeanTurnTest fails if any ToolPick.ESSENTIAL / HARNESS tool is in neither CORE nor that list.
+- Alarms: Home and the greeting showed a 19:30 alarm the Clock app didn't have. An alarm Argus recorded that the system
+  doesn't know (no next alarm, or the next one rings later) is dropped (`Processes.goneFromClock`, ProcessesAlarmTest).
+- Duplicates: two events with the same title at the same time show "(listed twice)" in the schedule, and the prompt
+  says to point it out and offer to delete the extra one (ScheduleDay.markTwice). calendar_add won't add an event that
+  is already there (same title, same start).
+
 ## 0.55.1 (versionCode 210, 2026-11-22): cloud tool loop, no trigger words, honest alarms and times
 Needs gateway 0.9.39 (`POST /v1/loop`, `/v1/turn/resume`, signed phone batches; uploaded `a80009fe`, not deployed yet).
 With 0.9.38 tickets don't offer the loop, so tool turns keep running the 0.55.0 way.

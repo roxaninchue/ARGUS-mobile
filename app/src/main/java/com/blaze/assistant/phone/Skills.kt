@@ -270,6 +270,25 @@ object Skills {
         return if (lines.isEmpty()) head + EVENTS_NONE else head + "Calendar events (tell the user each one with its time and place):\n" + lines.joinToString("\n")
     }
 
+    /** 0.55.2: same title (case and spaces ignored) and a start within a minute. Pure; SameEventTest. */
+    fun sameEvent(t1: String, s1: Long, t2: String, s2: Long): Boolean {
+        fun n(t: String) = t.trim().lowercase().replace(Regex("\\s+"), " ")
+        return n(t1) == n(t2) && Math.abs(s1 - s2) < 60_000L
+    }
+
+    private fun sameEventAt(ctx: Context, title: String, start: Long): String? = try {
+        if (!has(ctx, Manifest.permission.READ_CALENDAR)) null else {
+            val uri = CalendarContract.Instances.CONTENT_URI.buildUpon().also {
+                android.content.ContentUris.appendId(it, start - 60_000L); android.content.ContentUris.appendId(it, start + 60_000L) }.build()
+            ctx.contentResolver.query(uri, arrayOf(CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN), null, null, null)?.use { c ->
+                var hit: String? = null
+                while (hit == null && c.moveToNext()) if (sameEvent(title, start, c.getString(0) ?: "", c.getLong(1)))
+                    hit = "Already on the calendar: \"$title\" on ${SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(start))}. Not added again."
+                hit
+            }
+        }
+    } catch (_: Exception) { null }
+
     private fun addEvent(ctx: Context, a: JSONObject): String {
         val f = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
         val start = f.parse(a.getString("start"))?.time ?: return "Couldn't read the start time."
@@ -291,6 +310,9 @@ object Skills {
             primary ?: first
         } ?: com.blaze.assistant.routine.RoutineCalendar.calendarId(ctx) ?: return "No writable calendar on this phone."   // 18 Nov 2026: else the ARGUS calendar
         val rule = com.blaze.assistant.routine.RoutineCalendar.repeatRule(a.optString("repeat"))
+        // 0.55.2 (Finn 18:08: "Pack for COM102 exam" twice at 20:00, "Leave for COM102" twice): never add an event that is
+        // already there (same title, same start), however the turn got here (a retry, a resend, a second ask).
+        if (rule == null) sameEventAt(ctx, a.getString("title"), start)?.let { return it }
         val remind = if (a.has("reminder_minutes")) a.optInt("reminder_minutes", -1) else -1
         val v = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, calId)

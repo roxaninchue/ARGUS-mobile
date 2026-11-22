@@ -28,7 +28,7 @@ class LeanTurnTest {
     private val all = JSONArray().apply {
         (LeanTurn.CORE + LeanTurn.META).forEach { put(tool(it)) }
         put(tool("device_setting", "Turn a phone setting on or off: Wi-Fi, Bluetooth, flashlight, Do Not Disturb, airplane mode."))
-        put(tool("read_screen", "Read what is on the screen now, with numbered elements."))
+        put(tool("look_at_screen", "Look at the screen now as a picture."))
         put(tool("github_create_issue", "Open an issue in one of the user's GitHub repos."))
         put(tool("run_shell", "Run a command in Argus's Linux terminal."))
         put(tool("music_ops", "Play, pause or skip Argus Music."))
@@ -45,7 +45,7 @@ class LeanTurnTest {
 
     @Test fun coreKeepsAlarmsTimersAndMessagesSoTheyNeverWaitOnALookup() {
         for (n in listOf("set_alarm", "set_timer", "message_contact")) assertTrue(n, n in LeanTurn.CORE)
-        assertEquals(10, LeanTurn.CORE.size)
+        assertEquals(16, LeanTurn.CORE.size)
         assertEquals(listOf("find_tools", "load_skill"), LeanTurn.META)
     }
 
@@ -61,17 +61,17 @@ class LeanTurnTest {
     }
 
     @Test fun topFourAreTheMostUsedOtherToolsThisPhoneHas() {
-        val counts = mapOf("set_alarm" to 99, "music_ops" to 7, "read_screen" to 12, "run_shell" to 3, "gone_tool" to 50,
+        val counts = mapOf("set_alarm" to 99, "music_ops" to 7, "look_at_screen" to 12, "run_shell" to 3, "gone_tool" to 50,
             "github_create_issue" to 7, "flashcards" to 1, "find_tool" to 40, "device_setting" to 0)
         val have = names(all).toSet()
-        assertEquals(listOf("read_screen", "github_create_issue", "music_ops", "run_shell"), LeanTurn.top(counts, have))
+        assertEquals(listOf("look_at_screen", "github_create_issue", "music_ops", "run_shell"), LeanTurn.top(counts, have))
     }
 
     @Test fun aLeanStepSendsCoreTopCatalogToolsFoundAndUsedOnly() {
         val st = LeanTurn.State(1L, listOf("music_ops"))
         val sent = names(LeanTurn.filter(all, st, used = setOf("run_shell")))
         assertEquals(LeanTurn.CORE + LeanTurn.META + listOf("run_shell", "music_ops"), sent)
-        assertEquals(14, sent.size)
+        assertEquals(20, sent.size)
         assertFalse("device_setting" in sent)
         st.found += "device_setting"
         assertTrue("device_setting" in names(LeanTurn.filter(all, st, emptySet())))
@@ -210,5 +210,19 @@ class LeanTurnTest {
         // Agent wires it into every lean turn
         val agent = listOf("src/main/java/com/blaze/assistant/agent/Agent.kt", "app/src/main/java/com/blaze/assistant/agent/Agent.kt").map { java.io.File(it) }.first { it.exists() }.readText()
         assertTrue(agent.contains("now = LeanTurn.nowLine(java.time.ZonedDateTime.now())"))
+    }
+
+    /** 0.55.2 (Finn 18:00, weather web-searched and failed; "I don't want to fix every small error that used to work"). */
+    @Test fun leanNeverDropsAnAlwaysSentToolWithoutADecision() {
+        val old = ToolPick.ESSENTIAL + ToolPick.HARNESS
+        val missing = old.filter { it !in LeanTurn.CORE && it !in LeanTurn.BEHIND_FIND }
+        assertTrue("always-sent before, neither in LeanTurn.CORE nor LeanTurn.BEHIND_FIND: $missing", missing.isEmpty())
+        assertTrue(LeanTurn.BEHIND_FIND.none { it in LeanTurn.CORE })
+        // The everyday asks that used to work answer from CORE, never from a web search or a lookup first.
+        for (n in listOf("get_weather", "get_location", "set_alarm", "set_timer", "message_contact", "calendar_events", "create_routine", "device_status", "open_app"))
+            assertTrue("$n must ride every lean turn", n in LeanTurn.CORE)
+        assertTrue(LeanTurn.PROMPT.contains("Weather: call get_weather (never web search for weather)"))
+        assertTrue(LeanTurn.PROMPT.contains("\"(listed twice)\" is a duplicate"))
+        assertTrue(LeanTurn.PROMPT.length <= LeanTurn.PROMPT_MAX)
     }
 }

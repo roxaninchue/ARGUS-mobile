@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.55.2: weather comes from the weather tool again, Home and Argus only show alarms your Clock app really has, and an event on your calendar twice is pointed out (and never added twice).
 - New in 0.55.1: web lookups and page reads run in Argus Cloud in one go, and phone actions (alarms, messages and the rest) come back as one signed batch, so replies that act need fewer round trips. Speed stats moved to Settings › Developer › Speed stats and each reply's What happened sheet; Argus can also check them itself when you ask how fast it is. Alarms no longer say "couldn't confirm" when an earlier alarm rings first, and plans start from the exact time now.
 - New in 0.55.0: Argus sends a small, steady set of instructions and everyday tools each turn and looks up the rest only when it needs them, so replies start sooner.
 - New in 0.54.6: replies that use tools (alarms, search, messages and the rest) can start through the Direct lane too, with the same tools and the same confirmations; the wait before Argus quietly switches to the normal route now fits the model and the size of the request. Settings › Developer › Speed stats shows, for your last turns, which lane answered, how long until the first word, and how long each tool took.

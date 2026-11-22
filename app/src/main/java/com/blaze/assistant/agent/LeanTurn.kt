@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
  * models. A main-chat turn sends
  *  - a short, STABLE system prompt that lives on the phone ([PROMPT]: byte-identical turn after turn, so providers cache
  *    it; only a small live tail follows it),
- *  - [CORE] (10 tools: alarms, timers and messages never wait on a lookup), the phone's [TOP_N] most-used other tools
+ *  - [CORE] (16 tools: alarms, timers, messages, weather and the other everyday tools never wait on a lookup), the phone's [TOP_N] most-used other tools
  *    ([top]), and the two catalog tools [FIND] (`find_tools`) and [LOAD] (`load_skill`): about 12-16 tools instead of ~50.
  * Every other tool and skill waits in blaze.db ([LeanCatalog]) and joins from the next step when the model asks:
  * `find_tools` ([find], non-suspend: it only searches and marks names) adds what it found to this turn's [State.found], and
@@ -32,7 +32,19 @@ object LeanTurn {
 
     /** Sent on every lean turn. Alarms, timers and messages are here so they never wait on a lookup. */
     val CORE = listOf("ask_user", "web_search", "fetch_page", "memory_search", "memory_save",
-        "set_alarm", "set_timer", "message_contact", "calendar_events", "open_app")
+        "set_alarm", "set_timer", "message_contact", "calendar_events", "open_app",
+        // 0.55.2 (Finn 18:00: "Weather in Lusaka" web-searched weather.com and couldn't confirm; it worked before): the
+        // everyday tools the full list always sent (ToolPick.ESSENTIAL / HARNESS / ALWAYS_GROUPS) ride every lean turn too.
+        "get_weather", "get_location", "create_routine", "device_status", "read_screen", "call_control")
+
+    /**
+     * 0.55.2: tools the full list always sent that lean leaves behind find_tools on purpose. Every always-sent tool must be
+     * in [CORE] or here (LeanParityTest), so lean can never drop an everyday tool again without a decision.
+     */
+    val BEHIND_FIND = setOf("load_tools", "find_tool", "remember", "run_plan", "search_in_app", "blaze_now", "open_view",
+        "save_file", "make_document", "delegate", "http_request", "run_shell", "run_code", "file_read", "file_write", "file_edit",
+        "file_list", "browser_open", "browser_read", "browser_click", "browser_type", "generate_image", "request_secret",
+        "blaze_self", "design")
     val META = listOf(FIND, LOAD)
 
     /** Never counted as "most used" (they're already sent, or they're the catalog's own). */
@@ -42,11 +54,12 @@ object LeanTurn {
     val PROMPT = """
 You are ${com.blaze.assistant.BrandName.NAME}, an AI assistant that runs on the user's Android phone and acts for them.
 HOW YOU WORK: you have a few core tools now. For anything else (phone settings like Bluetooth or Wi-Fi, the screen, apps, files, the terminal, the browser, music, GitHub, email, your own settings and more) call $FIND with what you need in plain words; the tools it finds are yours from your next step. For work with known steps (essays, flashcards, slides, code review, research, designs) call $FIND or $LOAD and follow the skill. Never say you can't do something before $FIND came back empty.
-Alarms, timers and messages: call set_alarm, set_timer or message_contact straight away.
+Alarms, timers and messages: call set_alarm, set_timer or message_contact straight away. Weather: call get_weather (never web search for weather) and quote its source and time.
 Act, then report what the tool results say. Claim success only from a result that says so. Ask with ask_user only when a real choice is the user's (which contact, which account); check facts yourself.
 VOICE: a sharp, warm friend: contractions, answer first, plain words, no filler or stock lines ("How can I help?"). Fit the length to the ask: a line for chat, more for research and how-tos.
 GREETINGS: "hi", "hey", "good morning" get a warm hello (by name when you know it) plus one specific, useful thing: what's next today from the [context] block, or an offer that fits what they've been doing. Never answer a greeting with a bare "Hi".
 TIME: the CURRENT LOCAL TIME line below is exact. Plan from it: never offer a time today that has already passed as if it were still ahead. When the user points out the time, your last plan was wrong: own it in a few words and give the corrected plan from now, never just repeat the time.
+SCHEDULE: an item marked "(listed twice)" is a duplicate: whenever you mention that day, point it out and offer to delete the extra one.
 WHO SAID WHAT: only the user's own messages are what they said or chose. Memory, the [context] block and suggestions (yours or reply chips) are not their words: never say "you chose" or "you said" from those.
 Reply in the user's language. Never show tool names, JSON or code unless asked.
 """.trim()

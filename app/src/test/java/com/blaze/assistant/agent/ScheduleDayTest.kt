@@ -148,4 +148,18 @@ class ScheduleDayTest {
         // "weekly" with no day is today's weekday, not every day.
         assertEquals(ScheduleDay.bit(LocalDate.now().dayOfWeek), r.parseDays("weekly"))
     }
+
+    /** 0.55.2 (Finn 18:08): two "Pack for COM102 exam" at 20:00 on one day are flagged, a different title or time isn't. */
+    @Test fun aDuplicateIsListedTwice() {
+        val d = java.time.LocalDate.of(2026, 11, 22); val z = java.time.ZoneId.of("Africa/Lusaka")
+        fun span(h: Int, m1: Int, h2: Int, m2: Int) = ScheduleDay.Rule.Span(d.atTime(h, m1).atZone(z).toInstant(), d.atTime(h2, m2).atZone(z).toInstant())
+        val items = ScheduleDay.itemsOn(d, z, listOf(
+            ScheduleDay.Entry("Pack for COM102 exam", "event", span(20, 0, 21, 0)),
+            ScheduleDay.Entry("pack for  COM102 exam", "event", span(20, 0, 20, 15)),
+            ScheduleDay.Entry("Pack for COM102 exam", "event", span(21, 0, 21, 30)),
+            ScheduleDay.Entry("Dinner", "event", span(20, 0, 20, 30))))
+        assertEquals(2, items.count { it.twice })
+        assertTrue(items.first { it.twice }.label(quoted = true).contains("(listed twice)"))
+        assertFalse(items.first { it.title == "Dinner" }.twice)
+    }
 }

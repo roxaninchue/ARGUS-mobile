@@ -93,7 +93,10 @@ object TurnContextSource {
     private fun alarms(zone: ZoneId): List<ScheduleDay.Entry> {
         val out = ArrayList<ScheduleDay.Entry>()
         val now = System.currentTimeMillis()
-        Processes.all.value.filter { it.kind == "alarm" && it.status == "active" && it.due > now - 86_400_000L }.forEach { p ->
+        // 0.55.2: only alarms the Clock app really has (Processes.goneFromClock); a refused or deleted one never shows.
+        val sysNext = app?.let { c -> try { c.getSystemService(android.app.AlarmManager::class.java)?.nextAlarmClock?.triggerTime ?: 0L } catch (_: Throwable) { -1L } } ?: -1L
+        Processes.all.value.filter { it.kind == "alarm" && it.status == "active" && it.due > now - 86_400_000L &&
+            !(sysNext != -1L && Processes.goneFromClock(it.due, it.props.optBoolean("repeats"), now, sysNext.takeIf { n -> n > 0L }, it.created)) }.forEach { p ->
             out += ScheduleDay.Entry(p.title, "alarm", ScheduleDay.Rule.Once(Instant.ofEpochMilli(p.due)))
         }
         // The phone's next alarm from any clock app (only the next one is visible to apps).

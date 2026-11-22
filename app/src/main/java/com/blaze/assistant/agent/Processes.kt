@@ -53,6 +53,7 @@ object Processes {
         file = File(app.filesDir, "processes.json")
         val a0 = app
         nextSystemAlarm = { a0.getSystemService(android.app.AlarmManager::class.java)?.nextAlarmClock?.triggerTime }
+        systemAlarmReadable = true
         try {
             val o = JSONObject(file.readText())
             o.optJSONObject("next")?.let { n -> for (k in n.keys()) counters[k] = n.getInt(k) }
@@ -138,8 +139,14 @@ object Processes {
             list = list.map { if (it.kind == "goal") it.copy(status = when (gs[it.ref]) { "done" -> "finished"; "paused" -> "paused"; else -> "active" }) else it }.toMutableList()
             list = list.map { if (it.kind == "watcher") it.copy(status = if (ws[it.ref] == true) "active" else "paused") else it }.toMutableList()
         } catch (_: Exception) { }
+        // 0.55.2 (Finn 18:08: Home and the greeting showed a 19:30 alarm; the Clock app said "No alarms"): an alarm Argus
+        // recorded that the Clock app doesn't have (refused, or deleted there) is dropped. If it existed, the system's
+        // next alarm would ring at or before it.
+        val sysNext = if (systemAlarmReadable) try { nextSystemAlarm() } catch (_: Throwable) { -1L } else -1L
         list = list.map {
             when {
+                it.status == "active" && it.kind == "alarm" && sysNext != -1L &&
+                    goneFromClock(it.due, it.props.optBoolean("repeats"), now, sysNext, it.created) -> it.copy(status = "deleted")
                 it.status == "active" && it.kind == "timer" && it.due in 1..now -> it.copy(status = "finished")
                 it.status == "active" && it.kind == "alarm" && it.due in 1..now && !it.props.optBoolean("repeats") -> it.copy(status = "rang")
                 it.status == "active" && (it.kind == "event" || it.kind == "gevent") && it.due in 1..now -> it.copy(status = "past")
@@ -186,6 +193,16 @@ object Processes {
 
     /** v0.45.13: the phone's next Clock alarm when Argus tracks none at that time (only the next one is visible to apps). */
     @Volatile var nextSystemAlarm: () -> Long? = { null }
+
+    /** True once [init] wired [nextSystemAlarm] to AlarmManager (so null there means "no alarm", not "can't tell"). */
+    @Volatile var systemAlarmReadable = false
+
+    /**
+     * 0.55.2: a one-off alarm still ahead that the system doesn't know: no next alarm at all, or the next one rings more
+     * than a minute after it, two minutes after Argus set it (the Clock app registers it asynchronously). Repeating alarms are left alone (their next ring isn't [due]). Pure; ProcessesAlarmTest.
+     */
+    fun goneFromClock(due: Long, repeats: Boolean, now: Long, next: Long?, created: Long = 0L): Boolean =
+        !repeats && due > now + 60_000L && now - created > 120_000L && (next == null || next > due + 60_000L)
 
     private fun untrackedLine(kind: String, tracked: List<P>): String? {
         if (kind.isNotBlank() && kind != "alarm") return null
