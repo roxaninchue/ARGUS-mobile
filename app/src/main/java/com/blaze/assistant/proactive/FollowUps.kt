@@ -71,7 +71,7 @@ object FollowUps {
     /** New messages in a chat (from Conversations). The user's own message closes that chat's follow-ups. */
     fun onMessages(pkg: String, appName: String, conv: String, group: Boolean, msgs: List<Conversations.Msg>) {
         val ctx = app ?: return
-        if (JarvisLogic.Level.of(Settings.str("jarvis_level", "eager")) == JarvisLogic.Level.OFF) return
+        if (JarvisLogic.Level.of(Settings.str("jarvis_level", "off")) == JarvisLogic.Level.OFF) return
         if (msgs.any { it.self }) markReplied(pkg, conv)
         if (Proactive.paused) return   // owner 2026-11-19: heads-ups paused, so no plan is looked for (no model call)
         val theirs = msgs.filter { !it.self && FollowUpLogic.looksLikePlan(it.text) }

@@ -1,3 +1,9 @@
+## 0.55.6 (versionCode 215, 2026-11-22): no more unasked check-in notifications
+- Finn 21:20: "please get rid of these useless side notifications" ("What's one thing you'd like to get done this month?").
+  Jarvis check-ins (getting-to-know-you questions, call offers, routine ideas, screen glances) are off by default
+  (JarvisLogic.Level.of: unset → OFF), and the update turns them off once on phones still on the old default
+  (Jarvis.OFF_0556). Reminders, alarms and real heads-ups are untouched. JarvisLogicTest covers the default.
+
 ## 0.55.5 (versionCode 214, 2026-11-22): the lean chat knows everything it has again
 - "Set up my life team" → "a researcher" got a web search and a vague question: the lean prompt never said Argus leads a
   team, and find_tools' word match never reached agent_create. Now agents_list, agent_create and add_calendar_event ride

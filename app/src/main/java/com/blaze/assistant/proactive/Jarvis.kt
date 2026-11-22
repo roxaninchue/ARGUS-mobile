@@ -60,12 +60,14 @@ import kotlin.coroutines.resume
  */
 object Jarvis {
     private lateinit var app: Context
+    /** 0.55.6: set once the update turned the check-ins off. */
+    const val OFF_0556 = "jarvis_off_0556"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + com.blaze.assistant.device.CrashLog.guard)
     private var loop: Job? = null
     private val lock = Mutex()
 
     var level: Level
-        get() = Level.of(Settings.str("jarvis_level", Level.EAGER.id))
+        get() = Level.of(Settings.str("jarvis_level", Level.OFF.id))
         set(v) { Settings.setStr("jarvis_level", v.id); if (::app.isInitialized) start(app) }
     var screenGlances: Boolean
         get() = Settings.bool("jarvis_screen", false)
@@ -80,8 +82,15 @@ object Jarvis {
     fun start(ctx: Context) {
         app = ctx.applicationContext
         loop?.cancel(); loop = null
+        // 0.55.6 (Finn 21:20): getting-to-know-you questions, call offers and routine ideas are off. Once, on update, a
+        // phone still on the old default turns them off; choosing a level in Notifications & proactivity turns them back on.
+        offOnce()
         if (level == Level.OFF) return
         loop = scope.launch { delay(120_000); while (isActive) { try { tick() } catch (_: Throwable) { }; delay(5 * 60_000L) } }
+    }
+
+    private fun offOnce() {
+        if (Settings.ready && !Settings.bool(OFF_0556, false)) { Settings.setStr("jarvis_level", Level.OFF.id); Settings.setBool(OFF_0556, true) }
     }
 
     private fun inUse(): Boolean {
@@ -97,6 +106,7 @@ object Jarvis {
 
     suspend fun tick() = lock.withLock {
         if (!::app.isInitialized || !Settings.ready) return@withLock
+        offOnce()
         val l = level
         if (l == Level.OFF || Proactive.quietNow() || busy() || !inUse()) return@withLock
         if (Proactive.paused) return@withLock   // owner 2026-11-19: heads-ups paused: no questions, glances, routine ideas or call offers

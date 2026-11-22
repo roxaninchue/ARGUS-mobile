@@ -12,7 +12,8 @@ class JarvisLogicTest {
     private val now = 1_800_000_000_000L
 
     @Test fun levelsGrowMoreEager() {
-        assertEquals(Level.EAGER, Level.of(null)); assertEquals(Level.JARVIS, Level.of("jarvis")); assertEquals(Level.EAGER, Level.of("nope"))
+        assertEquals(Level.OFF, Level.of(null)); assertEquals(Level.JARVIS, Level.of("jarvis")); assertEquals(Level.OFF, Level.of("nope")) // 0.55.6: off unless chosen
+        assertEquals(Level.EAGER, Level.of("eager"))
         val g = JarvisLogic.limits(Level.GENTLE); val e = JarvisLogic.limits(Level.EAGER); val j = JarvisLogic.limits(Level.JARVIS)
         assertTrue(g.questionsPerDay < e.questionsPerDay && e.questionsPerDay < j.questionsPerDay)
         assertTrue(j.glanceEveryMin < e.glanceEveryMin && e.glanceEveryMin < g.glanceEveryMin)

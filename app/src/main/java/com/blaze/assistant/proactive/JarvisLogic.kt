@@ -13,7 +13,10 @@ import org.json.JSONObject
 object JarvisLogic {
     enum class Level(val id: String, val label: String) {
         OFF("off", "Off"), GENTLE("gentle", "Gentle"), EAGER("eager", "Eager"), JARVIS("jarvis", "Jarvis");
-        companion object { fun of(id: String?): Level = values().firstOrNull { it.id == id } ?: EAGER }
+        companion object {
+            /** 0.55.6 (Finn 21:20, "get rid of these useless side notifications"): unset or unknown is OFF, no unasked check-ins. */
+            fun of(id: String?): Level = values().firstOrNull { it.id == id } ?: OFF
+        }
     }
 
     /**
