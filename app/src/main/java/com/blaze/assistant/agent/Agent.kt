@@ -1296,6 +1296,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     /** Owner 2026-11-20: ARGUS's small chat kit (AgentKit), on unless switched off in Settings. */
     private fun leanChat(): Boolean = try { Settings.bool(com.blaze.assistant.team.AgentKit.PREF_LEAN, true) } catch (_: Throwable) { true }
 
+    /**
+     * 0.55.0 lean harness (LeanTurn): the short system message of a lean turn. LeanTurn.PROMPT and the stable rules first
+     * (byte-identical every turn, so providers cache them), then a small live tail (name, language, memory). The shared
+     * persona still goes first as its own message (requestMessages); the [context] block still ends the message.
+     */
+    private fun leanSystemPrompt(userText: String): String {
+        val shared = SharedPersona.applies(Settings.personaId) && SharedPersona.get() != null
+        val persona = when {
+            shared -> ""
+            Settings.personaId == Personas.CUSTOM && Settings.customPersona.isNotBlank() -> "You are ${BrandName.NAME}, an AI assistant on the user's Android phone. " + Settings.customPersona
+            else -> Personas.byId(Settings.personaId).prompt
+        }
+        val rules = RapidMessages.PROMPT_RULE + ToolVerify.PROMPT_RULE + "\n" + SecretRules.PROMPT + TurnContext.RULE + Duo.IDENTITY_RULES
+        val mem = try { Memory.promptBlock(userText) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: lean memory", e); "" }
+        return LeanTurn.system(persona, rules, Settings.greetName(), ReplyLanguage.line(ReplyLanguage.current()), mem)
+    }
+
     private fun systemPrompt(userText: String, chatId: String = _chatId.value, fullAware: Boolean = true,
                              groups: Set<String> = emptySet(), turnKey: Long = 0L): String {
         val now = SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date())
@@ -1498,6 +1515,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.mediaapps.CoverArt.tool())
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
+        // 0.55.0 lean harness (LeanTurn): the two catalog tools, and the phone's own tool rows in the blaze.db catalog.
+        t.put(LeanTurn.findDef()); t.put(LeanTurn.loadSkillDef())
         t.put(com.blaze.assistant.phone.CallControl.tool())
         if (Settings.bool("bg_agents", true)) { BgAgents.tools().forEach { t.put(it) }; t.put(com.blaze.assistant.orchestra.OrchestraRuns.tool()) }
         TeamHooks.toolDefs().forEach { t.put(JSONObject(it)) }   // P1-TM-05: job tools (add_job, done_job, …)
@@ -1537,7 +1556,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         // v0.30.4: straight to a settings page by intent (in no tool group, so it's always on hand).
         if (Settings.phoneControl) t.put(com.blaze.assistant.phone.SettingsJump.tool())
         // v0.45.9: one schema per name, valid names and object parameters (gateway 0.8.2 checks calls against this list).
-        return ToolTruth.clean(ToolGuide.apply(t)).also { try { BlazeDocs.noteTools(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeDocs.noteToolsit", e) } }
+        return ToolTruth.clean(ToolGuide.apply(t)).also { try { BlazeDocs.noteTools(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeDocs.noteToolsit", e) }
+            // 0.55.0 lean harness: find_tools searches this list; the catalog keeps the phone's own rows (off the turn's path).
+            try { LeanTurn.lastAll = it; LeanCatalog.notePhoneTools(it) { n -> ToolRouter.groupOf(n) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: LeanCatalog.notePhoneTools", e) } }
     }
 
     /** v0.28.4: the real tool list (for the blaze-docs tool reference, indexed at startup). */
@@ -2434,9 +2455,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val offline = !FastLane.online(app)
                 // Plan mode and background agents skip the fast lane: it acts on the phone without the tool gate.
                 // 2026-11-16 model-first: the fast lane's rules only run offline, when no model can be reached; online the model reads every message.
-                if (offline && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && notificationContext.isNullOrBlank()) {
+                // 0.55.0 (PhoneReadout): readouts the phone holds ("speed stats", "tool stats", "what's running") answer here online too.
+                val readout = !offline && PhoneReadout.match(shown) != null
+                if ((offline || readout) && single && attachments.isEmpty() && !routine && !Modes.plan && !agentPlan && agentId == null && notificationContext.isNullOrBlank()) {
                     mood = Mood.THINKING
-                    val fast = try { kotlinx.coroutines.withContext(ConfirmGate.Direct) { FastLane.tryHandle(app, shown, offline, key = turnUser) { t, d, a -> confirm(t, d, a) } } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+                    val fast = try { kotlinx.coroutines.withContext(ConfirmGate.Direct) { if (readout) FastLane.readout(app, shown, key = turnUser) { t, d, a -> confirm(t, d, a) }
+                        else FastLane.tryHandle(app, shown, offline, key = turnUser) { t, d, a -> confirm(t, d, a) } } } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
                     if (fast != null) {
                         history.put(JSONObject().put("role", "assistant").put("content", fast.reply))
                         addReply(-1, fast.reply, "", meta = if (fast.ms < 60) "⚡ instant · ${fast.ms} ms" else "⚡ on-device · ${fast.ms} ms")
@@ -3033,6 +3057,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return out
         }
 
+        /**
+         * 0.55.0 lean harness: this step's system message. A main-chat turn (no background agent, specialist or routine)
+         * with "lean_harness" on is lean: LeanTurn's state goes on the turn's CallState (ToolPick then sends core + top 4 +
+         * find_tools / load_skill + what was found) and the short lean prompt is used. Kept out of runLoop (64 KB limit).
+         */
+        private fun turnSystem(): String {
+            val ask = lastUserText()
+            val lean = try {
+                LeanTurn.begin(CallState.current(), promptTurn, LeanTurn.eligible(LeanTurn.enabled(), agentId, specialist != null, ask.startsWith("[Scheduled routine"))) {
+                    LeanTurn.top(ToolStats.counts(), DirectLane.toolNames(LeanTurn.lastAll).toSet())
+                }
+            } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: LeanTurn.begin", e); null }
+            if (lean == null) return systemPrompt(ask, id, awareFull, promptGroups, promptTurn)
+            LeanCatalog.syncSoon()   // background, at most every 6 h; a turn never waits for it
+            return leanSystemPrompt(ask)
+        }
+
         /** Only the newest screenshot is sent as an image; older ones become a note. */
         fun requestMessages(): JSONArray {
             val base = ctxFrom.coerceIn(0, history.length())
@@ -3063,8 +3104,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     // 18 Nov 2026: the [context] block (now: line with the zone, the dates asked) closed only the else branch
                     // below (Kotlin reads `if … else a + … + block` as the else's sum), so a specialist turn never had it.
                     "\n" + TurnContextSource.block(lastUserText())
-                else systemPrompt(lastUserText(), id, awareFull,
-                    promptGroups, promptTurn) + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
+                else turnSystem() + Modes.promptLine(agentPlan) + (if (isPrivate) PrivateChat.PROMPT_LINE else "") +
                 (if (Settings.longChat) LongChat.PROMPT_LINE + (if (rung == Mind.Rung.SUMMARY) LongChat.summaryBlock(st) else "") else "") +
                 (if (rung == Mind.Rung.LOOKUP) "\n" + Mind.LOOKUP_RULE + "\n" else "") +
                 cacheBlock +
@@ -4691,6 +4731,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             Modes.block(name, args, agentPlan).takeIf { it.isNotEmpty() }?.let { add(Role.STEP, "Plan mode: skipped ${name.replace('_', ' ')}"); return it }
             if (agentId != null && name in BgAgents.leadOnly) return "Error: background agents can't start or steer other agents. Do the work yourself."
             if (isPrivate && PrivateChat.blocked(name)) return PrivateChat.REFUSAL
+            // 0.55.0 lean harness (LeanTurn): the catalog tools. find_tools only searches and marks what it found (sent from the
+            // next step); load_skill reads one skill like use_skill.
+            when (name) {
+                LeanTurn.FIND -> { turnTools.add(name); add(Role.STEP, "Looking for the right tool")
+                    return LeanTurn.find(args.optString("query").ifBlank { args.optString("need") }, LeanTurn.lastAll ?: tools(),
+                        LeanCatalog.store()?.let { s -> { q: String, n: Int -> s.search(q, n) } }, LeanTurn.current()) }
+                LeanTurn.LOAD -> { turnTools.add(name); add(Role.STEP, "Reading skill \u201c${args.optString("name").take(40)}\u201d")
+                    return loadSkill(args) }
+            }
             // 0.45.29 (stale "Yes"): on a short-yes turn, an outbound / destructive tool the newest offer didn't name asks first,
             // Autopilot or not (FollowUpBind.toolGate). The card always shows (always = true).
             if (agentId == null) FollowUpBind.toolGate(turnBind, name, args.toString())?.let { (t, d) ->
@@ -4912,6 +4961,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
          * Round 5: recorded only when a switched-on skill by that name really exists (SkillShelf.known), not guessed from
          * how the result reads.
          */
+        /** 0.55.0 load_skill: the skill's steps (as use_skill reads them); a catalog-only skill answers with its summary. */
+        private suspend fun loadSkill(args: JSONObject): String {
+            val n = args.optString("name").trim()
+            if (n.isEmpty()) return "Error: name the skill (find_tools lists them)."
+            LeanTurn.current()?.skills?.add(n)
+            val r = try { SkillPacks.run("use_skill", JSONObject().put("name", n)) } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
+            if (!r.startsWith("Error") && r.isNotBlank()) return noteSkill(JSONObject().put("name", n), r)
+            val cat = try { LeanCatalog.store()?.get(LeanCatalog.KIND_SKILL, n) } catch (_: Throwable) { null }
+            return if (cat != null) "Skill \"${cat.name}\": ${cat.summary}\n(Its full steps aren't on this phone; follow this outline.)" else r.ifBlank { "No skill called \"$n\". Call find_tools to see the skills." }
+        }
+
         private fun noteSkill(args: JSONObject, result: String): String {
             val n = try { SkillShelf.known(args.optString("name"), SkillMatch.cached()) } catch (_: Throwable) { null }
             if (n != null) skillsRead = (skillsRead + n).distinct()

@@ -151,7 +151,7 @@ object LlmClient {
             val direct = DirectLane.tryChat(msgs, toolMaxTokens(t.model, msgs, wire), onText!!, onThink, task = task, tools = wire,
                 toolChoice = wire?.let { ToolTruth.choice(msgs, it) }, info = dTry)
             if (direct != null) {
-                lastRoute = "${BrandName.NAME} Cloud · direct"
+                lastRoute = "${BrandName.NAME} Cloud · direct" + LeanTurn.tag()   // 0.55.0: "· lean" on a lean turn
                 timing.call(TurnTiming.Call(TurnTiming.DIRECT, System.currentTimeMillis() - t0, firstFrom(), inChars, tools?.length() ?: 0, dTry.ticketMs, 0, "", kind))
                 return direct
             }
@@ -174,7 +174,7 @@ object LlmClient {
                                        onThink: ((String) -> Unit)?, lane: Lane, pick: ModelRoute.Pick, task: String): JSONObject {
         var msgs = messages
         var trimmed = false
-        val cloudLabel = { "${BrandName.NAME} Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + if (trimmed) " · trimmed" else "" }
+        val cloudLabel = { "${BrandName.NAME} Cloud" + (if (lastServedBy.isNotBlank()) " · $lastServedBy" else "") + ModelRoute.label(pick) + (if (trimmed) " · trimmed" else "") + LeanTurn.tag() }
         val gateway: suspend (String, JSONArray, JSONArray?, ((String) -> Unit)?, ((String) -> Unit)?) -> JSONObject = { reserve, m, tl, txt, thk ->
             Cloud.drive(txt != null, call = { a ->
                 call(t, if (a.nudge) EmptyReply.withNudge(m) else m, tl, if (a.stream) txt else null,

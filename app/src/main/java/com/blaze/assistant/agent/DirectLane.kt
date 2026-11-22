@@ -65,7 +65,9 @@ object DirectLane {
      * `tools: true` (its models were picked to take tools); [p95]: route token → measured p95 first byte (gateway 0.9.37).
      */
     data class Ticket(val token: String, val exp: Long, val routes: List<String>, val task: String,
-                      val allowed: Set<String> = emptySet(), val withTools: Boolean = false, val p95: Map<String, Long> = emptyMap())
+                      val allowed: Set<String> = emptySet(), val withTools: Boolean = false, val p95: Map<String, Long> = emptyMap(),
+                      /** 0.55.0: the plan's catalog hash (gateway 0.9.38 `cat`): the relay also keeps every tool of that catalog. */
+                      val cat: String = "")
 
     /** 0.54.6 timing: what one direct try cost (TurnTiming): the ticket fetch (-1 = a cached ticket or none) and why it fell back. */
     class Try { @Volatile var ticketMs = -1L; @Volatile var fallback = "" }
@@ -114,7 +116,13 @@ object DirectLane {
     fun fresh(t: Ticket?, now: Long): Boolean = t != null && t.exp - RENEW_BEFORE_MS > now
 
     /** The ticket lets every one of [names] through (and was picked for tools when there are any). */
-    fun covers(t: Ticket, names: Collection<String>): Boolean = names.isEmpty() || (t.withTools && t.allowed.containsAll(names))
+    fun covers(t: Ticket, names: Collection<String>): Boolean = names.isEmpty() || (t.withTools &&
+        // 0.55.0 lean harness: a catalog ticket (gateway 0.9.38) also lets through the plan's whole catalog, so a tool find_tools
+        // loaded mid-turn stays direct; read from blaze.db's synced catalog only when it is that same catalog (LeanCatalog.covers).
+        (t.allowed.containsAll(names) || (t.cat.isNotBlank() && LeanCatalog.covers(t.allowed, t.cat, names, catalog()))))
+
+    /** The synced plan catalog (hash, tool names) the phone holds, for [covers]; tests replace it. */
+    @Volatile var catalog: () -> Pair<String, Set<String>> = { LeanCatalog.coverage() }
 
     /** A cached ticket for [task] that is fresh and covers [names], or null. */
     fun usable(t: Ticket?, task: String, names: Collection<String>, now: Long): Ticket? =
@@ -129,7 +137,7 @@ object DirectLane {
         val routes = (0 until ms.length()).mapNotNull { ms.optJSONObject(it)?.optString("route")?.takeIf { r -> r.isNotBlank() } }
         val p95 = (0 until ms.length()).mapNotNull { i -> ms.optJSONObject(i)?.let { m -> m.optLong("p95_ms", 0).takeIf { it > 0 }?.let { m.optString("route") to it } } }.toMap()
         if (tok.count { it == '.' } == 1 && exp > 0 && routes.isNotEmpty())
-            Ticket(tok, exp, routes, j.optString("task", "chat"), payloadTools(tok), withTools, p95) else null
+            Ticket(tok, exp, routes, j.optString("task", "chat"), payloadTools(tok), withTools, p95, payloadCat(tok)) else null
     } catch (_: Exception) { null }
 
     /** The tool names a ticket's (unencrypted, signed) payload lets through: `tools` + `dtools`. Empty when unreadable. */
@@ -138,6 +146,11 @@ object DirectLane {
         fun arr(k: String) = p.optJSONArray(k)?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } ?: emptyList()
         (arr("tools") + arr("dtools")).toSet()
     } catch (_: Exception) { emptySet() }
+
+    /** 0.55.0: the ticket payload's catalog hash (`cat`, gateway 0.9.38); "" for an older ticket. */
+    fun payloadCat(ticket: String): String = try {
+        JSONObject(String(b64u(ticket.substringBefore('.')), Charsets.UTF_8)).optString("cat")
+    } catch (_: Exception) { "" }
 
     /** base64url without padding (java.util.Base64, so it reads the same on the phone and in tests). */
     private fun b64u(s: String): ByteArray = java.util.Base64.getUrlDecoder().decode(s.trimEnd('='))
