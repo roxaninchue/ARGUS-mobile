@@ -382,6 +382,22 @@ class SpaceLogicTest {
         assertEquals("mailto:blazecoderhue@gmail.com?subject=ARGUS%20feedback&body=a%20%26%20b%0A", SpaceFeedback.mailto("a & b\n"))
     }
 
+    /** 0.55.3: Send goes to the gateway (anonymous GitLab issue); the mail app stays the fallback (parity with 0.55.2). */
+    @Test fun feedbackGoesToTheGatewayWithMailAsFallback() {
+        val j = org.json.JSONObject(SpaceFeedback.json("  Weather fails  ", "0.55.3", "Pixel 7", 34))
+        assertEquals("Weather fails", j.getString("text")); assertEquals("0.55.3", j.getString("version"))
+        assertEquals("Pixel 7", j.getString("device")); assertEquals("34", j.getString("sdk"))
+        assertEquals("only the note, version, phone and Android level", setOf("text", "version", "device", "sdk"), j.keys().asSequence().toSet())
+        assertEquals(SpaceFeedback.Outcome.SENT, SpaceFeedback.outcome(200))
+        assertEquals(SpaceFeedback.Outcome.LIMIT, SpaceFeedback.outcome(429))
+        for (c in listOf(-1, 401, 500, 502, 503)) assertEquals("$c", SpaceFeedback.Outcome.MAIL, SpaceFeedback.outcome(c))
+        assertEquals(-1, SpaceFeedback.post("{}", ""))   // signed out: mail, no network call
+        val src = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
+            .walkTopDown().first { it.name == "SpaceProfile.kt" }.readText()
+        assertTrue("mail fallback kept", "Intent.ACTION_SENDTO" in src && "SpaceFeedback.Outcome.MAIL -> feedbackByMail(" in src)
+        assertTrue("no mail app still copies the note", "No mail app. Copied: send it to {0}" in src)
+    }
+
     @Test fun testTagsAreUniqueAndNamespaced() {
         assertEquals(SpaceTags.FIXED.size, SpaceTags.FIXED.toSet().size)
         for (t in SpaceTags.FIXED) assertTrue(t, t.startsWith("space_"))

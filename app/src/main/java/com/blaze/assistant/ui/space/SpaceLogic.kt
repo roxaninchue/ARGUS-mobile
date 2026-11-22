@@ -560,6 +560,34 @@ object SpaceFeedback {
 
     fun body(text: String, version: String, model: String, sdk: Int): String =
         text.trim() + "\n\n\u2014\n" + BrandName.UPPER + " " + version.ifBlank { "?" } + " \u00b7 " + model.ifBlank { "Android" } + " \u00b7 Android API " + sdk
+
+    /**
+     * 0.55.3 (Finn): Send posts the note to the gateway (POST /v1/feedback, gateway 0.9.40+), which files it as a GitLab
+     * issue without the account: only the note, the version, the phone model and the Android level go. The mail app is the
+     * fallback when the gateway can't take it (offline, signed out, not set up).
+     */
+    const val PATH = "feedback"
+
+    fun json(text: String, version: String, model: String, sdk: Int): String = org.json.JSONObject()
+        .put("text", text.trim()).put("version", version).put("device", model).put("sdk", sdk.toString()).toString()
+
+    enum class Outcome { SENT, LIMIT, MAIL }
+
+    /** What the page does with the gateway's answer: 200 sent, 429 a limit (say so, don't open mail), anything else mail. */
+    fun outcome(code: Int): Outcome = when (code) { in 200..299 -> Outcome.SENT; 429 -> Outcome.LIMIT; else -> Outcome.MAIL }
+
+    /** POST to the gateway; -1 when it can't be reached or there's no sign-in. Call off the main thread. */
+    fun post(json: String, token: String, base: String = com.blaze.assistant.agent.Providers.GATEWAY_BASE): Int {
+        if (token.isBlank()) return -1
+        return try {
+            val c = com.blaze.assistant.connect.UrlSafety.open(base.trimEnd('/') + "/" + PATH)
+            c.connectTimeout = 8000; c.readTimeout = 30000; c.requestMethod = "POST"; c.doOutput = true
+            c.setRequestProperty("Authorization", "Bearer $token"); c.setRequestProperty("Content-Type", "application/json")
+            c.outputStream.use { it.write(json.toByteArray()) }
+            val code = c.responseCode
+            c.disconnect(); code
+        } catch (_: Exception) { -1 }
+    }
 }
 
 /** Test tags of the new shell (Modifier.testTag): shots, the wiring test and the device checks find parts by these. */

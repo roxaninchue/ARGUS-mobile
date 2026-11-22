@@ -2,6 +2,7 @@ package com.blaze.assistant.ui.space
 
 import com.blaze.assistant.i18n.tr
 import android.content.Intent
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -171,36 +172,53 @@ fun SpaceSystemPage(onPage: (String) -> Unit) {
 }
 
 /**
- * Submit Feedback: a text box and Send, which hands the note (plus the version and the phone model, nothing else) to
- * the app the user picks (mail, a chat app). Nothing is sent by ARGUS itself.
+ * Submit Feedback: a text box and Send. 0.55.3: Send posts the note to the gateway, which files it anonymously as a GitLab
+ * issue (the note, version, phone model and Android level; never the account). When the gateway can't take it, the mail
+ * app opens with the note filled in, as before.
  */
 @Composable
 fun SpaceFeedbackPage(version: String) {
     val look = spaceLook()
     val ctx = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     var text by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Text(tr("Tell the {0} team what works, what doesn't, or what you'd love next.", BrandName.NAME), style = SpaceType.bodyText(look.sub))
+        Text(tr("Tell the {0} team what works, what doesn't, or what you'd love next. It's sent anonymously.", BrandName.NAME), style = SpaceType.bodyText(look.sub))
         Spacer(Modifier.height(14.dp))
         // Unification 5/9: the shared text field, from SpaceRows.kt
         SpaceField(text, { text = it }, "Your feedback\u2026", singleLine = false, minHeight = 160.dp, desc = "Your feedback")
         Spacer(Modifier.height(16.dp))
-        SpacePillButton(tr("Send feedback"), primary = true, enabled = text.isNotBlank(), onClick = {
-            val body = SpaceFeedback.body(text, version, android.os.Build.MODEL ?: "", android.os.Build.VERSION.SDK_INT)
-            // 16 Nov 2026 (Finn): straight to the team's inbox in the mail app, addressed and filled in.
-            val mail = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse(SpaceFeedback.mailto(body)))
-                .putExtra(Intent.EXTRA_EMAIL, arrayOf(SpaceFeedback.TO)).putExtra(Intent.EXTRA_SUBJECT, SpaceFeedback.SUBJECT).putExtra(Intent.EXTRA_TEXT, body)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            try { ctx.startActivity(mail) }
-            catch (t: Throwable) {
-                // No mail app: copy the note so nothing is lost, and say where it goes.
-                com.blaze.assistant.device.CrashLog.quiet("feedback mail", t)
-                runCatching {
-                    val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    cm.setPrimaryClip(android.content.ClipData.newPlainText("feedback", body))
-                    android.widget.Toast.makeText(ctx, tr("No mail app. Copied: send it to {0}", SpaceFeedback.TO), android.widget.Toast.LENGTH_LONG).show()
+        SpacePillButton(if (sending) tr("Sending\u2026") else tr("Send feedback"), primary = true, enabled = text.isNotBlank() && !sending, onClick = {
+            val model = android.os.Build.MODEL ?: ""; val sdk = android.os.Build.VERSION.SDK_INT
+            sending = true
+            scope.launch {
+                val code = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    SpaceFeedback.post(SpaceFeedback.json(text, version, model, sdk), com.blaze.assistant.agent.Settings.gatewayToken())
+                }
+                sending = false
+                when (SpaceFeedback.outcome(code)) {
+                    SpaceFeedback.Outcome.SENT -> { text = ""; android.widget.Toast.makeText(ctx, tr("Sent. Thank you!"), android.widget.Toast.LENGTH_SHORT).show() }
+                    SpaceFeedback.Outcome.LIMIT -> android.widget.Toast.makeText(ctx, tr("That's a lot of feedback for today. Try again tomorrow."), android.widget.Toast.LENGTH_LONG).show()
+                    SpaceFeedback.Outcome.MAIL -> feedbackByMail(ctx, SpaceFeedback.body(text, version, model, sdk))
                 }
             }
         })
+    }
+}
+
+/** The fallback: the team's inbox in the mail app, addressed and filled in (16 Nov 2026, Finn); no mail app copies it. */
+private fun feedbackByMail(ctx: android.content.Context, body: String) {
+    val mail = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse(SpaceFeedback.mailto(body)))
+        .putExtra(Intent.EXTRA_EMAIL, arrayOf(SpaceFeedback.TO)).putExtra(Intent.EXTRA_SUBJECT, SpaceFeedback.SUBJECT).putExtra(Intent.EXTRA_TEXT, body)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    try { ctx.startActivity(mail) }
+    catch (t: Throwable) {
+        com.blaze.assistant.device.CrashLog.quiet("feedback mail", t)
+        runCatching {
+            val cm = ctx.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("feedback", body))
+            android.widget.Toast.makeText(ctx, tr("No mail app. Copied: send it to {0}", SpaceFeedback.TO), android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 }

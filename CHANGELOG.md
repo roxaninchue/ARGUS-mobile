@@ -1,3 +1,13 @@
+## 0.55.3 (versionCode 212, 2026-11-22): feedback goes straight to the team, anonymously
+Works with gateway 0.9.40 (`POST /v1/feedback`); with an older gateway Send falls back to the mail app as before.
+- Settings > Submit feedback posts the note to the gateway instead of opening the mail app. Only the note, the app
+  version, the phone model and the Android level go; the account never leaves the gateway. The gateway's model sorts it
+  (bug, idea, question, praise, noise) into GitLab issues: bugs and ideas get their own issue or a +1 on the one they
+  repeat, the rest goes into a weekly digest.
+- The mail app is still the fallback (offline, signed out, gateway without feedback): SpaceLogicTest
+  `feedbackGoesToTheGatewayWithMailAsFallback` checks it stays.
+- 10 notes a day per account; past that the page says so instead of opening mail.
+
 ## 0.55.2 (versionCode 211, 2026-11-22): what used to work works again (weather, alarms you really have, duplicates flagged)
 Works with gateway 0.9.39 (live since 2026-11-22 12:35 CAT).
 - Weather: "What's the weather like" web-searched weather.com and said it couldn't confirm. The lean core had dropped

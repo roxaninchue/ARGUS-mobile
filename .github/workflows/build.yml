@@ -166,6 +166,33 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      # 2026-11-22: what failed, on the public run page (summary + annotations), since the log and artifacts need a sign-in
+      - name: Failures in the run summary
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import glob, os, re, html
+          from xml.etree import ElementTree as ET
+          out = []
+          for f in sorted(glob.glob("**/build/test-results/**/*.xml", recursive=True)):
+              try: root = ET.parse(f).getroot()
+              except Exception: continue
+              for tc in root.iter("testcase"):
+                  for fl in list(tc.findall("failure")) + list(tc.findall("error")):
+                      msg = (fl.get("message") or fl.text or "").strip().splitlines()
+                      out.append((tc.get("classname", "") + "." + tc.get("name", ""), " | ".join(msg[:3])[:400]))
+          errs = []
+          if os.path.exists("build.log"):
+              for line in open("build.log", errors="replace"):
+                  if re.match(r"^(e: |FAILURE:|\* What went wrong|> Task .* FAILED|.*error: )", line): errs.append(line.rstrip()[:300])
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as s:
+              s.write("## Failed tests (%d)\n" % len(out))
+              for n, m in out[:40]: s.write("- `%s`: %s\n" % (n, html.escape(m)))
+              s.write("\n## Build errors\n```\n" + "\n".join(errs[:40]) + "\n```\n")
+          for n, m in out[:10]: print("::error title=%s::%s" % (n[-120:], m.replace("\n", " ")))
+          for e in errs[:5]: print("::error title=build::%s" % e)
+          PY
+
       # Key rotation (v1.14.2+): v1/v2 stay on the old key for Android 8, v3 moves to the new key with a lineage
       # for Android 9+. The old key keeps installed-data (so current installs update) but loses rollback,
       # permission, shared-uid and auth, so an APK signed only with the old (public) key can't replace a rotated install.
