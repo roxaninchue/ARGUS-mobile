@@ -3,15 +3,15 @@
 ## Current state (2026-11-22, 21:35 CAT)
 
 **App**
-- **Latest green build: 0.55.5 (versionCode 214)**, commit `8ffac6ee`, GitHub Actions "Build APK" run 45057221018 on the
+- **Latest green build for Finn's phone check: 0.55.5 (versionCode 214)**, commit `8ffac6ee`, GitHub Actions "Build APK" run 45057221018 on the
   mirror `roxaninchue/ARGUS-mobile` (success). What it carries: CHANGELOG 0.55.5 (team tools and every tool area in the
   lean chat, no-lost-tools parity test, the app never asks the gateway to trim tools) plus 0.55.4's ghost-alarm fix.
   **Phone check by Finn: pending.**
 - **`main` is at 0.55.6 (versionCode 215)**, commit `01e9d0ca`: Jarvis check-in notifications (getting-to-know-you
   questions, call offers, routine ideas, screen glances) are off by default, and a one-time migration (`Jarvis.OFF_0556`)
   turns them off on phones still on the old default. Reminders, alarms and real heads-ups are untouched. A CI run
-  (45060697735) started on its own for this commit, but Finn said no APKs for now: **0.55.6 is unreleased and not sent
-  to anyone.**
+  (45060697735) started on its own for this commit and finished green at 21:44 CAT, but Finn said no APKs for now:
+  **0.55.6 is unreleased; its CI artifact is not to be sent to anyone** until Finn says.
 - Earlier today: 0.55.4 (`4fce5a88`, run 45052241481) and the first 0.55.5 build commit (`b1620608`, run 45054828990)
   went red; 0.55.3 (`7fcc7f02`, run 45047633588) was green.
 - Version pins: `app/build.gradle.kts` versionName "0.55.6" / versionCode 215; `SpaceWiringTest` pins the same.

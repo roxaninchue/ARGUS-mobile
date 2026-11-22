@@ -3,8 +3,8 @@
 Argus is an AI assistant app for Android, written in Kotlin with Jetpack Compose (one activity, Material 3). The
 package name stays `com.blaze.assistant` for install and update identity; everything the user sees is called Argus.
 
-Current version on `main`: **0.55.6 (versionCode 215)**, not released. Latest green CI build: **0.55.5 (versionCode
-214)**. See [STATUS.md](STATUS.md) for what is built, released and pending.
+Current version on `main`: **0.55.6 (versionCode 215)**, built green by CI but held back (not released). Latest
+green build for the phone check: **0.55.5 (versionCode 214)**. See [STATUS.md](STATUS.md) for what is built, released and pending.
 
 ## What the app does today
 

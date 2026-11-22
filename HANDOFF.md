@@ -62,7 +62,7 @@ Prefer `move` over `delete` for docs. The Hark workspace keeps a helper for this
 
 ## 7. Open items (2026-11-22)
 - Phone check of 0.55.5 by Finn.
-- 0.55.6 is on `main`, unreleased; build and send only when Finn says.
+- 0.55.6 is on `main` and its auto-started CI run (45060697735) went green, but it is unreleased: send nothing until Finn says.
 - Gateway: remove the `trimTools` word list only with Finn's word; the lane recheck interval change is not done.
 - Living UI 0.3.0: plan written (docs/overhaul/living-ui-0.3.0-plan.md), not started.
 - The overhaul plan (D1–D12) is not approved; the ArgusXHark port is stopped.
