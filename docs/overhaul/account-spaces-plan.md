@@ -1,7 +1,7 @@
 # Account spaces: one space per account on the phone
 
-Status: **plan only, not started** (2026-11-22, 23:40 CAT). Jake chose "separate space" per account. No code changed yet.
-Do not start coding until Jake approves this plan (standing rule: discuss first).
+Status: **approved by Jake 2026-11-22 23:44 CAT** ("yea okay go ahead" on the suggested answers below). Work happens on
+branch `feat/account-spaces`; every commit ends in `[skip ci]` until Jake says build.
 
 ## The bug (found 2026-11-22 on Jake's phone)
 
@@ -70,7 +70,20 @@ media caches (`mediaapps/`), `"terminal"`, `"browser"`, `"linux_ready"` and `bla
 accessibility/hand settings. **Check each one with Jake**, especially the terminal home and the phone browser's cookies,
 which may hold personal sessions.
 
-## Open questions for Jake
+## Jake's decisions (2026-11-22 23:44 CAT)
+
+1. **Data on Jake's phone now:** a one-time "Whose data is this?" screen on the first run of the fix, with Roxan's
+   account preselected and a "Not sure, keep it aside" button that parks the data as `spaces/unowned/`. It runs for any
+   phone that has data but no `space_owner`, not just Jake's.
+2. **Per account:** the phone browser's cookies, logins, history and web storage, and the terminal `home` folder.
+   **Shared on the device:** the Linux system files (`usr/`), downloaded models, media caches, and the other device-level
+   items listed above.
+3. **No account switcher for now.** Sign out, then sign in. Park-and-restore keeps every space on the phone, so a
+   switcher can be added later without rework.
+4. **Gateway audit: yes, read-only first.** List the skills and MCP servers on the "L" account, mark those that look like
+   they came from Roxan's phone data, and show Jake the list. Nothing is deleted until Jake says which.
+
+## Open questions for Jake (answered above; kept for the record)
 
 1. **Jake's phone right now** holds Roxan's data while signed in as "L". On the first run of the fix, which account owns
    it? Options: (a) Roxan's account (we know the name from the chat; the fix can't tell by itself), (b) a one-time "Whose
