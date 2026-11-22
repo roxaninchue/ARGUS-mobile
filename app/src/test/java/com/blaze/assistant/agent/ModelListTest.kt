@@ -111,4 +111,76 @@ class ModelListTest {
         assertTrue(ModelPick.isDown(a.key, listAt = 0, now = 6L))
         ModelPick.clearDown()
     }
+
+    // ---------------- 0.55.7 grouped list ----------------
+
+    private fun mm(key: String, name: String, ms: Int, tools: Boolean = false, vision: Boolean = false, success: Double? = null) =
+        LiveModels.Member(key, key, name, "x", ms = ms, success = success, tools = tools, vision = vision)
+
+    private val sample = listOf(
+        mm("a/gpt-oss-120b", "GPT OSS 120b", 900, tools = true),
+        mm("a/gpt-oss-20b", "GPT OSS 20b", 600, tools = true),
+        mm("b/nemotron-super", "Nemotron 3.5 Super VL 120b", 1800, vision = true),
+        mm("b/nemotron-bolt", "Nemotron 3.5 Bolt E4b", 500),
+        mm("c/deepseek-flash", "DeepSeek Flash", 400),
+        mm("d/mystery", "Phonellm Mini Alpha 2", 0, tools = true),
+        mm("e/codestral", "Codestral Latest", 800),
+        mm("f/gemma", "Gemma 3 27b", 700), mm("g/gemini", "Gemini 3.8 Flash", 1200),
+    )
+
+    @Test fun oneCardPerMakerAToZWithOtherLast() {
+        val secs = ModelList.sections(ModelList.rows(sample))
+        assertEquals(listOf("DeepSeek", "Google", "Mistral", "NVIDIA", "OpenAI", ModelList.OTHER), secs.map { it.title })
+        assertEquals("openai", secs.first { it.title == "OpenAI" }.brand)
+        assertNull(secs.last().brand)
+        assertEquals(2, secs.first { it.title == "Google" }.items.size)   // Gemini + Gemma share Google's card
+    }
+
+    @Test fun insideACardFastestFirstAndAFailingOneLastButStillShown() {
+        val rows = ModelList.rows(sample)
+        val secs = ModelList.sections(rows, down = { it.name == "GPT OSS 20b" })
+        val openai = secs.first { it.title == "OpenAI" }.items
+        assertEquals(listOf("GPT OSS 120b", "GPT OSS 20b"), openai.map { it.row.name })
+        assertEquals(ModelList.Tone.DOWN, openai.last().tone)
+        assertEquals(listOf("Nemotron 3.5 Bolt E4b", "Nemotron 3.5 Super VL 120b"), secs.first { it.title == "NVIDIA" }.items.map { it.row.name })
+        assertEquals(ModelList.Tone.SLOW, secs.first { it.title == "NVIDIA" }.items.last().tone)
+    }
+
+    @Test fun filtersNarrowTheCardsAndDropEmptyOnes() {
+        val rows = ModelList.rows(sample)
+        assertEquals(listOf("OpenAI", ModelList.OTHER), ModelList.sections(rows, ModelList.Filter.TOOLS).map { it.title })
+        assertEquals(listOf("NVIDIA"), ModelList.sections(rows, ModelList.Filter.VISION).map { it.title })
+        val fast = ModelList.sections(rows, ModelList.Filter.FAST).flatMap { s -> s.items.map { it.row.name } }
+        assertTrue("Nemotron 3.5 Super VL 120b" !in fast)   // 1.8 s
+        assertTrue("Phonellm Mini Alpha 2" !in fast)        // unmeasured is not fast
+        assertTrue("Gemini 3.8 Flash" in fast)              // 1.2 s
+        assertEquals(listOf("OpenAI"), ModelList.sections(rows, ModelList.Filter.TOOLS, "gpt 120").map { it.title })
+    }
+
+    @Test fun speedAndSize() {
+        assertEquals("0.9s", ModelList.speed(900))
+        assertEquals("1.8s", ModelList.speed(1800))
+        assertEquals("", ModelList.speed(0))
+        assertEquals("12s", ModelList.speed(12_400))
+        fun size(n: String) = ModelList.sizeRange(n)?.let { n.substring(it) }
+        assertEquals("120b", size("GPT OSS 120b"))
+        assertEquals("27B", size("Qwen3.8 27B"))
+        assertEquals("1.5b", size("Tiny 1.5b Chat"))
+        assertNull(size("Nemotron 3.5 Bolt E4b"))
+        assertNull(size("MiniCPM V 4.7 1Bx"))
+        assertNull(size("DeepSeek Flash"))
+    }
+
+    @Test fun recentKeepsTheLastTwoPicksAndSkipsGoneOrFailing() {
+        var s = ""
+        s = ModelList.pushRecent(s, "a/gpt-oss-120b")
+        s = ModelList.pushRecent(s, "b/nemotron-bolt")
+        s = ModelList.pushRecent(s, "a/gpt-oss-120b")
+        s = ModelList.pushRecent(s, "c/deepseek-flash")
+        assertEquals("c/deepseek-flash\na/gpt-oss-120b", s)
+        val rows = ModelList.rows(sample)
+        assertEquals(listOf("DeepSeek Flash", "GPT OSS 120b"), ModelList.recent(rows, s).map { it.name })
+        assertEquals(listOf("GPT OSS 120b"), ModelList.recent(rows, s) { it.name == "DeepSeek Flash" }.map { it.name })
+        assertEquals(listOf("GPT OSS 120b"), ModelList.recent(rows, "gone/model\na/gpt-oss-120b").map { it.name })
+    }
 }

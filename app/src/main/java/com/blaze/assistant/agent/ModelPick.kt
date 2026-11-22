@@ -33,7 +33,13 @@ object ModelPick {
         val c = Choice(key.trim(), effort.trim().lowercase().takeIf { it in LiveModels.EFFORTS }.orEmpty())
         _current.value = c
         try { Settings.setStr(PICK, c.key); Settings.setStr(EFFORT, c.effort) } catch (_: Throwable) { }
+        if (!c.auto) try { Settings.setStr(RECENT, ModelList.pushRecent(recentKeys(), c.key)) } catch (_: Throwable) { }
     }
+
+    /** 0.55.7: the picker's "Recent" (the last two models picked, newest first), one key per line. */
+    const val RECENT = "model_recent"
+
+    fun recentKeys(): String = try { Settings.str(RECENT, "") } catch (_: Throwable) { "" }
 
     fun auto() = set("")
 
