@@ -1,0 +1,203 @@
+package com.blaze.assistant.agent
+
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * 0.55.0 lean harness (docs/LEAN-HARNESS.md; Finn approved the design 2026-11-22): like opencode's harness for free
+ * models. A main-chat turn sends
+ *  - a short, STABLE system prompt that lives on the phone ([PROMPT]: byte-identical turn after turn, so providers cache
+ *    it; only a small live tail follows it),
+ *  - [CORE] (10 tools: alarms, timers and messages never wait on a lookup), the phone's [TOP_N] most-used other tools
+ *    ([top]), and the two catalog tools [FIND] (`find_tools`) and [LOAD] (`load_skill`): about 12-16 tools instead of ~50.
+ * Every other tool and skill waits in blaze.db ([LeanCatalog]) and joins from the next step when the model asks:
+ * `find_tools` ([find], non-suspend: it only searches and marks names) adds what it found to this turn's [State.found], and
+ * ToolPick sends those too. `load_skill` is a case in Agent.runToolInner's `when` (it reads the skill like use_skill).
+ *
+ * Nothing here lives in Agent.runLoop (the method is at the JVM's 64 KB limit): the turn's [State] is made in
+ * Agent.requestMessages, carried on the turn's [CallState] (forks share it) and read by ToolPick.core / ToolPick.pick and
+ * LlmClient (the "· lean" route label). Background agents, specialists, routines and the chat lane never go lean.
+ *
+ * Pure Kotlin + org.json apart from [enabled] (Settings, guarded); LeanTurnTest.
+ */
+object LeanTurn {
+    const val FIND = "find_tools"
+    const val LOAD = "load_skill"
+    const val PREF = "lean_harness"
+    const val TOP_N = 4
+    const val FIND_MAX = 6
+    const val SKILL_MAX = 3
+    const val TAG = " \u00b7 lean"
+
+    /** Sent on every lean turn. Alarms, timers and messages are here so they never wait on a lookup. */
+    val CORE = listOf("ask_user", "web_search", "fetch_page", "memory_search", "memory_save",
+        "set_alarm", "set_timer", "message_contact", "calendar_events", "open_app")
+    val META = listOf(FIND, LOAD)
+
+    /** Never counted as "most used" (they're already sent, or they're the catalog's own). */
+    private val NOT_TOP = (CORE + META + listOf("find_tool", "load_tools", "use_skill")).toSet()
+
+    /** The short, stable system prompt (on the phone, byte-identical every turn). Keep it under [PROMPT_MAX] chars. */
+    val PROMPT = """
+You are ${com.blaze.assistant.BrandName.NAME}, an AI assistant that runs on the user's Android phone and acts for them.
+HOW YOU WORK: you have a few core tools now. For anything else (phone settings like Bluetooth or Wi-Fi, the screen, apps, files, the terminal, the browser, music, GitHub, email, your own settings and more) call $FIND with what you need in plain words; the tools it finds are yours from your next step. For work with known steps (essays, flashcards, slides, code review, research, designs) call $FIND or $LOAD and follow the skill. Never say you can't do something before $FIND came back empty.
+Alarms, timers and messages: call set_alarm, set_timer or message_contact straight away.
+Act, then report what the tool results say. Claim success only from a result that says so. Ask with ask_user only when a real choice is the user's (which contact, which account); check facts yourself.
+Reply in the user's language, short and plain, no filler. Never show tool names, JSON or code unless asked.
+""".trim()
+
+    const val PROMPT_MAX = 4_000
+
+    /** Settings "lean_harness" (default on). */
+    fun enabled(): Boolean = try { Settings.bool(PREF, true) } catch (_: Throwable) { true }
+
+    /** Which turns go lean: the main chat's own turns, not background agents, specialists or routines. */
+    fun eligible(on: Boolean, agentId: String?, specialist: Boolean, routine: Boolean): Boolean = on && agentId == null && !specialist && !routine
+
+    /** One lean turn. [turn]: the turn's key (Agent's promptTurn). [top]: its most-used tools, fixed for the turn. */
+    class State(val turn: Long, val top: List<String>) {
+        /** Tools find_tools found this turn: sent from the next step, kept to the end of the turn. */
+        val found: MutableSet<String> = ConcurrentHashMap.newKeySet()
+        /** Skills load_skill read this turn. */
+        val skills: MutableSet<String> = ConcurrentHashMap.newKeySet()
+        /** Tool names this turn may send (core, top, catalog tools, found). */
+        fun names(): Set<String> = LinkedHashSet<String>().apply { addAll(CORE); addAll(top); addAll(META); addAll(found) }
+    }
+
+    /** The phone's whole tool list as Agent.tools last built it (find_tools searches it; ToolPick still decides what is sent). */
+    @Volatile var lastAll: JSONArray? = null
+
+    /** The lean state of the turn the caller runs in, or null (not a lean turn). */
+    fun current(): State? = CallState.current().lean
+
+    /**
+     * The turn's state: kept for every step of turn [turn], new when a new turn starts, null (and cleared) when the turn
+     * isn't lean. Called from Agent.requestMessages before ToolPick runs for the step.
+     */
+    fun begin(st: CallState, turn: Long, lean: Boolean, top: () -> List<String>): State? {
+        if (!lean) { st.lean = null; return null }
+        st.lean?.takeIf { it.turn == turn }?.let { return it }
+        return State(turn, try { top() } catch (_: Throwable) { emptyList() }).also { st.lean = it }
+    }
+
+    /** The [n] most-used tools from [counts] (calls per tool), not core or catalog tools, only ones this phone has. */
+    fun top(counts: Map<String, Int>, available: Set<String>, n: Int = TOP_N): List<String> =
+        counts.entries.filter { it.key !in NOT_TOP && it.key in available && it.value > 0 }
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).take(n).map { it.key }
+
+    /**
+     * The tools a lean step sends: those of [selected] (the turn's already-filtered list, its order kept) whose name is in
+     * the turn's [State.names] or [used] (tools this chat already called). [selected] decides what may be sent at all
+     * (Plan mode, private chats, a bot's subset), so nothing outside it can ride along.
+     */
+    fun filter(selected: JSONArray, st: State, used: Set<String>): JSONArray {
+        val want = st.names() + used
+        return JSONArray().apply {
+            for (i in 0 until selected.length()) {
+                val n = selected.optJSONObject(i)?.optJSONObject("function")?.optString("name") ?: continue
+                if (n in want) put(selected.opt(i))
+            }
+        }
+    }
+
+    /** "Argus Cloud · direct" + " · lean" on a lean turn (the route line the reply shows). */
+    fun tag(): String = if (current() != null) TAG else ""
+
+    // ---------------- the live tail and the whole message ----------------
+
+    /** The lean system message: [PROMPT] first (cached prefix), then the stable rules the app adds, then the live tail. */
+    fun system(persona: String, rules: String, name: String?, lang: String, memory: String, skillsHint: String = ""): String = buildString {
+        if (persona.isNotBlank()) append(persona.trim()).append('\n')
+        append(PROMPT)
+        if (rules.isNotBlank()) append('\n').append(rules.trim())
+        if (skillsHint.isNotBlank()) append('\n').append(skillsHint.trim())
+        // live tail: changes per user / turn, after everything cacheable
+        if (!name.isNullOrBlank()) append("\nThe user's name is ").append(name.trim()).append('.')
+        if (lang.isNotBlank()) append('\n').append(lang.trim())
+        if (memory.isNotBlank()) append('\n').append(memory.trim().take(MEMORY_MAX))
+    }
+
+    const val MEMORY_MAX = 1_500
+
+    // ---------------- find_tools ----------------
+
+    fun findDef(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
+        .put("name", FIND)
+        .put("description", "Search every tool and skill on this phone by what you need, in plain words (\"turn on bluetooth\", \"read my screen\", \"open a github issue\", \"make flashcards\"). The tools it finds are available from your next step; skills are read with $LOAD.")
+        .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
+            .put("query", JSONObject().put("type", "string").put("description", "What you need to do, in plain words")))
+            .put("required", JSONArray(listOf("query")))))
+
+    fun loadSkillDef(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
+        .put("name", LOAD)
+        .put("description", "Read one skill's full steps by its name (from $FIND), then follow them.")
+        .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
+            .put("name", JSONObject().put("type", "string").put("description", "The skill's name")))
+            .put("required", JSONArray(listOf("name")))))
+
+    /** One hit of [find]. */
+    data class Hit(val kind: String, val name: String, val summary: String)
+
+    private val wordRe = Regex("[a-z0-9]{2,}")
+    private val stop = setOf("the", "my", "a", "an", "to", "on", "of", "for", "in", "and", "or", "me", "it", "is", "with", "please", "can", "you", "turn", "do", "this", "that")
+
+    /** Words that mean the same tool family (the query's words are extended by these before scoring). */
+    private val SYN = mapOf("bluetooth" to "device setting toggle", "wifi" to "device setting toggle", "wi" to "device setting",
+        "torch" to "flashlight device setting", "flashlight" to "device setting", "volume" to "device setting sound", "brightness" to "device setting display",
+        "screen" to "read tap scroll", "text" to "sms message", "sms" to "message send", "email" to "gmail", "mail" to "gmail",
+        "song" to "music", "music" to "media play", "photo" to "gallery camera image", "picture" to "image gallery", "file" to "file",
+        "command" to "shell terminal run", "code" to "run code terminal", "website" to "browser open", "site" to "browser open",
+        "remind" to "routine reminder calendar", "reminder" to "routine calendar", "call" to "call contact dial", "contact" to "contact find")
+
+    private fun terms(q: String): List<String> {
+        val base = wordRe.findAll(q.lowercase().replace('_', ' ')).map { it.value }.filter { it !in stop }.toList()
+        return (base + base.flatMap { SYN[it]?.split(' ') ?: emptyList() }).distinct()
+    }
+
+    /** Local score of one tool for the query terms: name words x3, description words x1. */
+    fun score(terms: List<String>, name: String, desc: String): Int {
+        if (terms.isEmpty()) return 0
+        val nameWords = name.lowercase().split('_', '-', '.', ':').toSet()
+        val d = desc.lowercase()
+        return terms.sumOf { t -> (if (t in nameWords || name.lowercase() == t) 3 else 0) + (if (Regex("\\b" + Regex.escape(t)).containsMatchIn(d)) 1 else 0) }
+    }
+
+    /**
+     * find_tools: searches the catalog ([catalog]: name, summary, kind) and the turn's real tool list ([all]: only tools
+     * this phone can send), marks the tools found on [st] (sent from the next step), and answers in a few lines.
+     * Non-suspend and quick (no network); never throws.
+     */
+    fun find(query: String, all: JSONArray, catalog: ((String, Int) -> List<LeanCatalog.Entry>)?, st: State?, max: Int = FIND_MAX): String {
+        val q = query.trim()
+        if (q.isEmpty()) return "Say what you need in a few words, e.g. find_tools query=\"turn on bluetooth\"."
+        val real = LinkedHashMap<String, String>()
+        for (i in 0 until all.length()) all.optJSONObject(i)?.optJSONObject("function")?.let { f -> real[f.optString("name")] = f.optString("description") }
+        val t = terms(q)
+        val scored = HashMap<String, Int>()
+        val skills = LinkedHashMap<String, String>()
+        try {
+            catalog?.invoke(q + " " + t.joinToString(" "), max * 3)?.forEachIndexed { i, e ->
+                if (e.kind == LeanCatalog.KIND_SKILL) { if (skills.size < SKILL_MAX) skills.putIfAbsent(e.name, e.summary) }
+                else if (e.name in real) scored.merge(e.name, 40 - i, ::maxOf)
+            }
+        } catch (_: Throwable) { /* the local scoring below still answers */ }
+        for ((n, d) in real) { val s = score(t, n, d); if (s > 0) scored.merge(n, s * 4, Int::plus) }
+        val already = st?.names().orEmpty()
+        val picked = scored.entries.filter { it.key != FIND && it.key != LOAD }
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).take(max).map { it.key }
+        st?.found?.addAll(picked)
+        if (picked.isEmpty() && skills.isEmpty()) return "No tool or skill matched \"$q\". Try other words (what you want to happen, e.g. \"switch on bluetooth\", \"send a whatsapp\"), or do it another way."
+        return buildString {
+            if (picked.isNotEmpty()) {
+                append("Tools for \"").append(q).append("\" (available from your next step; call one now):")
+                for (n in picked) append("\n- ").append(n).append(if (n in already) " (already loaded)" else "").append(": ").append(LeanCatalog.firstSentence(real[n].orEmpty()))
+            }
+            if (skills.isNotEmpty()) {
+                if (isNotEmpty()) append('\n')
+                append("Skills (read one with $LOAD name=…):")
+                for ((n, s) in skills) append("\n- ").append(n).append(": ").append(s)
+            }
+        }
+    }
+}

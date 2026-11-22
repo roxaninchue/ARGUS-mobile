@@ -74,7 +74,8 @@ object ToolPick {
     fun core(simple: Boolean): Set<String> = ESSENTIAL + (if (simple) HARNESS - TERMINAL_CORE else HARNESS)
 
     /** Owner 2026-11-20: with the lean chat kit on, ARGUS's own core is [com.blaze.assistant.team.AgentKit.CHAT_CORE]. */
-    fun core(simple: Boolean, lean: Boolean): Set<String> = if (lean) ESSENTIAL + com.blaze.assistant.team.AgentKit.CHAT_CORE else core(simple)
+    fun core(simple: Boolean, lean: Boolean): Set<String> = LeanTurn.current()?.names()   // 0.55.0 lean harness: core + top 4 + find_tools / load_skill + found
+        ?: if (lean) ESSENTIAL + com.blaze.assistant.team.AgentKit.CHAT_CORE else core(simple)
 
     data class Cue(val id: String, val about: String, val names: Set<String>, val match: Regex)
 
@@ -140,6 +141,9 @@ object ToolPick {
              /** v0.45.2: tools this turn must keep past the cap (the desktop agent on a desktop request). */
              must: Set<String> = emptySet()): JSONArray {
         if (keepAll) return selected
+        // 0.55.0 lean harness: a lean turn sends its core, its top tools, the catalog tools, what find_tools found and what
+        // this chat already called; the rest stays in the catalog (LeanTurn).
+        LeanTurn.current()?.let { return LeanTurn.filter(selected, it, used) }
         val on = cues(userText, used, groupsOn)
         val kept = ArrayList<Pair<Int, Any?>>()
         for (i in 0 until selected.length()) {

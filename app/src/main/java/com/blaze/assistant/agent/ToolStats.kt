@@ -32,6 +32,10 @@ object ToolStats {
         try { file?.writeText(data.toString()) } catch (_: Exception) { }
     }
 
+    /** 0.55.0 lean harness: calls per tool that ran (clean or repaired), for the turn's most-used tools (LeanTurn.top). */
+    @Synchronized fun counts(): Map<String, Int> = data.keys().asSequence().filter { it.startsWith("tool:") }
+        .associate { k -> k.substringAfter(':') to (data.optJSONObject(k)?.let { it.optInt("ok") + it.optInt("repaired") } ?: 0) }
+
     @Synchronized fun reset() { data.keys().asSequence().toList().forEach { data.remove(it) }; save() }
 
     /** One line per tool or model with problems, worst first. */
