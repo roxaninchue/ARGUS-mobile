@@ -106,6 +106,13 @@
         <intent>
             <action android:name="android.media.action.VIDEO_CAPTURE" />
         </intent>
+        <!-- 0.55.4: tell a clock app's alarm from a calendar/reminder app's alarm clock (agent/SystemAlarm). -->
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SET_ALARM" />
+        </intent>
     </queries>
 
     <application

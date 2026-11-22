@@ -52,7 +52,7 @@ object Processes {
         app = ctx.applicationContext
         file = File(app.filesDir, "processes.json")
         val a0 = app
-        nextSystemAlarm = { a0.getSystemService(android.app.AlarmManager::class.java)?.nextAlarmClock?.triggerTime }
+        nextSystemAlarm = { SystemAlarm.read(a0) }   // 0.55.4: only a clock app's alarm; another app's = SystemAlarm.UNKNOWN
         systemAlarmReadable = true
         try {
             val o = JSONObject(file.readText())
@@ -191,7 +191,8 @@ object Processes {
         return null
     }
 
-    /** v0.45.13: the phone's next Clock alarm when Argus tracks none at that time (only the next one is visible to apps). */
+    /** v0.45.13: the phone's next Clock alarm when Argus tracks none at that time (only the next one is visible to apps).
+     *  0.55.4: null = none, [SystemAlarm.UNKNOWN] = another app's alarm clock is next (can't tell). */
     @Volatile var nextSystemAlarm: () -> Long? = { null }
 
     /** True once [init] wired [nextSystemAlarm] to AlarmManager (so null there means "no alarm", not "can't tell"). */
@@ -207,6 +208,7 @@ object Processes {
     private fun untrackedLine(kind: String, tracked: List<P>): String? {
         if (kind.isNotBlank() && kind != "alarm") return null
         val t = try { nextSystemAlarm() } catch (_: Throwable) { null } ?: return null
+        if (t == SystemAlarm.UNKNOWN) return null   // 0.55.4: a calendar/reminder app's alarm clock is not a Clock alarm
         if (tracked.any { it.kind == "alarm" && it.status == "active" && Math.abs(it.due - t) < 60_000L }) return null
         val hm = SimpleDateFormat("HH:mm", Locale.US).format(Date(t))
         return "clock@$hm · alarm · next Clock alarm (not tracked by ${BrandName.NAME}) · ${fmt.format(Date(t))} · on. To switch it off or delete it use process with id clock@$hm, or A<n> if its label says (${BrandName.NAME} A<n>)."

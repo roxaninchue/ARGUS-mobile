@@ -1,3 +1,11 @@
+## 0.55.4 (versionCode 213, 2026-11-22): no more ghost alarms from other apps
+- Home, the greeting and the chat showed "20:00 Alarm" while the Clock app said "No alarms": Android's "next alarm clock"
+  is whatever ANY app registered (a calendar or reminder app uses the same call). New `SystemAlarm`: it only counts when a
+  clock app made it (the alarm's creator opens SHOW_ALARMS / SET_ALARM, or is a known clock package). Another app's
+  alarm clock is "can't tell": nothing is shown, and an alarm Argus set is never dropped because of it.
+- Used by TurnContextSource (Home + context) and Processes (the "next Clock alarm" line and the phantom check). Manifest
+  queries SHOW_ALARMS / SET_ALARM. SystemAlarmTest keeps real Clock alarms showing (parity).
+
 ## 0.55.3 (versionCode 212, 2026-11-22): feedback goes straight to the team, anonymously
 Works with gateway 0.9.40 (`POST /v1/feedback`); with an older gateway Send falls back to the mail app as before.
 - Settings > Submit feedback posts the note to the gateway instead of opening the mail app. Only the note, the app

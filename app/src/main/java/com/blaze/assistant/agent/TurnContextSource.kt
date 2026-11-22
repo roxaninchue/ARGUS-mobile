@@ -94,17 +94,17 @@ object TurnContextSource {
         val out = ArrayList<ScheduleDay.Entry>()
         val now = System.currentTimeMillis()
         // 0.55.2: only alarms the Clock app really has (Processes.goneFromClock); a refused or deleted one never shows.
-        val sysNext = app?.let { c -> try { c.getSystemService(android.app.AlarmManager::class.java)?.nextAlarmClock?.triggerTime ?: 0L } catch (_: Throwable) { -1L } } ?: -1L
+        // 0.55.4: only a clock app's alarm counts (SystemAlarm); 0 = none, -1 = can't tell.
+        val clockNext = app?.let { SystemAlarm.read(it) ?: 0L } ?: SystemAlarm.UNKNOWN
+        val sysNext = clockNext
         Processes.all.value.filter { it.kind == "alarm" && it.status == "active" && it.due > now - 86_400_000L &&
             !(sysNext != -1L && Processes.goneFromClock(it.due, it.props.optBoolean("repeats"), now, sysNext.takeIf { n -> n > 0L }, it.created)) }.forEach { p ->
             out += ScheduleDay.Entry(p.title, "alarm", ScheduleDay.Rule.Once(Instant.ofEpochMilli(p.due)))
         }
-        // The phone's next alarm from any clock app (only the next one is visible to apps).
-        val ctx = app ?: return out
-        ctx.getSystemService(android.app.AlarmManager::class.java)?.nextAlarmClock?.let { n ->
-            if (out.none { Math.abs(it.rule.let { r -> (r as ScheduleDay.Rule.Once).at.toEpochMilli() } - n.triggerTime) < 60_000L })
-                out += ScheduleDay.Entry("Alarm", "alarm", ScheduleDay.Rule.Once(Instant.ofEpochMilli(n.triggerTime)))
-        }
+        // The Clock app's next alarm (only the next one is visible to apps). 0.55.4 (Finn 19:53, a "20:00 Alarm" with
+        // "No alarms" in Clock): never another app's alarm clock (calendar, reminders), which nextAlarmClock also returns.
+        if (clockNext > 0L && out.none { Math.abs(it.rule.let { r -> (r as ScheduleDay.Rule.Once).at.toEpochMilli() } - clockNext) < 60_000L })
+            out += ScheduleDay.Entry("Alarm", "alarm", ScheduleDay.Rule.Once(Instant.ofEpochMilli(clockNext)))
         return out
     }
 
