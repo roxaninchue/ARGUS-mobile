@@ -13,8 +13,8 @@ android {
         applicationId = "com.blaze.assistant"
         minSdk = 26
         targetSdk = 34
-        versionCode = 216
-        versionName = "0.55.7"
+        versionCode = 217
+        versionName = "0.55.8"
         // Build round (owner said "yes please" to the build, 2026-11-21 23:50 CAT): 0.54.5 (207), Direct lane client (e7b7c0a7 + a6b3d8ec).
         // v0.30.1 Music Store: Jamendo client_id, from the environment or -Pjamendo.clientId at build time. Never hard-coded;
         // empty = "not configured" (the user can paste one in the Music Store instead).

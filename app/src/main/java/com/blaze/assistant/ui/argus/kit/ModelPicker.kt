@@ -1,14 +1,5 @@
 package com.blaze.assistant.ui.argus.kit
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.Velocity
 import com.blaze.assistant.i18n.tr
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +16,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.heading
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
@@ -104,9 +99,14 @@ fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = n
 
 /**
  * 0.55.7 (owner 2026-11-22, the "grouped cards" concept): a header with a close button, search, filter chips (All, Tools,
- * Vision, Fast), the Auto card, the two most recent picks, then one glass card per maker with its rows healthiest and
- * fastest first. A model that didn't answer lately stays in its card, dimmed, with a red "Failing" pill instead of hiding.
- * Only the picked thing shows a tick and a highlight.
+ * Vision, Fast), the Auto card, the two most recent picks, then the models grouped by maker, healthiest and fastest first.
+ * A model that didn't answer lately stays in its group, dimmed, with a red "Failing" pill instead of hiding. Only the picked
+ * thing shows a tick and a highlight.
+ *
+ * 0.55.8 (owner 2026-11-22): no boxes or dividers round the groups; a shared grid does the work (each maker's logo sits on
+ * its models' logo column, its name on their name column). Rounder search and highlight. No swipe down: the X, Back and the
+ * scrim close it. On a phone on its side the sheet splits in two: search, filters, Auto and Recent on the left, the models
+ * on the right, so the list gets the full height.
  */
 @Composable
 fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
@@ -119,34 +119,24 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
     val sections = remember(rows, query, filter, choice) { ModelList.sections(rows, filter, query, isDown) }
     val recent = remember(rows, choice) { ModelList.recent(rows, ModelPick.recentKeys(), isDown) }
     val pick: (ModelList.Row) -> Unit = { r -> ModelPick.set(r.best.key, choice.effort); onDismiss() }
-    ArgusSheet(onDismiss = onDismiss, title = null, scroll = false) {
+    val cfg = androidx.compose.ui.platform.LocalConfiguration.current
+    val wide = cfg.screenWidthDp > cfg.screenHeightDp
+    ArgusSheet(onDismiss = onDismiss, title = null, scroll = false, dragToClose = false,
+        maxWidth = if (wide) 960.dp else androidx.compose.material3.BottomSheetDefaults.SheetMaxWidth) {
         val picked = list.firstOrNull { it.key == choice.key }
         val pickedRow = if (choice.auto) null else ModelList.rowOf(rows, choice.key)
         val pickedDown = !choice.auto && ModelPick.isDown(choice.key)
         val close = LocalSheetClose.current
-        Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(tr("Model"), style = ArgusType.sheetTitle, color = c.ink, modifier = Modifier.weight(1f)
-                .semantics { heading() })
-            ArgusIconButton("x", tr("Close"), { close() })
-        }
-        if (rows.size > 6) ArgusSearch(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), placeholder = tr("Search models"))
-        if (rows.isNotEmpty()) FilterRow(filter) { filter = it }
-        // 2026-11-17 / 21 (owner): scrolling the list only scrolls it; a pull or flick down from the top closes the sheet.
-        val listScroll = rememberScrollState()
-        val pullPx = with(androidx.compose.ui.platform.LocalDensity.current) { ModelSheetScroll.PULL_DP.dp.toPx() }
-        val keepSheet = remember(listScroll) { ModelSheetScroll.Hold({ listScroll.value == 0 }, pullPx) { close() } }
         val browsing = query.isBlank() && filter == ModelList.Filter.ALL
-        androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth()
-            .pointerInput(listScroll) {
-                awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                    keepSheet.down(listScroll.value == 0)
-                }
+        val header: @Composable () -> Unit = {
+            Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(tr("Model"), style = ArgusType.sheetTitle, color = c.ink, modifier = Modifier.weight(1f).semantics { heading() })
+                ArgusIconButton("x", tr("Close"), { close() })
             }
-            .nestedScroll(keepSheet)
-            .verticalScroll(listScroll)
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (rows.size > 6) ArgusSearch(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),
+                placeholder = tr("Search models"), radius = ArgusTokens.Radius.PILL)
+        }
+        val top: @Composable () -> Unit = {
             if (browsing) AutoCard(on = choice.auto) { ModelPick.auto(); onDismiss() }
             if (pickedDown && browsing) MenuRow("triangle-alert", picked?.name ?: LiveModels.prettyName(choice.key.substringAfter('/')), { ModelPick.auto(); onDismiss() },
                 sub = tr("Didn't answer, so messages go Auto until it's healthy again. Tap to stay on Auto"))
@@ -154,48 +144,82 @@ fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
                 sub = tr("Not healthy right now, so messages go Auto. Tap to switch to Auto"))
             if (browsing && recent.isNotEmpty()) {
                 SectionHeader(tr("Recent"), icon = "history", brand = null)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (wide) for (r in recent) RecentCard(r, Modifier.fillMaxWidth()) { pick(r) }
+                else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (r in recent) RecentCard(r, Modifier.weight(1f)) { pick(r) }
                     if (recent.size == 1) Box(Modifier.weight(1f))
                 }
             }
+        }
+        val models: @Composable () -> Unit = {
             if (list.isEmpty()) Text(tr("No healthy models listed yet. Auto still works."), style = ArgusType.meta, color = c.mute,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
             else if (sections.isEmpty()) Text(if (query.isBlank()) tr("No {0} models right now.", tr(filter.label).lowercase()) else tr("No model matches \u201c{0}\u201d.", query.trim()),
                 style = ArgusType.meta, color = c.mute, modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
             for (sec in sections) {
                 SectionHeader(sec.title, icon = null, brand = sec.brand)
-                androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth()
-                    .argusGlass(GlassLevel.SURFACE, RoundedCornerShape(ArgusTokens.Radius.ROW.dp), shadow = false)) {
-                    sec.items.forEachIndexed { i, item ->
-                        if (i > 0) Box(Modifier.fillMaxWidth().padding(start = 64.dp).height(1.dp).background(c.line))
-                        ModelRow(item, on = item.row == pickedRow) { pick(item.row) }
-                    }
-                }
+                for (item in sec.items) ModelRow(item, on = item.row == pickedRow) { pick(item.row) }
             }
-            Box(Modifier.size(8.dp))
+            Box(Modifier.size(12.dp))
+        }
+        if (wide) Row(Modifier.fillMaxWidth().fillMaxHeight(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            androidx.compose.foundation.layout.Column(Modifier.width(300.dp).fillMaxHeight().fadeEdges().verticalScroll(rememberScrollState())
+                .padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                header()
+                FilterRow(filter, wrap = true) { filter = it }
+                top()
+            }
+            androidx.compose.foundation.layout.Column(Modifier.weight(1f).fillMaxHeight().fadeEdges().verticalScroll(rememberScrollState())
+                .padding(horizontal = 4.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) { models() }
+        } else {
+            header()
+            if (rows.isNotEmpty()) FilterRow(filter) { filter = it }
+            androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().fadeEdges().verticalScroll(rememberScrollState())
+                .padding(horizontal = 4.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                top()
+                models()
+            }
         }
     }
 }
 
-/** All / Tools / Vision / Fast: one at a time, the picked one in ink. */
+/** A list's top and bottom 14 dp fade out, so rows slide under the header softly instead of being cut by a hard edge. */
+private fun Modifier.fadeEdges(): Modifier = this
+    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val f = (14.dp.toPx() / size.height).coerceIn(0f, 0.5f)
+        drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(0f to Color.Transparent, f to Color.Black, (1f - f) to Color.Black, 1f to Color.Transparent),
+            blendMode = androidx.compose.ui.graphics.BlendMode.DstIn)
+    }
+
+/** All / Tools / Vision / Fast: one at a time, the picked one in ink. [wrap]: two to a line (the narrow side pane). */
 @Composable
-private fun FilterRow(current: ModelList.Filter, onPick: (ModelList.Filter) -> Unit) {
-    val c = Argus.colors
-    androidx.compose.foundation.lazy.LazyRow(Modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp),
+private fun FilterRow(current: ModelList.Filter, wrap: Boolean = false, onPick: (ModelList.Filter) -> Unit) {
+    if (wrap) androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+        for (pair in ModelList.Filter.entries.chunked(2)) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (f in pair) FilterChip(f, f == current, Modifier.weight(1f), fill = true, onPick = onPick)
+            if (pair.size == 1) Box(Modifier.weight(1f))
+        }
+    } else androidx.compose.foundation.lazy.LazyRow(Modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(ModelList.Filter.entries) { f ->
-            val on = f == current
-            val shape = RoundedCornerShape(ArgusTokens.Radius.PILL.dp)
-            Box(Modifier.heightIn(min = 48.dp).clickable(role = Role.Tab) { onPick(f) }
-                .clearAndSetSemantics { contentDescription = tr(f.label); role = Role.Tab; selected = on; onClick { onPick(f); true } },
-                contentAlignment = Alignment.Center) {
-                Row(Modifier.heightIn(min = 34.dp).then(if (on) Modifier.clip(shape).background(c.ink) else Modifier.argusGlass(GlassLevel.RAISED, shape, shadow = false))
-                    .padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (f.icon.isNotEmpty()) Icon(Lucide.icon(f.icon, 14), null, Modifier.size(14.dp), tint = if (on) c.onInk else c.mute)
-                    Text(tr(f.label), style = ArgusType.chip, color = if (on) c.onInk else c.ink, maxLines = 1)
-                }
-            }
+        items(ModelList.Filter.entries) { f -> FilterChip(f, f == current, Modifier, onPick = onPick) }
+    }
+}
+
+@Composable
+private fun FilterChip(f: ModelList.Filter, on: Boolean, modifier: Modifier, fill: Boolean = false, onPick: (ModelList.Filter) -> Unit) {
+    val c = Argus.colors
+    val shape = RoundedCornerShape(ArgusTokens.Radius.PILL.dp)
+    Box(modifier.heightIn(min = 48.dp).clickable(role = Role.Tab) { onPick(f) }
+        .clearAndSetSemantics { contentDescription = tr(f.label); role = Role.Tab; selected = on; onClick { onPick(f); true } },
+        contentAlignment = Alignment.Center) {
+        Row(Modifier.heightIn(min = 34.dp).then(if (fill) Modifier.fillMaxWidth() else Modifier)
+            .then(if (on) Modifier.clip(shape).background(c.ink) else Modifier.argusGlass(GlassLevel.RAISED, shape, shadow = false))
+            .padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
+            if (f.icon.isNotEmpty()) Icon(Lucide.icon(f.icon, 14), null, Modifier.size(14.dp), tint = if (on) c.onInk else c.mute)
+            Text(tr(f.label), style = ArgusType.chip, color = if (on) c.onInk else c.ink, maxLines = 1)
         }
     }
 }
@@ -204,14 +228,16 @@ private fun FilterRow(current: ModelList.Filter, onPick: (ModelList.Filter) -> U
 @Composable
 private fun AutoCard(on: Boolean, onClick: () -> Unit) {
     val c = Argus.colors
-    val shape = RoundedCornerShape(ArgusTokens.Radius.ROW.dp)
+    val shape = RoundedCornerShape(ArgusTokens.Radius.CARD.dp)
     Row(Modifier.fillMaxWidth().clip(shape).argusGlass(if (on) GlassLevel.RAISED else GlassLevel.SURFACE, shape, shadow = false)
         .then(if (on) Modifier.border(1.dp, c.brandCobalt, shape) else Modifier)
         .clickable(role = Role.Button, onClick = onClick)
         .clearAndSetSemantics { contentDescription = tr("Auto. The gateway picks the fastest healthy model") + (if (on) ", selected" else ""); role = Role.Button; onClick { onClick(); true } }
-        .heightIn(min = 64.dp).padding(horizontal = 14.dp, vertical = 10.dp),
+        .heightIn(min = 64.dp).padding(horizontal = 10.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(Lucide.icon("sparkles", 22), null, Modifier.size(24.dp), tint = if (on) c.brandCobalt else c.ink)
+        Box(Modifier.size(ROW_LOGO.dp), contentAlignment = Alignment.Center) {
+            Icon(Lucide.icon("sparkles", 22), null, Modifier.size(22.dp), tint = if (on) c.brandCobalt else c.ink)
+        }
         androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
             Text(tr("Auto"), style = ArgusType.field, color = c.ink, maxLines = 1)
             Text(tr("Picks the fastest healthy model"), style = ArgusType.meta, color = c.mute, maxLines = 2)
@@ -220,29 +246,36 @@ private fun AutoCard(on: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** A small caps-free label above a card: the maker's logo (or an icon) and its name. */
+/** The grid every row shares: [ROW_PAD] in, a [ROW_LOGO] logo column, [ROW_GAP], then the name column. */
+private const val ROW_PAD = 10
+private const val ROW_LOGO = 36
+private const val ROW_GAP = 12
+
+/** A quiet label over a group: the maker's logo centred on the logo column, its name on the name column. */
 @Composable
 private fun SectionHeader(title: String, icon: String?, brand: String?) {
     val c = Argus.colors
-    Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 10.dp, bottom = 2.dp)
-        .semantics { heading() },
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        val logo = Brands.icon(brand, c.ink)
-        if (logo != null) androidx.compose.foundation.Image(logo, null, Modifier.size(18.dp))
-        else if (icon != null) Icon(Lucide.icon(icon, 16), null, Modifier.size(16.dp), tint = c.mute)
-        Text(title, style = ArgusType.bodyStrong, color = c.ink, maxLines = 1)
+    Row(Modifier.fillMaxWidth().padding(start = ROW_PAD.dp, end = 8.dp, top = 14.dp, bottom = 2.dp).semantics { heading() },
+        verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.width(ROW_LOGO.dp), contentAlignment = Alignment.Center) {
+            val logo = Brands.icon(brand, c.mute)
+            if (logo != null) androidx.compose.foundation.Image(logo, null, Modifier.size(16.dp))
+            else if (icon != null) Icon(Lucide.icon(icon, 16), null, Modifier.size(16.dp), tint = c.mute)
+        }
+        Box(Modifier.width(ROW_GAP.dp))
+        Text(title, style = ArgusType.meta, color = c.mute, maxLines = 1)
     }
 }
 
-/** A recent pick: logo, name (size faint) and its speed. */
+/** A recent pick: logo, name (size faint) and its speed, as a pill. */
 @Composable
 private fun RecentCard(r: ModelList.Row, modifier: Modifier, onClick: () -> Unit) {
     val c = Argus.colors
-    val shape = RoundedCornerShape(ArgusTokens.Radius.ROW.dp)
+    val shape = RoundedCornerShape(ArgusTokens.Radius.PILL.dp)
     val item = ModelList.Item(r, false)
     Row(modifier.clip(shape).argusGlass(GlassLevel.SURFACE, shape, shadow = false).clickable(role = Role.Button, onClick = onClick)
         .clearAndSetSemantics { contentDescription = r.name + ", " + tr("recent"); role = Role.Button; onClick { onClick(); true } }
-        .heightIn(min = 56.dp).padding(horizontal = 10.dp, vertical = 8.dp),
+        .heightIn(min = 52.dp).padding(start = 8.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MakerDisc(r, 32)
         Text(nameText(r.name, c.mute), style = ArgusType.meta.copy(color = c.ink), maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -250,21 +283,21 @@ private fun RecentCard(r: ModelList.Row, modifier: Modifier, onClick: () -> Unit
     }
 }
 
-/** One model: maker logo, the full name (size fainter, wraps to two lines rather than cut), tool / vision icons, status, tick. */
+/** One model, no box: maker logo, the full name (size fainter, wraps to two lines rather than cut), tool / vision icons, status, tick. */
 @Composable
 private fun ModelRow(item: ModelList.Item, on: Boolean, onClick: () -> Unit) {
     val c = Argus.colors
     val r = item.row
     val detail = ModelList.detail(r)
     val status = if (item.down) tr("failing") else ModelList.speed(r.best.ms).ifEmpty { tr("not measured yet") }
-    val shape = RoundedCornerShape(ArgusTokens.Radius.ROW.dp)
-    Row(Modifier.fillMaxWidth().clip(shape).then(if (on) Modifier.background(c.brandCobalt.copy(alpha = 0.16f)).border(1.dp, c.brandCobalt.copy(alpha = 0.7f), shape) else Modifier)
-        .heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onClick)
+    val shape = RoundedCornerShape(ArgusTokens.Radius.CARD.dp)
+    Row(Modifier.fillMaxWidth().clip(shape).then(if (on) Modifier.background(c.brandCobalt.copy(alpha = 0.16f)) else Modifier)
+        .heightIn(min = 52.dp).clickable(role = Role.Button, onClick = onClick)
         .clearAndSetSemantics { contentDescription = r.name + (if (detail.isEmpty()) "" else ", $detail") + ", $status" + (if (on) ", selected" else ""); role = Role.Button; onClick { onClick(); true } }
-        .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        .padding(horizontal = ROW_PAD.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ROW_GAP.dp)) {
         val a = if (item.down) 0.5f else 1f
-        Box(Modifier.alpha(a)) { MakerDisc(r, 40) }
+        Box(Modifier.alpha(a)) { MakerDisc(r, ROW_LOGO) }
         Text(nameText(r.name, c.mute), style = ArgusType.field.copy(color = c.ink), maxLines = 2, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).alpha(a))
         Row(Modifier.alpha(a), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -318,44 +351,6 @@ private fun nameText(name: String, mute: androidx.compose.ui.graphics.Color): an
         append(name)
         ModelList.sizeRange(name)?.let { addStyle(androidx.compose.ui.text.SpanStyle(color = mute), it.first, it.last + 1) }
     }
-
-/**
- * The model list's hold on the sheet: what the list doesn't use of a drag or fling stays with the list, so the sheet
- * never slides because a scroll ran into the top. Only a drag that began with the list at the top ([startedAtTop])
- * passes on to the sheet, so pulling down from the top still closes it.
- */
-internal object ModelSheetScroll {
-    /** How far a pull down from the top closes the sheet, and how fast a flick down does. */
-    const val PULL_DP = 72
-    const val FLICK_PX_S = 1500f
-
-    /** Whether the sheet closes: the drag began with the list at the top, it's still there, and it was pulled or flicked down far enough. */
-    fun closes(startedAtTop: Boolean, atTop: Boolean, pulled: Float, velocityY: Float, pullPx: Float): Boolean =
-        startedAtTop && atTop && (pulled >= pullPx || velocityY >= FLICK_PX_S)
-
-    /** The list's hold: it keeps every leftover scroll and fling (the sheet never moves under the finger) and calls [close] once. */
-    class Hold(private val atTop: () -> Boolean, private val pullPx: Float, private val close: () -> Unit) : NestedScrollConnection {
-        private var startedAtTop = true
-        private var pulled = 0f
-        private var closed = false
-
-        fun down(listAtTop: Boolean) { startedAtTop = listAtTop; pulled = 0f }
-
-        private fun maybeClose(velocityY: Float): Boolean {
-            if (closed || !closes(startedAtTop, atTop(), pulled, velocityY, pullPx)) return false
-            closed = true; close(); return true
-        }
-
-        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-            if (source == NestedScrollSource.UserInput) pulled = if (available.y > 0f && consumed.y == 0f) pulled + available.y else 0f
-            maybeClose(0f)
-            return available
-        }
-
-        override suspend fun onPreFling(available: Velocity): Velocity = if (maybeClose(available.y)) available else Velocity.Zero
-        override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity = available
-    }
-}
 
 /** Four rising bars like a phone's signal: 4 = fast and healthy; 2 goes amber and 1 red as replies get slow or fail. */
 @Composable

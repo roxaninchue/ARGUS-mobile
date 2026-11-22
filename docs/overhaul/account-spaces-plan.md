@@ -8,12 +8,12 @@ Do not start coding until Jake approves this plan (standing rule: discuss first)
 Jake signed out of one Argus account and signed in to another. The new account still saw the old account's chats
 ("Hey Roxan!"), its chat list, memory and settings.
 
-Cause, in `connect/BlazeAccount.kt`:
+Cause, in the account object (`connect/`, the `*Account.kt` with `signOut()`):
 
 - `signOut()` calls `setSession(null, null)`, which only clears the session token (`SESSION`) and the stored user (`USER`),
   signs the terminal CLI out and recomputes `AccountGate`. Nothing else on the phone is touched.
 - Everything Argus keeps lives in app-wide storage with no owner: `team.db` (chats, `TeamSchema.NAME`), `mind.db`
-  (memory), `longchat.db` (chat search index), the `"blaze"` shared prefs (`Settings`), and files under `filesDir`
+  (memory), `longchat.db` (chat search index), the main shared prefs file (`Settings`), and files under `filesDir`
   (`chats/`, `secret_vault.json`, `skills.json`, `plan_memory.json`, `screen_memory.json`, `taste.json`, `watchers.json`,
   `servers.json`, `money/`, `myvoice/`, ...).
 - On a fresh sign-in `setSession` runs `KeySync.syncSoon()` and `SkillSync.syncSoon()`. `SkillSync` merges and **pushes
@@ -58,7 +58,7 @@ The source of truth for this list should be `SetupGate`'s existing "copy shared_
 (`setup/SetupGate.kt` around line 98), reused rather than duplicated. It covers:
 
 - databases: `team.db`, `mind.db`, `longchat.db` (plus `-wal`/`-shm`/`-journal`)
-- shared prefs: `"blaze"` (Settings), `"blaze_tasks"`, `"blaze_phone"`, `"store"`
+- shared prefs: the main Settings file, the tasks and phone prefs files, `"store"`
 - files: `chats/`, `secret_vault.json`, `skills.json`, `plan_memory.json`, `screen_memory.json`, `taste.json`,
   `watchers.json`, `servers.json`, `turn_feedback.json`, `tool_stats.json`, `state.json`, `money/`, `myvoice/`,
   `orchestra/`, `backup/`
@@ -66,7 +66,7 @@ The source of truth for this list should be `SetupGate`'s existing "copy shared_
 ### Device-level data (stays put, shared by all accounts)
 
 Proposed: downloaded models (`offline-brain`, `wake-model`, `spk-model`, `needle`), the Linux rootfs (`usr/`, `home`),
-media caches (`mediaapps/`), `"terminal"`, `"browser"`, `"linux_ready"` and `blaze_browser_trackers` prefs, and
+media caches (`mediaapps/`), `"terminal"`, `"browser"`, `"linux_ready"` and the browser-trackers prefs, and
 accessibility/hand settings. **Check each one with Jake**, especially the terminal home and the phone browser's cookies,
 which may hold personal sessions.
 

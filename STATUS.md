@@ -15,9 +15,9 @@
 - Earlier today: 0.55.4 (`4fce5a88`, run 45052241481) and the first 0.55.5 build commit (`b1620608`, run 45054828990)
   went red; 0.55.3 (`7fcc7f02`, run 45047633588) was green.
 - **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT. CI run 45066197518 (commit `a4cbe9d9`) green at 22:47 CAT; artifact argus-debug-signed-a4cbe9d9 (49.5 MB). Phone check: pending.
-- **Model picker polish (after the 0.55.7 phone check)**, on branch `feat/model-picker-polish` (`c5f59930`, [skip ci], not merged, not compiled): no group boxes or dividers (a shared logo/name grid), a pill search, a landscape two-pane layout, no swipe-down to close (`ArgusSheet(dragToClose = false)`), and soft edge fades. Jake is still adding changes. Build it as 0.55.8 / 217 only on his word.
 - **Bug, high priority: switching accounts keeps the old account's data** (found 2026-11-22 23:31 CAT). Sign-out only clears the token; chats, memory and settings stay, and the sign-in sync can push the old skills and MCP list into the new account. Jake chose one space per account. The plan is in docs/overhaul/account-spaces-plan.md (**not started**; it has open questions for Jake).
-- Version pins: `app/build.gradle.kts` versionName "0.55.7" / versionCode 216; `SpaceWiringTest.theVersionIs0557` pins the same.
+- **0.55.8 (versionCode 217)**: model picker polish (CHANGELOG 0.55.8), from `feat/model-picker-polish`, built on Jake's word 2026-11-22 23:44 CAT; CI result in its history entry.
+- Version pins: `app/build.gradle.kts` versionName "0.55.8" / versionCode 217; `SpaceWiringTest.theVersionIs0558` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
 - **0.9.41 deployed 2026-11-22 21:22 CAT:** health v2 live model list; `providerProven` lists every confirmed-free
@@ -58,6 +58,11 @@ entry mean as of that entry.
 
 - **Versioning rule (the owner 2026-10-13): bump patch only (v0.24.N+1) per release.**
 - **Rollover rule (the owner 2026-10-14): after a patch of .9 the next release rolls over: patch back to 0, minor +1 (0.24.9 → 0.25.0).** Shipped: v0.24.7 Magic Hand (#45), v0.24.8 rounded-everything (#44), v0.24.9 rich replies. **v0.25.0 = bug-fix release; v0.25.1 = Linux desktop; v0.25.2 = classic colours; v0.25.3 = "VPN that just works"; v0.26.0 = Magic Hand box + silent long chats; v0.26.1 = visual answers + "Thinking it through"; v0.26.2 = specialists Hark-style + the empty-answer ("Done.") fix; v0.26.3 = offline diagrams + blaze.db memory; v0.27.0 = habit offers only for real apps + Magic Hand Grab button + one motion system (minor bump as asked by the owner, not a patch); v0.27.1 = "Ask Blaze about this page" always answers (pasted links, Lens, empty / one-word questions); v0.27.2 = swipeable text-selection pill (Search, Ask Argus, Translate, Define, Read aloud, Share); v0.27.3 = agent intent + honesty ("show me your memories", retries stay on the request, no fake 3D, hands-on offers); v0.28.0 = My voice (on-device voice cloning, as asked in the brief: a new feature takes the next minor); v0.28.1 = batch 1 fixes (the owner's A12); v0.28.2 = security hardening; v0.28.3 = project chats in Projects + round back button; v0.28.4 = blaze-docs (Argus looks itself up) + the work-card timer fix; v0.28.5 = project brief cap (brief ≤ 600 tokens, full text looked up).**
+
+## v0.55.8 (versionCode 217, 2026-11-22, main): model picker polish
+- **What:** see CHANGELOG 0.55.8 (ModelPicker.kt: no group boxes, shared grid, landscape two panes, edge fades; KitOverlays ArgusSheet dragToClose/maxWidth; KitFields radius). From feat/model-picker-polish (c5f59930). Jake said build 2026-11-22 23:44 CAT.
+- **Ran:** rename guard (below baseline), do-not-port 0 hits. **Not run:** Gradle / compile, tests, device. CI is the first compile.
+- **Phone check:** upright: no boxes, logos and names in two clean columns; landscape: search/filters left, list right at full height; the sheet doesn't move on a downward drag; X, Back and scrim close it.
 
 ## v0.55.7 (versionCode 216, 2026-11-22, main): grouped model list
 - **What:** see CHANGELOG 0.55.7 (ModelPicker.kt ModelSheet rewritten; ModelList.sections / Filter / Tone / speed / sizeRange / recent; ModelPick.RECENT; ArgusGlyphs eye + history). From branch feat/model-list-grouped (6526e82b, MR !74). Jake said build 2026-11-22 22:22 CAT.

@@ -1,3 +1,16 @@
+## 0.55.8 (versionCode 217, 2026-11-22): model picker, calmer and landscape-ready
+- Jake 23:13, after the 0.55.7 phone check ("not liking how square it feels"; landscape showed two rows; reference: a list
+  with no boxes):
+  - No glass card or dividers round each maker: rows share one grid instead (the maker's logo centred on the models'
+    logo column, its name on their name column, in the quiet meta style). Highlight, Auto card and search are rounder;
+    Recent picks are pills. The list's top and bottom fade softly instead of a hard cut under the chips.
+  - Landscape: two panes. Title, close, search, filters (two per line), Auto and Recent on the left; the models on the
+    right at full sheet height. The sheet may be up to 960 dp wide there.
+  - No swipe down to close: `ArgusSheet(dragToClose = false)` drops the handle and keeps leftover drags and scrolls, so the
+    sheet never moves; the X, Back and the scrim close it. `ModelSheetScroll` and its test are gone.
+  - `ArgusField` / `ArgusSearch` take a `radius` (default unchanged); `ArgusSheet` takes `dragToClose` and `maxWidth`
+    (defaults unchanged, so other sheets are as before).
+
 ## 0.55.7 (versionCode 216, 2026-11-22): the model list, grouped and readable
 - Jake 21:40–22:01, from the "grouped cards" concept: the model sheet was one long unsorted list in the gateway's order,
   with signal bars and only "tools" / "vision" under each name. Now (ModelPicker.kt ModelSheet, ModelList.sections):
