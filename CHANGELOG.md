@@ -10,6 +10,9 @@ Works with gateway 0.9.39 (live since 2026-11-22 12:35 CAT).
 - Duplicates: two events with the same title at the same time show "(listed twice)" in the schedule, and the prompt
   says to point it out and offer to delete the extra one (ScheduleDay.markTwice). calendar_add won't add an event that
   is already there (same title, same start).
+- Settings: Developer > Speed stats (0.55.1) was only added to the old profile tree, so the You page never showed it.
+  It is now a row under System (search "speed" finds it), Back from Speed stats returns to Developer, and
+  SettingsAliasTest checks every System Preferences page is on the You page.
 
 ## 0.55.1 (versionCode 210, 2026-11-22): cloud tool loop, no trigger words, honest alarms and times
 Needs gateway 0.9.39 (`POST /v1/loop`, `/v1/turn/resume`, signed phone batches; uploaded `a80009fe`, not deployed yet).

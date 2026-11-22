@@ -58,6 +58,8 @@ object ArgusSettings {
             Row("sync", "Sync & devices", "refresh-cw", "sync", listOf("cloud sync", "devices", "encrypted")),
             Row("backup", "Backup & import", "download", "backup", listOf("export", "import", "restore", "a-team")),
             Row("updates", "Updates", "arrow-up", "updates", listOf("version", "upgrade")),
+            // 0.55.2: Developer > Speed stats was only in the 0.52.3 profile tree (SpaceSettings), which the ARGUS look never shows.
+            Row("developer", "Developer", "list-checks", "developer", listOf("speed", "speed stats", "timing", "first token")),
             Row("about", "About", "info", "about", listOf("licences", "version", "privacy")),
             Row("feedback", "Submit feedback", "message-circle", "feedback", listOf("report", "bug")),
         )),
@@ -69,7 +71,7 @@ object ArgusSettings {
     val TREE: Set<String> get() = ROWS.map { it.page }.toSet() + ACCOUNT_PAGE + PLAN_PAGE
 
     /** Pages that open from another page; everything else goes back to the You page. */
-    val PARENT: Map<String, String> = mapOf("logins" to "secrets", "policy" to "privacy", "activity" to "privacy")   // P2-SF-04 / P2-SF-05: Approvals & permissions and Activity open from Privacy
+    val PARENT: Map<String, String> = mapOf("logins" to "secrets", "policy" to "privacy", "activity" to "privacy", "speed" to "developer")   // P2-SF-04 / P2-SF-05: Approvals & permissions and Activity open from Privacy
 
     fun parentOf(page: String?): String? = page?.let { PARENT[it] }
 

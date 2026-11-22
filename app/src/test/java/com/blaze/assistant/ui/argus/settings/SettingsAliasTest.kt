@@ -67,6 +67,15 @@ class SettingsAliasTest {
         for (r in ArgusSettings.ROWS) assertTrue("${r.icon} is a Lucide icon", r.icon in com.blaze.assistant.ui.argus.icons.LucidePaths.ICONS)
     }
 
+    /** 0.55.2 parity: every page the 0.52.3 profile's System Preferences listed is a row on the You page (Developer was missed in 0.55.1). */
+    @Test fun everySystemPreferencesPageIsOnTheYouPage() {
+        for ((page, label) in com.blaze.assistant.ui.space.SpaceSettings.SYSTEM_ROWS) assertTrue("$label ($page) is missing from the You page", ArgusSettings.ROWS.any { it.page == page })
+        for ((child, parent) in com.blaze.assistant.ui.space.SpaceSettings.PARENT) if (parent != com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE && parent in ArgusSettings.TREE)
+            assertTrue("$child opens from $parent", child in ArgusSettings.TREE || ArgusSettings.parentOf(child) == parent || child in setOf("sync", "plan"))
+        assertEquals("developer", ArgusSettings.parentOf("speed"))
+        assertEquals(listOf("developer"), ArgusSettings.search("speed stats", settingsPages.associate { it.id to (it.title + " " + it.sub) }).map { it.id })
+    }
+
     @Test fun backGoesToTheYouPage() {
         assertEquals("secrets", ArgusSettings.parentOf("logins"))
         for (p in listOf("look", "voice", "permissions", "updates", "plan", "sync", "about")) assertNull(p, ArgusSettings.parentOf(p))
