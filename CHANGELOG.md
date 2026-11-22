@@ -1,3 +1,20 @@
+## 0.55.7 (versionCode 216, 2026-11-22): the model list, grouped and readable
+- Jake 21:40–22:01, from the "grouped cards" concept: the model sheet was one long unsorted list in the gateway's order,
+  with signal bars and only "tools" / "vision" under each name. Now (ModelPicker.kt ModelSheet, ModelList.sections):
+  - A header with "Model" and a close (×) button; search; filter chips All, Tools, Vision, Fast (Fast = a measured reply
+    under 1.5 s, the same line as 4 bars).
+  - Auto is its own card at the top, outlined and ticked only when it is the pick. Only one thing ever looks selected.
+  - Recent: the last two models picked (ModelPick.RECENT, `model_recent`), skipped when gone or failing.
+  - One glass card per maker (OpenAI, NVIDIA, Mistral, Google = Gemini + Gemma, …; A to Z, Other last), healthiest then
+    fastest first inside each.
+  - Each row: the maker's logo, the full name on up to two lines with its size ("120b") drawn fainter, wrench / eye icons
+    for tools and vision, and a coloured dot with the reply time (green = 4 bars, amber = 2–3, red = 1) instead of bars.
+  - A model that didn't answer lately is no longer hidden: it stays in its card, dimmed and last, with a red "Failing"
+    pill. Tapping it still picks it (calls go Auto until it is healthy again, as before).
+- New glyphs "eye" and "history" in ArgusGlyphs (LucidePaths is generated and untouched).
+- ModelListTest: cards A to Z with Other last, order inside a card, failing kept and last, filters, speed and size text,
+  recent picks.
+
 ## 0.55.6 (versionCode 215, 2026-11-22): no more unasked check-in notifications
 - Finn 21:20: "please get rid of these useless side notifications" ("What's one thing you'd like to get done this month?").
   Jarvis check-ins (getting-to-know-you questions, call offers, routine ideas, screen glances) are off by default

@@ -14,7 +14,8 @@
   **0.55.6 is unreleased; its CI artifact is not to be sent to anyone** until Finn says.
 - Earlier today: 0.55.4 (`4fce5a88`, run 45052241481) and the first 0.55.5 build commit (`b1620608`, run 45054828990)
   went red; 0.55.3 (`7fcc7f02`, run 45047633588) was green.
-- Version pins: `app/build.gradle.kts` versionName "0.55.6" / versionCode 215; `SpaceWiringTest` pins the same.
+- **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT; CI result in its history entry.
+- Version pins: `app/build.gradle.kts` versionName "0.55.7" / versionCode 216; `SpaceWiringTest.theVersionIs0557` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
 - **0.9.41 deployed 2026-11-22 21:22 CAT:** health v2 live model list; `providerProven` lists every confirmed-free
@@ -55,6 +56,12 @@ entry mean as of that entry.
 
 - **Versioning rule (the owner 2026-10-13): bump patch only (v0.24.N+1) per release.**
 - **Rollover rule (the owner 2026-10-14): after a patch of .9 the next release rolls over: patch back to 0, minor +1 (0.24.9 → 0.25.0).** Shipped: v0.24.7 Magic Hand (#45), v0.24.8 rounded-everything (#44), v0.24.9 rich replies. **v0.25.0 = bug-fix release; v0.25.1 = Linux desktop; v0.25.2 = classic colours; v0.25.3 = "VPN that just works"; v0.26.0 = Magic Hand box + silent long chats; v0.26.1 = visual answers + "Thinking it through"; v0.26.2 = specialists Hark-style + the empty-answer ("Done.") fix; v0.26.3 = offline diagrams + blaze.db memory; v0.27.0 = habit offers only for real apps + Magic Hand Grab button + one motion system (minor bump as asked by the owner, not a patch); v0.27.1 = "Ask Blaze about this page" always answers (pasted links, Lens, empty / one-word questions); v0.27.2 = swipeable text-selection pill (Search, Ask Argus, Translate, Define, Read aloud, Share); v0.27.3 = agent intent + honesty ("show me your memories", retries stay on the request, no fake 3D, hands-on offers); v0.28.0 = My voice (on-device voice cloning, as asked in the brief: a new feature takes the next minor); v0.28.1 = batch 1 fixes (the owner's A12); v0.28.2 = security hardening; v0.28.3 = project chats in Projects + round back button; v0.28.4 = blaze-docs (Argus looks itself up) + the work-card timer fix; v0.28.5 = project brief cap (brief ≤ 600 tokens, full text looked up).**
+
+## v0.55.7 (versionCode 216, 2026-11-22, main): grouped model list
+- **What:** see CHANGELOG 0.55.7 (ModelPicker.kt ModelSheet rewritten; ModelList.sections / Filter / Tone / speed / sizeRange / recent; ModelPick.RECENT; ArgusGlyphs eye + history). From branch feat/model-list-grouped (6526e82b, MR !74). Jake said build 2026-11-22 22:22 CAT.
+- **Ran (kotlinc 2.0.21 + JDK 17, JUnit 4; real ModelList, LiveModels, ModelPick; stubs for Settings, TurnModel):** ModelListTest 13 + ModelPickTest 7 = 20 OK. Rename guard at baseline, do-not-port 0 hits.
+- **Not run:** Gradle / full compile, the Compose file (ModelPicker.kt uncompiled here), shots, device. CI is the check.
+- **Phone check:** open the model chip: Auto card on top, Recent after a pick, one card per maker, Fast / Tools / Vision chips narrow it, a model that missed shows "Failing".
 
 ## v0.55.6 (versionCode 215, 2026-11-22, main): Jarvis check-ins off by default
 - **What:** see CHANGELOG 0.55.6. Includes 0.55.5.
