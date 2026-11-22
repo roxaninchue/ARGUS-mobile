@@ -69,7 +69,7 @@ class ToolVerifyTest {
         val now = java.util.Calendar.getInstance(tz).apply { set(2026, 10, 22, 22, 30, 0); set(java.util.Calendar.MILLISECOND, 0) }.timeInMillis
         val target = ToolVerify.nextAt(7, 0, now)
         assertEquals(8.5 * 3_600_000, (target - now).toDouble(), 1.0)   // 22:30 → 07:00 tomorrow
-        val ok = "Alarm set for 07:00, label \u201c(Argus A12)\u201d. [ID A12]"
+        val ok = "Alarm set for 07:00, label \u201c(Argus A7)\u201d. [ID A7]"
         val args = a("hour" to 7, "minute" to 0)
         // the system's next alarm is an earlier one (06:00 tomorrow): ours is hidden behind it
         val v = check("set_alarm", args, ok, Fake(alarm = 6 to 0, alarmAt = target - 3_600_000, clock = now))

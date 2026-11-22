@@ -136,8 +136,8 @@ object PhoneBatch {
     fun confirmation(o: Outcome): String = o.done.joinToString("\n") { d -> clean(d.result) }.ifBlank { "Done." }
 
     /**
-     * One tool result as a user-facing line: its first line, without the registry id ("[ID A12]") or the internal alarm
-     * label ("label “(Argus A12)”"): "Alarm set for 07:00, label “(Argus A12)”. [ID A12]" → "Alarm set for 07:00."
+     * One tool result as a user-facing line: its first line, without the registry id ("[ID A7]") or the internal alarm
+     * label ("label “(Argus A7)”"): "Alarm set for 07:00, label “(Argus A7)”. [ID A7]" → "Alarm set for 07:00."
      */
     fun clean(result: String): String {
         var t = result.trim().lineSequence().firstOrNull { it.isNotBlank() }.orEmpty().removePrefix("Done: ").trim()

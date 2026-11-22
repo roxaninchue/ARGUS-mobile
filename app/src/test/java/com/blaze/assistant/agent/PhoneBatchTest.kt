@@ -78,7 +78,7 @@ class PhoneBatchTest {
     @Test fun anAllFinalBatchThatSucceedsEndsTheTurnWithNoModelCall() = runBlocking {
         val b = batch(alarm, timer)
         assertTrue(b.allFinal)
-        val o = PhoneBatch.run(b, key, jti, allowAll, { n, _ -> if (n == "set_alarm") "Alarm set for 07:00, label \u201c(Argus A12)\u201d. [ID A12]" else "Timer started for 5 min. [ID T3]" })
+        val o = PhoneBatch.run(b, key, jti, allowAll, { n, _ -> if (n == "set_alarm") "Alarm set for 07:00, label \u201c(Argus A7)\u201d. [ID A7]" else "Timer started for 5 min. [ID T3]" })
         val n = PhoneBatch.next(b, o)
         assertTrue(n is PhoneBatch.Next.End)
         assertEquals("Alarm set for 07:00.\nTimer started for 5 min.", (n as PhoneBatch.Next.End).text)

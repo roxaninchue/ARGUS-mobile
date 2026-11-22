@@ -125,7 +125,7 @@ class LeanTurnTest {
         assertEquals("find_tools", f.getString("name")); assertEquals("load_skill", l.getString("name"))
         assertEquals("query", f.getJSONObject("parameters").getJSONArray("required").getString(0))
         assertEquals("name", l.getJSONObject("parameters").getJSONArray("required").getString(0))
-        for (n in LeanTurn.CORE + LeanTurn.META) assertTrue(DirectLaneNames.ok(n))
+        for (n in LeanTurn.CORE + LeanTurn.META) assertTrue(Regex("^[A-Za-z0-9_.:-]{1,128}$").matches(n))
     }
 
     @Test fun toolPickSendsTheLeanSetOnALeanTurnAndTheOldSetOtherwise() {
@@ -179,10 +179,7 @@ class LeanTurnTest {
         assertTrue(src.contains("LeanTurn.LOAD -> {"))
         assertTrue(src.contains("private fun turnSystem(): String"))
     }
-}
 
-/** Tool names the gateway's ticket accepts (ticket.ts TOOL_NAME_RE; DirectLane.TOOL_NAME_RE), without loading DirectLane here. */
-private object DirectLaneNames { fun ok(n: String) = Regex("^[A-Za-z0-9_.:-]{1,128}$").matches(n) 
     /** 0.55.1 (Finn: "Hi" got only "Hi"): the lean prompt keeps the voice and greeting guidance; the [context] block rides in the live tail. */
     @Test fun greetingsGetAWarmUsefulReply() {
         assertTrue(LeanTurn.PROMPT.contains("GREETINGS:"))
@@ -203,9 +200,9 @@ private object DirectLaneNames { fun ok(n: String) = Regex("^[A-Za-z0-9_.:-]{1,1
             "This is exact: answer any time, date or day question from it and plan the rest of today from it.", line)
         val a = LeanTurn.system("", "RULES", "Finn", "Reply in English.", "memory", now = line)
         assertTrue(a.contains("11:05, Africa/Lusaka (UTC+02:00)"))
-        assertTrue("the time is after the cached prefix", a.indexOf("CURRENT LOCAL TIME") > a.indexOf(LeanTurn.PROMPT) + LeanTurn.PROMPT.length)
+        assertTrue("the time is after the cached prefix", a.indexOf("CURRENT LOCAL TIME:") > a.indexOf(LeanTurn.PROMPT) + LeanTurn.PROMPT.length)
         val b = LeanTurn.system("", "RULES", "Finn", "Reply in English.", "memory", now = LeanTurn.nowLine(now.plusMinutes(1), java.util.Locale.forLanguageTag("en-ZM")))
-        assertEquals("the prefix stays byte-identical", a.substringBefore("CURRENT LOCAL TIME"), b.substringBefore("CURRENT LOCAL TIME"))
+        assertEquals("the prefix stays byte-identical", a.substringBefore("CURRENT LOCAL TIME:"), b.substringBefore("CURRENT LOCAL TIME:"))
         assertTrue(LeanTurn.PROMPT.contains("WHO SAID WHAT:"))
         // Finn 11:07: "It's 11:07" got a bare "It's 11:07 now." instead of a corrected study plan
         assertTrue(LeanTurn.PROMPT.contains("your last plan was wrong") && LeanTurn.PROMPT.contains("never just repeat the time"))

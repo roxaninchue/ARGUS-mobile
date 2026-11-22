@@ -20,7 +20,8 @@ With 0.9.38 tickets don't offer the loop, so tool turns keep running the 0.55.0 
   (`ToolVerify.nextAt`, `nextAlarmAt`); a Clock app that refused it reads as failed.
 - Tests (kotlinc 2.0.20 + stubs): PhoneBatchTest 9, LoopWireTest 4, ToolVerifyTest 10, LeanTurnTest 16,
   PhoneReadoutTest 4, DirectLaneTest 10, TurnTimingTest 8, SpaceLogicTest 25, SpaceWiringTest 17, InterestsLineTest 2
-  = 105 OK. LeanTurnTest had a `.map(::java.io.File)` that doesn't compile; fixed.
+  = 107 OK. LeanTurnTest had a `.map(::java.io.File)` that doesn't compile and a helper object that swallowed four
+  tests; fixed. CI fixes: speed_stats declared READ in ToolRegistry, Settings page count 42, no phone-model ids in examples.
 
 ## 0.55.0 (versionCode 209, 2026-11-22): lean harness (small stable prompt, tools on demand)
 Needs gateway 0.9.38 (`GET /v1/catalog`, catalog tickets; uploaded `64a70d84`, not deployed yet). With an older gateway
