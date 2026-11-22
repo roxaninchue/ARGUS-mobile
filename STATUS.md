@@ -1,5 +1,58 @@
 # Argus Android status
 
+## Current state (2026-11-22, 21:35 CAT)
+
+**App**
+- **Latest green build: 0.55.5 (versionCode 214)**, commit `8ffac6ee`, GitHub Actions "Build APK" run 45057221018 on the
+  mirror `roxaninchue/ARGUS-mobile` (success). What it carries: CHANGELOG 0.55.5 (team tools and every tool area in the
+  lean chat, no-lost-tools parity test, the app never asks the gateway to trim tools) plus 0.55.4's ghost-alarm fix.
+  **Phone check by Finn: pending.**
+- **`main` is at 0.55.6 (versionCode 215)**, commit `01e9d0ca`: Jarvis check-in notifications (getting-to-know-you
+  questions, call offers, routine ideas, screen glances) are off by default, and a one-time migration (`Jarvis.OFF_0556`)
+  turns them off on phones still on the old default. Reminders, alarms and real heads-ups are untouched. A CI run
+  (45060697735) started on its own for this commit, but Finn said no APKs for now: **0.55.6 is unreleased and not sent
+  to anyone.**
+- Earlier today: 0.55.4 (`4fce5a88`, run 45052241481) and the first 0.55.5 build commit (`b1620608`, run 45054828990)
+  went red; 0.55.3 (`7fcc7f02`, run 45047633588) was green.
+- Version pins: `app/build.gradle.kts` versionName "0.55.6" / versionCode 215; `SpaceWiringTest` pins the same.
+
+**Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
+- **0.9.41 deployed 2026-11-22 21:22 CAT:** health v2 live model list; `providerProven` lists every confirmed-free
+  model of a provider that has at least one healthy model; a probe answering 402 prices that model out for 24 h.
+- Before it: 0.9.40 (deployed 2026-11-22 19:33 CAT: `POST /v1/feedback`, in-app feedback filed as GitLab issues) and
+  0.9.39 (live since 2026-11-22 12:35 CAT: cloud tool loop `/v1/loop`, `/v1/turn/resume`, signed phone batches).
+- Open, only with Finn's word: remove the `trimTools` word list (inert since app 0.55.5: the app never sends the "auto" tools
+  flag that asked for trimming, `ToolWire.mayTrim` is always false). Not done: changing the lane recheck interval.
+- The `gateway/` folder in this project is an old 0.3.1 copy; it is not the live code.
+
+**Plans**
+- Living UI is at **0.2.4** (`LivingSpec.VERSION`). The 0.3.0 plan is docs/overhaul/living-ui-0.3.0-plan.md:
+  proposed 2026-11-22, **not started**.
+- The overhaul plan and its decisions D1–D12 in overhaul.md are **not approved** as of 2026-11-22 (the file still
+  records D1–D11 as taken on 2026-11-12 under "go with what you see fit"; ask Finn before acting on any of it). The
+  ArgusXHark (axh) port is **stopped**.
+
+## Standing rules (Finn)
+
+- **No APK builds until Finn says so** (2026-11-22 21:26 CAT). Every commit message ends with `[skip ci]` until then.
+- No trigger words and no text routing: the model decides (docs/MODEL-FIRST.md, `ModelFirstTest`).
+- No local model (no user RAM) and no keep-warm ping.
+- Add nothing inside `Agent.runLoop`: it is at the JVM's 64 KB per-method limit.
+- Before cutting a behaviour, add a parity test that proves what must stay. For every key or behaviour removed, grep
+  the tests (they read the source as text) and update them in the same commit.
+- Commit straight to `main`; work in progress carries `[skip ci]`.
+- Versioning: patch +1 per release; after a .9 patch the next release rolls to the next minor (0.24.9 → 0.25.0).
+- Before a build commit, update: CHANGELOG.md, this file, overhaul.md (handoff log), the "New in" lines of the
+  in-app about doc (about.md in the app's docs folder), the version pin in `SpaceWiringTest`, the rename-guard baseline
+  (the guard script in `tools/`; update the baseline only when a count went down), `node tools/check-do-not-port.mjs` (0 hits), and the evals.
+
+How to pick the work up: [HANDOFF.md](HANDOFF.md). Build and CI details: [BUILDING.md](BUILDING.md).
+
+## History (newest first)
+
+Every version's notes as they were written at the time. Versions and dates are exact; "current" and "next" inside an
+entry mean as of that entry.
+
 - **Versioning rule (the owner 2026-10-13): bump patch only (v0.24.N+1) per release.**
 - **Rollover rule (the owner 2026-10-14): after a patch of .9 the next release rolls over: patch back to 0, minor +1 (0.24.9 → 0.25.0).** Shipped: v0.24.7 Magic Hand (#45), v0.24.8 rounded-everything (#44), v0.24.9 rich replies. **v0.25.0 = bug-fix release; v0.25.1 = Linux desktop; v0.25.2 = classic colours; v0.25.3 = "VPN that just works"; v0.26.0 = Magic Hand box + silent long chats; v0.26.1 = visual answers + "Thinking it through"; v0.26.2 = specialists Hark-style + the empty-answer ("Done.") fix; v0.26.3 = offline diagrams + blaze.db memory; v0.27.0 = habit offers only for real apps + Magic Hand Grab button + one motion system (minor bump as asked by the owner, not a patch); v0.27.1 = "Ask Blaze about this page" always answers (pasted links, Lens, empty / one-word questions); v0.27.2 = swipeable text-selection pill (Search, Ask Argus, Translate, Define, Read aloud, Share); v0.27.3 = agent intent + honesty ("show me your memories", retries stay on the request, no fake 3D, hands-on offers); v0.28.0 = My voice (on-device voice cloning, as asked in the brief: a new feature takes the next minor); v0.28.1 = batch 1 fixes (the owner's A12); v0.28.2 = security hardening; v0.28.3 = project chats in Projects + round back button; v0.28.4 = blaze-docs (Argus looks itself up) + the work-card timer fix; v0.28.5 = project brief cap (brief ≤ 600 tokens, full text looked up).**
 

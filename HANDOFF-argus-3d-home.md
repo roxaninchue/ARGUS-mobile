@@ -1,5 +1,8 @@
 # Handoff: ARGUS living 3D Home (branch `feat/argus-3d-home`) — CI 9/9 GREEN ON ea927e3e, DRAFT MR OPEN
 
+> **Archived 2026-11-22.** Superseded: a 0.52.2 branch handoff; `main` has moved on many versions since. Current state: STATUS.md and HANDOFF.md at the project root. This file stays at its old path because the rename guard counts per path.
+
+
 Target release **0.52.2 (versionCode 189)**, from `main` @ e8341100 (0.52.1 / 188). Owner: Gaby ("yes main and yea replace").
 Merge request into `main` must be a **Draft**; never merge.
 

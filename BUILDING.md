@@ -1,18 +1,21 @@
 # Building ARGUS mobile (and not breaking CI)
 
-This branch is built **only by CI** (owner rule: no local Gradle on `feat/argus-3d-home` / `feat/argus-hark-design`; on
-`feat/argus-hark-design` a standalone kotlinc type-check and the pure tests are allowed, see the 0.52.3 notes at the end).
-Every push costs a 15–25 minute CI round, so the cheapest build is the one you check before you push.
+> **Updated 2026-11-22.** Work happens on `main` of GitLab `argus-mobile`; the branch rules this file was first written
+> for (`feat/argus-3d-home`, `feat/argus-hark-design`, 0.52.x) are history. **Standing rule: no APK builds until Finn
+> says so**, so every commit message ends with `[skip ci]`. The error table and the checklists below still apply.
+
+Every build push costs a 20–25 minute CI round, so the cheapest build is the one you check before you push.
 
 ## Where builds run
 
 | What | Where |
 |---|---|
-| Source of truth | GitLab `blazeinchue/BlazeMobile`, branch `feat/argus-hark-design` (0.52.3; `feat/argus-3d-home` was 0.52.2) |
-| CI | GitHub Actions on the mirror `roxaninchue/ARGUS-mobile` (GitLab mirrors every branch within minutes) |
-| GitLab CI | Not used (credits exhausted). `.gitlab-ci.yml` is left alone. |
+| Source of truth | GitLab `blazeinchue/argus-mobile` (project id 87806466), branch `main` |
+| CI | GitHub Actions on the mirror `roxaninchue/ARGUS-mobile` (GitLab mirrors `main` within minutes) |
+| GitLab CI | Not used for app builds. `.gitlab-ci.yml` is left alone |
+| Commits | GitLab commits API (`POST /api/v4/projects/87806466/repository/commits`); see HANDOFF.md |
 
-Never push or merge on GitHub. Never merge draft MR !27. Never change `applicationId` (it belongs to MR !26).
+Never push or merge on GitHub. Never change `applicationId`.
 
 **Every workflow has `concurrency: cancel-in-progress: true`.** A new push cancels the round that is running.
 Batch fixes into one commit per round and don't push docs while a round you care about is still running.
@@ -129,7 +132,8 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 ./gradlew :app:assembleRelease
 ```
 
-On this branch, don't. Let CI compile.
+In the Hark sandbox (aarch64, no KVM) follow docs/BUILD-LOCAL.md. Most sessions compile only the changed classes and
+their tests with kotlinc against stubs and let CI do the full build.
 
 ## Low-RAM smoke stall on the ARGUS Home (0.52.3, fix-up 6)
 

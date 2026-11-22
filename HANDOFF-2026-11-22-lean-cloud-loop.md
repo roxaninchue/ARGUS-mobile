@@ -1,5 +1,8 @@
 # Handoff 2026-11-22: lean harness + cloud tool loop
 
+> **Archived 2026-11-22.** Superseded on 2026-11-22: 0.55.1 was built and gateway 0.9.39 went live the same day. Current state: STATUS.md and HANDOFF.md at the project root. This file stays at its old path because the rename guard counts per path.
+
+
 ## Live / shipped
 - Gateway **0.9.38 LIVE** (64a70d84, deployed 22 Nov 10:57 CAT on Finn's go). Rollback: `npx wrangler versions deploy dfe137f9-2009-443c-9137-743cdc8d36ce@100%` (0.9.37).
 - Gateway **0.9.39 uploaded, NOT deployed**: a80009fe (Blaze-agent main 4ae19071). Rollback target once deployed: 64a70d84.

@@ -40,7 +40,7 @@ Owner rule (Finn, 13 Nov 2026): every agent follows this before pushing a commit
 1. Make one commit without `[skip ci]`. Its title says what is built.
 2. Find the run with `curl -s "https://api.github.com/repos/roxaninchue/ARGUS-mobile/actions/runs?per_page=3"`, match `head_sha`, and poll its `status` every 30 s. It takes about 20 to 25 minutes.
 3. Job logs need a GitHub token (403 without one). Job names and conclusions are public: `/actions/runs/<id>/jobs`. On red, reproduce the failure locally with steps 1 and 2 above instead of guessing.
-4. Artifacts: `blaze-<sha>` (APK) and `shots-<sha>`. Download them through `https://nightly.link/roxaninchue/ARGUS-mobile/actions/artifacts/<artifact-id>.zip`.
+4. Artifacts (names as of 2026-11-22): `argus-debug-signed-<sha>` (test-signed APK), `mapping-<sha>` (R8 map), `shots-<sha>`, and `buildlog-<sha>` on a failed run. Download them through `https://nightly.link/roxaninchue/ARGUS-mobile/actions/artifacts/<artifact-id>.zip`.
 5. The CI APK is unsigned. For install testing only, sign it with apksig (from maven.google.com) and a throwaway debug keystore, using v2 and v3 signatures, and check that `ApkVerifier` reports verified=true. Never use or commit the release keystore.
 
 ## 4. After a build

@@ -1,5 +1,8 @@
 # PLAN — a reliable Argus agent (and Argus that helps build Argus)
 
+> **Archived 2026-11-22.** Historical plan (2026-11-01, for 0.50.0). Its brain order (an on-phone model first) and its routing ideas predate the standing rules of 2026-11-22 (no local model) and docs/MODEL-FIRST.md. Current state: STATUS.md and HANDOFF.md at the project root. This file stays at its old path because the rename guard counts per path.
+
+
 Written 2026-11-01 for 0.50.0. A plan only: nothing here is implemented yet. It is based on what the code has today
 (file names are under `app/src/main/java/com/blaze/assistant/` unless noted) and on the zero-budget rule: the brain
 order stays **on-phone brain → Nous (:free) → Blaze cloud gateway**, never Jev, System One or NVIDIA models; no paid APIs.

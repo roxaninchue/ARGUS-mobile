@@ -1,5 +1,8 @@
 # Handoff: ARGUS × Hark design (0.52.3 / versionCode 190)
 
+> **Archived 2026-11-22.** Superseded: a 0.52.3 branch handoff; `main` has moved on many versions since. Current state: STATUS.md and HANDOFF.md at the project root. This file stays at its old path because the rename guard counts per path.
+
+
 Branch `feat/argus-hark-design` on GitLab `blazeinchue/BlazeMobile` (project 87806466), created from `main` @ b074f2ba
 (0.52.2 / 189). Draft MR into `main`: "0.52.3: ARGUS × Hark design, space view, one-screen setup, no model picker".
 Never merge it without Gaby; MR !26 (`feat/argus-identity-signing`, owns `applicationId`) is not touched.

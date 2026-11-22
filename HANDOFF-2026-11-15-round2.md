@@ -1,5 +1,8 @@
 # Handoff: 0.53.4 round 2 (15 Nov 2026, stopped by owner)
 
+> **Archived 2026-11-22.** Superseded: the work below shipped in later 0.53.x builds. Current state: STATUS.md and HANDOFF.md at the project root. This file stays at its old path because the rename guard counts per path.
+
+
 Shipped and building: `5bc24c44` Build 0.53.4 (versionCode 196) = All files access card, GitHub through the connection,
 Music/Video Import, no mode swiping. CI run: Build APK #61 on roxaninchue/ARGUS-mobile.
 

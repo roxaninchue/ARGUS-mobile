@@ -1,5 +1,8 @@
 # Blaze 0.52.1 handoff (branch `feat/blaze-0.52`) — IN PROGRESS
 
+> **Archived 2026-11-22.** Superseded: a 0.52.1 branch handoff; `main` has moved on many versions since. Current state: STATUS.md and HANDOFF.md at the project root. This file stays at its old path because the rename guard counts per path.
+
+
 > Historical note: written before the product was renamed to Argus (2026-11-20). The old product name in this file means Argus; repo, host and code names are as they were then.
 
 0.52.1 = versionCode 188 (from 0.52.0 / 187). Session started 2026-11-03 23:27 CAT. Pushed in chunks with `work/push052.sh "<msg>"`
