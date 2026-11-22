@@ -45,7 +45,7 @@ class LeanTurnTest {
 
     @Test fun coreKeepsAlarmsTimersAndMessagesSoTheyNeverWaitOnALookup() {
         for (n in listOf("set_alarm", "set_timer", "message_contact")) assertTrue(n, n in LeanTurn.CORE)
-        assertEquals(16, LeanTurn.CORE.size)
+        assertEquals(19, LeanTurn.CORE.size)
         assertEquals(listOf("find_tools", "load_skill"), LeanTurn.META)
     }
 
@@ -71,7 +71,7 @@ class LeanTurnTest {
         val st = LeanTurn.State(1L, listOf("music_ops"))
         val sent = names(LeanTurn.filter(all, st, used = setOf("run_shell")))
         assertEquals(LeanTurn.CORE + LeanTurn.META + listOf("run_shell", "music_ops"), sent)
-        assertEquals(20, sent.size)
+        assertEquals(23, sent.size)
         assertFalse("device_setting" in sent)
         st.found += "device_setting"
         assertTrue("device_setting" in names(LeanTurn.filter(all, st, emptySet())))
@@ -225,4 +225,48 @@ class LeanTurnTest {
         assertTrue(LeanTurn.PROMPT.contains("\"(listed twice)\" is a duplicate"))
         assertTrue(LeanTurn.PROMPT.length <= LeanTurn.PROMPT_MAX)
     }
+
+    /** 0.55.5 (Finn 20:02: "make sure nothing else is missing"): everything the full list always sent has a decision. */
+    @Test fun everyToolTheFullListAlwaysSentIsInCoreOrBehindFind() {
+        val router = src("agent/ToolRouter.kt")
+        val core = Regex("private val core = setOf\\(([\\s\\S]*?)\\n    \\)").find(router)!!.groupValues[1]
+            .lines().map { it.substringBefore("//") }.joinToString(" ").let { Regex("\"([a-z_]+)\"").findAll(it).map { m -> m.groupValues[1] }.toList() }
+        assertTrue("parsed ToolRouter core: ${core.size}", core.size > 40)
+        fun group(id: String) = Regex("Group\\(\"$id\"[\\s\\S]*?\\{ (it [^}]*)\\}\\)").find(router)!!.groupValues[1]
+            .let { Regex("\"([a-z_]+)\"").findAll(it).map { m -> m.groupValues[1] }.toList() }
+        val always = ToolPick.ESSENTIAL + ToolPick.HARNESS + core + ToolPick.ALWAYS_GROUPS.flatMap { group(it) }
+        assertTrue(ToolPick.ALWAYS_GROUPS.flatMap { group(it) }.containsAll(listOf("add_calendar_event", "flashcards")))
+        val missing = always.toSet().filter { it !in LeanTurn.CORE && it !in LeanTurn.BEHIND_FIND && it !in LeanTurn.META }
+        assertTrue("always-sent before, no lean decision: $missing", missing.isEmpty())
+        assertTrue(LeanTurn.BEHIND_FIND.none { it in LeanTurn.CORE })
+        // The team and adding an event ride every lean turn; the prompt says the team exists.
+        for (n in listOf("agents_list", "agent_create", "add_calendar_event")) assertTrue("$n must ride every lean turn", n in LeanTurn.CORE)
+        assertTrue(LeanTurn.PROMPT.contains("agents_list shows it; agent_create adds a bot"))
+        assertTrue(LeanTurn.PROMPT.contains("WHEN A STEP FAILS"))
+        assertTrue(LeanTurn.PROMPT.length <= LeanTurn.PROMPT_MAX)
+    }
+
+    /** 0.55.5: find_tools names every area, and an area's name returns its tools (the model picks; no user words read). */
+    @Test fun findToolsListsEveryAreaAndReturnsOneByName() {
+        val prev = LeanTurn.areas
+        try {
+            LeanTurn.areas = listOf(LeanTurn.Area("team", "the team's bots: list, create") { it == "agents_list" || it == "agent_create" },
+                LeanTurn.Area("study", "flashcards") { it == "flashcards" })
+            val d = LeanTurn.findDef().getJSONObject("function").getString("description")
+            assertTrue(d, d.contains("Areas: team (the team's bots: list, create); study (flashcards)."))
+            val st = LeanTurn.State(1L, emptyList())
+            val r = LeanTurn.find("team", all, null, st)
+            assertTrue(r, r.startsWith("Tools in team") && r.contains("agent_create") && r.contains("agents_list"))
+            assertTrue(LeanTurn.find("area: study", all, null, st).contains("flashcards"))
+            assertTrue("flashcards" in st.found)
+            assertNull(LeanTurn.areaOf("make me a researcher"))
+        } finally { LeanTurn.areas = prev }
+        assertEquals("", LeanTurn.areaMenu())
+        val wire = src("agent/LeanAreas.kt")
+        assertTrue(wire.contains("ToolRouter.groups.filter { it.id != \"more\" }") && wire.contains("ToolPick.CUES.map"))
+        assertTrue(src("agent/Agent.kt").contains("LeanTurn.areas = try { LeanAreas.all() }"))
+    }
+
+    private fun src(p: String) = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
+        .walkTopDown().first { it.path.endsWith(p) }.readText()
 }

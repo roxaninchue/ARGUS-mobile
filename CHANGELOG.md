@@ -1,3 +1,19 @@
+## 0.55.5 (versionCode 214, 2026-11-22): the lean chat knows everything it has again
+- "Set up my life team" → "a researcher" got a web search and a vague question: the lean prompt never said Argus leads a
+  team, and find_tools' word match never reached agent_create. Now agents_list, agent_create and add_calendar_event ride
+  every lean turn, and the prompt says the team exists. The model decides when to use them; nothing reads the user's words.
+- No more lost tools: find_tools' description lists every area (ToolRouter's groups and ToolPick's cues, via LeanAreas,
+  the menu load_tools used to carry), and find_tools with an area's name returns that area's tools.
+- Parity test: every tool the full list always sent (ToolPick ESSENTIAL + HARNESS, ToolRouter's core, the schedule and
+  study groups) is in LeanTurn.CORE or an explicit BEHIND_FIND decision, or the build fails.
+- Prompt: when a step fails, say what failed and try another way or offer a concrete choice, never a vague question.
+- agent_create's description says it makes a bot on the user's team (e.g. a researcher, a writer or a coach).
+- Auto keeps its tools on small talk too: the app never sends `blaze_tools: "auto"` any more, so the gateway's
+  ACTION word list (trimTools) can't strip a turn's tools. ToolWire.mayTrim is always false; ToolWireTest covers it.
+- 0.55.4's CI failed one test (BlazeDocsTest: "which tool searches blaze docs" no longer found the tool reference in the top
+  5, because the about doc's growing feature map, boosted ×2, crowded it out). The tools doc's rank boost goes 1.2 → 1.5,
+  so the tool reference stays findable as the about doc grows. 0.55.5 carries 0.55.4's ghost-alarm fix.
+
 ## 0.55.4 (versionCode 213, 2026-11-22): no more ghost alarms from other apps
 - Home, the greeting and the chat showed "20:00 Alarm" while the Clock app said "No alarms": Android's "next alarm clock"
   is whatever ANY app registered (a calendar or reminder app uses the same call). New `SystemAlarm`: it only counts when a

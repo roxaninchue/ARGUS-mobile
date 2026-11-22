@@ -207,7 +207,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS blaze_docs_fts USING fts5(id UNINDEXED, doc, 
             val fq = BlazeDb.ftsQuery(expand(query), 32); if (fq.isEmpty()) return emptyList()
             return try {
                 sql.query("SELECT id, doc, section, snippet(blaze_docs_fts, 3, '', '', '…', 48) FROM blaze_docs_fts f WHERE blaze_docs_fts MATCH ? " +
-                    "ORDER BY bm25(blaze_docs_fts, 0.0, 2.0, 6.0, 1.0) * (CASE WHEN f.id LIKE 'about#%' THEN 2.0 WHEN f.id LIKE 'tools#%' THEN 1.2 ELSE 1.0 END) LIMIT ?",
+                    "ORDER BY bm25(blaze_docs_fts, 0.0, 2.0, 6.0, 1.0) * (CASE WHEN f.id LIKE 'about#%' THEN 2.0 WHEN f.id LIKE 'tools#%' THEN 1.5 ELSE 1.0 END) LIMIT ?",
                     fq, limit.coerceIn(1, 5)) { Hit(it.text(0), "", it.text(2), it.text(3)) }
                     .map { h -> h.copy(doc = h.id.substringBeforeLast('#')) }
             } catch (_: Exception) { emptyList() }

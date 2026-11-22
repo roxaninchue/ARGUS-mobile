@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
  * models. A main-chat turn sends
  *  - a short, STABLE system prompt that lives on the phone ([PROMPT]: byte-identical turn after turn, so providers cache
  *    it; only a small live tail follows it),
- *  - [CORE] (16 tools: alarms, timers, messages, weather and the other everyday tools never wait on a lookup), the phone's [TOP_N] most-used other tools
+ *  - [CORE] (19 tools, 0.55.5 adds the team and add_calendar_event: alarms, timers, messages, weather and the other everyday tools never wait on a lookup), the phone's [TOP_N] most-used other tools
  *    ([top]), and the two catalog tools [FIND] (`find_tools`) and [LOAD] (`load_skill`): about 12-16 tools instead of ~50.
  * Every other tool and skill waits in blaze.db ([LeanCatalog]) and joins from the next step when the model asks:
  * `find_tools` ([find], non-suspend: it only searches and marks names) adds what it found to this turn's [State.found], and
@@ -35,7 +35,10 @@ object LeanTurn {
         "set_alarm", "set_timer", "message_contact", "calendar_events", "open_app",
         // 0.55.2 (Finn 18:00: "Weather in Lusaka" web-searched weather.com and couldn't confirm; it worked before): the
         // everyday tools the full list always sent (ToolPick.ESSENTIAL / HARNESS / ALWAYS_GROUPS) ride every lean turn too.
-        "get_weather", "get_location", "create_routine", "device_status", "read_screen", "call_control")
+        "get_weather", "get_location", "create_routine", "device_status", "read_screen", "call_control",
+        // 0.55.5 (Finn 19:57: "Set up my life team" never found agent_create; "add to my calendar" sat behind a lookup too):
+        // the team (see / add bots) and adding a calendar event ride every lean turn. The model decides when to use them.
+        "agents_list", "agent_create", "add_calendar_event")
 
     /**
      * 0.55.2: tools the full list always sent that lean leaves behind find_tools on purpose. Every always-sent tool must be
@@ -44,7 +47,27 @@ object LeanTurn {
     val BEHIND_FIND = setOf("load_tools", "find_tool", "remember", "run_plan", "search_in_app", "blaze_now", "open_view",
         "save_file", "make_document", "delegate", "http_request", "run_shell", "run_code", "file_read", "file_write", "file_edit",
         "file_list", "browser_open", "browser_read", "browser_click", "browser_type", "generate_image", "request_secret",
-        "blaze_self", "design")
+        "blaze_self", "design",
+        // 0.55.5: the old ToolRouter core and the schedule / study groups (always sent before lean). Each is one find_tools
+        // away, by words or by its area's name (find_tools lists every area: [areas]). LeanTurnTest keeps this list complete.
+        "forget", "memory_update", "memory_delete", "memory_merge", "about_blaze", "jarvis_mode", "bank_mode", "follow_ups",
+        "blaze_docs_search", "blaze_docs_read", "blazerouter", "processes", "process", "recall_memory", "list_apps", "blaze_camera",
+        "self_test", "goal", "use_skill", "find_skill", "search_past_chats", "run_skill", "search_chat", "read_turn", "read_artifact",
+        "update_brief", "project_docs_search", "project_docs_read", "cache_toc", "cache_read", "cache_search", "cache_summarize",
+        "pdf_page", "phone_task", "start_agent", "list_agents", "check_agent", "message_agent", "cancel_agent", "stage_show",
+        "request_app_connection", "done_job", "create_task", "update_task", "gcal_events", "gcal_create", "list_routines",
+        "delete_routine", "schedule_command", "create_trigger", "list_triggers", "delete_trigger", "move_event", "delete_event",
+        "flashcards")
+
+    /**
+     * 0.55.5 (Finn 20:02: "make sure nothing else is missing, we cannot keep going back and forth with lost tools"): every
+     * area of tools the app has (ToolRouter's groups and ToolPick's cues, wired by [LeanAreas]). find_tools' description
+     * lists them all, so the model always knows what exists, and find_tools with an area's name returns that area's tools
+     * (the model picks the area; nothing reads the user's words). This replaces the group list load_tools used to carry.
+     */
+    data class Area(val id: String, val about: String, val has: (String) -> Boolean)
+    @Volatile var areas: List<Area> = emptyList()
+    const val AREA_MAX = 12
     val META = listOf(FIND, LOAD)
 
     /** Never counted as "most used" (they're already sent, or they're the catalog's own). */
@@ -54,6 +77,8 @@ object LeanTurn {
     val PROMPT = """
 You are ${com.blaze.assistant.BrandName.NAME}, an AI assistant that runs on the user's Android phone and acts for them.
 HOW YOU WORK: you have a few core tools now. For anything else (phone settings like Bluetooth or Wi-Fi, the screen, apps, files, the terminal, the browser, music, GitHub, email, your own settings and more) call $FIND with what you need in plain words; the tools it finds are yours from your next step. For work with known steps (essays, flashcards, slides, code review, research, designs) call $FIND or $LOAD and follow the skill. Never say you can't do something before $FIND came back empty.
+YOUR TEAM: you lead the user's team of bots. agents_list shows it; agent_create adds a bot (a researcher, a writer, a coach…) for work that comes back. When they ask for a bot or a team, suggest the bots and create the ones they agree to.
+WHEN A STEP FAILS: say in a few words what failed, then try another way or offer a concrete choice. Never answer a failure with a vague question.
 Alarms, timers and messages: call set_alarm, set_timer or message_contact straight away. Weather: call get_weather (never web search for weather) and quote its source and time.
 Act, then report what the tool results say. Claim success only from a result that says so. Ask with ask_user only when a real choice is the user's (which contact, which account); check facts yourself.
 VOICE: a sharp, warm friend: contractions, answer first, plain words, no filler or stock lines ("How can I help?"). Fit the length to the ask: a line for chat, more for research and how-tos.
@@ -156,10 +181,17 @@ Reply in the user's language. Never show tool names, JSON or code unless asked.
 
     fun findDef(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", FIND)
-        .put("description", "Search every tool and skill on this phone by what you need, in plain words (\"turn on bluetooth\", \"read my screen\", \"open a github issue\", \"make flashcards\"). The tools it finds are available from your next step; skills are read with $LOAD.")
+        .put("description", "Search every tool and skill on this phone by what you need, in plain words (\"turn on bluetooth\", \"read my screen\", \"open a github issue\", \"make flashcards\"), " +
+            "or pass an area's name to get that area's tools. The tools it finds are available from your next step; skills are read with $LOAD." + areaMenu())
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("query", JSONObject().put("type", "string").put("description", "What you need to do, in plain words")))
             .put("required", JSONArray(listOf("query")))))
+
+    /** " Areas: team (…); device (…); …" from [areas] (empty before they're wired). */
+    fun areaMenu(): String = areas.takeIf { it.isNotEmpty() }?.joinToString("; ", " Areas: ", ".") { "${it.id} (${it.about})" }.orEmpty()
+
+    /** The area [q] names ("team", "area: team"), or null. */
+    fun areaOf(q: String): Area? { val k = q.trim().lowercase().removePrefix("area").trim(' ', ':', '=').trim(); return areas.firstOrNull { it.id == k } }
 
     fun loadSkillDef(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject()
         .put("name", LOAD)
@@ -205,6 +237,18 @@ Reply in the user's language. Never show tool names, JSON or code unless asked.
         if (q.isEmpty()) return "Say what you need in a few words, e.g. find_tools query=\"turn on bluetooth\"."
         val real = LinkedHashMap<String, String>()
         for (i in 0 until all.length()) all.optJSONObject(i)?.optJSONObject("function")?.let { f -> real[f.optString("name")] = f.optString("description") }
+        // 0.55.5: an area by its name → that area's tools (only ones this phone has).
+        areaOf(q)?.let { a ->
+            val picked = real.keys.filter { a.has(it) && it != FIND && it != LOAD }.take(AREA_MAX)
+            if (picked.isNotEmpty()) {
+                st?.found?.addAll(picked)
+                val already = st?.names().orEmpty()
+                return buildString {
+                    append("Tools in ").append(a.id).append(" (available from your next step; call one now):")
+                    for (n in picked) append("\n- ").append(n).append(if (n in already) " (already loaded)" else "").append(": ").append(LeanCatalog.firstSentence(real[n].orEmpty()))
+                }
+            }
+        }
         val t = terms(q)
         val scored = HashMap<String, Int>()
         val skills = LinkedHashMap<String, String>()

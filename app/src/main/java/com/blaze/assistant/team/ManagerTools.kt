@@ -251,7 +251,7 @@ class ManagerTools(
 
     fun defs(): List<String> = listOf(
         fn("agents_list", "List every bot on the team (the roster): name, id, role, who it reports to, open jobs.", linkedMapOf(), emptyList()),
-        fn("agent_create", "Create a new agent for work that will come back. Pick only the tool groups it needs (tools, at most ${AgentKit.MAX_GROUPS}). It reports to you unless you say otherwise; agents reporting to another agent form its team.", fields(), listOf("name")),
+        fn("agent_create", "Create a new bot (agent) on the user's team for work that will come back, e.g. a researcher, a writer or a coach. Pick only the tool groups it needs (tools, at most ${AgentKit.MAX_GROUPS}). It reports to you unless you say otherwise; agents reporting to another agent form its team.", fields(), listOf("name")),
         fn("agent_update", "Change a bot: name, role, email, portfolio, instructions, look, reports-to, effort or mode. ${BotRules.MANAGER_NAME} itself is locked.",
             linkedMapOf<String, Map<String, Any?>>("agent" to str("Bot name or id")).apply { putAll(fields()) }, listOf("agent")),
         fn("agent_delete", "Delete a bot. The first call only asks the user to confirm; call again with confirm: true after they say yes in their next message. ${BotRules.MANAGER_NAME} can never be deleted.",

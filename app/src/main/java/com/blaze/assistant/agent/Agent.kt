@@ -1520,6 +1520,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
         // 0.55.0 lean harness (LeanTurn): the two catalog tools, and the phone's own tool rows in the blaze.db catalog.
+        LeanTurn.areas = try { LeanAreas.all() } catch (_: Throwable) { emptyList() }   // 0.55.5: find_tools lists every area
         t.put(LeanTurn.findDef()); t.put(LeanTurn.loadSkillDef())
         t.put(PhoneReadout.def())   // 0.55.1: speed_stats, a catalog tool (not core) the model may choose to call
         t.put(com.blaze.assistant.phone.CallControl.tool())

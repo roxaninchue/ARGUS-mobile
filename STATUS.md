@@ -3,6 +3,9 @@
 - **Versioning rule (the owner 2026-10-13): bump patch only (v0.24.N+1) per release.**
 - **Rollover rule (the owner 2026-10-14): after a patch of .9 the next release rolls over: patch back to 0, minor +1 (0.24.9 → 0.25.0).** Shipped: v0.24.7 Magic Hand (#45), v0.24.8 rounded-everything (#44), v0.24.9 rich replies. **v0.25.0 = bug-fix release; v0.25.1 = Linux desktop; v0.25.2 = classic colours; v0.25.3 = "VPN that just works"; v0.26.0 = Magic Hand box + silent long chats; v0.26.1 = visual answers + "Thinking it through"; v0.26.2 = specialists Hark-style + the empty-answer ("Done.") fix; v0.26.3 = offline diagrams + blaze.db memory; v0.27.0 = habit offers only for real apps + Magic Hand Grab button + one motion system (minor bump as asked by the owner, not a patch); v0.27.1 = "Ask Blaze about this page" always answers (pasted links, Lens, empty / one-word questions); v0.27.2 = swipeable text-selection pill (Search, Ask Argus, Translate, Define, Read aloud, Share); v0.27.3 = agent intent + honesty ("show me your memories", retries stay on the request, no fake 3D, hands-on offers); v0.28.0 = My voice (on-device voice cloning, as asked in the brief: a new feature takes the next minor); v0.28.1 = batch 1 fixes (the owner's A12); v0.28.2 = security hardening; v0.28.3 = project chats in Projects + round back button; v0.28.4 = blaze-docs (Argus looks itself up) + the work-card timer fix; v0.28.5 = project brief cap (brief ≤ 600 tokens, full text looked up).**
 
+## v0.55.5 (versionCode 214, 2026-11-22, main): team tools + area menu in the lean chat, no-lost-tools parity test
+- **What:** see CHANGELOG 0.55.5 (LeanTurn CORE/BEHIND_FIND/areas, LeanAreas.kt, ToolWire never asks the gateway to trim tools). Includes 0.55.4's ghost-alarm fix.
+
 ## v0.55.4 (versionCode 213, 2026-11-22, main): ghost alarms from other apps' alarm clocks
 - **What:** see CHANGELOG 0.55.4 (agent/SystemAlarm.kt). Gateway 0.9.40 live (`6eee055b`, rollback `a80009fe`).
 

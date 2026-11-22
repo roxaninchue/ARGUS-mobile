@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.55.5: ask Argus for a bot or to set up your life team and it creates the bots with you; it also knows everything it can do, so nothing that used to work goes missing.
 - New in 0.55.4: a reminder another app set (a calendar, a to-do app) no longer shows up as an alarm on Home or in the greeting; only your Clock app's alarms do.
 - New in 0.55.3: Settings > Submit feedback sends your note straight to the team, anonymously (just the note, app version and phone model), and opens your mail app only when it can't.
 - New in 0.55.2: weather comes from the weather tool again, Home and Argus only show alarms your Clock app really has, and an event on your calendar twice is pointed out (and never added twice).

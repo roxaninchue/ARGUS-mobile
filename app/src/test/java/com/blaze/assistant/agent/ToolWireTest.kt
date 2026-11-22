@@ -16,12 +16,12 @@ class ToolWireTest {
             "how much is a PS5 in Lusaka", "add dentist friday 3pm").forEach { assertFalse(it, ToolWire.mayTrim(user(it), "auto", false)) }
     }
 
-    @Test fun smallTalkMayBeTrimmedOnAutoOnly() {
-        assertTrue(ToolWire.mayTrim(user("hey argus!"), "auto", false))
-        assertTrue(ToolWire.mayTrim(user("thanks"), "auto", false))
-        assertTrue(ToolWire.mayTrim(user("hi there"), "auto", false))
-        assertFalse(ToolWire.mayTrim(user("hi there, what's the weather"), "auto", false))
-        assertFalse("a hand pick always gets its tools", ToolWire.mayTrim(user("hey argus!"), "auto", true))
+    /** 0.55.5: parity with 0.55.4 for every message that already kept its tools, and small talk now keeps them too (no word list). */
+    @Test fun everyMessageKeepsItsToolsOnAutoAndOnAPick() {
+        listOf("hey argus!", "thanks", "hi there", "hi there, what's the weather", "set up my life team", "ok").forEach {
+            assertFalse(it, ToolWire.mayTrim(user(it), "auto", false))
+            assertFalse(it, ToolWire.mayTrim(user(it), "auto", true))
+        }
         assertFalse("a named tool is the app's decision", ToolWire.mayTrim(user("thanks"), "required", false))
     }
 
@@ -36,7 +36,7 @@ class ToolWireTest {
     @Test fun partsContentIsRead() {
         val m = JSONArray().put(JSONObject().put("role", "user").put("content", JSONArray().put(JSONObject().put("type", "text").put("text", "thanks"))))
         assertEquals("thanks", ToolWire.lastUser(m))
-        assertTrue(ToolWire.mayTrim(m, "auto", false))
+        assertFalse(ToolWire.mayTrim(m, "auto", false))
     }
 
     @Test fun clockAppAndNoLiveDataAreRefusals() {

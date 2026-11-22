@@ -25,14 +25,12 @@ object ToolWire {
         }
     }
 
-    /** May this call say `blaze_tools: "auto"` (let the gateway drop the schemas)? [manualPick] = a model picked by hand. */
-    fun mayTrim(messages: JSONArray, choice: Any, manualPick: Boolean): Boolean {
-        if (choice != "auto" || manualPick) return false
-        val t = lastUser(messages)?.trim() ?: return false
-        if (t.isEmpty() || t.startsWith("[")) return false
-        return SmallTalk.chitChat(t) || SmallTalk.chitChat(t.replace(greetTail, ""))
-    }
+    /**
+     * May this call say `blaze_tools: "auto"` (let the gateway drop the schemas)? 0.55.5 (Finn, 22 Nov 2026: no trigger
+     * words): never. The gateway's trim keys off its ACTION word list, which is text routing, so every call now carries its
+     * tools and the model decides. The lean prompt is cached, so small talk costs no extra time. [manualPick] kept for callers.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun mayTrim(messages: JSONArray, choice: Any, manualPick: Boolean): Boolean = false
 
-    /** "hi there", "hello again", "hey guys": a greeting with a filler word SmallTalk's name list doesn't carry. */
-    private val greetTail = Regex("""(?i)\s+(?:there|again|everyone|everybody|all|guys|you)(?=[\s!?.,~]*$)""")
 }
