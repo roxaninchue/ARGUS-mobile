@@ -1,5 +1,8 @@
 package com.blaze.assistant.ui.argus.kit
 
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.verticalScroll
 
 import com.blaze.assistant.i18n.tr
@@ -77,6 +80,8 @@ fun ArgusSheet(
     cancel: String = "Cancel",
     bodyMax: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified,
     scroll: Boolean = true,
+    dragToClose: Boolean = true,
+    maxWidth: androidx.compose.ui.unit.Dp = androidx.compose.material3.BottomSheetDefaults.SheetMaxWidth,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Argus.colors
@@ -98,12 +103,16 @@ fun ArgusSheet(
         contentColor = c.ink,
         scrimColor = c.scrim,
         tonalElevation = 0.dp,
+        sheetMaxWidth = maxWidth,
+        // dragToClose = false (owner 2026-11-22, model picker): the sheet has its own close X, so no handle and no drag;
+        // the scrim, Back and the X still close it.
         dragHandle = {
-            Box(Modifier.padding(top = 8.dp, bottom = 6.dp).size(KitSpec.Sheet.HANDLE_W.dp, KitSpec.Sheet.HANDLE_H.dp)
+            if (dragToClose) Box(Modifier.padding(top = 8.dp, bottom = 6.dp).size(KitSpec.Sheet.HANDLE_W.dp, KitSpec.Sheet.HANDLE_H.dp)
                 .clip(RoundedCornerShape(3.dp)).background(c.line2))
+            else Box(Modifier.size(12.dp))
         },
     ) { androidx.compose.runtime.CompositionLocalProvider(LocalSheetClose provides close) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().then(if (dragToClose) Modifier else Modifier.holdSheet())) {
             if (!title.isNullOrBlank()) Text(tr(title), style = ArgusType.sheetTitle, color = c.ink,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).semantics { heading() })
             Column(Modifier.fillMaxWidth().weight(1f, fill = false).then(if (bodyCap != null) Modifier.heightIn(max = bodyCap) else Modifier)
@@ -292,3 +301,24 @@ fun CloudChip(
         }
     }
 }
+
+/**
+ * Keeps a sheet where it is: drags its content didn't use are eaten here (after the children, so lists and taps work), and
+ * scrolls a list runs into its ends are kept, so nothing reaches the sheet's own drag. Used by [ArgusSheet] when
+ * dragToClose is false.
+ */
+private fun Modifier.holdSheet(): Modifier = this
+    .nestedScroll(object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+        override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset,
+            source: androidx.compose.ui.input.nestedscroll.NestedScrollSource) = available
+        override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity) = available
+    })
+    .pointerInput(Unit) {
+        androidx.compose.foundation.gestures.awaitEachGesture {
+            androidx.compose.foundation.gestures.awaitFirstDown(requireUnconsumed = false)
+            do {
+                val e = awaitPointerEvent()
+                e.changes.forEach { if (it.positionChange() != androidx.compose.ui.geometry.Offset.Zero) it.consume() }
+            } while (e.changes.any { it.pressed })
+        }
+    }

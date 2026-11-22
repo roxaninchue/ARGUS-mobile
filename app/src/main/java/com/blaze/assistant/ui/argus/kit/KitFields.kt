@@ -50,9 +50,10 @@ fun ArgusField(
     trailing: (@Composable () -> Unit)? = null,
     imeAction: ImeAction = ImeAction.Done,
     onIme: (() -> Unit)? = null,
+    radius: Int = ArgusTokens.Radius.FIELD,
 ) {
     val c = Argus.colors
-    val shape = RoundedCornerShape(ArgusTokens.Radius.FIELD.dp)
+    val shape = RoundedCornerShape(radius.dp)
     val src = remember { MutableInteractionSource() }
     val focused by src.collectIsFocusedAsState()
     val ring = if (focused) Modifier.border(KitSpec.Field.FOCUS_RING.dp, c.glassFill2, shape).padding(KitSpec.Field.FOCUS_RING.dp)
@@ -95,10 +96,11 @@ fun ArgusSearch(
     modifier: Modifier = Modifier,
     placeholder: String = "Search",
     onSearch: (() -> Unit)? = null,
+    radius: Int = ArgusTokens.Radius.FIELD,
 ) {
     ArgusField(
         value = value, onValueChange = onValueChange, label = placeholder, modifier = modifier, placeholder = placeholder,
-        leadingIcon = "search", imeAction = ImeAction.Search, onIme = onSearch,
+        leadingIcon = "search", imeAction = ImeAction.Search, onIme = onSearch, radius = radius,
         trailing = if (value.isEmpty()) null else ({
             ArgusIconButton("x", "Clear search", { onValueChange("") }, kind = IconButtonKind.FLAT)
         }),
