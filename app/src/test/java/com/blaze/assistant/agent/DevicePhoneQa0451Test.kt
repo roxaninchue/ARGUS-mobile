@@ -83,7 +83,8 @@ class DevicePhoneQa0451Test {
         assertEquals("open_settings", body.getJSONObject("tool_choice").getJSONObject("function").getString("name"))
         assertFalse(body.has("blaze_tools"))
         val plain = CloudRuns.createBody("c2", JSONArray().put(JSONObject().put("role", "user").put("content", "hi there")), tools, "agent")
-        assertEquals("auto", plain.get("tool_choice")); assertEquals("auto", plain.getString("blaze_tools"))
+        // 0.55.5 (no trigger words): small talk keeps its tools too; the app never asks the gateway to trim them.
+        assertEquals("auto", plain.get("tool_choice")); assertFalse(plain.has("blaze_tools"))
     }
 
     @Test fun actionsAreNotScheduleQuestions() {

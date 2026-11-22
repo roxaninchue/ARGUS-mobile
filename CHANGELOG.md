@@ -13,6 +13,7 @@
 - 0.55.4's CI failed one test (BlazeDocsTest: "which tool searches blaze docs" no longer found the tool reference in the top
   5, because the about doc's growing feature map, boosted ×2, crowded it out). The tools doc's rank boost goes 1.2 → 1.5,
   so the tool reference stays findable as the about doc grows. 0.55.5 carries 0.55.4's ghost-alarm fix.
+- DevicePhoneQa0451Test now expects small talk to keep its tools (no `blaze_tools` on a run either).
 
 ## 0.55.4 (versionCode 213, 2026-11-22): no more ghost alarms from other apps
 - Home, the greeting and the chat showed "20:00 Alarm" while the Clock app said "No alarms": Android's "next alarm clock"
