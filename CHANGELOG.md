@@ -1,3 +1,27 @@
+## 0.55.1 (versionCode 210, 2026-11-22): cloud tool loop, no trigger words, honest alarms and times
+Needs gateway 0.9.39 (`POST /v1/loop`, `/v1/turn/resume`, signed phone batches; uploaded `a80009fe`, not deployed yet).
+With 0.9.38 tickets don't offer the loop, so tool turns keep running the 0.55.0 way.
+- Cloud tool loop (`agent/CloudLoop.kt`, `agent/LoopWire.kt`): web_search, fetch_page, find_tools, load_skill and
+  speed_stats run inside the gateway's loop, so a search turn costs one round trip from the phone instead of one per step.
+  Phone tools come back as ONE HMAC-signed, ordered batch (`agent/PhoneBatch.kt`): the phone checks the signature, runs
+  the steps through the usual runTool (approval cards unchanged), stops at the first failure or decline, and ends the
+  turn locally when every step was final and succeeded (no second model call). Otherwise it resumes with the turn id and
+  results only; an expired turn is sent again whole without re-running anything. Falls back to the normal route only
+  while nothing has run on the phone. `final` comes from the gateway's tool names, never from the user's words.
+- No trigger words: the phrase-matched readouts ("speed stats", "tool stats", "what's running") are gone from FastLane,
+  PhoneReadout and QuickRules. Speed stats now live in Settings > Developer > Speed stats, each reply's What happened
+  sheet (cloud vs phone tool round trips included), and the `speed_stats` catalog tool the model may choose to call.
+- Lean prompt: VOICE, GREETINGS (a greeting never gets a bare "Hi"), TIME and WHO SAID WHAT rules; an exact CURRENT
+  LOCAL TIME + locale line after the cached prefix (fixes "study 9:00 to 12:00" offered at 11:05); when the user points
+  out the time, the reply owns the slip and re-plans from now instead of echoing the time.
+- Home setup topics are saved to memory as "Home topics from setup: …" with a note that they aren't a plan or a choice
+  (the old "Interested in Study" came back as "You chose to study").
+- set_alarm check: no more "I couldn't confirm it" when the Clock app took the alarm and an earlier alarm rings first
+  (`ToolVerify.nextAt`, `nextAlarmAt`); a Clock app that refused it reads as failed.
+- Tests (kotlinc 2.0.20 + stubs): PhoneBatchTest 9, LoopWireTest 4, ToolVerifyTest 10, LeanTurnTest 16,
+  PhoneReadoutTest 4, DirectLaneTest 10, TurnTimingTest 8, SpaceLogicTest 25, SpaceWiringTest 17, InterestsLineTest 2
+  = 105 OK. LeanTurnTest had a `.map(::java.io.File)` that doesn't compile; fixed.
+
 ## 0.55.0 (versionCode 209, 2026-11-22): lean harness (small stable prompt, tools on demand)
 Needs gateway 0.9.38 (`GET /v1/catalog`, catalog tickets; uploaded `64a70d84`, not deployed yet). With an older gateway
 the catalog sync just finds nothing and turns keep working with the core tools.

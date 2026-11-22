@@ -11,13 +11,17 @@ Pushed: 81920aa7 (CloudLoop, LoopWire, PhoneBatch, version 0.55.1/210) + this WI
 - ToolVerify: set_alarm no longer says "couldn't confirm" when the Clock app accepted the intent and an earlier alarm hides it (`nextAlarmAt`, `nextAt`, `REPORTED`).
 - Tests touched: LeanTurnTest, ToolVerifyTest, new PhoneBatchTest, LoopWireTest — NOT all re-run after the last edits.
 
-## Left to do (0.55.1)
-1. Re-run app tests (kotlinc + stubs in work/tc): LeanTurnTest, ToolVerifyTest, PhoneBatchTest, LoopWireTest, DirectLaneTest, PhoneReadoutTest, ModelFirstTest.
-2. Remove the phrase-matched readouts ("speed stats", "tool stats", "what's running") from FastLane/PhoneReadout (Finn: NO trigger words anywhere). Keep TurnTiming; show it on a Settings > Developer "Speed stats" screen + What happened sheet; `speed_stats` catalog tool (gateway catalog already has it, e5614c0).
-3. Trace "You chose to study" (a chip/memory injected as the user's words?).
-4. CHANGELOG / STATUS / overhaul.md / about.md 0.55.1 lines; SpaceWiringTest pin theVersionIs0551; check-no-blaze --update-baseline; check-do-not-port; `node --test evals/test/*.test.mjs` (34/34).
-5. Final build commit without [skip ci]; watch GitHub mirror CI.
-6. Deploy gateway 0.9.39 only on Finn's go, after the app is ready.
+## Done since (11:10–11:45 CAT)
+- Tests re-run (kotlinc 2.0.20 + stubs): 105 OK across PhoneBatch, LoopWire, ToolVerify, LeanTurn, PhoneReadout, DirectLane, TurnTiming, SpaceLogic, SpaceWiring, InterestsLine. Fixed: LeanTurnTest `.map(::java.io.File)` (didn't compile); ToolVerifyTest now expects FAILED when the Clock app refuses an alarm.
+- Phrase readouts were already gone in 81920aa7 (Settings > Developer > Speed stats, What happened sheet, speed_stats tool); PhoneReadoutTest confirms.
+- "You chose to study": traced to Home setup's interest chips saved to memory as "Interested in Study: …" (kind preference), read back as a choice. Now "Home topics from setup: … (not a plan …)" (InterestsLineTest) plus the WHO SAID WHAT rule.
+- New TIME rule: when the user points out the time, own the slip and re-plan from now (Finn's "It's 11:07" got a bare echo).
+- Docs: CHANGELOG, STATUS, overhaul.md, about.md 0.55.1; rename baseline updated; do-not-port 0; evals 34/34.
+
+## Left to do
+1. Build commit (no [skip ci]) and watch GitHub mirror CI.
+2. Deploy gateway 0.9.39 only on Finn's go.
+3. Phone check (see STATUS 0.55.1).
 
 ## Design rules (Finn)
 - No trigger words / text routing: the model decides; `final` comes from the tool name (gateway list).

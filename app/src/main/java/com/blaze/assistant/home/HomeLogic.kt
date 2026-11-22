@@ -246,13 +246,20 @@ object Interests {
         WidgetSpec(WidgetTypes.INTO, "Tell me what you're into", "For you", JSONObject(), WidgetSize.S),
     )
 
-    /** Memory lines → interests as a memory sentence ("Interested in Sports: Arsenal, NBA."). */
+    /**
+     * Memory lines → interests as a memory sentence ("Home topics from setup: Sports: Arsenal, NBA. ...").
+     * 0.55.1: worded as setup topics, not as something the user chose or said today. "Interested in Study" read back as
+     * "You chose to study" when Finn asked Argus to plan his day (2026-11-22); [HOME_TOPICS] keeps it out of plans.
+     */
+    const val HOME_TOPICS = "Home topics from setup: "
+    const val NOT_A_PLAN = "(Picked once to choose Home cards; not a plan, and not something they said or chose today.)"
+
     fun memoryLine(chosen: Set<String>, subs: Set<String>, typed: String): String {
         val parts = catalogue.filter { it.id in chosen }.map { c ->
             val s = c.subs.filter { it in subs }
             if (s.isEmpty()) c.label else c.label + ": " + s.joinToString(", ")
         } + subs.filter { s -> catalogue.none { s in it.subs } } + listOfNotNull(typed.trim().takeIf { it.isNotBlank() })
-        return if (parts.isEmpty()) "" else "Interested in " + parts.joinToString("; ") + "."
+        return if (parts.isEmpty()) "" else HOME_TOPICS + parts.joinToString("; ") + ". " + NOT_A_PLAN
     }
 
     /**

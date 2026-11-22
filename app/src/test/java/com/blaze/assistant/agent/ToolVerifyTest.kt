@@ -79,8 +79,8 @@ class ToolVerifyTest {
         val bad = check("set_alarm", args, ok, Fake(alarm = 9 to 0, alarmAt = target + 2 * 3_600_000, clock = now))
         assertEquals(Status.UNVERIFIED, bad.status)
         assertFalse(ToolVerify.reportedDone(bad.why))
-        // the Clock app didn't take it at all: never verified
-        assertEquals(Status.UNVERIFIED, check("set_alarm", args, "No app on this phone can do that.", Fake(alarm = 6 to 0, alarmAt = target - 1, clock = now)).status)
+        // the Clock app didn't take it at all: a plain failure, never verified
+        assertEquals(Status.FAILED, check("set_alarm", args, "No app on this phone can do that.", Fake(alarm = 6 to 0, alarmAt = target - 1, clock = now)).status)
         // the system list can't be read: the tool's own success stands (soft note, see UnconfirmedEcho)
         val unread = check("set_alarm", args, ok, Fake(clock = now))
         assertTrue(ToolVerify.reportedDone(unread.why))

@@ -207,8 +207,11 @@ private object DirectLaneNames { fun ok(n: String) = Regex("^[A-Za-z0-9_.:-]{1,1
         val b = LeanTurn.system("", "RULES", "Finn", "Reply in English.", "memory", now = LeanTurn.nowLine(now.plusMinutes(1), java.util.Locale.forLanguageTag("en-ZM")))
         assertEquals("the prefix stays byte-identical", a.substringBefore("CURRENT LOCAL TIME"), b.substringBefore("CURRENT LOCAL TIME"))
         assertTrue(LeanTurn.PROMPT.contains("WHO SAID WHAT:"))
+        // Finn 11:07: "It's 11:07" got a bare "It's 11:07 now." instead of a corrected study plan
+        assertTrue(LeanTurn.PROMPT.contains("your last plan was wrong") && LeanTurn.PROMPT.contains("never just repeat the time"))
+        assertTrue(LeanTurn.PROMPT.length <= LeanTurn.PROMPT_MAX)
         // Agent wires it into every lean turn
-        val agent = listOf("src/main/java/com/blaze/assistant/agent/Agent.kt", "app/src/main/java/com/blaze/assistant/agent/Agent.kt").map(::java.io.File).first { it.exists() }.readText()
+        val agent = listOf("src/main/java/com/blaze/assistant/agent/Agent.kt", "app/src/main/java/com/blaze/assistant/agent/Agent.kt").map { java.io.File(it) }.first { it.exists() }.readText()
         assertTrue(agent.contains("now = LeanTurn.nowLine(java.time.ZonedDateTime.now())"))
     }
 }
