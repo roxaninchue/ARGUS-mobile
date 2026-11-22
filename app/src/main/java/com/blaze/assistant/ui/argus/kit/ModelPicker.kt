@@ -108,6 +108,7 @@ fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = n
  * scrim close it. On a phone on its side the sheet splits in two: search, filters, Auto and Recent on the left, the models
  * on the right, so the list gets the full height.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ModelSheet(list: List<LiveModels.Member>, onDismiss: () -> Unit) {
     val c = Argus.colors

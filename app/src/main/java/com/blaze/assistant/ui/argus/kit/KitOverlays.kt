@@ -1,6 +1,8 @@
 package com.blaze.assistant.ui.argus.kit
 
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.verticalScroll
@@ -314,8 +316,8 @@ private fun Modifier.holdSheet(): Modifier = this
         override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity) = available
     })
     .pointerInput(Unit) {
-        androidx.compose.foundation.gestures.awaitEachGesture {
-            androidx.compose.foundation.gestures.awaitFirstDown(requireUnconsumed = false)
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false)
             do {
                 val e = awaitPointerEvent()
                 e.changes.forEach { if (it.positionChange() != androidx.compose.ui.geometry.Offset.Zero) it.consume() }
