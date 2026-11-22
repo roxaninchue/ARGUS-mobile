@@ -1,3 +1,22 @@
+## 0.55.0 (versionCode 209, 2026-11-22): lean harness (small stable prompt, tools on demand)
+Needs gateway 0.9.38 (`GET /v1/catalog`, catalog tickets; uploaded `64a70d84`, not deployed yet). With an older gateway
+the catalog sync just finds nothing and turns keep working with the core tools.
+- Each turn now sends a short, stable system prompt that lives on the phone, 10 core tools (ask_user, web_search,
+  fetch_page, memory_search, memory_save, set_alarm, set_timer, message_contact, calendar_events, open_app), the phone's
+  top 4 most-used tools, anything already used in this chat, and `find_tools` + `load_skill` (`agent/LeanTurn.kt`).
+  The prompt barely changes between turns, so it caches well; alarms and messages never wait on a lookup.
+- Every other tool and skill sits in blaze.db's `lean_catalog` (FTS), synced from the gateway in the background at most
+  every 6 hours with ETag, plus the phone's own tools (`agent/LeanCatalog.kt`). `find_tools` (non-suspend
+  `LeanTurn.find`) adds what it finds to the same turn; `load_skill` returns a skill's text. Both run in
+  `runToolInner`; nothing was added to `runLoop` (64 KB method limit).
+- Direct lane: tickets carry the plan's catalog hash (`cat`), so a tool found mid-turn stays direct (`LeanCatalog.covers`).
+  Limits stay on the gateway: quota, budget and per-call charging unchanged, and tools a plan doesn't allow are dropped.
+- Readouts ("speed stats", "tool stats", "what's running") answer on the phone while online too (`agent/PhoneReadout.kt`,
+  `FastLane.readout`); since the model-first change they only did offline.
+- Route label shows "· lean". Tests: LeanTurnTest, LeanCatalogTest, PhoneReadoutTest 31 OK (kotlinc + stubs).
+- Phone check: "Hi!" / "alarm at 7" show "· lean" with ~12-16 tools; "turn on bluetooth" runs find_tools and stays
+  direct (after one catalog sync); "speed stats" answers instantly online; approval cards unchanged.
+
 ## 0.54.6 (versionCode 208, 2026-11-22): the two "Unreleased" entries below (tool turns on the Direct lane, per-turn timing)
 Needs gateway 0.9.35+ with `direct_lane` on (live); the per-model first-token wait uses gateway 0.9.37's `p95_ms` once
 that is deployed (until then the size-aware bound). Phone check: "set an alarm for 7" answers with route "· direct" and

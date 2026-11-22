@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.55.0: Argus sends a small, steady set of instructions and everyday tools each turn and looks up the rest only when it needs them, so replies start sooner. "speed stats" and "tool stats" now answer right on the phone, online or off.
 - New in 0.54.6: replies that use tools (alarms, search, messages and the rest) can start through the Direct lane too, with the same tools and the same confirmations; the wait before Argus quietly switches to the normal route now fits the model and the size of the request. Say "speed stats" to see, for your last turns, which lane answered, how long until the first word, and how long each tool took.
 - New in 0.54.5: short chat replies can start faster through the Direct lane (once it is switched on); if it is slow or busy, Argus quietly uses the normal route.
 - New in 0.54.4: Argus decides which view work goes in from a short list of every view and what it holds (no guessing from your words, so "remind me what we decided about the logo" stays a chat answer and Bemba or Nyanja requests reach the right view); while a 3D design is current Argus knows which one, so "the fins look wrong" changes it.
