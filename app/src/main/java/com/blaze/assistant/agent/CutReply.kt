@@ -49,7 +49,10 @@ object CutReply {
         val t = text.trimEnd()
         if (t.isEmpty() || !t.last().isLetter()) return false
         val word = t.takeLastWhile { !it.isWhitespace() }.lowercase().replace('\u2019', '\'')
-        return word in openers
+        if (word in openers) return true
+        // Two-word openers: "Let me", "Allow me" (the last word alone, "me", also closes "tell me").
+        val two = t.lowercase().replace('\u2019', '\'').split(Regex("\\s+")).takeLast(2).joinToString(" ")
+        return two == "let me" || two == "allow me"
     }
 
     /** A reply that is only a few words and stops on an opener ("So", "Okay so", "Let me"): no answer was given yet. */
