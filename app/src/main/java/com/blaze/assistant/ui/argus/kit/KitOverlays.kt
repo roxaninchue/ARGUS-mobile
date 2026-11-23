@@ -1,9 +1,6 @@
 package com.blaze.assistant.ui.argus.kit
 
-import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.verticalScroll
 
@@ -306,22 +303,29 @@ fun CloudChip(
 }
 
 /**
- * Keeps a sheet where it is: drags its content didn't use are eaten here (after the children, so lists and taps work), and
- * scrolls a list runs into its ends are kept, so nothing reaches the sheet's own drag. Used by [ArgusSheet] when
- * dragToClose is false.
+ * Keeps a sheet where it is without stealing scrolls (Finn 2026-11-23: in the model picker a slow scroll sometimes
+ * didn't register).
+ *
+ * The old version consumed every pointer move under the sheet. Compose's drag detectors (the list's verticalScroll and
+ * the sheet's own drag alike) give up on a gesture when they see a move consumed before they pass touch slop, so a
+ * slow drag, whose first moves are under slop, lost the list for the whole touch; only a quick flick that crossed slop
+ * in one move got through.
+ *
+ * Now the sheet is held the way nested scrollables share a touch: a vertical [draggable] that does nothing sits between
+ * the content and the sheet. The deepest detector that passes slop wins, so a list under the finger takes its scroll,
+ * and a drag on the header or filters is taken here before the sheet's own drag can move it. Scrolls a list runs into
+ * its ends are kept, so nothing reaches the sheet's drag that way either. Used by [ArgusSheet] when dragToClose is false.
  */
 private fun Modifier.holdSheet(): Modifier = this
-    .nestedScroll(object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-        override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset,
-            source: androidx.compose.ui.input.nestedscroll.NestedScrollSource) = available
-        override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity) = available
-    })
-    .pointerInput(Unit) {
-        awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
-            do {
-                val e = awaitPointerEvent()
-                e.changes.forEach { if (it.positionChange() != androidx.compose.ui.geometry.Offset.Zero) it.consume() }
-            } while (e.changes.any { it.pressed })
-        }
-    }
+    .nestedScroll(SheetHold)
+    .draggable(NoDrag, androidx.compose.foundation.gestures.Orientation.Vertical)
+
+/** One shared do-nothing state: a new one per recomposition would reset the drag mid-touch. */
+private val NoDrag = androidx.compose.foundation.gestures.DraggableState { }
+
+/** Eats what a list leaves over at its ends, so it never moves the sheet. */
+private object SheetHold : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+    override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset,
+        source: androidx.compose.ui.input.nestedscroll.NestedScrollSource) = available
+    override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity) = available
+}

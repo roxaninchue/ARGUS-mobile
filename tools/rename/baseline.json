@@ -1498,6 +1498,7 @@
 "app/src/test/java/com/blaze/assistant/ui/argus/kit/KitSpecTest.kt":6,
 "app/src/test/java/com/blaze/assistant/ui/argus/kit/PlusMenuSpecTest.kt":14,
 "app/src/test/java/com/blaze/assistant/ui/argus/kit/ShellSpecTest.kt":9,
+"app/src/test/java/com/blaze/assistant/ui/argus/kit/SheetScrollTest.kt":3,
 "app/src/test/java/com/blaze/assistant/ui/argus/LucidePathsTest.kt":6,
 "app/src/test/java/com/blaze/assistant/ui/argus/OrbGeometryTest.kt":3,
 "app/src/test/java/com/blaze/assistant/ui/argus/OrbShotsTest.kt":7,
