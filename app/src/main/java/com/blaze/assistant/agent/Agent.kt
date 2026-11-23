@@ -1936,15 +1936,17 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
 
         fun stop() {
-            if (this === curRef) _confirm.value?.answer?.complete(false)
+            // 0.55.10 (Finn, 23 Nov: "the app crashed when my agent was trying to reply and I hit stop"): Stop runs on the main
+            // thread straight from the button, outside any guarded scope, so one throw in its clean-up closed the app.
+            // Each step is now its own guarded block (StopSafe), and the turn is always cancelled first, whatever fails after.
+            StopSafe.run("live gate") { liveGate?.close(); liveGate = null }   // v0.45.0 (#5): nothing streamed after Stop reaches the chat
+            StopSafe.run("cancel turn") { job?.cancel(); job = null }
+            StopSafe.run("confirm") { if (this === curRef) _confirm.value?.answer?.complete(false) }
             // v0.30.6: Stop also closes an open burst. What was sent meanwhile stays in the conversation, but starts nothing.
-            burstJob?.cancel(); burstJob = null
-            settleInbox()
-            dropFormOf(this)
-            sideQueue.clear(); sideJob?.cancel(); sideJob = null   // v0.32.0
-            liveGate?.close(); liveGate = null   // v0.45.0 (#5): nothing streamed after Stop reaches the chat
-            job?.cancel()
-            job = null
+            StopSafe.run("burst") { burstJob?.cancel(); burstJob = null }
+            StopSafe.run("side") { sideQueue.clear(); sideJob?.cancel(); sideJob = null }   // v0.32.0
+            StopSafe.run("form") { dropFormOf(this) }
+            StopSafe.run("inbox") { settleInbox() }
             mood = Mood.IDLE
         }
 
@@ -3340,10 +3342,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             thinking = ""
             mood = Mood.IDLE
             currentStep = 0
-            persist()
-            announce()
-            learnAfterTurn()
-            trimSessions()   // v0.45.0 (#12)
+            // 0.55.10: the end of a turn never closes the app (Stop mid-reply crashed), and a stopped turn learns nothing:
+            // its reply is half-written, and learning from it was the main-thread stall right after Stop.
+            val stopped = turnEnd == TurnEnd.Reason.STOPPED
+            StopSafe.run("persist") { persist() }
+            StopSafe.run("announce") { announce() }
+            if (!stopped) StopSafe.run("learn") { learnAfterTurn() }
+            StopSafe.run("trim sessions") { trimSessions() }   // v0.45.0 (#12)
             if (wakes.isNotEmpty()) scope.launch { job?.join(); wakes.poll()?.let { wake(it) } }
             // v0.30.6: messages that came in after this turn's last step start the next turn (after this one ends).
             if (inbox.isNotEmpty()) scope.launch { job?.join(); drain() }
@@ -4423,12 +4428,15 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // is tidied (an unfinished tool call gets an honest "interrupted" result, the unread screenshot is dropped) and
                 // the task is kept so "Continue where you stopped" picks it up with its goal and receipts.
                 turnEnd = TurnEnd.Reason.STOPPED
-                liveGate?.close(); liveGate = null
-                keepForResume()
-                add(Role.STEP, "Stopped.")
-                if (agentId == null && resume != null) {
-                    val sid = add(Role.BLAZE, StopResume.STOPPED_LINE)
-                    msgs = msgs.map { if (it.id == sid) it.copy(followups = listOf(StopResume.CHIP)) else it }
+                // 0.55.10: nothing here may replace the cancellation (a throw from the clean-up escaped as a crash).
+                StopSafe.run("stop tidy") {
+                    liveGate?.close(); liveGate = null
+                    keepForResume()
+                    add(Role.STEP, "Stopped.")
+                    if (agentId == null && resume != null) {
+                        val sid = add(Role.BLAZE, StopResume.STOPPED_LINE)
+                        msgs = msgs.map { if (it.id == sid) it.copy(followups = listOf(StopResume.CHIP)) else it }
+                    }
                 }
                 throw e
             } catch (e: Delivery.NotSent) {
