@@ -6,7 +6,6 @@ import org.json.JSONObject
 
 /**
  * v0.30.1: Internet Archive (archive.org) sources, no key needed:
- *  - [ArchiveAudioSource]: audio items licensed Creative Commons or public domain (advancedsearch filter on licenseurl).
  *  - [ArchiveFilmsSource]: the Feature Films collection (public-domain films).
  *  - [BlenderMoviesSource]: the Blender open movies (CC BY) as archive.org hosts them.
  * Search: https://archive.org/advancedsearch.php, files: https://archive.org/metadata/{id}, picture:
@@ -132,17 +131,6 @@ abstract class ArchiveSource : StoreSource {
     override fun defaultChoice(kind: String, choices: List<Choice>) = if (kind == "video") ArchiveParse.defaultVideo(choices) else choices.firstOrNull()
 
     protected fun words(q: String) = q.replace(Regex("""[():"\\\[\]{}^~*?]"""), " ").replace(Regex("\\s+"), " ").trim()
-}
-
-object ArchiveAudioSource : ArchiveSource() {
-    override val id = "archive-audio"
-    override val name = "Internet Archive"
-    override val kinds = setOf("audio")
-    override val square = true
-    override fun query(user: String): String {
-        val w = words(user)
-        return (if (w.isEmpty()) "" else "($w) AND ") + "mediatype:audio AND licenseurl:(*creativecommons.org* OR *publicdomain*)"
-    }
 }
 
 object ArchiveFilmsSource : ArchiveSource() {

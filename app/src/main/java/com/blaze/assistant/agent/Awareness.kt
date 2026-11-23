@@ -157,7 +157,7 @@ object Awareness {
     fun features(views: List<Triple<String, String, String>>, commands: String = ""): String = buildString {
         append("## ${BrandName.NAME} apps\n")
         append("- Chat: talking to ${BrandName.NAME} (this). Projects and Home (widgets) are its other tabs.\n")
-        append("- ${BrandName.NAME} Music: library, Store (Jamendo, Internet Archive), playlists, smart mixes, DJ, equaliser, sleep timer, lyrics. Drive it with music_ops.\n")
+        append("- ${BrandName.NAME} Music: library, songs from YouTube on every page, playlists, smart mixes, DJ, equaliser, sleep timer, lyrics. Drive it with music_ops.\n")
         append("- ${BrandName.NAME} Video: library, Store, series and episodes, subtitles (incl. AI translation), recaps, picture-in-picture, resume where you left off. Drive it with video_ops.\n")
         append("- Gallery: photos and everything ${BrandName.NAME} makes; clean-up, trash, editor. Drive it with gallery / gallery_ops.\n")
         append("- Camera: Photo (Night, HDR), Document, Text (prices, sums), barcodes. blaze_camera, camera_math.\n")

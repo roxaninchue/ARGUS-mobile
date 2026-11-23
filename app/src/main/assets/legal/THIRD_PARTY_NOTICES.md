@@ -166,7 +166,6 @@ ExoPlayer, MediaSession and PlayerView (`androidx.media3:media3-exoplayer`, `med
 
 No third-party code is bundled for these; Argus calls their public APIs. Content keeps its own licence, shown on every item.
 
-- **Jamendo** (https://developer.jamendo.com/v3.0): Creative Commons music. Needs a client_id from https://devportal.jamendo.com (Jamendo API terms: non-commercial use of the free tier; attribution). No key is shipped.
 - **Internet Archive** (https://archive.org/advancedsearch.php, https://archive.org/metadata): only items whose licence url is Creative Commons or public domain (audio), the Feature Films collection (public-domain films) and the Blender open movies.
 - **Blender open movies** (Big Buck Bunny, Elephants Dream, Sintel, Tears of Steel, Cosmos Laundromat, Spring, Agent 327, Sprite Fright, Caminandes): © Blender Foundation / Blender Studio, CC BY (Agent 327: CC BY-ND; Spring: public domain mark) as stated on each archive.org item. https://studio.blender.org/films/
 - **LRCLIB** (https://lrclib.net): lyrics, looked up on demand, no key.

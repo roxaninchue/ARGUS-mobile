@@ -10,13 +10,13 @@ package com.blaze.assistant.mediaapps.store
  * This file is the :storeapi module (pure Kotlin, no Android) so a separate source module (:youtube) can implement
  * [StoreSource] without depending on the app.
  *
- * Free / legal sources: Jamendo (Creative Commons music, needs a Jamendo client_id), Internet Archive audio
- * (public-domain / CC only), Internet Archive Feature Films (public domain) and the Blender open movies (CC).
+ * Sources: YouTube (Music and Video; 0.55.11: the only music source), Internet Archive Feature Films (public domain)
+ * and the Blender open movies (CC), both Video only.
  * YouTube is an optional plug-in module (youtube/, Gradle :youtube) found at runtime; see STATUS.md "YouTube plug-in".
  */
 data class StoreItem(
     val source: String,          // StoreSource.id
-    val id: String,              // the source's own id (YouTube video id, archive.org identifier, Jamendo track id)
+    val id: String,              // the source's own id (YouTube video id, archive.org identifier)
     val title: String,
     val author: String,
     val durationSec: Int = 0,

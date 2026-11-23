@@ -106,7 +106,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.blaze.assistant.mediaapps.store.Choice
-import com.blaze.assistant.mediaapps.store.JamendoSource
 import com.blaze.assistant.mediaapps.store.LinkParse
 import com.blaze.assistant.mediaapps.store.LinkSource
 import com.blaze.assistant.mediaapps.store.StoreDetail
@@ -297,7 +296,7 @@ class StoreState(kind: String) {
 }
 
 /**
- * The Store tab: pick a source (Jamendo, Internet Archive, public-domain films, Blender open movies, and YouTube when
+ * The Store tab: pick a source (YouTube; for video also public-domain films and Blender open movies, and YouTube when
  * the plug-in is in this build), search, see results as a neat grid (picture, title, author, length, licence), the
  * download queue on top. Tapping a result opens [PreviewSheet]. [onPlay] streams it right away.
  */
@@ -311,9 +310,8 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
     val sources = remember(kind) { StoreSources.forKind(kind) }
     // Wave A 27: null = All sources. The setup notice only shows when one source is picked and it needs setup.
     val src = sources.firstOrNull { it.id == state.source }
-    var setupTick by remember { mutableStateOf(0) }
-    val setup = remember(src?.id, setupTick) { src?.setupNeeded() }
-    val ready = remember(kind, setupTick) { sources.filter { it.setupNeeded() == null } }
+    val setup = remember(src?.id) { src?.setupNeeded() }
+    val ready = remember(kind) { sources.filter { it.setupNeeded() == null } }
 
     // v0.30.5 (Blazeinchue: "already scrollable ideas rather than a blank search in case the user isn't feeling inspired"):
     // ideas from what they play and download (Taste), then starters; an empty box shows the first one's results.
@@ -522,8 +520,7 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
         if (setup == null && ForYou.isMix(state.query, state.chip) && state.results.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
             MText("For you", 15.sp, c.ink, FontWeight.SemiBold, modifier = Modifier.padding(top = 2.dp))
         }
-        if (setup != null && src is JamendoSource) item(span = { GridItemSpan(maxLineSpan) }) { JamendoSetup(setup) { setupTick++ } }
-        else if (setup != null) item(span = { GridItemSpan(maxLineSpan) }) { MText(setup, 13.sp, c.sub, maxLines = 4) }
+        if (setup != null) item(span = { GridItemSpan(maxLineSpan) }) { MText(setup, 13.sp, c.sub, maxLines = 4) }
         if (mine.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { DownloadsList(mine) }
         // 0.45.20: a search that failed gets an honest card (Retry, saved results when there are any), never a blank grid.
         if (searchNote == NetHonesty.Search.OFFLINE_ERROR || searchNote == NetHonesty.Search.SOURCE_ERROR) item(span = { GridItemSpan(maxLineSpan) }) {
@@ -621,53 +618,6 @@ fun LinkDialog(kind: String, onDismiss: () -> Unit, onReady: (StoreItem, StoreSo
                 PillButton(if (busy) "Getting\u2026" else "Get", primary = true) { go() }
             }
         }
-    }
-}
-
-/** Jamendo's "not configured" card: where to get a client_id, and a field to paste it. */
-@Composable
-fun JamendoSetup(text: String, onSaved: () -> Unit) {
-    val c = LocalBlaze.current
-    val ctx = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var id by remember { mutableStateOf("") }
-    var checking by remember { mutableStateOf(false) }
-    var bad by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().clip(BlazeShapes.medium).background(c.faint).padding(14.dp)) {
-        MText("Set up Jamendo", 14.sp, c.ink, FontWeight.Medium)
-        Spacer(Modifier.height(4.dp))
-        MText(text, 12.5.sp, c.sub, maxLines = 5)
-        Spacer(Modifier.height(10.dp))
-        // v0.30.5 (Blazeinchue: "a simple button to take them where they have to go, or simply asking Blaze to get it"):
-        // Argus can do it (its browser + the jamendo_setup tool), or the dev portal opens in the browser.
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Ask ${BrandName.NAME} to set it up", primary = true, icon = Icons.Rounded.AutoAwesome) {
-                com.blaze.assistant.agent.Agent.send("Set up the Jamendo Store in ${BrandName.NAME} Music for me: get a free Jamendo API client_id on " +
-                    JamendoSource.DEVPORTAL + " (ask me before creating an account) and save it with " + JamendoSource.TOOL + ".")
-                runCatching { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
-            }
-            PillButton("Get a free ID", primary = false, icon = Icons.Rounded.VpnKey) {
-                runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(JamendoSource.DEVPORTAL))
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BlazeTextField(id, { id = it }, "Jamendo client_id", Modifier.weight(1f))
-            Spacer(Modifier.width(8.dp))
-            PillButton("Save", primary = true) {
-                val v = id.trim()
-                if (v.isNotBlank()) scope.launch {
-                    checking = true
-                    val ok = JamendoSource.works(v)
-                    checking = false
-                    if (ok) { JamendoSource.setClientId(v); onSaved() } else bad = true
-                }
-            }
-        }
-        if (checking || bad) MText(if (checking) "Checking with Jamendo\u2026" else "Jamendo didn't accept that ID.", 12.sp, if (bad) BlazeBrush.orange else c.sub,
-            modifier = Modifier.padding(top = 6.dp))
     }
 }
 

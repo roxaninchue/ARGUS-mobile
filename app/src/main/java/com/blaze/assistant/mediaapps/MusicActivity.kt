@@ -163,7 +163,6 @@ class MusicActivity : ComponentActivity() {
         if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         intent?.getStringExtra(EXTRA_TAB)?.takeIf { it.isNotBlank() }?.let { tab.value = it }
-        com.blaze.assistant.mediaapps.store.JamendoSource.init(this)
         lifecycleScope.launch(Dispatchers.IO) { MediaLib.ensure(this@MusicActivity); Downloads.resumePending(this@MusicActivity) }
         StoragePermission.asker = {
             if (Build.VERSION.SDK_INT < 29 && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)

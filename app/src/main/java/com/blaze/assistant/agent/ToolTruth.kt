@@ -315,7 +315,7 @@ object ToolTruth {
         "message_contact", "call_number", "dial", "music_ops", "video_ops", "movies", "blaze_now", "load_tools", "find_tool")
 
     /** Rarely needed on a phone turn: dropped first when the list is over the cap. */
-    val LOW = listOf("jamendo_setup", "install_skill", "skill_file", "write_skill", "skill_manage", "brand_kit", "blazerouter", "update_brief",
+    val LOW = listOf("install_skill", "skill_file", "write_skill", "skill_manage", "brand_kit", "blazerouter", "update_brief",
         "project_docs_read", "project_docs_search", "flashcards", "life_logs", "browser_vpn", "uninstall_app", "home_widget_update",
         "home_widget_remove", "home_widget_list", "gallery_ops", "jarvis_mode", "standing_permission", "preview_server", "terminal_stop",
         "job_input", "linux_install", "read_artifact", "read_turn", "blaze_docs_read", "schedule_command", "delete_trigger", "list_triggers",

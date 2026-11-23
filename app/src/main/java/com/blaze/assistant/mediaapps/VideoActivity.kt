@@ -362,7 +362,6 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
         if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         enableEdgeToEdge()
         intent?.getStringExtra(MusicActivity.EXTRA_TAB)?.takeIf { it.isNotBlank() }?.let { tab.value = VideoNav.normalize(it); if (tab.value != "player") browse.value = tab.value }
-        com.blaze.assistant.mediaapps.store.JamendoSource.init(this)
         com.blaze.assistant.movies.Movies.init(this)
         lifecycleScope.launch(Dispatchers.IO) { MediaLib.ensure(this@VideoActivity); Downloads.resumePending(this@VideoActivity); smartCleanup() }
         intros = MediaPrefs.intros(this).toMutableMap()

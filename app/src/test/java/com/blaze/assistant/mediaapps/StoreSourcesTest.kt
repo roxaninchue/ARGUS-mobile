@@ -1,10 +1,8 @@
 package com.blaze.assistant.mediaapps
 
 import com.blaze.assistant.mediaapps.store.ArchiveFilmsSource
-import com.blaze.assistant.mediaapps.store.ArchiveAudioSource
 import com.blaze.assistant.mediaapps.store.ArchiveParse
 import com.blaze.assistant.mediaapps.store.BlenderMoviesSource
-import com.blaze.assistant.mediaapps.store.JamendoParse
 import com.blaze.assistant.mediaapps.store.Licence
 import com.blaze.assistant.mediaapps.store.StoreError
 import com.blaze.assistant.mediaapps.store.StoreItem
@@ -15,7 +13,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** v0.30.1: the free Store sources (Internet Archive, Blender open movies, Jamendo) and licence labels. */
+/** v0.30.1: the free Store sources (Internet Archive, Blender open movies) and licence labels. 0.55.11: music is YouTube only. */
 class StoreSourcesTest {
     private fun res(n: String) = javaClass.classLoader!!.getResource("store/$n")!!.readText()
 
@@ -76,39 +74,16 @@ class StoreSourcesTest {
     }
 
     @Test fun archiveQueries() {
-        assertEquals("(jazz piano) AND mediatype:audio AND licenseurl:(*creativecommons.org* OR *publicdomain*)", ArchiveAudioSource.query("jazz: piano"))
         assertEquals("collection:feature_films AND mediatype:movies", ArchiveFilmsSource.query("  "))
         assertTrue(BlenderMoviesSource.query("sintel").startsWith("identifier:(BigBuckBunny_124 OR"))
         assertTrue(BlenderMoviesSource.query("sintel").endsWith(" AND (sintel)"))
     }
 
-    @Test fun jamendo() {
-        val json = """{"headers":{"status":"success","code":0,"results_count":2},"results":[
-            {"id":"1","name":"Song","duration":185,"artist_name":"Ann","album_name":"LP","image":"https://img/1.jpg",
-             "audio":"https://prod-1.storage.jamendo.com/?trackid=1&format=mp31&from=x","audiodownload":"https://prod-1.storage.jamendo.com/download/track/1/mp32/",
-             "audiodownload_allowed":true,"license_ccurl":"http://creativecommons.org/licenses/by-nc-sa/3.0/"},
-            {"id":"2","name":"Stream only","duration":60,"artist_name":"Bo","audio":"https://s/?trackid=2&format=mp31","audiodownload_allowed":false,"license_ccurl":""}]}"""
-        val p = JamendoParse.search(json, 0, 2)
-        assertEquals(listOf("1", "2"), p.items.map { it.id })
-        assertEquals("CC BY-NC-SA 3.0", p.items[0].licence)
-        assertEquals("Creative Commons", p.items[1].licence)
-        assertEquals("2", p.next)
-        val d = JamendoParse.detail(p.items[0])
-        assertEquals(listOf("mp32", "mp31"), d.formats.map { it.key })
-        assertEquals(listOf("High \u00b7 MP3 VBR", "Low \u00b7 MP3 96 kbps"), JamendoParse.choices(d).map { it.label })
-        assertEquals(listOf("mp31"), JamendoParse.detail(p.items[1]).formats.map { it.key })
-        assertEquals("https://s/?trackid=2&format=mp31", JamendoParse.withFormat("https://s/?trackid=2&format=mp32", "mp31"))
-        assertEquals("https://s/x?format=mp31", JamendoParse.withFormat("https://s/x", "mp31"))
-    }
-
     @Test fun youtubeIsAPluginFoundByName() {
         assertNull(StoreSources.plugin("com.example.NotThere"))
         // v0.33.0: YouTube is built in and first in both stores
-        assertEquals(listOf("youtube", "jamendo", "archive-audio"), StoreSources.forKind("audio").map { it.id }.take(3))
+        assertEquals(listOf("youtube"), StoreSources.forKind("audio").map { it.id })   // 0.55.11: music is YouTube only
+        assertNull(StoreSources.get("jamendo")); assertNull(StoreSources.get("archive-audio"))
         assertEquals(listOf("youtube", "archive-films", "blender"), StoreSources.forKind("video").map { it.id }.take(3))
-    }
-
-    @Test(expected = StoreError::class) fun jamendoBadKey() {
-        JamendoParse.search("""{"headers":{"status":"failed","code":5,"error_message":"Your credential is not authorized."}}""", 0, 30)
     }
 }

@@ -1438,7 +1438,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         Memory.tools().forEach { t.put(it) }
         if (Mind.ready) Mind.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.device.DeviceStatus.tool())
-        t.put(com.blaze.assistant.mediaapps.store.JamendoSource.tool())
         t.put(SelfControl.tool())
         t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "ask_user")
             .put("description", "Pause and ask the user a question with 2-4 short tap-able options (an 'own answer' choice is added automatically). Use when a real choice is theirs (which account, which contact, which item) or the request is ambiguous. Never use it for facts you can check yourself (phone model, Android version, installed apps, settings, battery). The task waits right where it is and continues with the answer.")
@@ -5258,7 +5257,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 GatewayWeather.TOOL -> { add(Role.STEP, "Checking the weather")
                     kotlinx.coroutines.withContext(Dispatchers.IO) { GatewayWeather.run(args, Settings.gatewayToken()) { lastFix() } } }
-                com.blaze.assistant.mediaapps.store.JamendoSource.TOOL -> { add(Role.STEP, "Setting up Jamendo"); com.blaze.assistant.mediaapps.store.JamendoSource.init(app); com.blaze.assistant.mediaapps.store.JamendoSource.runTool(args) }
                 "look_at_screen" -> if (Settings.lowData) {
                     add(Role.STEP, "Reading the screen (low-data mode)")
                     "Low-data mode is on, so no screenshot was taken. Screen as text:\n" + (com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected.")

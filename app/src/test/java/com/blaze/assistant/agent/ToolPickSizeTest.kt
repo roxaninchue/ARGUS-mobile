@@ -20,7 +20,6 @@ class ToolPickSizeTest {
         }
         add("Memory") { Memory.tools() }
         add("DeviceStatus") { com.blaze.assistant.device.DeviceStatus.tool() }
-        add("Jamendo") { com.blaze.assistant.mediaapps.store.JamendoSource.tool() }
         add("SelfControl") { SelfControl.tool() }
         add("Web") { Web.tools() }
         add("Media") { com.blaze.assistant.media.Media.tools() }

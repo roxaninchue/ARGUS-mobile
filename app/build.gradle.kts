@@ -16,9 +16,6 @@ android {
         versionCode = 219
         versionName = "0.55.10"
         // Build round (owner said "yes please" to the build, 2026-11-21 23:50 CAT): 0.54.5 (207), Direct lane client (e7b7c0a7 + a6b3d8ec).
-        // v0.30.1 Music Store: Jamendo client_id, from the environment or -Pjamendo.clientId at build time. Never hard-coded;
-        // empty = "not configured" (the user can paste one in the Music Store instead).
-        buildConfigField("String", "JAMENDO_CLIENT_ID", "\"" + (System.getenv("JAMENDO_CLIENT_ID") ?: (project.findProperty("jamendo.clientId") as String?) ?: "").replace("\"", "") + "\"")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         // 0.46.6: the low-RAM emulator release gate (src/androidTest/.../smoke, .github/workflows/lowram-smoke.yml)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

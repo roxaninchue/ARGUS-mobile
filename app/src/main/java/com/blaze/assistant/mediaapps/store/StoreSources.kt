@@ -21,7 +21,8 @@ object StoreSources {
 
     val all: List<StoreSource> by lazy {
         // v0.33.0: the built-in YouTube source (search + the working link clients) replaces the plug-in.
-        listOf(YouTubeStoreSource, JamendoSource, ArchiveAudioSource, ArchiveFilmsSource, BlenderMoviesSource, LinkSource)
+        // 0.55.11: music is YouTube only (Jamendo and Internet Archive audio removed); the films stay for Video.
+        listOf(YouTubeStoreSource, ArchiveFilmsSource, BlenderMoviesSource, LinkSource)
     }
 
     /** The source chips (v0.32.1: the Link source is reached by "Download by link", not a chip). */

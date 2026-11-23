@@ -22,7 +22,7 @@ data class DlPart(
 
 data class DlJob(
     val id: String,
-    val videoId: String,        // the source's item id (YouTube video id, archive.org identifier, Jamendo track id)
+    val videoId: String,        // the source's item id (YouTube video id, archive.org identifier)
     val kind: String,           // audio | video
     val title: String,
     val channel: String,
