@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.phone.BlazeAccessibilityService
 import com.blaze.assistant.phone.ScreenWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +66,6 @@ object ScreenGlow {
     }
 
     private fun host(ctx: Context): Pair<Context, Int>? {
-        BlazeAccessibilityService.instance?.let { return it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
         if (Overlay.canDrawOverApps(ctx)) return ctx to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         return null
     }

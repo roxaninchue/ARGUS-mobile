@@ -25,7 +25,6 @@ object SelfSetup {
     private fun perm(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
 
     fun audit(ctx: Context): List<Item> {
-        val a11y = com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx)
         val overlay = android.provider.Settings.canDrawOverlays(ctx)
         val notifs = Build.VERSION.SDK_INT < 33 || perm(ctx, Manifest.permission.POST_NOTIFICATIONS)
         val mic = perm(ctx, Manifest.permission.RECORD_AUDIO)
@@ -36,7 +35,6 @@ object SelfSetup {
         val conns = try { com.blaze.assistant.connect.Connectors.connectedCount() } catch (_: Exception) { 0 }
         return listOf(
             Item("brain", "${BrandName.NAME} account", Settings.ready, "Needed to think and chat: ${BrandName.NAME} Cloud answers once you're signed in.", "open settings account and sign in", true),
-            Item("accessibility", "Phone control", a11y && Settings.phoneControl, "Lets ${BrandName.NAME} see and tap the screen.", "open accessibility", true),
             Item("overlay", "Draw over apps", overlay, "Needed for the floating orb and the panel over other apps.", "open overlay", true),
             Item("microphone", "Microphone", mic, "Needed for voice and \u201cHey ${BrandName.NAME}\u201d.", "open app_permissions (or tap the mic in ${BrandName.NAME} once)", true),
             Item("notifications", "Notifications", notifs, "So ${BrandName.NAME} can tell you when tasks finish and send heads-ups.", "open app_permissions"),

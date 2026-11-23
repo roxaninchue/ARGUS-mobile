@@ -96,7 +96,7 @@ class AccountLockTest {
     // ---------------------------------------------------------------- side doors (pure parts)
 
     @Test fun onlyStopAndDontWorkWhileLocked() {
-        for (a in listOf("com.blaze.assistant.STOP", "com.blaze.assistant.STOP_HAND", "com.blaze.assistant.DENY")) assertTrue(a, AccountLock.actionAllowed(true, a))
+        for (a in listOf("com.blaze.assistant.STOP", "com.blaze.assistant.DENY")) assertTrue(a, AccountLock.actionAllowed(true, a))
         for (a in listOf("com.blaze.assistant.REPLY", "com.blaze.assistant.ALLOW", "com.blaze.assistant.DO", null)) assertFalse("$a", AccountLock.actionAllowed(true, a))
         assertTrue(AccountLock.actionAllowed(false, "com.blaze.assistant.DO"))
         assertTrue(AccountLock.mediaAccepts(false, "com.google.android.projection.gearhead", "com.blaze.assistant"))

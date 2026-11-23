@@ -163,7 +163,6 @@ fun ProactivePage() {
     V18Section("Jarvis mode")
     val J = com.blaze.assistant.proactive.Jarvis
     var lvl by remember { mutableStateOf(J.level) }
-    var glances by remember { mutableStateOf(J.screenGlances) }
     var looks by remember { mutableStateOf(J.cameraLooks) }
     V18Note("${BrandName.NAME} reaches out on its own: a question now and then to get to know you (reply right in the notification), help offered in the moment, and routines it sets up for itself. Jarvis sets them up without asking; the others offer first.")
     Row(Modifier.fillMaxWidth()) {
@@ -173,7 +172,6 @@ fun ProactivePage() {
         }
     }
     Spacer(Modifier.height(8.dp))
-    ToggleRow("Glance at my screen", "Now and then, as text. Never banks, wallets, passwords or codes. Needs phone control", glances) { glances = !glances; J.screenGlances = glances }
     ToggleRow("Look through the camera", "One front-camera frame while ${BrandName.NAME} is open; never saved. Android shows its camera dot", looks) { looks = !looks; J.cameraLooks = looks }
     if (looks && androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED)
         V18Note("Camera looks need the camera permission: open ${BrandName.NAME} Camera once and allow it.", top = 4)

@@ -25,9 +25,8 @@ import org.json.JSONObject
  * Two kinds of call:
  *  - a call with Argus itself (the call screen): handled directly through [Voice].
  *  - a real phone call: Android's telecom API where it allows it (answer / end, needs the
- *    "answer phone calls" permission), the phone's own in-call buttons through the accessibility
- *    service for speaker / mute / hold / keypad (so it works on Samsung and other dialers), and
- *    AudioManager as a last resort.
+ *    "answer phone calls" permission), and AudioManager for speaker / mute / volume (0.55.11: the in-call
+ *    buttons through the accessibility service went with phone control).
  */
 @Suppress("DEPRECATION")
 object CallControl {
@@ -176,44 +175,9 @@ object CallControl {
 
     // ---------- the dialer's own buttons ----------
 
-    private fun labels(n: AccessibilityNodeInfo) = listOfNotNull(n.text?.toString(), n.contentDescription?.toString(),
-        n.viewIdResourceName?.substringAfterLast('/')?.replace('_', ' ')).map { it.trim().lowercase() }
-
-    private fun findAny(want: List<String>, exact: Boolean = false): AccessibilityNodeInfo? {
-        val root = BlazeAccessibilityService.instance?.rootInActiveWindow ?: return null
-        val w = want.map { it.lowercase() }
-        var best: AccessibilityNodeInfo? = null
-        fun walk(n: AccessibilityNodeInfo?, depth: Int) {
-            if (n == null || depth > 30 || best != null) return
-            val ls = labels(n)
-            if (ls.any { l -> w.any { x -> l == x || (!exact && (l.startsWith("$x ") || l.endsWith(" $x"))) } } && n.isVisibleToUser) {
-                var c: AccessibilityNodeInfo? = n
-                while (c != null && !c.isClickable) c = c.parent
-                best = c ?: n; return
-            }
-            for (i in 0 until n.childCount) walk(n.getChild(i), depth + 1)
-        }
-        walk(root, 0)
-        return best
-    }
-
-    private suspend fun tapAny(want: List<String>, exact: Boolean = false): Boolean {
-        val svc = BlazeAccessibilityService.instance ?: return false
-        val n = findAny(want, exact) ?: return false
-        return svc.tapNode(n)
-    }
-
-    /** Set an on/off call button; null when the button isn't on screen. */
-    private suspend fun toggle(ctx: Context, want: List<String>, on: Boolean): Boolean? {
-        val svc = BlazeAccessibilityService.instance ?: return null
-        val n = findAny(want) ?: return null
-        val desc = if (Build.VERSION.SDK_INT >= 30) n.stateDescription?.toString()?.lowercase().orEmpty() else ""
-        val state = when {
-            n.isCheckable -> n.isChecked
-            desc.isNotEmpty() -> desc == "on" || ((desc.contains("selected") || desc.contains("checked")) && !desc.contains("not "))
-            else -> n.isSelected
-        }
-        if (state == on) return true
-        return svc.tapNode(n)
-    }
+    // 0.55.11: phone control (the accessibility service) is gone, so the dialer's own buttons can't be found or pressed;
+    // these stay as "not on screen" until removal 2 (SMS and calls) takes call control out.
+    @Suppress("UNUSED_PARAMETER") private fun findAny(want: List<String>, exact: Boolean = false): Any? = null
+    @Suppress("UNUSED_PARAMETER") private fun tapAny(want: List<String>, exact: Boolean = false): Boolean = false
+    @Suppress("UNUSED_PARAMETER") private fun toggle(ctx: Context, want: List<String>, on: Boolean): Boolean? = null
 }

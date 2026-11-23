@@ -3,8 +3,6 @@ package com.blaze.assistant.agent
 
 import com.blaze.assistant.BrandName
 import android.content.Context
-import com.blaze.assistant.phone.BlazeAccessibilityService
-import com.blaze.assistant.phone.PhoneTools
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
@@ -14,7 +12,7 @@ import java.io.File
 /**
  * Self-improvement, after Hermes Agent's pattern: after a finished turn a quick background review
  * decides what's worth keeping. Durable facts → Memory. Repeatable procedures → Skills (markdown
- * steps, plus recorded phone steps that can be replayed without the AI). Each chat also gets a
+ * steps; 0.55.11: replaying recorded phone steps went with phone control, old "replay" data is kept but unused). Each chat also gets a
  * one-line summary for cross-chat search. With "Ask before saving" on, changes wait for approval.
  * Skills never bypass the approval card for risky actions.
  */
@@ -72,8 +70,8 @@ object Learning {
 
     fun promptBlock(userText: String): String {
         val r = relevant(userText); if (r.isEmpty()) return ""
-        return "\nSkills you learned earlier (run_skill replays saved phone steps fast):\n" +
-            r.joinToString("\n") { "- ${it.name}: ${it.description}${if (it.replay != null) " [replayable]" else ""}\n  ${it.steps.take(400).replace("\n", "\n  ")}" } + "\n"
+        return "\nSkills you learned earlier:\n" +
+            r.joinToString("\n") { "- ${it.name}: ${it.description}\n  ${it.steps.take(400).replace("\n", "\n  ")}" } + "\n"
     }
 
     fun upsertSkill(name: String, description: String, whenToUse: String, steps: String, replay: JSONArray?): String {
@@ -89,46 +87,9 @@ object Learning {
     fun deleteSkill(name: String) = saveSkills(_skills.value.filterNot { it.name == name })
     fun clearSkills() = saveSkills(emptyList())
 
-    /** Replays recorded phone steps without the AI. Stops at the first step that doesn't match the screen. */
-    suspend fun replay(ctx: Context, name: String): String {
-        val s = _skills.value.firstOrNull { it.name == name } ?: return "No skill called \"$name\"."
-        val steps = s.replay ?: return "\"$name\" has no recorded steps; follow its written steps instead:\n${s.steps}"
-        val svc = BlazeAccessibilityService.instance ?: return "Phone control is off, so I can't replay \"$name\"."
-        saveSkills(_skills.value.map { if (it.name == name) it.copy(uses = it.uses + 1) else it })
-        val log = StringBuilder()
-        for (i in 0 until steps.length()) {
-            val st = steps.getJSONObject(i)
-            val tool = st.optString("tool"); val args = st.optJSONObject("args") ?: JSONObject()
-            val label = st.optString("label")
-            val res = when (tool) {
-                "tap", "type_text" -> {
-                    // v0.30.7: a short settle, then the label by LabelMatch (OEM synonyms, fuzzy) with a short wait for a lazy
-                    // screen and off-screen rows scrolled in, instead of 1.5 s of settling and a plain substring match.
-                    svc.settle(600, 150); svc.readScreen()
-                    val id = svc.findByLabel(label) ?: (if (label.isNotBlank()) svc.waitFor(label, 1200, wantField = tool == "type_text") ?: svc.reveal(label, wantField = tool == "type_text") else null)
-                        ?: return log.append("Step ${i + 1}: couldn't find \"$label\" on screen. Stopped; continue from here yourself.\n\n")
-                        .append(svc.readScreen()).toString()
-                    if (tool == "tap") {
-                        if (Settings.confirmRisky && Regex("\\b(send|pay|buy|order|delete|post|transfer|confirm|book)\\b", RegexOption.IGNORE_CASE).containsMatchIn(label) &&
-                            !Agent.confirm("Tap \u201c${label.take(40)}\u201d?", "Replaying the \"$name\" skill.", "Tap"))
-                            return log.append("The user did NOT approve tapping \"$label\". Stopped.").toString()
-                        svc.tap(id, false)
-                    } else svc.type(id, args.optString("text"))
-                }
-                // v0.30.7: settings pages by intent replay too (recorded since this version).
-                com.blaze.assistant.phone.SettingsJump.TOOL -> com.blaze.assistant.phone.SettingsJump.run(ctx, args).substringBefore(" Screen now:")
-                else -> PhoneTools.run(ctx, tool, args)
-            }
-            log.append("Step ${i + 1} ($tool${if (label.isNotEmpty()) " \"$label\"" else ""}): $res\n")
-            if (res.startsWith("Error") || res.startsWith("No ")) return log.append("Stopped here.").toString()
-        }
-        svc.settle(1200, 250)
-        return log.append("Replay finished. Screen now:\n").append(svc.readScreen()).toString()
-    }
-
     // ---------- Tools ----------
 
-    val toolNames = setOf("skill_manage", "run_skill", "search_past_chats")
+    val toolNames = setOf("skill_manage", "search_past_chats")
 
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) =
         JSONObject().put("type", "function").put("function", JSONObject().put("name", name).put("description", desc)
@@ -140,8 +101,6 @@ object Learning {
             JSONObject().put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("save", "delete"))))
                 .put("name", p("short-kebab-name")).put("description", p("One line: what it does"))
                 .put("when", p("When to use it")).put("steps", p("Numbered steps")), listOf("action", "name")),
-        fn("run_skill", "Replay a learned skill's recorded phone steps quickly, without thinking through each tap.",
-            JSONObject().put("name", p("Skill name")), listOf("name")),
         fn("search_past_chats", "Search earlier conversations with the user (titles, summaries and messages) to recall what was said or decided.",
             JSONObject().put("query", p("Words to look for")), listOf("query")),
     )
@@ -149,7 +108,6 @@ object Learning {
     suspend fun run(ctx: Context, name: String, a: JSONObject): String = when (name) {
         "skill_manage" -> if (a.optString("action") == "delete") { deleteSkill(a.optString("name")); "Deleted." }
             else upsertSkill(a.optString("name"), a.optString("description"), a.optString("when"), a.optString("steps"), null)
-        "run_skill" -> replay(ctx, a.optString("name"))
         "search_past_chats" -> searchChats(a.optString("query"))
         else -> "Unknown tool"
     }

@@ -21,12 +21,11 @@ import org.json.JSONObject
 /**
  * Wider Android control with plain public APIs (no root, no Shizuku): clipboard, Argus's own
  * notifications (with progress and a tap action), the share sheet, ringer/DND/brightness/rotation,
- * jumping straight to any settings page, system actions (power menu, split screen, screenshot,
- * lock), app usage, uninstall prompts and the camera. Anything Android doesn't let an app change
+ * jumping straight to any settings page, app usage, uninstall prompts and the camera. Anything Android doesn't let an app change
  * directly opens the right settings page for the user instead.
  */
 object AndroidControl {
-    val names = setOf("clipboard", "post_notification", "share_text", "phone_mode", "open_settings_page", "system_action", "app_usage", "uninstall_app", "open_camera", "list_apps", "blaze_camera")
+    val names = setOf("clipboard", "post_notification", "share_text", "phone_mode", "open_settings_page", "app_usage", "uninstall_app", "open_camera", "list_apps", "blaze_camera")
 
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function",
         JSONObject().put("name", name).put("description", desc).put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
@@ -55,8 +54,6 @@ object AndroidControl {
         fn("phone_mode", "Ringer and screen: ringer normal/vibrate/silent, Do Not Disturb on/off, brightness 0-100, auto-rotate on/off.",
             JSONObject().put("setting", en("ringer", "dnd", "brightness", "rotation")).put("value", str("normal|vibrate|silent, on|off, or 0-100")), listOf("setting", "value")),
         fn("open_settings_page", "Open a specific Android settings page for the user.", JSONObject().put("page", en(*pages.keys.toTypedArray())), listOf("page")),
-        fn("system_action", "Power menu, split screen, screenshot, lock screen, recents, notifications, quick settings.",
-            JSONObject().put("action", en("power_dialog", "split_screen", "screenshot", "lock", "recents", "notifications", "quick_settings")), listOf("action")),
         fn("app_usage", "Which apps were used most today/this week (needs Usage access).", JSONObject().put("days", JSONObject().put("type", "integer")), emptyList()),
         fn("uninstall_app", "Ask Android to uninstall an app (the user confirms).", JSONObject().put("package", str("Package name")), listOf("package")),
         fn("list_apps", "List the apps installed on this phone (name, package, game or not); the chat shows them as a tappable card. Without a filter: every launchable app. " +
@@ -83,7 +80,6 @@ object AndroidControl {
             val p = a.optString("page"); val act = pages[p] ?: return "Unknown page."
             if (start(ctx, Intent(act))) "Opened $p settings." else if (start(ctx, Intent(Settings.ACTION_SETTINGS))) "That page isn't on this phone, so I opened Settings." else "Couldn't open settings."
         }
-        "system_action" -> system(a.optString("action"))
         "app_usage" -> usage(ctx, a.optInt("days", 1).coerceIn(1, 30))
         "list_apps" -> {
             val pm = ctx.packageManager
@@ -177,21 +173,6 @@ object AndroidControl {
             }
             else -> "Unknown setting."
         }
-    }
-
-    private fun system(action: String): String {
-        val svc = BlazeAccessibilityService.instance ?: return "Turn on ${BrandName.NAME} phone control first."
-        val g = when (action) {
-            "power_dialog" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_POWER_DIALOG
-            "split_screen" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN
-            "screenshot" -> if (Build.VERSION.SDK_INT >= 28) android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT else return "Screenshots need Android 9+."
-            "lock" -> if (Build.VERSION.SDK_INT >= 28) android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN else return "Locking needs Android 9+."
-            "recents" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_RECENTS
-            "notifications" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS
-            "quick_settings" -> android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS
-            else -> return "Unknown action."
-        }
-        return if (svc.performGlobalAction(g)) "Done: ${action.replace('_', ' ')}." else "The phone didn't allow ${action.replace('_', ' ')}."
     }
 
     private fun usage(ctx: Context, days: Int): String {

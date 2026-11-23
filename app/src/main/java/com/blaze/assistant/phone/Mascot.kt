@@ -6,7 +6,7 @@ package com.blaze.assistant.phone
  * a soft orange / blue glow around it.
  *
  * Pure geometry in "units": the round body is a circle of radius 1 centred on (0, 0), y down; the flame tip reaches
- * up to y ≈ -1.56. The on-screen pointer (phone/Pointer.kt, android.graphics), its Compose preview (ui/PointerPreview.kt)
+ * up to y ≈ -1.56. Its Compose preview (ui/PointerPreview.kt)
  * and the launcher / themed / notification icons (res/drawable/ic_launcher_*.xml, ic_stat_blaze.xml, generated from the
  * same numbers) all draw this one shape. The tip ([TIP]) is the pointer's click point.
  */

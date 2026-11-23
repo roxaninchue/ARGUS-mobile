@@ -48,9 +48,7 @@ import kotlin.coroutines.resume
  * v0.38.0 Jarvis mode: Argus reaching out on its own, every few minutes while the phone is in use.
  *  - Questions: a real getting-to-know-you question as a heads-up ("Quick question: what do you do for fun?"); the
  *    reply lands in the Heads-ups chat, where Argus saves what it learns with remember.
- *  - Screen glances (switch, off by default): the screen as text through phone control, never banks, wallets,
- *    password managers, sign-ins or codes; Argus offers help only when it really fits, and keeps a one-line note of
- *    what the user was doing (Awareness), nothing else.
+ *  - Screen glances: removed in 0.55.11 with phone control (they read the screen through it).
  *  - Camera looks (switch, off by default): one small front-camera frame, only while Argus is open on the Chat
  *    screen (Android shows its camera dot); never saved.
  *  - Usage: today's top apps (Usage access) go into its thinking.
@@ -69,9 +67,8 @@ object Jarvis {
     var level: Level
         get() = Level.of(Settings.str("jarvis_level", Level.OFF.id))
         set(v) { Settings.setStr("jarvis_level", v.id); if (::app.isInitialized) start(app) }
-    var screenGlances: Boolean
-        get() = Settings.bool("jarvis_screen", false)
-        set(v) = Settings.setBool("jarvis_screen", v)
+    /** 0.55.11: screen glances read the screen through phone control, which is gone; always off (old "jarvis_screen" is ignored). */
+    val screenGlances: Boolean get() = false
     var cameraLooks: Boolean
         get() = Settings.bool("jarvis_camera", false)
         set(v) = Settings.setBool("jarvis_camera", v)
@@ -115,12 +112,9 @@ object Jarvis {
         val lim = JarvisLogic.limits(l)
         val now = System.currentTimeMillis()
         val blazeFront = Awareness.get("screen") != null
-        // One reach-out per tick at most: camera (Argus open), else a screen glance, else a question, else a routine.
+        // One reach-out per tick at most: camera (Argus open), else a question, else a routine.
         if (blazeFront && cameraLooks && JarvisLogic.everyDue(lim.cameraEveryMin, num("jarvis_cam_at"), now) && Awareness.get("screen")?.title == "Chat") {
             setNum("jarvis_cam_at", now); if (cameraLook()) return@withLock
-        }
-        if (!blazeFront && screenGlances && JarvisLogic.everyDue(lim.glanceEveryMin, num("jarvis_glance_at"), now)) {
-            if (screenGlance(now)) return@withLock
         }
         val day = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
         val askedToday = if (Settings.str("jarvis_q_day", "") == day) Settings.str("jarvis_q_n", "0").toIntOrNull() ?: 0 else 0
@@ -156,38 +150,6 @@ object Jarvis {
         Settings.setStr("jarvis_q_day", day); Settings.setStr("jarvis_q_n", (askedToday + 1).toString())
         setNum("jarvis_q_at", now)
         return true
-    }
-
-    // ---------------- screen glances ----------------
-
-    private fun launcher(pkg: String): Boolean = try {
-        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        app.packageManager.queryIntentActivities(home, 0).any { it.activityInfo?.packageName == pkg }
-    } catch (_: Throwable) { false }
-
-    private suspend fun screenGlance(now: Long): Boolean {
-        val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return false
-        // Never while Argus is working a task (it may be using the screen's element numbers).
-        if (try { com.blaze.assistant.agent.Agent.busyChats.value.isNotEmpty() } catch (_: Throwable) { true }) return false
-        val pkg = try { withContext(Dispatchers.Main) { svc.rootInActiveWindow?.packageName?.toString() } } catch (_: Throwable) { null } ?: return false
-        if (!JarvisLogic.glanceable(pkg, app.packageName, launcher(pkg), Settings.str("jarvis_glance_pkg", ""), num("jarvis_glance_at"), now)) return false
-        if (JarvisLogic.sensitive(pkg, "")) return false
-        val screen = try { withContext(Dispatchers.Main) { svc.readScreen() } } catch (_: Throwable) { return false }
-        setNum("jarvis_glance_at", now); Settings.setStr("jarvis_glance_pkg", pkg)
-        if (JarvisLogic.sensitive(pkg, screen)) return false
-        val label = try { app.packageManager.getApplicationLabel(app.packageManager.getApplicationInfo(pkg, 0)).toString() } catch (_: Throwable) { pkg }
-        val compact = com.blaze.assistant.agent.Orient.compact(screen, maxLines = 30, maxChars = 1800)
-        val sys = "You are ${BrandName.NAME}, the user's phone assistant, glancing at their screen on your own to see if you can help right now. " +
-            "Speak only when you can clearly save them time or effort with something concrete you can do (compare prices, add an event they're looking at, " +
-            "translate, summarise a long article, find a better route, reply drafts, remind them later). Never comment on private messages or content, never judge. " +
-            "Most glances say nothing. ${Memory.promptBlock(label).take(600)}\n" +
-            "Reply ONLY with JSON: {\"say\": \"\" or \"one short friendly sentence offering help\", \"suggest\": \"\" or \"the request they'd tap, max 6 words\", " +
-            "\"note\": \"what they're doing, max 12 words, no private details\"}"
-        val g = JarvisLogic.parseGlance(llm(sys, "App: $label\nToday's usage: ${usageToday()}\n${Awareness.promptBlock()}\nScreen:\n$compact"))
-        if (g.note.isNotBlank()) Awareness.did("glance", "in $label: ${g.note}")
-        if (g.say.isNotBlank()) { Proactive.say(g.say, "jarvis-glance:" + g.say.lowercase().take(40), suggest = g.suggest,
-            why = ProactiveDial.Why.glance(label), source = ProactiveDial.Source.GLANCE); return true }
-        return false
     }
 
     // ---------------- camera looks ----------------
@@ -314,24 +276,21 @@ object Jarvis {
     const val TOOL = "jarvis_mode"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Jarvis mode: how much ${BrandName.NAME} reaches out on its own (questions to get to know the user, screen glances, camera looks while ${BrandName.NAME} is open, its own routines). " +
-            "Use when the user says 'be more / less proactive', 'stop asking me questions', 'look at my screen now and then', 'don't use the camera'. No arguments = show the current settings.")
+        .put("description", "Jarvis mode: how much ${BrandName.NAME} reaches out on its own (questions to get to know the user, camera looks while ${BrandName.NAME} is open, its own routines). " +
+            "Use when the user says 'be more / less proactive', 'stop asking me questions', 'don't use the camera'. No arguments = show the current settings.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("level", JSONObject().put("type", "string").put("enum", JSONArray(Level.values().map { it.id })))
-            .put("screen_glances", JSONObject().put("type", "boolean"))
             .put("camera_looks", JSONObject().put("type", "boolean")))))
 
     fun run(args: JSONObject): String {
         if (args.has("level")) level = Level.of(args.optString("level"))
-        if (args.has("screen_glances")) screenGlances = args.optBoolean("screen_glances")
         if (args.has("camera_looks")) cameraLooks = args.optBoolean("camera_looks")
         val needs = buildList {
-            if (screenGlances && com.blaze.assistant.phone.BlazeAccessibilityService.instance == null) add("screen glances need phone control (Settings › Phone control)")
             if (cameraLooks && ::app.isInitialized && ContextCompat.checkSelfPermission(app, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) add("camera looks need the camera permission")
         }
         val lim = JarvisLogic.limits(level)
         return "Jarvis mode: ${level.label} (up to ${lim.questionsPerDay} questions a day; ${if (lim.selfRoutines) "sets up its own routines" else "offers routines"}). " +
-            "Screen glances ${if (screenGlances) "on, every ${lim.glanceEveryMin} min" else "off"}. Camera looks ${if (cameraLooks && lim.cameraEveryMin > 0) "on while ${BrandName.NAME} is open, every ${lim.cameraEveryMin} min" else "off"}." +
+            "Camera looks ${if (cameraLooks && lim.cameraEveryMin > 0) "on while ${BrandName.NAME} is open, every ${lim.cameraEveryMin} min" else "off"}." +
             (if (needs.isNotEmpty()) " Still needed: " + needs.joinToString("; ") + "." else "")
     }
 

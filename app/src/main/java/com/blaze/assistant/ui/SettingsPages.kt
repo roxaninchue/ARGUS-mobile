@@ -42,11 +42,10 @@ val topPages = listOf(
 val advancedPages = listOf(
     SettingsPage("connections", "Accounts", "Google, GitHub, Spotify, Notion, Slack"),
     SettingsPage("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer"),
-    SettingsPage("control", "Phone control", "Accessibility, skills, the pointer"),
+    SettingsPage("control", "Phone skills", "Messages, calls, contacts and notification access"),
     SettingsPage("persona", "Personality", "How ${BrandName.NAME} talks"),
     SettingsPage("feel", "Taps, sounds & panel", "Tap highlights, sounds, compact panel"),
     SettingsPage("privacy", "Security", "App lock, approvals, bank mode"),
-    SettingsPage("watches", "Watches", "Values Magic Hand is watching for you"),
     SettingsPage("secrets", "Wallet", "Keys, tokens, logins and cards from the Secure Form, only on this phone"),
     SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
     SettingsPage("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: sign out of sites, clear its data"),
@@ -107,7 +106,7 @@ fun settingsPageByName(raw: String): String {
     val alias = mapOf("router" to "ai", "blazerouter" to "ai", "update" to "updates", "upgrade" to "updates", "permission" to "permissions", "version" to "about", "brain" to "ai", "model" to "ai", "models" to "ai", "keys" to "ai", "provider" to "ai",
         "wake" to "voice", "speech" to "voice", "tts" to "voice", "call" to "voice", "mic" to "voice", "speak" to "voice",
         "look" to "feel", "theme" to "feel", "sounds" to "feel", "accounts" to "connections", "connected" to "connections",
-        "personality" to "persona", "phone" to "control", "accessibility" to "control", "skills" to "control",
+        "personality" to "persona", "phone" to "control", "skills" to "control",
         "library" to "skills", "signin" to "account", "login" to "account", "signup" to "account", "lock" to "privacy", "safety" to "privacy", "export" to "backup",
         "brainstorm" to "logs", "lifelogs" to "logs", "transcripts" to "logs", "autoreply" to "replies") + com.blaze.assistant.ui.argus.settings.ArgusSettings.NAME_ALIASES
     val words = raw.lowercase().replace("settings", " ").split(Regex("[^a-z_]+")).filter { it.isNotBlank() && it !in com.blaze.assistant.ui.argus.settings.ArgusSettings.STOP_WORDS }

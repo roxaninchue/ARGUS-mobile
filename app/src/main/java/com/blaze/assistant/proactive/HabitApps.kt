@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * v0.27.0: the Android side of [HabitFilter]. Looks up (and caches) which packages are keyboards, home apps and
  * launchable apps, follows the app in front through [HabitFilter.Visits], and hands only real, deliberate visits to
- * [Habits]. Called from BlazeAccessibilityService on every window change; all lookups are cheap after the first.
+ * [Habits]. All lookups are cheap after the first.
  */
 object HabitApps {
     private val facts = ConcurrentHashMap<String, HabitFilter.AppFacts>()

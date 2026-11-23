@@ -19,7 +19,6 @@ import com.blaze.assistant.R
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.bank.BankModeLogic.Action
 import com.blaze.assistant.bank.BankModeLogic.Event
-import com.blaze.assistant.phone.BlazeAccessibilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,14 +30,12 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /**
- * v0.43.0 Bank mode on the phone: runs [BankModeLogic]'s actions. On: Argus's accessibility service switches itself
- * off ([android.accessibilityservice.AccessibilityService.disableSelf]), the floating orb, Magic Hand and the pointer
- * go away, notification reading pauses, Jarvis stops glancing at the screen or through the camera, and a plain
- * notification says so with "Turn Blaze back on". Off: what was on comes back; phone control comes back by itself when
- * Argus holds WRITE_SECURE_SETTINGS (adb grant), otherwise the user is sent straight to Argus's switch.
+ * v0.43.0 Bank mode on the phone: runs [BankModeLogic]'s actions. On: the floating orb goes away, notification reading
+ * pauses, Jarvis stops glancing through the camera, and a plain notification says so with "Turn Argus back on". Off: what
+ * was on comes back. (0.55.11: phone control, which Bank mode used to switch off and back on, is gone from Argus.)
  *
- * Argus has no VPN service and doesn't record the screen (its own browser's VPN is a proxy inside Argus only, and
- * screen glances go through the accessibility service), so there is nothing else for a bank to see.
+ * Argus has no VPN service and doesn't record the screen (its own browser's VPN is a proxy inside Argus only), so there
+ * is nothing else for a bank to see.
  */
 object BankMode {
     private const val PREF_STATE = "bank_mode_state"
@@ -125,7 +122,7 @@ object BankMode {
 
     // ---------- on / off ----------
     private fun now(ctx: Context): BankModeLogic.Saved = BankModeLogic.Saved(
-        accessibility = BlazeAccessibilityService.instance != null,
+        accessibility = false,   // 0.55.11: no phone control to switch off
         orb = try { Settings.orbPinned } catch (_: Throwable) { false },
         notifications = com.blaze.assistant.notify.NotificationBrain.instance != null,
         screenGlances = try { com.blaze.assistant.proactive.Jarvis.screenGlances } catch (_: Throwable) { false },
@@ -145,18 +142,17 @@ object BankMode {
         app = ctx.applicationContext
         if (active) return "Bank mode is already on."
         step(ctx, Event.TurnOn(now(ctx)))
-        return "Bank mode is on. ${BrandName.NAME} has stepped back: phone control, the floating button and screen reading are off until you turn it off."
+        return "Bank mode is on. ${BrandName.NAME} has stepped back: the floating button and screen reading are off until you turn it off."
     }
 
     fun turnOff(ctx: Context): String {
         app = ctx.applicationContext
         if (!active) return "Bank mode is already off."
-        val hadA11y = _state.value.saved.accessibility
         step(ctx, Event.TurnOff)
-        return if (!hadA11y || canRestoreA11y(ctx)) "Bank mode is off. ${BrandName.NAME} is back." else "Bank mode is off. " + BankModeLogic.RESTORE_ASK
+        return "Bank mode is off. ${BrandName.NAME} is back."
     }
 
-    /** The app in front changed (from the accessibility service while it's on, else the watcher's usage check). */
+    /** The app in front changed (the watcher's usage check). */
     fun onFront(ctx: Context, pkg: String) {
         if (pkg.isBlank() || pkg == ctx.packageName && !active) return
         app = ctx.applicationContext
@@ -180,65 +176,19 @@ object BankMode {
             Action.HIDE_OVERLAYS -> {
                 com.blaze.assistant.ui.Overlay.hideOrb(ctx, unpin = false)
                 try { com.blaze.assistant.ui.Overlay.closePanel() } catch (_: Throwable) { }
-                try { com.blaze.assistant.phone.MagicHand.stop() } catch (_: Throwable) { }
-                try { com.blaze.assistant.phone.Pointer.done() } catch (_: Throwable) { }
             }
             // Jarvis checks [active] before every glance or camera look; nothing to switch.
             Action.PAUSE_GLANCES, Action.PAUSE_CAMERA, Action.RESUME_GLANCES, Action.RESUME_CAMERA -> Unit
             Action.PAUSE_NOTIFICATIONS -> com.blaze.assistant.notify.NotificationBrain.instance?.let { if (Build.VERSION.SDK_INT >= 24) it.requestUnbind() }
             Action.RESUME_NOTIFICATIONS -> if (Build.VERSION.SDK_INT >= 24) android.service.notification.NotificationListenerService.requestRebind(
                 ComponentName(ctx, com.blaze.assistant.notify.NotificationBrain::class.java))
-            Action.DISABLE_ACCESSIBILITY -> {
-                val svc = BlazeAccessibilityService.instance
-                if (svc != null && Build.VERSION.SDK_INT >= 24) svc.disableSelf()
-            }
-            Action.RESTORE_ACCESSIBILITY -> if (!restoreA11y(ctx)) askRestore(ctx)
+            // 0.55.11: phone control is gone; a Bank mode saved by an older version may still name it, nothing to do.
+            Action.DISABLE_ACCESSIBILITY, Action.RESTORE_ACCESSIBILITY -> Unit
             Action.SHOW_ORB -> { delay(600); com.blaze.assistant.ui.Overlay.showOrb(ctx) }
             Action.SHOW_NOTICE -> BankModeService.start(ctx)
             Action.WATCH_FRONT -> Unit   // the service watches while it runs
             Action.CLEAR_NOTICE, Action.STOP_WATCH -> BankModeService.stop(ctx)
         } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.error("bank mode $a", e) }
-    }
-
-    fun canRestoreA11y(ctx: Context): Boolean = ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == PackageManager.PERMISSION_GRANTED
-
-    /** Puts Argus's service back in Android's list, other services untouched. Needs WRITE_SECURE_SETTINGS. */
-    private fun restoreA11y(ctx: Context): Boolean {
-        if (!canRestoreA11y(ctx)) return false
-        return try {
-            val cr = ctx.contentResolver
-            val cn = ComponentName(ctx, BlazeAccessibilityService::class.java).flattenToString()
-            val cur = android.provider.Settings.Secure.getString(cr, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
-            android.provider.Settings.Secure.putString(cr, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, BankModeLogic.editServices(cur, cn, true))
-            android.provider.Settings.Secure.putString(cr, android.provider.Settings.Secure.ACCESSIBILITY_ENABLED, "1")
-            true
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.error("bank mode restore", e); false }
-    }
-
-    /** v0.45.0: asks in a row that phone control didn't come back after (reset when it connects). */
-    private const val PREF_IGNORED = "bank_restore_ignored"
-    private const val PREF_ASKED = "bank_restore_pending"
-    fun restoreIgnored(): Int = Settings.int(PREF_IGNORED, 0)
-    /** Phone control connected again: the last ask worked (or the user did it anyway). */
-    /** "Remind me again" on Bank mode's page. */
-    fun resetRestoreReminders() { Settings.setInt(PREF_IGNORED, 0); Settings.setBool(PREF_ASKED, false) }
-    fun a11yBack() { if (Settings.bool(PREF_ASKED, false) || restoreIgnored() != 0) { Settings.setBool(PREF_ASKED, false); Settings.setInt(PREF_IGNORED, 0) } }
-
-    /** Without the permission: one tap straight to Argus's switch. */
-    private fun askRestore(ctx: Context) {
-        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
-        channel(nm)
-        // The previous ask is still open and phone control never came back: it was ignored.
-        if (Settings.bool(PREF_ASKED, false)) Settings.setInt(PREF_IGNORED, restoreIgnored() + 1)
-        val ask = BankModeLogic.restoreAsk(restoreIgnored(), com.blaze.assistant.agent.SimpleMode.simple) ?: run {
-            com.blaze.assistant.device.CrashLog.write("Bank mode: restore reminder skipped (ignored ${restoreIgnored()} times)"); return }
-        Settings.setBool(PREF_ASKED, true)
-        val pi = PendingIntent.getActivity(ctx, 1, com.blaze.assistant.phone.PhoneControl.fixIntent(ctx), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        try {
-            nm.notify(RESTORE_ID, NotificationCompat.Builder(ctx, CHANNEL).setSmallIcon(R.drawable.ic_stat_blaze)
-                .setContentTitle(ask.title).setContentText(ask.text).setStyle(NotificationCompat.BigTextStyle().bigText(ask.text))
-                .setContentIntent(pi).setAutoCancel(true).build())
-        } catch (_: SecurityException) { }
     }
 
     fun channel(nm: NotificationManager) {
@@ -278,7 +228,7 @@ object BankMode {
 
 /**
  * Keeps Bank mode's notification up and, with usage access, notices when the user leaves the bank app (Argus's
- * accessibility service is off by then, so it can't tell).
+ * accessibility service went with phone control in 0.55.11).
  */
 class BankModeService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
