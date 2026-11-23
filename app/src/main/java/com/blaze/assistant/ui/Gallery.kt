@@ -61,18 +61,21 @@ import androidx.compose.ui.draw.clip
 
 object GalleryUi { val open = MutableStateFlow(false) }
 
+/** A thumbnail being decoded: [done] once decoding finished, [bmp] null then means the file isn't a picture. */
+private class Thumb(val done: Boolean, val bmp: ImageBitmap?)
+
 /** Decodes a picture at roughly [px] wide, off the main thread. */
 @Composable
-private fun rememberThumb(path: String, px: Int): ImageBitmap? {
-    val v by produceState<ImageBitmap?>(null, path) {
-        value = withContext(Dispatchers.IO) {
+private fun rememberThumb(path: String, px: Int): Thumb {
+    val v by produceState(Thumb(false, null), path) {
+        value = Thumb(true, withContext(Dispatchers.IO) {
             try {
                 val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 BitmapFactory.decodeFile(path, o)
                 var s = 1; while (o.outWidth / (s * 2) >= px) s *= 2
                 BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = s })?.asImageBitmap()
             } catch (_: Throwable) { null }
-        }
+        })
     }
     return v
 }
@@ -122,10 +125,15 @@ fun MediaStrip(paths: List<String>) {
             val f = File(p)
             when (Media.kindOf(f)) {
                 "image" -> {
-                    val bmp = rememberThumb(p, 720)
+                    val thumb = rememberThumb(p, 720)
+                    val bmp = thumb.bmp
                     Box(Modifier.widthIn(max = 330.dp).fillMaxWidth().heightIn(min = 120.dp).clip(BlazeShapes.medium).background(c.hair.copy(alpha = 0.3f))
                         .clickable { try { ctx.startActivity(Media.viewIntent(f)) } catch (_: Exception) { } }) {
                         if (bmp != null) Image(bmp, contentDescription = f.nameWithoutExtension, modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillWidth)
+                        // fix/chat-picture-load: a file that isn't a picture says so instead of loading forever.
+                        else if (thumb.done) Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                            Label(tr("Couldn't open this picture"), size = 10.sp)
+                        }
                         else Box(Modifier.fillMaxWidth().height(200.dp).shimmer(c.hair.copy(alpha = 0.3f), c.paper.copy(alpha = 0.3f), BlazeShapes.medium),
                             contentAlignment = Alignment.Center) { Label(tr("Loading picture\u2026"), size = 10.sp) }
                     }
@@ -164,7 +172,7 @@ fun AttachedThumbs(paths: List<String>) {
     val ctx = LocalContext.current
     Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         paths.take(5).forEach { p ->
-            val bmp = rememberThumb(p, 360)
+            val bmp = rememberThumb(p, 360).bmp
             val single = paths.size == 1
             Box(Modifier.then(if (single) Modifier.widthIn(max = 220.dp) else Modifier.size(84.dp)).clip(BlazeShapes.small).background(c.hair.copy(alpha = 0.3f)).border(1.dp, c.hair, BlazeShapes.small)
                 .clickable { try { ctx.startActivity(Media.viewIntent(File(p))) } catch (_: Exception) { } }) {
