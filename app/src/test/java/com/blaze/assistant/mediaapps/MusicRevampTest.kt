@@ -35,9 +35,14 @@ class MusicRevampTest {
         assertTrue("onClose = { a.leaveToChat() }" in src("mediaapps/VideoActivity.kt"))
         val shell = src("mediaapps/MusicShell.kt")
         assertTrue("Close and go back to \${BrandName.NAME} chat" in shell)
-        // Account badge left, close right (badge is the first child, close the last).
+        // 23 Nov 2026 (Finn's mockup): profile far left, the name, then search and notifications; the close lives in the
+        // profile menu (backLabel, onBack = onClose) and Back still goes to the chat.
         val bar = shell.substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
-        assertTrue(bar.indexOf("AccountBadge(onAccount)") < bar.indexOf("actions()") && bar.indexOf("actions()") < bar.indexOf("Icons.Rounded.Close"))
+        assertTrue("ViewHeader(" in bar && "onBack = onClose" in bar)
+        val head = src("ui/ViewHeader.kt").substringAfter("fun ViewHeader(").substringBefore("\n}\n")
+        assertTrue(head.indexOf("ProfileIcon(") < head.indexOf("actions()") && head.indexOf("actions()") < head.indexOf("Icons.Rounded.Search")
+            && head.indexOf("Icons.Rounded.Search") < head.indexOf("Icons.Rounded.Notifications"))
+        assertTrue("add(backLabel to onBack)" in head)
     }
 
     @Test fun bottomNavInMusicAndVideo() {
@@ -157,7 +162,8 @@ class MusicRevampTest {
         // Themes and glass: the pages sit on the themed screen and use glass surfaces.
         // 0.52.2: one ARGUS look (no Living Theme scene behind Music); the glass shell and the light / dark switch stay.
         // Unification 7/9: the switch lives in the shared header (MediaTopBar), which Music uses.
-        val bar = src("mediaapps/MusicShell.kt").substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
-        assertTrue("ThemeSwitch(" in bar && "MediaTopBar(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
+        // 23 Nov 2026: the switch is in the shared header's profile menu (ViewHeader).
+        val bar = src("ui/ViewHeader.kt").substringAfter("fun ViewHeader(").substringBefore("\n}\n")
+        assertTrue("AppTheme.toggle()" in bar && "MediaTopBar(" in src("mediaapps/MusicActivity.kt") && ".glass(" in src("mediaapps/MusicShell.kt"))
     }
 }

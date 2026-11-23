@@ -848,7 +848,8 @@ private fun VideoApp(a: VideoActivity) {
     // light / dark switch.
     com.blaze.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            if (detail == null) MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Library"; "sources" -> "Sources"; else -> "Video" },
+            // 23 Nov 2026 (Finn's Movies mockup): the view's name, then search and notifications (downloads) on the right.
+            if (detail == null) MediaTopBar("Movies", onSearch = { go("search") }, kind = "video",
                 onAccount = { account = true }, onClose = { a.leaveToChat() })
             if (note.isNotBlank()) MText(note, 12.sp, c.sub, modifier = Modifier.padding(horizontal = 16.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -875,7 +876,7 @@ private fun VideoApp(a: VideoActivity) {
                         }
                     }
                     "sources" -> VideoSourcesPage(onPickFile = { a.pickMovieFile() }, incoming = a.pendingSource.value, onIncomingDone = { a.pendingSource.value = null })
-                    else -> VideoHomePage(open, resume)
+                    else -> VideoHomePage(open, resume, onTab = { t, chip -> if (chip.isNotBlank()) libChip = chip; go(t) })
                 }
                 // Mini-player above the nav while something plays: tap re-opens the player, play / pause, close.
                 androidx.compose.animation.AnimatedVisibility(tab != "player" && cur != null, Modifier.align(Alignment.BottomCenter), enter = MotionTokens.enterUp(), exit = MotionTokens.exitDown()) {

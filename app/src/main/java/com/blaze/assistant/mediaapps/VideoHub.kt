@@ -32,6 +32,16 @@ object VideoNav {
 }
 
 object VideoHome {
+    /** 23 Nov 2026: a library tile's line ("37 items"). */
+    fun items(n: Int): String = if (n == 1) "1 item" else "$n items"
+
+    /** Time left on a film ("1h 12m left", "54m left"), or "" when the length isn't known. */
+    fun left(posMs: Long, durMs: Long): String {
+        if (durMs <= 0) return ""
+        val m = ((durMs - posMs).coerceAtLeast(0) / 60_000L).toInt()
+        return if (m >= 60) "${m / 60}h ${m % 60}m left" else "${m.coerceAtLeast(1)}m left"
+    }
+
     /** Built-in source ids in Home order; the user's Jellyfin and installed providers follow, in the order they were added. */
     private val builtIn = listOf("archive", "blender", "local")
 

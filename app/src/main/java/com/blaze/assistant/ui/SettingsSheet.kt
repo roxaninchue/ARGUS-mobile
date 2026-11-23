@@ -136,7 +136,8 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
         } else {
             if (page == "connections") SearchTitle(current?.title ?: "Settings", onBack = { back() }, placeholder = "Gmail, GitHub, weather\u2026",
                 modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp), right = { ThemeSwitch() })
-            else BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
+            // 23 Nov 2026: Studying (Learn) draws the shared view header itself (profile, name, search, notifications).
+            else if (page != "learn") BackTitle(current?.title ?: "Settings", onBack = { back() }, modifier = Modifier.hairlineBottom(c.hair).padding(vertical = 2.dp),
                 right = { ThemeSwitch() })
             Column(Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
                 when (page) {
@@ -203,7 +204,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                             com.blaze.assistant.ui.argus.settings.ATeamBackupLive()
                         }
                     }
-                    "learn" -> LearnPage()
+                    "learn" -> LearnPage(onBack = { back() }, onAsk = { text -> Agent.sharedDraft.value = Agent.SharedDraft(text); onDismiss() })
                     "seller" -> SellerPage()
                     "appstore" -> AppStorePage()
                     "logs" -> LifeLogsPage()

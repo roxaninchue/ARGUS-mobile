@@ -24,18 +24,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blaze.assistant.movies.MovieHub
-import com.blaze.assistant.movies.MoviePlay
-import com.blaze.assistant.movies.MoviePost
-import com.blaze.assistant.movies.MovieSource
-import com.blaze.assistant.movies.Movies
-import com.blaze.assistant.movies.Progress
+import com.blaze.assistant.movies.*
 import com.blaze.assistant.ui.BlazeShapes
 import com.blaze.assistant.ui.EmptyState
 import com.blaze.assistant.ui.GlassIntensity
 import com.blaze.assistant.ui.KitSearch
 import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.glass
+import com.blaze.assistant.ui.AccentPill
+import com.blaze.assistant.ui.PageDots
+import com.blaze.assistant.ui.SeeAllHeader
+import com.blaze.assistant.ui.space.spaceLook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,19 +69,20 @@ internal fun rememberSourceRows(sources: List<MovieSource>, gen: Int, retry: Int
 }
 
 @Composable
-internal fun VideoHomePage(open: (MovieSource, MoviePost) -> Unit, onResume: (Progress) -> Unit) {
+internal fun VideoHomePage(open: (MovieSource, MoviePost) -> Unit, onResume: (Progress) -> Unit, onTab: (String, String) -> Unit = { _, _ -> }) {
     val gen by Movies.gen.collectAsState()
     val lib by Movies.lib.collectAsState()
     val sources = remember(gen) { Movies.sources() }
     var retry by remember { mutableStateOf(0) }
     val rows = rememberSourceRows(sources, gen, retry)
-    VideoHomeContent(sources, rows, lib.continueWatching, lib.watchlist, { p -> lib.inWatchlist(p.link, p.source) }, open, onResume, onRetry = { retry++ })
+    VideoHomeContent(sources, rows, lib.continueWatching, lib.watchlist, { p -> lib.inWatchlist(p.link, p.source) }, open, onResume, onRetry = { retry++ }, onTab = onTab)
 }
 
 /** Home, stateless (screenshot-tested): hero carousel, Continue watching, Watchlist, then each source's poster rows. */
 @Composable
 internal fun VideoHomeContent(sources: List<MovieSource>, rows: Map<String, Result<List<Pair<String, List<MoviePost>>>>>, cont: List<Progress>, watch: List<MoviePost>,
-                              saved: (MoviePost) -> Boolean, open: (MovieSource, MoviePost) -> Unit, onResume: (Progress) -> Unit, onRetry: () -> Unit = {}) {
+                              saved: (MoviePost) -> Boolean, open: (MovieSource, MoviePost) -> Unit, onResume: (Progress) -> Unit, onRetry: () -> Unit = {},
+                              onTab: (String, String) -> Unit = { _, _ -> }) {
     val c = LocalBlaze.current
     val byId = remember(sources) { sources.associateBy { it.id } }
     val snap = rows.toMap()
@@ -93,20 +93,42 @@ internal fun VideoHomeContent(sources: List<MovieSource>, rows: Map<String, Resu
     if (BrowseState.nothing(ids, ids.associateWith { rows[it] }, cont.size + watch.size)) {
         EmptyState("Nothing to show right now", "Check your connection, then try again.", mark = false, action = "Retry", onAction = onRetry); return
     }
+    // 23 Nov 2026 redesign (Finn's Movies mockup): a full-width featured carousel with dots, Continue watching as wide
+    // cards with time left, Your library tiles, Sources tiles (the user's own sources, no brand logos), then the rows.
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 150.dp)) {
         if (hero.isNotEmpty()) item {
-            LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            val heroState = androidx.compose.foundation.lazy.rememberLazyListState()
+            LazyRow(state = heroState, flingBehavior = androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior(heroState),
+                contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(VideoKeys.unique(hero) { heroKey(it) }, key = { heroKey(it) }) { h ->
-                    HeroCard(h, saved = h.post?.let(saved) == true,
+                    HeroCard(h, saved = h.post?.let(saved) == true, Modifier.fillParentMaxWidth(),
                         onPlay = { h.resume?.let(onResume) ?: h.post?.let { p -> byId[p.source]?.let { open(it, p) } } },
                         onWatchlist = { h.post?.let { Movies.toggleWatchlist(it) } })
                 }
             }
+            PageDots(minOf(hero.size, 6), heroState.firstVisibleItemIndex.coerceAtMost(5), Modifier.padding(start = 30.dp, top = 10.dp))
         }
         if (cont.isNotEmpty()) item {
-            SectionTitle("Continue watching")
+            SeeAllHeader("Continue watching", onSeeAll = { onTab("library", "videos") })
+            LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(VideoKeys.unique(cont) { "cw-" + it.play.key }, key = { "cw-" + it.play.key }) { pr -> ContinueCard(pr) { onResume(pr) } }
+            }
+        }
+        item {
+            SeeAllHeader("Your library", onSeeAll = { onTab("library", "videos") })
+            Row(Modifier.padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LibraryTile("Watchlist", VideoHome.items(watch.size), Icons.Rounded.Bookmark, Modifier.weight(1f)) { onTab("library", "watchlist") }
+                LibraryTile("Continue", VideoHome.items(cont.size), Icons.Rounded.History, Modifier.weight(1f)) { onTab("library", "videos") }
+                LibraryTile("Downloads", "On this phone", Icons.Rounded.Download, Modifier.weight(1f)) { onTab("library", "downloads") }
+            }
+        }
+        item {
+            SeeAllHeader("Sources", onSeeAll = { onTab("sources", "") })
             LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(VideoKeys.unique(cont) { "cw-" + it.play.key }, key = { "cw-" + it.play.key }) { pr -> Poster(pr.play.title, pr.play.image, pr.fraction) { onResume(pr) } }
+                items(VideoKeys.unique(sources) { it.id }, key = { "st-" + it.id }) { s ->
+                    LibraryTile(VideoHome.rowTitle(s.id, s.name, ""), "", if (s.official) Icons.Rounded.Verified else Icons.Rounded.Extension, Modifier.width(112.dp)) { onTab("sources", "") }
+                }
+                item(key = "st-add") { LibraryTile("Add source", "", Icons.Rounded.Add, Modifier.width(112.dp)) { onTab("sources", "") } }
             }
         }
         if (watch.isNotEmpty()) item {
@@ -143,25 +165,63 @@ private fun PosterSkeletons() {
     }
 }
 
-/** A hero card: the backdrop art, its title, Play / Resume and Watchlist. */
+/**
+ * A hero card (23 Nov 2026 mockup): the backdrop art edge to edge, darker on the left, a FEATURED (or CONTINUE) chip, the
+ * title large, then an accent Play / Resume and an outlined Add (the watchlist).
+ */
 @Composable
-private fun HeroCard(h: VideoHome.Hero, saved: Boolean, onPlay: () -> Unit, onWatchlist: () -> Unit) {
-    Box(Modifier.width(300.dp).aspectRatio(16f / 10f).clip(BlazeShapes.medium).clickable(role = Role.Button, onClickLabel = "Open ${h.title}") { onPlay() }) {
+private fun HeroCard(h: VideoHome.Hero, saved: Boolean, modifier: Modifier = Modifier, onPlay: () -> Unit, onWatchlist: () -> Unit) {
+    Box(modifier.aspectRatio(16f / 12f).clip(RoundedCornerShape(26.dp)).clickable(role = Role.Button, onClickLabel = "Open ${h.title}") { onPlay() }) {
         PosterArt(h.title, h.image, Modifier.fillMaxSize())
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)))))
-        Column(Modifier.align(Alignment.BottomStart).padding(12.dp)) {
-            Text(h.title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(Modifier.clip(BlazeShapes.pill).background(Color.White).clickable(role = Role.Button, onClickLabel = if (h.resume != null) "Resume ${h.title}" else "Play ${h.title}") { onPlay() }
-                    .padding(horizontal = 14.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
-                    Text(if (h.resume != null) "Resume" else "Play", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                }
-                if (h.post != null) RoundIcon(if (saved) Icons.Rounded.BookmarkAdded else Icons.Rounded.BookmarkBorder,
-                    if (saved) "Remove from watchlist" else "Add to watchlist", size = 38, tint = Color.White, fill = Color.Black.copy(alpha = 0.35f)) { onWatchlist() }
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color.Black.copy(alpha = 0.78f), Color.Black.copy(alpha = 0.15f)))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)))))
+        Column(Modifier.align(Alignment.CenterStart).padding(horizontal = 20.dp)) {
+            Row(Modifier.clip(RoundedCornerShape(50)).background(Color.Black.copy(alpha = 0.45f)).padding(horizontal = 10.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(7.dp).clip(RoundedCornerShape(50)).background(spaceLook().accent))
+                Spacer(Modifier.width(6.dp))
+                Text(if (h.resume != null) "CONTINUE" else "FEATURED", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(h.title, color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, lineHeight = 34.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            h.resume?.let { r -> Text(VideoHome.left(r.posMs, r.durMs), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp)) }
+            Spacer(Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                AccentPill(if (h.resume != null) "Resume" else "Play", Icons.Rounded.PlayArrow, onClick = onPlay)
+                if (h.post != null) AccentPill(if (saved) "Added" else "Add", if (saved) Icons.Rounded.Check else Icons.Rounded.Add,
+                    onClick = onWatchlist, filled = false)
             }
         }
+    }
+}
+
+/** A Continue watching card: a wide frame with the progress bar and the time left under it. */
+@Composable
+private fun ContinueCard(pr: Progress, onClick: () -> Unit) {
+    val c = spaceLook()
+    Column(Modifier.width(200.dp).clip(RoundedCornerShape(16.dp)).clickable(role = Role.Button, onClickLabel = "Resume ${pr.play.title}") { onClick() }) {
+        Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(RoundedCornerShape(16.dp))) {
+            PosterArt(pr.play.title, pr.play.image, Modifier.fillMaxSize())
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp).height(4.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.3f))) {
+                Box(Modifier.fillMaxWidth(pr.fraction.coerceIn(0.02f, 1f)).fillMaxHeight().background(c.accent))
+            }
+        }
+        Text(pr.play.title, color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+        Text(VideoHome.left(pr.posMs, pr.durMs), color = c.sub, fontSize = 12.5.sp, maxLines = 1)
+    }
+}
+
+/** A glass tile with an icon, a name and a line under it (Your library, Sources). */
+@Composable
+private fun LibraryTile(label: String, line: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier, onClick: () -> Unit) {
+    val c = spaceLook()
+    Column(modifier.height(112.dp).clip(BlazeShapes.small).glass(BlazeShapes.small, GlassIntensity.Low, shadow = false)
+        .clickable(role = Role.Button, onClickLabel = label) { onClick() }.padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(label, color = c.ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (line.isNotBlank()) Text(line, color = c.sub, fontSize = 12.sp, maxLines = 1)
     }
 }
 

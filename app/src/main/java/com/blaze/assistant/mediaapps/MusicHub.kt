@@ -44,6 +44,11 @@ object MusicContext {
 }
 
 object MusicHome {
+    /** 23 Nov 2026: rows Recently played shows before "See all" opens the rest. */
+    const val RECENT_ROWS = 4
+    /** A mix's line under its name ("Mix · 50 songs"). */
+    fun mixLine(n: Int): String = "Mix \u00b7 " + if (n == 1) "1 song" else "$n songs"
+
     val chips: List<Pair<String, String>> = listOf("all" to "All", "songs" to "Songs", "albums" to "Albums", "artists" to "Artists", "playlists" to "Playlists")
 
     /** One Home / Library tile: a playlist, a smart list, a mix, an album, an artist or a single song. */

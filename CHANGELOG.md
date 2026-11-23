@@ -1,4 +1,11 @@
-## Unreleased (on main, not built)
+## 0.55.9 (versionCode 218, 2026-11-23): new look for Music, Movies and Studying, plus phone fixes
+- Views redesign (Finn's mockups): one shared top bar (`ViewHeader`): profile icon far left (menu: account, light / dark,
+  back to chat), the view's name ("Music", "Movies", "Studying"), then search and a notifications bell (downloads; cards
+  waiting). Music Home: Argus DJ hero carousel with page dots, Mixes for you, Recently played rows with play buttons.
+  Now Playing: "ARGUS Music" header, lit art edge, heart, accent scrubber, shuffle / repeat squares, accent play, one
+  glass bar (output, equaliser, sleep, share, queue), restyled lyrics card. Movies Home: full-width featured carousel,
+  Continue watching cards with time left, Your library and Sources tiles (the user's own sources, no brand logos).
+  Studying (Learn): greeting, streak card, today's review ring with Continue, decks grid, ask box to the chat.
 - Reasoning no longer spills into the chat: words a model writes beside its tool calls stay a chat line only when they read
   like a short status (one paragraph, at most 200 characters, two sentences, no tool names, not about "the user");
   anything longer moves into the turn's Thoughts fold (`Narration.gate`).

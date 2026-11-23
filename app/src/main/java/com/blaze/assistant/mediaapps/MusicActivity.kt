@@ -98,6 +98,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.blaze.assistant.agent.Agent
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -301,7 +305,7 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     }
     fun go(id: String) { open = null; onTab(id) }
     fun askBlaze(text: String) {
-        com.blaze.assistant.agent.Agent.sharedDraft.value = com.blaze.assistant.agent.Agent.SharedDraft(text)
+        Agent.sharedDraft.value = Agent.SharedDraft(text)
         onClose()
     }
 
@@ -310,11 +314,10 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     com.blaze.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             val page = if (tab == "player") under else MusicNav.normalize(tab)
-            MediaTopBar(when (page) { "search", "store" -> "Search"; "library" -> "Your library"; "create" -> "Create"; else -> "Music" },
-                onAccount = { account = true }, onClose = onClose) {
-                RoundIcon(Icons.Rounded.Headphones, if (djOn) "${BrandName.NAME} DJ is on" else "${BrandName.NAME} DJ", tint = if (djOn) c.accent else c.ink,
-                    fill = com.blaze.assistant.ui.space.spaceLook().track) { djOpen = true }
-            }
+            // 23 Nov 2026 (Finn's mockups): the view's name, then search and notifications (downloads) on the right. Argus DJ
+            // starts from the hero card on Home (and Search's vibes), so it left this row.
+            MediaTopBar("Music", onSearch = { go("search") }, kind = "audio",
+                onAccount = { account = true }, onClose = onClose)
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val o = open
                 if (o != null) PlaylistPage(o, np, ::playList, onBack = { open = null },
@@ -455,6 +458,7 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
         return
     }
     val from by MusicContext.from.collectAsState()
+    val look = com.blaze.assistant.ui.space.spaceLook()
     var more by remember { mutableStateOf(false) }
     val density = LocalDensity.current
     Box(Modifier.fillMaxSize()) {
@@ -464,13 +468,15 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             .navigationBarsPadding().padding(horizontal = 22.dp).verticalScroll(rememberScrollState())) {
             // Header: down chevron · Playing from <playlist> · ⋮
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                RoundIcon(Icons.Rounded.KeyboardArrowDown, "Close the player", onClick = onCollapse)
+                // 23 Nov 2026 redesign (Finn's Now Playing mockup): round glass chevron and ⋮, "ARGUS Music" over the context.
+                val chrome = look.track
+                RoundIcon(Icons.Rounded.KeyboardArrowDown, "Close the player", fill = chrome, onClick = onCollapse)
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MText(if (from.isBlank()) "Now playing" else "Playing from", 11.sp, c.sub)
-                    if (from.isNotBlank()) MText(from, 13.sp, c.ink, FontWeight.SemiBold)
+                    MText("${BrandName.NAME} Music", 15.sp, c.ink, FontWeight.SemiBold)
+                    MText(if (from.isBlank()) "Now playing" else "Playing from $from", 13.sp, c.accent)
                 }
                 Box {
-                    RoundIcon(Icons.Rounded.MoreVert, "More") { more = true }
+                    RoundIcon(Icons.Rounded.MoreVert, "More", fill = chrome) { more = true }
                     BlazeMenu(more, { more = false }, buildList {
                         add(("Repeat: " + when (np.repeat) { Repeat.OFF -> "off"; Repeat.ALL -> "all"; Repeat.ONE -> "one" }) to {
                             ctl?.repeatMode = when (np.repeat.next()) { Repeat.ALL -> Player.REPEAT_MODE_ALL; Repeat.ONE -> Player.REPEAT_MODE_ONE; Repeat.OFF -> Player.REPEAT_MODE_OFF }; Unit })
@@ -508,7 +514,9 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                                     when (NowPlayingGestures.skip(dx, size.width.toFloat())) { 1 -> ctl?.seekToNext(); -1 -> ctl?.seekToPrevious() }
                                     dx = 0f
                                 }, onHorizontalDrag = { ch, d -> ch.consume(); dx += d })
-                        }, BlazeShapes.large, target = 720)
+                        }
+                        // the mockup's lit edge: a hairline in the cover's colour round the art
+                        .border(1.dp, glow.copy(alpha = 0.55f), RoundedCornerShape(28.dp)), RoundedCornerShape(28.dp), target = 720)
                 }
             }
             Spacer(Modifier.height(18.dp))
@@ -518,8 +526,8 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                     MText(t.artist, 14.sp, c.sub)
                 }
                 val on = t.key in liked
-                RoundIcon(if (on) Icons.Rounded.CheckCircle else Icons.Rounded.AddCircleOutline, if (on) "Remove from Liked" else "Add to Liked",
-                    tint = if (on) c.accent else c.ink) {
+                RoundIcon(if (on) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, if (on) "Remove from Liked" else "Add to Liked",
+                    size = 52, tint = if (on) c.accent else c.ink, fill = look.track) {
                     if (t.source == "stream") Toast.makeText(ctx, "Download it first to keep it in Liked.", Toast.LENGTH_SHORT).show() else MediaLib.toggleLike(t.key)
                 }
             }
@@ -542,26 +550,43 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             var dragging by remember { mutableStateOf<Float?>(null) }
             val frac = dragging ?: if (np.dur > 0) (np.pos.toFloat() / np.dur).coerceIn(0f, 1f) else 0f
             ScrubBar(frac, { dragging = it }, { dragging?.let { f -> ctl?.seekTo((f * np.dur).toLong()) }; dragging = null },
-                active = c.ink, rest = c.hair, knob = c.ink, label = "Seek song")
+                active = c.accent, rest = c.hair, knob = c.accent, label = "Seek song")
             Row {
                 MText(TimeText.clock(if (dragging != null) (frac * np.dur).toLong() else np.pos), 12.sp, c.sub)
                 Spacer(Modifier.weight(1f))
                 MText(if (np.dur > 0) TimeText.clock(np.dur) else "", 12.sp, c.sub)
             }
-            // shuffle · previous · play / pause · next · sleep timer
-            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                RoundIcon(Icons.Rounded.Shuffle, if (np.shuffle) "Shuffle on" else "Shuffle off", tint = if (np.shuffle) c.accent else c.sub) { ctl?.shuffleModeEnabled = !np.shuffle }
-                RoundIcon(Icons.Rounded.SkipPrevious, "Previous", size = 52) { ctl?.seekToPrevious() }
-                Box(Modifier.size(70.dp).clip(BlazeShapes.pill).background(c.ink).clickable(onClickLabel = if (np.playing) "Pause" else "Play") {
+            // shuffle · previous · play / pause · next · repeat (23 Nov 2026 mockup: shuffle and repeat in soft squares, an
+            // accent play button with a glow); then one glass bar: where it plays · equaliser · sleep timer · share · queue.
+            val square = RoundedCornerShape(16.dp)
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(52.dp).clip(square).background(look.track).clickable(onClickLabel = if (np.shuffle) "Shuffle on" else "Shuffle off") { ctl?.shuffleModeEnabled = !np.shuffle },
+                    contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = if (np.shuffle) c.accent else c.ink, modifier = Modifier.size(24.dp))
+                }
+                RoundIcon(Icons.Rounded.SkipPrevious, "Previous", size = 56) { ctl?.seekToPrevious() }
+                Box(Modifier.size(78.dp).shadow(18.dp, BlazeShapes.pill, ambientColor = c.accent, spotColor = c.accent).clip(BlazeShapes.pill).background(c.accent)
+                    .clickable(onClickLabel = if (np.playing) "Pause" else "Play") {
                     ctl?.let { if (it.isPlaying) it.pause() else { if (it.playbackState == Player.STATE_IDLE) it.prepare(); if (it.playbackState == Player.STATE_ENDED) it.seekTo(0, 0); it.play() } }
                 }, contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(if (np.playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = null, tint = c.paper, modifier = Modifier.size(38.dp))
+                    androidx.compose.material3.Icon(if (np.playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
                 }
-                RoundIcon(Icons.Rounded.SkipNext, "Next", size = 52) { ctl?.seekToNext() }
+                RoundIcon(Icons.Rounded.SkipNext, "Next", size = 56) { ctl?.seekToNext() }
+                Box(Modifier.size(52.dp).clip(square).background(look.track).clickable(onClickLabel = "Repeat: " + when (np.repeat) { Repeat.OFF -> "off"; Repeat.ALL -> "all"; Repeat.ONE -> "one" }) {
+                    ctl?.repeatMode = when (np.repeat.next()) { Repeat.ALL -> Player.REPEAT_MODE_ALL; Repeat.ONE -> Player.REPEAT_MODE_ONE; Repeat.OFF -> Player.REPEAT_MODE_OFF }
+                }, contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.Icon(if (np.repeat == Repeat.ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat, contentDescription = null,
+                        tint = if (np.repeat == Repeat.OFF) c.ink else c.accent, modifier = Modifier.size(24.dp))
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp).clip(RoundedCornerShape(22.dp)).background(look.track).padding(horizontal = 10.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                RoundIcon(Icons.Rounded.Speaker, "Choose where it plays", tint = c.ink) { openOutputPicker(ctx) }
+                RoundIcon(Icons.Rounded.GraphicEq, "Equaliser: $eqName", tint = if (eqName == "Flat") c.ink else c.accent) { eqMenu = true }
                 Box {
                     val left = if (np.pos >= 0) SleepTimer.left(sleepAt, System.currentTimeMillis()) else 0L   // re-read as the position ticks
                     RoundIcon(Icons.Rounded.Bedtime, when { sleepAt == -1L -> "Sleep timer: end of song"; left > 0 -> "Sleep timer: " + TimeText.clock(left); else -> "Sleep timer" },
-                        tint = if (sleepAt != 0L) c.accent else c.sub) { sleepMenu = true }
+                        tint = if (sleepAt != 0L) c.accent else c.ink) { sleepMenu = true }
                     BlazeMenu(sleepMenu, { sleepMenu = false }, buildList {
                         if (sleepAt != 0L) add("Turn off" to { MusicService.sleepAt.value = 0L })
                         SleepTimer.presetsMin.forEach { m -> add("$m minutes" to { MusicService.sleepAt.value = System.currentTimeMillis() + m * 60_000L }) }
@@ -569,17 +594,12 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
                         add((if (sleepFade) "Fade out at the end: on" else "Fade out at the end: off") to { sleepFade = !sleepFade; MediaPrefs.setBool(ctx, MediaPrefs.SLEEP_FADE, sleepFade) })
                     })
                 }
-            }
-            // output device · share · queue
-            Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                RoundIcon(Icons.Rounded.Speaker, "Choose where it plays", tint = c.sub) { openOutputPicker(ctx) }
-                Spacer(Modifier.weight(1f))
-                RoundIcon(Icons.Rounded.Share, "Share", tint = c.sub) {
+                RoundIcon(Icons.Rounded.Share, "Share", tint = c.ink) {
                     val text = listOf(t.title, t.artist).filter { it.isNotBlank() }.joinToString(" - ")
                     runCatching { ctx.startActivity(android.content.Intent.createChooser(android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
                         .putExtra(android.content.Intent.EXTRA_TEXT, text), "Share").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }
-                RoundIcon(Icons.AutoMirrored.Rounded.QueueMusic, if (view == "queue") "Hide queue" else "Queue", tint = if (view == "queue") c.accent else c.sub) {
+                RoundIcon(Icons.AutoMirrored.Rounded.QueueMusic, if (view == "queue") "Hide queue" else "Queue", tint = if (view == "queue") c.accent else c.ink) {
                     view = if (view == "queue") "art" else "queue"
                 }
             }

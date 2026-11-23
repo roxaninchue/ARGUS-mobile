@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -54,6 +55,13 @@ import com.blaze.assistant.ui.LocalBlaze
 import com.blaze.assistant.ui.PillButton
 import com.blaze.assistant.ui.glass
 import com.blaze.assistant.ui.MotionTokens
+import com.blaze.assistant.ui.ViewHeader
+import com.blaze.assistant.ui.ViewNotices
+import com.blaze.assistant.ui.SeeAllHeader
+import com.blaze.assistant.ui.PopMenu
+import com.blaze.assistant.ui.OrbArt
+import com.blaze.assistant.ui.AccentPill
+import com.blaze.assistant.ui.PageDots
 import com.blaze.assistant.ui.space.SpaceInsets
 import com.blaze.assistant.ui.space.SpacePalette
 import com.blaze.assistant.ui.space.SpaceRoundButton
@@ -75,46 +83,20 @@ import java.io.File
 // ---------------------------------------------------------------- shared chrome (Music and Video)
 
 /**
- * The account badge: the user's initial in a round [SpaceInsets.CONTROL_DP] circle (top-left of Music and Video).
- * Unification: drawn like the top bar's avatar (Argus Blue, white initial).
+ * The top bar of Music and Video. 23 Nov 2026 (Finn, the Movies mockup): the profile icon far left, the view's name
+ * ("Music", "Movies"), then [actions], search and notifications on the right ([ViewHeader]). The light / dark switch and
+ * the close moved into the profile icon's menu ("Back to chat" closes to the Argus chat, [MusicNav.CLOSE_TARGET]); the
+ * phone's Back still goes there too. The bell lists this view's downloads ([kind] audio or video).
  */
 @Composable
-fun AccountBadge(onClick: () -> Unit) {
+fun MediaTopBar(title: String, onAccount: () -> Unit, onClose: () -> Unit, onSearch: (() -> Unit)? = null, kind: String = "",
+                actions: @Composable RowScope.() -> Unit = {}) {
     val name = remember { runCatching { com.blaze.assistant.agent.Settings.userName }.getOrDefault("") }
-    val initial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: ""
-    Box(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(Color(SpacePalette.ARGUS_BLUE))
-        .clickable(role = Role.Button, onClickLabel = "Your account") { onClick() }
-        .semantics { contentDescription = if (name.isBlank()) "Your account" else "Your account, $name" }, contentAlignment = Alignment.Center) {
-        if (initial.isNotEmpty()) Text(initial, style = SpaceType.rowTitle(Color.White))
-        else Icon(Icons.Rounded.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-    }
-}
-
-/**
- * The top bar of Music and Video: account badge left, then [actions] (Argus DJ in Music), the light / dark switch and the
- * close (X) on the right. Close always goes back to the Argus chat ([MusicNav.CLOSE_TARGET]).
- * Unification: the shared header, matched to the shell's top bar and BackTitle: the same height (the 44 dp control plus
- * 10 dp above and below), the controls at the gutter ([SpaceInsets.GUTTER_DP]), round [SpaceInsets.CONTROL_DP] buttons
- * in the track colour, and the shell's serif title ([SpaceType.section]). The switch lives here, so every screen that
- * uses this header has it ([themeSwitch] = false leaves it out).
- */
-@Composable
-fun MediaTopBar(title: String, onAccount: () -> Unit, onClose: () -> Unit, themeSwitch: Boolean = true, actions: @Composable RowScope.() -> Unit = {}) {
-    val look = spaceLook()
-    Row(Modifier.fillMaxWidth().heightIn(min = (SpaceInsets.CONTROL_DP + 2 * 10).dp).padding(horizontal = SpaceInsets.GUTTER_DP.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        AccountBadge(onAccount)
-        Spacer(Modifier.width(10.dp))
-        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = SpaceType.section(look.ink),
-            modifier = Modifier.weight(1f).semantics { heading() })
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            actions()
-            if (themeSwitch) com.blaze.assistant.ui.ThemeSwitch(Modifier.size(SpaceInsets.CONTROL_DP.dp).clip(CircleShape).background(look.track), tint = look.ink)
-            SpaceRoundButton("Close and go back to ${BrandName.NAME} chat", onClose) {
-                Icon(Icons.Rounded.Close, contentDescription = null, tint = look.ink, modifier = Modifier.size(22.dp))
-            }
-        }
-    }
+    val jobs by Downloads.jobs.collectAsState()
+    val mine = remember(jobs, kind) { jobs.filter { kind.isNotBlank() && it.kind == kind }.sortedByDescending { it.createdAt } }
+    val notices = remember(mine) { ViewNotices.downloads(mine.map { (it.fileTitle.ifBlank { it.title }) to DlVerify.statusLine(it) }) }
+    ViewHeader(title, initial = name, backLabel = "Close and go back to ${BrandName.NAME} chat", onBack = onClose, onAccount = onAccount,
+        onSearch = onSearch, notices = notices, noticeDot = mine.any { it.status == DlStatus.RUNNING || it.status == DlStatus.FAILED }, actions = actions)
 }
 
 data class NavItem(val id: String, val label: String, val icon: ImageVector)
@@ -237,51 +219,99 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
         }
         return
     }
+    var allRecent by remember { mutableStateOf(false) }
+    // 23 Nov 2026 redesign (Finn's Music mockup): chips, the Argus DJ hero (a carousel with the top mixes after it),
+    // Mixes for you, Recently played as rows with a play button. A chip other than All shows that kind as the tile grid.
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 150.dp)) {
         item { FilterChips(MusicHome.chips, chip) { chip = it } }
-        // 2-column grid of recent playlists (cover + name), 8 tiles.
-        items(tiles.chunked(2)) { row ->
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { t -> HomeTile(t, byKey, Modifier.weight(1f)) { openTile(t) } }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
-        // The Argus DJ tile.
-        item {
-            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth().clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
-                .clickable(role = Role.Button, onClickLabel = "Start ${BrandName.NAME} DJ") { onDj() }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(52.dp).clip(BlazeShapes.pill).background(Brush.linearGradient(listOf(c.accent.copy(alpha = 0.9f), BlazeBrushTint.warm))),
-                    contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp)) }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("${BrandName.NAME} DJ", color = c.ink, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("Songs from your library, picked for " + DjPlan.partOfDay(hour), color = c.sub, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (chip != "all") {
+            items(tiles.chunked(2)) { row ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { t -> HomeTile(t, byKey, Modifier.weight(1f)) { openTile(t) } }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
-                Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = c.ink, modifier = Modifier.size(28.dp))
             }
+            return@LazyColumn
         }
+        item { DjHero(hour, mixes.take(3), byKey, onDj = onDj, playMix = { m -> MusicContext.set(m.name); playList(m.keys.mapNotNull { byKey[it] }, 0, false) }) }
         if (mixes.isNotEmpty()) item {
-            SectionTitle("Your mixes")
-            LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SeeAllHeader("Mixes for you", onSeeAll = { chip = "playlists" })
+            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 items(mixes, key = { it.id }) { m ->
                     Column(Modifier.width(150.dp).clip(BlazeShapes.small).clickable(role = Role.Button, onClickLabel = "Open ${m.name}") { openTile(m) }) {
-                        CoverTile(m.id, m.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(150.dp), BlazeShapes.small)
-                        Text(m.sub.ifBlank { m.name }, color = c.sub, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                        CoverTile(m.id, m.keys.take(8).mapNotNull { byKey[it] }, Modifier.size(150.dp), RoundedCornerShape(18.dp))
+                        Text(m.name, color = c.ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
+                        Text(MusicHome.mixLine(m.keys.size), color = c.sub, fontSize = 12.5.sp, maxLines = 1)
                     }
                 }
             }
         }
-        if (recentSongs.isNotEmpty()) item {
-            SectionTitle("Recently played")
-            LazyRow(contentPadding = PaddingValues(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(recentSongs, key = { "r-" + it.key }) { t ->
-                    Column(Modifier.width(112.dp).clip(BlazeShapes.small).clickable(role = Role.Button, onClickLabel = "Play ${t.title}") {
-                        MusicContext.set("Recently played"); playList(recentSongs, recentSongs.indexOf(t), false) }) {
-                        Art(t, Modifier.size(112.dp), BlazeShapes.small, 240)
-                        Text(t.title, color = c.ink, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 5.dp))
-                    }
+        if (recentSongs.isNotEmpty()) {
+            item { SeeAllHeader("Recently played", onSeeAll = if (recentSongs.size > MusicHome.RECENT_ROWS) ({ allRecent = !allRecent }) else null) }
+            val shown = if (allRecent) recentSongs else recentSongs.take(MusicHome.RECENT_ROWS)
+            items(shown, key = { "r-" + it.key }) { t ->
+                RecentRow(t, liked = t.key in liked, playing = np.item?.mediaId == t.key,
+                    onPlay = { MusicContext.set("Recently played"); playList(recentSongs, recentSongs.indexOf(t), false) })
+            }
+        }
+        if (tiles.isNotEmpty()) {
+            item { SeeAllHeader("Jump back in", onSeeAll = { chip = "playlists" }) }
+            items(tiles.chunked(2)) { row ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { t -> HomeTile(t, byKey, Modifier.weight(1f)) { openTile(t) } }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
+        }
+    }
+}
+
+/**
+ * The Home hero (the mockup's "Argus DJ, songs picked for tonight" card): a swipeable card, Argus DJ first, then up to
+ * three of today's mixes, each with one accent Play button, the planet art on the right and page dots under it.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun DjHero(hour: Int, mixes: List<MusicHome.Tile>, byKey: Map<String, Track>, onDj: () -> Unit, playMix: (MusicHome.Tile) -> Unit) {
+    val look = spaceLook()
+    val pager = androidx.compose.foundation.pager.rememberPagerState { 1 + mixes.size }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth(), pageSpacing = 12.dp) { i ->
+            val m = mixes.getOrNull(i - 1)
+            Box(Modifier.fillMaxWidth().height(188.dp).clip(RoundedCornerShape(26.dp))
+                .background(Brush.linearGradient(listOf(look.accent.copy(alpha = if (look.dark) 0.30f else 0.18f), look.card)))
+                .border(1.dp, look.hair, RoundedCornerShape(26.dp))) {
+                if (m == null) OrbArt(Modifier.align(Alignment.CenterEnd).size(190.dp).offset(x = 24.dp))
+                else CoverTile(m.id, m.keys.take(8).mapNotNull { byKey[it] }, Modifier.align(Alignment.CenterEnd).padding(end = 18.dp).size(124.dp), RoundedCornerShape(20.dp))
+                Column(Modifier.align(Alignment.CenterStart).padding(start = 22.dp, end = 150.dp)) {
+                    Text(if (m == null) "${BrandName.NAME} DJ," else m.name, style = SpaceType.body(26.sp, look.ink, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(if (m == null) "songs picked for " + DjPlan.partOfDay(hour) else MusicHome.mixLine(m.keys.size),
+                        style = SpaceType.body(15.sp, look.sub), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(16.dp))
+                    AccentPill(if (m == null) "Play Mix" else "Play", Icons.Rounded.PlayArrow, onClick = { if (m == null) onDj() else playMix(m) })
+                }
+            }
+        }
+        PageDots(1 + mixes.size, pager.currentPage, Modifier.align(Alignment.CenterHorizontally).padding(top = 10.dp))
+    }
+}
+
+/** A Recently played row: cover, title and artist, a round play button and a ⋮ with Like. */
+@Composable
+private fun RecentRow(t: Track, liked: Boolean, playing: Boolean, onPlay: () -> Unit) {
+    val look = spaceLook()
+    var menu by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Play ${t.title}") { onPlay() }.padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Art(t, Modifier.size(60.dp), RoundedCornerShape(14.dp), 200)
+        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+            Text(t.title, style = SpaceType.body(16.sp, if (playing) look.accent else look.ink, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(t.artist, style = SpaceType.body(13.sp, look.sub), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        SpaceRoundButton("Play ${t.title}", onPlay) { Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = look.ink, modifier = Modifier.size(24.dp)) }
+        Box {
+            RoundIcon(Icons.Rounded.MoreVert, "More for ${t.title}", tint = look.sub, fill = Color.Transparent) { menu = true }
+            PopMenu(menu, { menu = false }, listOf((if (liked) "Remove from Liked" else "Add to Liked") to { if (t.source != "stream") MediaLib.toggleLike(t.key) }))
         }
     }
 }
@@ -626,13 +656,14 @@ internal fun LyricsCard(t: Track, pos: Long, onOpen: () -> Unit) {
     } else r.plain.lines().filter { it.isNotBlank() }.take(4)
     Column(Modifier.fillMaxWidth().padding(vertical = 10.dp).clip(BlazeShapes.medium).glass(BlazeShapes.medium, GlassIntensity.Medium, shadow = false)
         .clickable(role = Role.Button, onClickLabel = "Open lyrics") { onOpen() }.padding(16.dp)) {
+        // 23 Nov 2026 mockup: "Lyrics" with an expand mark, the current line in the accent, the next ones quieter.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Lyrics, contentDescription = null, tint = c.sub, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Lyrics", color = c.sub, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text("Lyrics", color = c.ink, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Icon(Icons.Rounded.OpenInFull, contentDescription = null, tint = c.sub, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.height(6.dp))
-        lines.forEachIndexed { i, l -> Text(l, color = if (i == 0) c.ink else c.sub, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 2) }
+        Spacer(Modifier.height(8.dp))
+        lines.forEachIndexed { i, l -> Text(l, color = if (i == 0) c.accent else c.sub, fontSize = if (i == 0) 18.sp else 17.sp,
+            fontWeight = if (i == 0) FontWeight.SemiBold else FontWeight.Normal, maxLines = 2, modifier = Modifier.padding(vertical = 3.dp)) }
     }
 }
 

@@ -221,11 +221,12 @@ class SpaceWiringTest {
             assertFalse("$f has no flat paper background", "Box(Modifier.fillMaxSize().background(c.paper))" in t)
         }
         val shell = src("mediaapps/MusicShell.kt")
-        val bar = shell.substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
-        assertTrue("the header is at the gutter", "padding(horizontal = SpaceInsets.GUTTER_DP.dp)" in bar)
-        assertTrue("the header title is the serif section step", "SpaceType.section(look.ink)" in bar)
-        assertTrue("the close is the shell's round button", "SpaceRoundButton(" in bar)
-        assertFalse("no 20 sp bold title", "fontSize = 20.sp" in bar)
+        // 23 Nov 2026 (Finn's mockup): the shared view header, at the gutter, a bold sans title, round shell buttons.
+        val bar = src("ui/ViewHeader.kt").substringAfter("fun ViewHeader(").substringBefore("\n}\n")
+        assertTrue("the header is at the gutter", "inset: androidx.compose.ui.unit.Dp = SpaceInsets.GUTTER_DP.dp" in bar && "padding(horizontal = inset)" in bar)
+        assertTrue("the header title is the bold view name", "SpaceType.body(26.sp, look.ink, FontWeight.Bold)" in bar)
+        assertTrue("search and notifications are the shell's round buttons", "SpaceRoundButton(" in bar)
+        assertTrue("Music and Video use it", "ViewHeader(" in shell.substringAfter("fun MediaTopBar(").substringBefore("\n}\n"))
         val nav = shell.substringAfter("fun MediaBottomNav(").substringBefore("\n}\n")
         assertTrue("the nav floats at the composer's inset", "SpaceInsets.COMPOSER_EDGE_DP.dp" in nav && "clip(SpaceShapes.pill)" in nav)
         assertTrue("the nav is the top bar's pill", "look.track" in nav && "look.selectedFill" in nav)
@@ -340,9 +341,9 @@ class SpaceWiringTest {
         }
     }
 
-    @Test fun theVersionIs0558() {
+    @Test fun theVersionIs0559() {
         val g = listOf(File("build.gradle.kts"), File("app/build.gradle.kts")).first { it.isFile && it.readText().contains("versionCode") }.readText()
-        assertTrue("versionCode = 217" in g)
-        assertTrue("versionName = \"0.55.8\"" in g)
+        assertTrue("versionCode = 218" in g)
+        assertTrue("versionName = \"0.55.9\"" in g)
     }
 }

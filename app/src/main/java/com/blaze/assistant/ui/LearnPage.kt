@@ -42,6 +42,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -78,7 +80,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * the answer, and the Study reminder switch (StudyNudge).
  */
 @Composable
-internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Long? = null) {
+internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Long? = null, onBack: () -> Unit = {}, onAsk: (String) -> Unit = {}) {
     val c = LocalBlaze.current.mono
     val all by Flashcards.cards.collectAsState()
     val undo by Flashcards.undoable.collectAsState()
@@ -86,37 +88,102 @@ internal fun LearnPage(startDeck: String = "", reveal: Boolean = false, now: Lon
     var deck by remember { mutableStateOf(startDeck) }
     val clock = now ?: System.currentTimeMillis()
 
-    Spacer(Modifier.height(18.dp))
     if (deck.isNotEmpty()) {
+        Spacer(Modifier.height(18.dp))
         Study(deck, reveal, now, undo, onBack = { deck = "" })
         return
     }
+    // 23 Nov 2026 redesign (Finn's Learn mockup, "Studying"): the shared view header, a greeting, the streak card, today's
+    // review with a progress ring and Continue, the decks as a two-column grid ("Explore topics"), and the ask box.
     val decks = remember(all) { Flashcards.decks(clock) }
+    val waiting = remember(all) { Flashcards.waiting(clock) }
+    val next = remember(all) { Flashcards.nextDue(Flashcards.ALL, clock) }
+    var search by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    ViewHeader("Studying", initial = Settings.userName, backLabel = "Back", onBack = onBack, onSearch = { search = !search; query = "" },
+        notices = ViewNotices.cards(waiting, next?.let { Flashcards.until(it - clock) }), noticeDot = waiting > 0, inset = 0.dp)
+    Box(Modifier.fillMaxWidth().height(150.dp)) {
+        HorizonGlow(Modifier.matchParentSize())
+        Column(Modifier.align(Alignment.CenterStart)) {
+            Text(tr(LearnHome.greeting(java.util.Calendar.getInstance().apply { timeInMillis = clock }.get(java.util.Calendar.HOUR_OF_DAY))),
+                style = TextStyle(fontFamily = Type.Sans, fontSize = 22.sp, color = c.ink))
+            Text(tr("Keep learning."), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Bold, fontSize = 36.sp, color = c.ink))
+            Box(Modifier.padding(top = 6.dp).width(110.dp).height(3.dp).clip(CircleShape).background(c.accent, CircleShape))
+        }
+    }
+    if (search) PillField(query, { query = it }, tr("Find a deck"), c.ink, c.sub, c.accent, Modifier.padding(vertical = 6.dp))
+    val week = remember(all) { LearnHome.week(all.flatMap { listOf(it.first, it.last) }, clock) }
+    val streak = remember(all) { LearnHome.streak(all.flatMap { listOf(it.first, it.last) }, clock) }
+    // Streak card: flame, "N day streak", the last seven days as dots.
+    Row(Modifier.fillMaxWidth().padding(top = 8.dp).clip(CardShape).glass(CardShape, GlassIntensity.Low, shadow = false).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Rounded.LocalFireDepartment, contentDescription = null, tint = c.accent, modifier = Modifier.size(36.dp))
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(if (streak > 0) tr("{0} day streak", streak.toString()) else tr("Start a streak"),
+                style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = c.ink))
+            Text(tr(LearnHome.streakLine(streak)), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+        }
+        week.forEach { (day, on) ->
+            Column(Modifier.padding(horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.size(16.dp).clip(CircleShape).background(if (on) c.accent else c.hair, CircleShape))
+                Text(day, style = TextStyle(fontFamily = Type.Sans, fontSize = 10.sp, color = c.sub), modifier = Modifier.padding(top = 3.dp))
+            }
+        }
+    }
     if (decks.isEmpty()) {
+        Spacer(Modifier.height(12.dp))
         Rows { EmptyState(tr("No cards yet"), tr("Ask {0} to \u201cmake flashcards from my CIT102 notes\u201d, a PDF or slides. Decks show up here, and cards come back just before you'd forget them.", BrandName.NAME)) }
     } else {
-        val waiting = remember(all) { Flashcards.waiting(clock) }
-        if (waiting > 0) {
-            Row(Modifier.fillMaxWidth().height(56.dp).clip(BlazeShapes.pill).background(c.accent, BlazeShapes.pill)
-                .clickable(onClickLabel = tr("Study all")) { deck = Flashcards.ALL }.padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
-                Spacer(Modifier.width(10.dp))
-                ButtonText(tr("Study all"), color = Color.White, size = 15.sp)
-                Spacer(Modifier.weight(1f))
-                Text("$waiting", style = TextStyle(fontFamily = Type.Mono, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color.White))
+        // Today's review: the ring is today's share done (cards reviewed today against those still waiting).
+        val doneToday = remember(all) { all.count { it.last >= Flashcards.dayStart(clock) } }
+        val pct = LearnHome.todayPct(doneToday, waiting)
+        val top = decks.firstOrNull { it.due + it.today > 0 }
+        Row(Modifier.fillMaxWidth().padding(top = 12.dp).clip(CardShape).glass(CardShape, GlassIntensity.Low, shadow = false).padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(78.dp), contentAlignment = Alignment.Center) {
+                androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+                    val w = 8.dp.toPx()
+                    drawArc(c.hair, 0f, 360f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(w),
+                        topLeft = androidx.compose.ui.geometry.Offset(w / 2, w / 2), size = androidx.compose.ui.geometry.Size(size.width - w, size.height - w))
+                    drawArc(c.accent, -90f, 360f * pct / 100f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(w, cap = androidx.compose.ui.graphics.StrokeCap.Round),
+                        topLeft = androidx.compose.ui.geometry.Offset(w / 2, w / 2), size = androidx.compose.ui.geometry.Size(size.width - w, size.height - w))
+                }
+                Text("$pct%", style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, color = c.ink))
             }
-        } else {
-            val next = remember(all) { Flashcards.nextDue(Flashcards.ALL, clock) }
-            IconLine(Icons.Rounded.CheckCircle, tr("All caught up") + (next?.let { " \u00b7 " + Flashcards.until(it - clock) } ?: ""), c.accent)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(tr("Today's review"), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+                Text(top?.name ?: tr("All caught up"), maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = c.ink))
+                Text(if (waiting > 0) tr("{0} cards waiting", waiting.toString()) else next?.let { tr("Next cards in {0}", Flashcards.until(it - clock)) } ?: "",
+                    style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.sub))
+            }
+            if (waiting > 0) AccentPill(tr("Continue"), Icons.Rounded.PlayArrow, onClick = { deck = Flashcards.ALL })
         }
-        Spacer(Modifier.height(18.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Label(tr("Decks"), modifier = Modifier.weight(1f))
-            if (undo == "delete_deck" || undo == "rename") GlassIconButton(Icons.AutoMirrored.Rounded.Undo, tr("Undo"), size = 36.dp) { Flashcards.undo() }
+        SeeAllHeader(tr("Your decks"), inset = 0.dp)
+        if (undo == "delete_deck" || undo == "rename") Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            GlassIconButton(Icons.AutoMirrored.Rounded.Undo, tr("Undo"), size = 36.dp) { Flashcards.undo() }
         }
-        Spacer(Modifier.height(4.dp))
-        decks.forEach { d -> DeckRow(d) { deck = d.name } }
+        val shown = decks.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+        shown.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { d -> DeckTile(d, c.accent, c.ink, c.sub, Modifier.weight(1f)) { deck = d.name } }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+    // The ask box (the mockup's "Ask me to teach you anything…"): the words go to the chat's message box to send.
+    var ask by remember { mutableStateOf("") }
+    Row(Modifier.fillMaxWidth().padding(top = 14.dp).clip(CircleShape).glass(CircleShape, GlassIntensity.Low, shadow = false).padding(start = 16.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = c.accent, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(8.dp))
+        androidx.compose.foundation.text.BasicTextField(ask, { ask = it }, Modifier.weight(1f), singleLine = true,
+            textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.ink),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(c.accent),
+            decorationBox = { inner -> Box { if (ask.isEmpty()) Text(tr("Ask me to teach you anything\u2026"), style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = c.sub)); inner() } })
+        GlassIconButton(Icons.AutoMirrored.Rounded.Send, tr("Send to chat"), bg = c.accent, tint = Color.White) {
+            onAsk(ask.ifBlank { tr("Teach me something new") }); ask = "" }
     }
     Spacer(Modifier.height(22.dp))
     Label(tr("Student tools"), modifier = Modifier.padding(bottom = 4.dp))
@@ -183,6 +250,51 @@ private fun DeckRow(d: Flashcards.Deck, onStudy: () -> Unit) {
         }
     }
 }
+
+/** A deck in the "Your decks" grid: a lettered square, the name, its cards, and a ⋯ with study, rename and delete. */
+@Composable
+private fun DeckTile(d: Flashcards.Deck, accent: Color, ink: Color, sub: Color, modifier: Modifier, onStudy: () -> Unit) {
+    var menu by remember(d.name) { mutableStateOf(false) }
+    var renaming by remember(d.name) { mutableStateOf(false) }
+    var name by remember(d.name) { mutableStateOf(d.name) }
+    Column(modifier) {
+        Row(Modifier.fillMaxWidth().clip(CardShape).glass(CardShape, GlassIntensity.Low, shadow = false)
+            .clickable(onClickLabel = tr("Study")) { onStudy() }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(40.dp).clip(TileShape).background(accent.copy(alpha = 0.16f), TileShape), contentAlignment = Alignment.Center) {
+                Text(d.name.trim().take(1).uppercase(), style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = accent))
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(d.name, maxLines = 1, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = ink))
+                Text(if (d.due + d.today > 0) tr("{0} due", (d.due + d.today).toString()) else tr("{0} cards", d.total.toString()),
+                    style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = if (d.due + d.today > 0) accent else sub))
+            }
+            Box {
+                Icon(Icons.Rounded.MoreHoriz, contentDescription = tr("Deck options"), tint = sub,
+                    modifier = Modifier.size(28.dp).clip(CircleShape).clickable(onClickLabel = tr("Deck options")) { menu = true })
+                PopMenu(menu, { menu = false }, listOf(tr("Study this deck") to onStudy, tr("Rename deck") to { renaming = true },
+                    tr("Delete deck") to { Flashcards.deleteDeck(d.name) }))
+            }
+        }
+        if (renaming) Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            PillField(name, { name = it }, tr("Deck name"), ink, sub, accent, Modifier.weight(1f))
+            Spacer(Modifier.width(6.dp))
+            GlassIconButton(Icons.Rounded.Check, tr("Save the name"), size = 36.dp, bg = accent, tint = Color.White) { Flashcards.renameDeck(d.name, name); renaming = false }
+        }
+    }
+}
+
+/** A one-line text field in a glass pill (find a deck, rename a deck). */
+@Composable
+private fun PillField(value: String, onChange: (String) -> Unit, hint: String, ink: Color, sub: Color, accent: Color, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.text.BasicTextField(value, onChange, modifier.fillMaxWidth().clip(CircleShape).glass(CircleShape, GlassIntensity.Low, shadow = false)
+        .padding(horizontal = 16.dp, vertical = 12.dp), singleLine = true, textStyle = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = ink),
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(accent),
+        decorationBox = { inner -> Box { if (value.isEmpty()) Text(hint, style = TextStyle(fontFamily = Type.Sans, fontSize = 15.sp, color = sub)); inner() } })
+}
+
+private val CardShape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+private val TileShape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
 
 private val FORGOT_RED = Color(0xFFFF6B6B)
 
@@ -366,5 +478,47 @@ private fun DoneCard(deck: String, seen: Int, knew: Int, now: Long, onBack: () -
                 ButtonText(tr("{0} more", minOf(held, Flashcards.NEW_PER_DAY).toString()), color = Color.White, size = 14.sp)
             }
         }
+    }
+}
+
+/** The Studying header's pieces (pure; ViewRedesignTest). Days are local days; a day counts when any card was first studied or last reviewed then. */
+object LearnHome {
+    private const val DAY = 86_400_000L
+    fun greeting(hour: Int): String = when (hour) { in 5..11 -> "Good morning,"; in 12..16 -> "Good afternoon,"; else -> "Good evening," }
+
+    private fun day(t: Long, tz: java.util.TimeZone): Long = Flashcards.dayStart(t, tz)
+
+    /** The last seven days, oldest first, as (weekday letter pair, studied that day). */
+    fun week(times: List<Long>, now: Long, tz: java.util.TimeZone = java.util.TimeZone.getDefault()): List<Pair<String, Boolean>> {
+        val days = times.filter { it > 0 }.map { day(it, tz) }.toSet()
+        val today = day(now, tz)
+        return (6 downTo 0).map { back ->
+            val d = day(today - back * DAY + DAY / 2, tz)
+            val cal = java.util.Calendar.getInstance(tz).apply { timeInMillis = d }
+            val name = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")[cal.get(java.util.Calendar.DAY_OF_WEEK) - 1]
+            name to (d in days)
+        }
+    }
+
+    /**
+     * Days in a row with study, ending today (or yesterday, so the streak isn't lost before today's session). Cards keep
+     * only their first and last study times, so a day whose cards were all studied again later can be missed: the
+     * count never overstates.
+     */
+    fun streak(times: List<Long>, now: Long, tz: java.util.TimeZone = java.util.TimeZone.getDefault()): Int {
+        val days = times.filter { it > 0 }.map { day(it, tz) }.toSet()
+        var d = day(now, tz)
+        if (d !in days) d = day(d - DAY / 2, tz)
+        var n = 0
+        while (d in days) { n++; d = day(d - DAY / 2, tz) }
+        return n
+    }
+
+    fun streakLine(streak: Int): String = when { streak >= 7 -> "You're on fire!"; streak > 0 -> "Keep it going today"; else -> "Study a few cards today" }
+
+    /** Today's ring: reviewed today out of reviewed + still waiting, 0..100 (100 when nothing waits and some were done). */
+    fun todayPct(done: Int, waiting: Int): Int = when {
+        done + waiting == 0 -> 0
+        else -> (done * 100 / (done + waiting)).coerceIn(0, 100)
     }
 }

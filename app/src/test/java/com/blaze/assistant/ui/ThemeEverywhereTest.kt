@@ -44,8 +44,10 @@ class ThemeEverywhereTest {
         for ((s, f) in switchers) assertTrue("$s has no ThemeSwitch", "ThemeSwitch(" in src(f))
         // Unification 7/9: Music and Video share one header (MediaTopBar in MusicShell.kt), and the switch lives in it
         // (on unless a caller passes themeSwitch = false, which neither does).
-        val bar = src("mediaapps/MusicShell.kt").substringAfter("fun MediaTopBar(").substringBefore("\n}\n")
-        assertTrue("the shared media header has no ThemeSwitch", "ThemeSwitch(" in bar && "themeSwitch: Boolean = true" in bar)
+        // 23 Nov 2026: the switch moved into the shared view header's profile menu (ViewHeader), always there.
+        val bar = src("ui/ViewHeader.kt").substringAfter("fun ViewHeader(").substringBefore("\n}\n")
+        assertTrue("the shared view header has no light / dark switch", "AppTheme.toggle()" in bar)
+        assertTrue("Music and Video use the shared view header", "ViewHeader(" in src("mediaapps/MusicShell.kt"))
         for ((s, f) in mapOf("music" to "mediaapps/MusicActivity.kt", "video" to "mediaapps/VideoActivity.kt")) {
             val t = src(f)
             assertTrue("$s doesn't use the shared header", "MediaTopBar(" in t)
