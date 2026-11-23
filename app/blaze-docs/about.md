@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.55.12: the model list stays open until you tap its X (or go Back), scrolls smoothly even on a slow drag, and the opening ARGUS animation fills the whole screen with no black bars.
 - New in 0.55.11: Music plays songs from YouTube on every page: Home, Search and an empty Library open on shelves of songs (trending, new releases, genres, picks from what you play), saved so they show offline too, with clean song titles and square covers. Jamendo and Internet Archive music are gone.
 - New in 0.55.10: pressing Stop mid-reply no longer closes the app, the clock and battery stay readable when a sheet like the model picker is open, and a reply that stops after a word like "So" asks again for the full answer.
 - New in 0.55.9: Music, Movies and Studying have a new look (a hero card up top, wide rows, a fresh Now Playing) and one top bar everywhere: your profile on the left, the view's name, then search and notifications. Long reasoning stays in Thoughts, swipes in the chat no longer get ignored, and the status bar shows in Music, Video and Browser.

@@ -1,3 +1,23 @@
+## 0.55.12 (versionCode 221, 2026-11-24): model list closes only with its X, slow scrolls work, full-screen intro
+Branch `fix/model-sheet-scroll-intro` (merge request into main). Finn's UI rules, now in docs/UI-RULES.md.
+- Model selector closes only with its X (Back too): never from a swipe, a drag, a list pulled past its top or a tap on
+  the scrim. A no-drag `ArgusSheet` vetoes Hidden unless its X asked for it (`confirmValueChange`, remembered so the
+  saved sheet state is not rebuilt).
+- Slow scrolls in the model list: Material's sheet surface has its own drag (material3 1.3 can't turn it off). Touches
+  that began on the 12 dp strip that replaced the handle, or on the bottom inset band (nav bar), were outside the hold, so
+  the sheet's drag owned them: the list didn't move at all on a slow drag from near the bottom, and a downward drag slid
+  the sheet. While the sheet opened, its drag also took every touch at once (startDragImmediately). Now the handle and
+  the inset band are gone from outside the hold (the insets are padded inside it), and the hold's do-nothing draggable
+  starts at once too while the sheet animates, so the sheet's drag is cancelled on the first move. The 0.55.11 fix (no
+  consumed moves before touch slop) stays.
+- Intro animation fills the screen: the 4:3 clip sat on black, letterboxed on a tall phone. The screen around it is now
+  the clip's own deep blue (`IntroClip.GROUND`, a radial glow measured from the clip's border) and the clip's edges fade
+  into it (`IntroClip.FEATHER_X` / `FEATHER_Y`, outside the logo), so it reads as one picture; the logo keeps its size
+  and is never cut. The still logo (Remove animations on) uses the same ground.
+- Tests: SheetScrollTest (4), OnboardingLandscapeTest.theClipFillsTheScreenWithNoLetterbox,
+  SpaceLogicTest.theClipGroundIsBlueAndTheFadesMissTheLogo. CI: `.github/workflows/build.yml` also builds this branch
+  (never publishes).
+
 ## 0.55.11 (versionCode 220, 2026-11-24): Music is YouTube only, with songs on every page
 Branch `music-youtube-only` (merge request into main; not merged).
 - One music source: Jamendo and Internet Archive audio are gone (source, Jamendo setup card and `jamendo_setup` tool,

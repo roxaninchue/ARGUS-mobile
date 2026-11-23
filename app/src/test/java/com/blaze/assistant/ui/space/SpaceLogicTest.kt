@@ -360,6 +360,19 @@ class SpaceLogicTest {
         assertTrue(IntroClip.START_TIMEOUT_MS < IntroClip.DURATION_MS && IntroClip.DURATION_MS < IntroClip.MAX_MS)
     }
 
+    /** Owner 2026-11-24: no black bars. The ground is the clip's dark blue, and the edge fades stay outside the logo. */
+    @Test fun theClipGroundIsBlueAndTheFadesMissTheLogo() {
+        assertEquals(IntroClip.GROUND.size, IntroClip.GROUND_STOPS.size)
+        for (c in IntroClip.GROUND) {
+            val r = (c shr 16) and 0xFFL; val g = (c shr 8) and 0xFFL; val b = c and 0xFFL
+            assertTrue("opaque", (c ushr 24) == 0xFFL)
+            assertTrue("blue, not grey or black", b > r && b > g && b > 0)
+        }
+        // the logo spans 13.4-92.6 % of the clip's width and 7.5-89.4 % of its height (measured from the clip's frames)
+        assertTrue(IntroClip.FEATHER_X < 0.074f && IntroClip.FEATHER_Y < 0.075f)
+        assertTrue(IntroClip.FEATHER_X > 0f && IntroClip.FEATHER_Y > 0f)
+    }
+
     @Test fun projectRows() {
         assertEquals(PS.NEEDS_YOU, SpaceProjectRows.status(listOf("a", "b"), busy = setOf("a"), needsYou = setOf("b")))
         assertEquals(PS.WORKING, SpaceProjectRows.status(listOf("a"), setOf("a"), emptySet()))

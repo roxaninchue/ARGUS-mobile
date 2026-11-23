@@ -104,8 +104,8 @@ fun ModelChip(modifier: Modifier = Modifier, force: List<LiveModels.Member>? = n
  * thing shows a tick and a highlight.
  *
  * 0.55.8 (owner 2026-11-22): no boxes or dividers round the groups; a shared grid does the work (each maker's logo sits on
- * its models' logo column, its name on their name column). Rounder search and highlight. No swipe down: the X, Back and the
- * scrim close it. On a phone on its side the sheet splits in two: search, filters, Auto and Recent on the left, the models
+ * its models' logo column, its name on their name column). Rounder search and highlight. 0.55.12 (owner 2026-11-24): only
+ * the X closes it (Back too); never a swipe, a drag or a tap on the scrim (docs/UI-RULES.md). On a phone on its side the sheet splits in two: search, filters, Auto and Recent on the left, the models
  * on the right, so the list gets the full height.
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)

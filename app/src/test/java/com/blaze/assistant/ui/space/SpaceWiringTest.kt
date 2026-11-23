@@ -341,9 +341,9 @@ class SpaceWiringTest {
         }
     }
 
-    @Test fun theVersionIs05511() {
+    @Test fun theVersionIs05512() {
         val g = listOf(File("build.gradle.kts"), File("app/build.gradle.kts")).first { it.isFile && it.readText().contains("versionCode") }.readText()
-        assertTrue("versionCode = 220" in g)
-        assertTrue("versionName = \"0.55.11\"" in g)
+        assertTrue("versionCode = 221" in g)
+        assertTrue("versionName = \"0.55.12\"" in g)
     }
 }

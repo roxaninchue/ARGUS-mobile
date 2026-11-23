@@ -496,6 +496,20 @@ object IntroClip {
     /** The clip's sound, kept (a designed sting with a fade) at this volume while the ringer is on. */
     const val VOLUME = 0.7f
 
+    /**
+     * 0.55.12 (owner 2026-11-24: no letterbox, the clip must fill the screen). The clip is 4:3, so a tall phone can't be
+     * filled by cropping without cutting "ARGUS" (its logo spans 13–93 % of the width, 7.5–89 % of the height). Instead
+     * the screen around it is the clip's own deep blue ([GROUND], a radial glow measured from its border pixels, never
+     * black) and each edge of the clip fades into it ([FEATHER_X] / [FEATHER_Y] of its size, outside the logo), so the
+     * clip and the screen read as one picture.
+     */
+    val GROUND = longArrayOf(0xFF07102E, 0xFF030718, 0xFF010208)
+    val GROUND_STOPS = floatArrayOf(0f, 0.4f, 1f)
+    /** The ground's glow radius, as a share of the screen's longer side. */
+    const val GROUND_RADIUS = 0.6f
+    const val FEATHER_X = 0.06f
+    const val FEATHER_Y = 0.07f
+
     enum class Mode { CLIP, STILL }
 
     fun mode(motionOn: Boolean, failed: Boolean): Mode = if (motionOn && !failed) Mode.CLIP else Mode.STILL

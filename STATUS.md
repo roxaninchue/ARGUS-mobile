@@ -17,10 +17,11 @@
 - **0.55.7 (versionCode 216)**: grouped model list (CHANGELOG 0.55.7), built on Jake's word 2026-11-22 22:22 CAT. CI run 45066197518 (commit `a4cbe9d9`) green at 22:47 CAT; artifact argus-debug-signed-a4cbe9d9 (49.5 MB). Phone check: pending.
 - **Bug, high priority: switching accounts keeps the old account's data** (found 2026-11-22 23:31 CAT). Sign-out only clears the token; chats, memory and settings stay, and the sign-in sync can push the old skills and MCP list into the new account. Jake chose one space per account. The plan is in docs/overhaul/account-spaces-plan.md (**not started**; it has open questions for Jake).
 - **0.55.8 (versionCode 217)**: model picker polish (CHANGELOG 0.55.8), from `feat/model-picker-polish`, built on Jake's word 2026-11-22 23:44 CAT; CI result in its history entry.
+- **0.55.12 / vc 221 (2026-11-24, branch `fix/model-sheet-scroll-intro`, merge request)**: model selector closes only with its X (Back too), never by swipe / drag / scrim; its list scrolls on slow drags (no touch reaches the sheet's own drag); the intro clip fills the screen on its own deep blue with feathered edges, no black bars; docs/UI-RULES.md. CHANGELOG 0.55.12. Phone check after: open the model picker and drag down from the title, the filter chips, the list top and the very bottom edge (nothing moves), tap the dimmed area above (stays open), slow-scroll the list from near the bottom (scrolls), tap a row (picks), X and Back (close); a fresh install's intro (no black bars, ARGUS not cut, no seam).
 - **0.55.11 / vc 220 (2026-11-24, branch `music-youtube-only`, MR !76, CI green on 25427bcf (run 45284656462), brought into main on Finn's approval)**: Music is YouTube only (Jamendo and Internet Archive audio removed; Video keeps its films), song shelves on Home / Search / empty Library from a disk copy refreshed in the background (MusicFeed), YouTube Music song data (YtMusic), clean titles (SongTitle); CHANGELOG 0.55.11. Phone check after: open Music with no library (Home, Search, Library all show songs), airplane mode after one load (shelves stay), tap a shelf song (plays, next ones queue), ⋮ Download, titles without "Official Video".
 - **0.55.10 / vc 219 (2026-11-23, Finn said build)**: Stop crash guards (StopSafe), sheet status bar icons (SyncDialogBarIcons), stub-reply re-ask (CutReply.stub); CHANGELOG 0.55.10. Not compiled here; CI is the first compile. Phone check after: Stop mid-reply, open the model picker on a dark-mode phone with light ARGUS, a long tool task ending in a full answer.
 - **0.55.9 / vc 218 (2026-11-23, Finn said build)**: views redesign (CHANGELOG 0.55.9) on top of Finn's phone fixes, see CHANGELOG "Unreleased" (reasoning to Thoughts, chat scroll / swipe-to-quote, sheet height, status bar in Music / Video / Browser, landscape rail insets, auto fit). Not compiled here; CI is the first compile when Finn says build. Phone check after: a long tool task (only short status lines in the chat, the rest under Thoughts), swipe up mid-stream, open the model picker, Music in light mode, Living in landscape with 3-button nav.
-- Version pins: `app/build.gradle.kts` versionName "0.55.8" / versionCode 217; `SpaceWiringTest.theVersionIs0558` pins the same.
+- Version pins: `app/build.gradle.kts` versionName "0.55.12" / versionCode 221; `SpaceWiringTest.theVersionIs05512` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
 - **0.9.41 deployed 2026-11-22 21:22 CAT:** health v2 live model list; `providerProven` lists every confirmed-free
@@ -43,6 +44,8 @@
 ## Standing rules (Finn)
 
 - **No APK builds until Finn says so** (2026-11-22 21:26 CAT). Every commit message ends with `[skip ci]` until then.
+- UI rules (2026-11-24): the model selector closes only with its X (Back too), never by swipe / drag / scrim; lists in sheets
+  scroll on slow drags; the intro animation fills the screen with no letterbox. Details and tests: docs/UI-RULES.md.
 - No trigger words and no text routing: the model decides (docs/MODEL-FIRST.md, `ModelFirstTest`).
 - No local model (no user RAM) and no keep-warm ping.
 - Add nothing inside `Agent.runLoop`: it is at the JVM's 64 KB per-method limit.

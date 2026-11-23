@@ -1,6 +1,7 @@
 package com.blaze.assistant.ui.argus.kit
 
 import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.verticalScroll
 
@@ -84,9 +85,15 @@ fun ArgusSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = Argus.colors
-    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // dragToClose = false (owner 2026-11-24, model picker): only the X closes the sheet (Back too). A swipe, a list pulled
+    // past its top or a tap on the scrim never hides it: the state vetoes Hidden unless [close] asked for it.
+    val closing = androidx.compose.runtime.remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+    val confirm = androidx.compose.runtime.remember(dragToClose) {
+        { v: androidx.compose.material3.SheetValue -> dragToClose || v != androidx.compose.material3.SheetValue.Hidden || closing.get() }
+    }
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = confirm)
     val sheetScope = androidx.compose.runtime.rememberCoroutineScope()
-    val close: () -> Unit = { sheetScope.launch { state.hide() }.invokeOnCompletion { onDismiss() } }
+    val close: () -> Unit = { closing.set(true); sheetScope.launch { state.hide() }.invokeOnCompletion { onDismiss() } }
     // Landscape overhaul: never taller than the window under the status bar (a phone on its side is ~360 dp), and the
     // body scrolls between the title and the pinned action row. [bodyMax] is the cap a sheet was designed with upright;
     // [scroll] = false for a body that scrolls itself (a list with a sticky search above it).
@@ -103,16 +110,21 @@ fun ArgusSheet(
         scrimColor = c.scrim,
         tonalElevation = 0.dp,
         sheetMaxWidth = maxWidth,
-        // dragToClose = false (owner 2026-11-22, model picker): the sheet has its own close X, so no handle and no drag;
-        // the scrim, Back and the X still close it.
-        dragHandle = {
-            if (dragToClose) Box(Modifier.padding(top = 8.dp, bottom = 6.dp).size(KitSpec.Sheet.HANDLE_W.dp, KitSpec.Sheet.HANDLE_H.dp)
+        // dragToClose = false (owner 2026-11-22 / 2026-11-24, model picker): the sheet has its own close X, so no handle and
+        // no drag. No handle strip and no inset band either: every pixel of the sheet sits under [holdSheet], so no touch
+        // reaches the sheet's own drag (the 12 dp top strip and the bottom inset band used to, and moved / hid the sheet).
+        dragHandle = if (dragToClose) { {
+            Box(Modifier.padding(top = 8.dp, bottom = 6.dp).size(KitSpec.Sheet.HANDLE_W.dp, KitSpec.Sheet.HANDLE_H.dp)
                 .clip(RoundedCornerShape(3.dp)).background(c.line2))
-            else Box(Modifier.size(12.dp))
-        },
+        } } else null,
+        contentWindowInsets = { if (dragToClose) androidx.compose.material3.BottomSheetDefaults.windowInsets else androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0) },
     ) { androidx.compose.runtime.CompositionLocalProvider(LocalSheetClose provides close) {
         com.blaze.assistant.ui.SyncDialogBarIcons(c.dark)   // 0.55.10: the sheet's own window keeps readable status bar icons
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().then(if (dragToClose) Modifier else Modifier.holdSheet())) {
+        // Opening / closing: the sheet's drag would take a touch at once (Material's startDragImmediately while it animates)
+        val moving = state.currentValue != state.targetValue
+        val held = if (dragToClose) Modifier.navigationBarsPadding()
+            else Modifier.holdSheet(moving).windowInsetsPadding(androidx.compose.material3.BottomSheetDefaults.windowInsets).padding(top = 12.dp)
+        Column(Modifier.fillMaxWidth().then(held)) {
             if (!title.isNullOrBlank()) Text(tr(title), style = ArgusType.sheetTitle, color = c.ink,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).semantics { heading() })
             Column(Modifier.fillMaxWidth().weight(1f, fill = false).then(if (bodyCap != null) Modifier.heightIn(max = bodyCap) else Modifier)
@@ -303,22 +315,23 @@ fun CloudChip(
 }
 
 /**
- * Keeps a sheet where it is without stealing scrolls (Finn 2026-11-23: in the model picker a slow scroll sometimes
- * didn't register).
+ * Keeps a sheet where it is without stealing scrolls (Finn 2026-11-23 / 2026-11-24, model picker: slow scrolls sometimes
+ * didn't register, and a drag could slide the sheet down or close it).
  *
- * The old version consumed every pointer move under the sheet. Compose's drag detectors (the list's verticalScroll and
- * the sheet's own drag alike) give up on a gesture when they see a move consumed before they pass touch slop, so a
- * slow drag, whose first moves are under slop, lost the list for the whole touch; only a quick flick that crossed slop
- * in one move got through.
+ * Compose's drag detectors give up on a gesture when they see a move consumed before they pass touch slop, so nothing
+ * here consumes raw moves (that made every slow drag lose the list). Instead the sheet is held the way nested scrollables
+ * share a touch: a vertical [draggable] that does nothing sits between the content and the sheet. The deepest detector
+ * that passes slop wins, so a list under the finger takes its scroll, and a drag on the header or filters is taken here
+ * before the sheet's own drag can move it. Scrolls a list runs into its ends are kept, so nothing reaches the sheet's
+ * drag that way either.
  *
- * Now the sheet is held the way nested scrollables share a touch: a vertical [draggable] that does nothing sits between
- * the content and the sheet. The deepest detector that passes slop wins, so a list under the finger takes its scroll,
- * and a drag on the header or filters is taken here before the sheet's own drag can move it. Scrolls a list runs into
- * its ends are kept, so nothing reaches the sheet's drag that way either. Used by [ArgusSheet] when dragToClose is false.
+ * [moving]: while the sheet opens or closes, Material's drag starts on touch-down without waiting for slop; the hold
+ * does the same then, so that drag is cancelled on the first move and the sheet never follows the finger.
+ * Used by [ArgusSheet] when dragToClose is false; it must wrap every pixel of the sheet (no handle, no inset band outside).
  */
-private fun Modifier.holdSheet(): Modifier = this
+private fun Modifier.holdSheet(moving: Boolean): Modifier = this
     .nestedScroll(SheetHold)
-    .draggable(NoDrag, androidx.compose.foundation.gestures.Orientation.Vertical)
+    .draggable(NoDrag, androidx.compose.foundation.gestures.Orientation.Vertical, startDragImmediately = moving)
 
 /** One shared do-nothing state: a new one per recomposition would reset the drag mid-touch. */
 private val NoDrag = androidx.compose.foundation.gestures.DraggableState { }

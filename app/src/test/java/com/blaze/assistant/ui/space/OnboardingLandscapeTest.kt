@@ -32,9 +32,12 @@ class OnboardingLandscapeTest {
         assertTrue("no pop-out box, no typing", "BackHandler" !in b && "var open" !in b && "TextField" !in b)
     }
 
-    @Test fun theClipFillsAnyWindowOnBlack() {
+    /** Owner 2026-11-24: no letterbox. The clip sits on its own deep blue (never black bars) and its edges fade into it. */
+    @Test fun theClipFillsTheScreenWithNoLetterbox() {
         assertTrue("IntroClip.size(maxWidth.value, maxHeight.value)" in intro)
-        assertTrue("clipToBounds()" in intro && "Color.Black" in intro)
+        assertTrue("clipToBounds()" in intro)
+        assertTrue("the ground is the clip's blue", "fillMaxSize().introGround()" in intro && "background(Color.Black)" !in intro)
+        assertTrue("edges fade into the ground", ".graphicsLayer { this.alpha = alpha }.introFeather()" in intro && "BlendMode.DstIn" in intro)
         assertTrue("no controls: a TextureView, not a PlayerView", "TextureView(c)" in intro && "PlayerView" !in intro)
     }
 

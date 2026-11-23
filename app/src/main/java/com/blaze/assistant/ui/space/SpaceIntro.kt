@@ -8,7 +8,6 @@ import android.net.Uri
 import android.view.TextureView
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -57,8 +61,9 @@ import com.blaze.assistant.ui.MotionTokens
 import kotlinx.coroutines.delay
 
 /**
- * Owner 2026-11-18: onboarding opens with the ARGUS logo clip (res/raw/argus_intro.mp4) full screen on black, with no
- * controls and the system bars hidden. A tap anywhere skips it; when it ends onboarding moves on by itself. With the
+ * Owner 2026-11-18: onboarding opens with the ARGUS logo clip (res/raw/argus_intro.mp4) full screen, with no controls
+ * and the system bars hidden. 0.55.12 (owner 2026-11-24): edge to edge with no letterbox: the screen around the clip is
+ * the clip's own deep blue ([introGround]) and the clip's edges fade into it ([introFeather]), never black bars. A tap anywhere skips it; when it ends onboarding moves on by itself. With the
  * phone's "Remove animations" on, or when the clip can't play (no decoder, an error, nothing on screen after
  * [IntroClip.START_TIMEOUT_MS]), the still ARGUS logo and the tagline show for [IntroClip.STILL_MS] instead. Its sound
  * plays at [IntroClip.VOLUME], muted on silent / vibrate or while other audio plays ([IntroClip.volume]).
@@ -72,7 +77,7 @@ fun IntroStep(onDone: () -> Unit) {
     val mode = IntroClip.mode(MotionTokens.enabled, failed)
     LaunchedEffect(Unit) { delay(IntroClip.MAX_MS); finish() }   // whatever happens, onboarding moves on
     HideSystemBars()
-    Box(Modifier.fillMaxSize().background(Color.Black).testTag(SpaceTags.ONBOARDING_INTRO)
+    Box(Modifier.fillMaxSize().introGround().testTag(SpaceTags.ONBOARDING_INTRO)
         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = tr("Skip"), role = Role.Button) { finish() }
         .semantics { contentDescription = BrandName.UPPER },
         contentAlignment = Alignment.Center) {
@@ -88,7 +93,10 @@ fun IntroStep(onDone: () -> Unit) {
     }
 }
 
-/** The clip on a TextureView (so it can be sized past the screen and cut), fitted and gently zoomed by [IntroClip.size]. */
+/**
+ * The clip on a TextureView (so it can be sized past the screen and cut), fitted and gently zoomed by [IntroClip.size],
+ * its edges fading into the ground ([introFeather]).
+ */
 @Composable
 private fun IntroVideo(onEnd: () -> Unit, onFail: () -> Unit) {
     val ctx = LocalContext.current
@@ -121,9 +129,25 @@ private fun IntroVideo(onEnd: () -> Unit, onFail: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
         val (vw, vh) = IntroClip.size(maxWidth.value, maxHeight.value)
         AndroidView(factory = { c -> TextureView(c).also { player.setVideoTextureView(it) } },
-            modifier = Modifier.requiredSize(vw.dp, vh.dp).graphicsLayer { this.alpha = alpha })
+            modifier = Modifier.requiredSize(vw.dp, vh.dp).graphicsLayer { this.alpha = alpha }.introFeather())
     }
 }
+
+/** The screen behind and around the clip: [IntroClip.GROUND], a deep blue glow from the centre to near-black corners. */
+private fun Modifier.introGround(): Modifier = drawBehind {
+    val stops = IntroClip.GROUND_STOPS.indices.map { IntroClip.GROUND_STOPS[it] to Color(IntroClip.GROUND[it]) }.toTypedArray()
+    drawRect(Brush.radialGradient(*stops, center = center, radius = size.maxDimension * IntroClip.GROUND_RADIUS))
+}
+
+/** Fades the clip's four edges out (DstIn masks on an offscreen layer), so no seam shows against [introGround]. */
+private fun Modifier.introFeather(): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fy = IntroClip.FEATHER_Y; val fx = IntroClip.FEATHER_X
+        drawRect(Brush.verticalGradient(0f to Color.Transparent, fy to Color.Black, (1f - fy) to Color.Black, 1f to Color.Transparent), blendMode = BlendMode.DstIn)
+        drawRect(Brush.horizontalGradient(0f to Color.Transparent, fx to Color.Black, (1f - fx) to Color.Black, 1f to Color.Transparent), blendMode = BlendMode.DstIn)
+    }
 
 private fun ringerNormal(ctx: Context): Boolean = try {
     ctx.getSystemService(AudioManager::class.java)?.ringerMode == AudioManager.RINGER_MODE_NORMAL

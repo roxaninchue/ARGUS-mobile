@@ -10,6 +10,7 @@ Note: every `.md` file under this folder is bundled into the app's built-in help
 | File | What it is |
 |---|---|
 | [PC-REPLACEMENT.md](PC-REPLACEMENT.md) | Owner goal (2026-11-23): Argus as a PC replacement. Argus Desk, keyboard and mouse, desk apps, phases, Phase 0 removals |
+| [UI-RULES.md](UI-RULES.md) | Owner UI rules (2026-11-24): the model sheet closes only with its X, lists scroll on slow drags, the intro fills the screen; each with its test |
 | [MODEL-FIRST.md](MODEL-FIRST.md) | Owner rule (2026-11-16): build around the model, no keyword routing; guarded by `ModelFirstTest` |
 | [LEAN-HARNESS.md](LEAN-HARNESS.md) | How a chat turn works since 0.55.0: short cached prompt, core tools, `find_tools` / `load_skill` |
 | [SKILL-SHELF.md](SKILL-SHELF.md) | Skills and specialists reach the model as one-line shelves; the model picks |
