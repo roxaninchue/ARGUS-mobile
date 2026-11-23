@@ -31,6 +31,8 @@
 - The `gateway/` folder in this project is an old 0.3.1 copy; it is not the live code.
 
 **Plans**
+- **PC replacement (Finn, 2026-11-23): the current direction.** Plan, phases and the Phase 0 removals in
+  [docs/PC-REPLACEMENT.md](docs/PC-REPLACEMENT.md). Phase 0 = slim-down (one removal per merge request) + gated GitLab CI.
 - Living UI is at **0.2.4** (`LivingSpec.VERSION`). The 0.3.0 plan is docs/overhaul/living-ui-0.3.0-plan.md:
   proposed 2026-11-22, **not started**.
 - The overhaul plan and its decisions D1–D12 in overhaul.md are **not approved** as of 2026-11-22 (the file still

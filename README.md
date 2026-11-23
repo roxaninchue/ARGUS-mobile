@@ -6,6 +6,12 @@ package name stays `com.blaze.assistant` for install and update identity; everyt
 Current version on `main`: **0.55.6 (versionCode 215)**, built green by CI but held back (not released). Latest
 green build for the phone check: **0.55.5 (versionCode 214)**. See [STATUS.md](STATUS.md) for what is built, released and pending.
 
+## Where it is going
+
+Argus is becoming a replacement for a PC: a native desktop on a connected monitor or TV (Argus Desk), keyboard and
+mouse first, desktop-class apps, and heavy work offloaded to a PC or cloud box. The plan, phases and the Phase 0
+slim-down decisions are in [docs/PC-REPLACEMENT.md](docs/PC-REPLACEMENT.md).
+
 ## What the app does today
 
 - **Chat with a lean agent loop.** Each turn sends a short, cache-friendly system prompt with a small set of core tools
