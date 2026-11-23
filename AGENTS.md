@@ -1,7 +1,10 @@
 # For agents working in this repo
 
 Start with **STATUS.md** ("Current state" and "Standing rules") and **HANDOFF.md** (how to build, test, check CI and
-commit). Every commit message ends with `[skip ci]` until Finn says build.
+commit). **Since 2026-11-23 (Finn): every change goes on its own branch, then a merge request into `main`; the GitLab
+pipeline (`.gitlab-ci.yml`: checks, compile, `:app:testDebugUnitTest`) must be green before it merges. No `[skip ci]`
+on those branches.** The merge commit into `main` carries `[skip ci]` so the GitHub mirror builds no APK until Finn
+says build. Direction: docs/PC-REPLACEMENT.md.
 
 Read **docs/MODEL-FIRST.md** before changing anything the model sees or anything that routes a user's message.
 Build the system around the model. No keyword routers that guess intent, no shouting or contradictory prompt rules,

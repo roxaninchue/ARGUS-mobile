@@ -12,7 +12,7 @@ Every build push costs a 20–25 minute CI round, so the cheapest build is the o
 |---|---|
 | Source of truth | GitLab `blazeinchue/argus-mobile` (project id 87806466), branch `main` |
 | CI | GitHub Actions on the mirror `roxaninchue/ARGUS-mobile` (GitLab mirrors `main` within minutes) |
-| GitLab CI | Not used for app builds. `.gitlab-ci.yml` is left alone |
+| GitLab CI | **The merge gate since 2026-11-23.** `.gitlab-ci.yml`: `checks` (node: rename guard, do-not-port, design JS) and `build-test` (`:app:compileDebugKotlin :app:compileDebugUnitTestKotlin`, then `:app:testDebugUnitTest`) on merge requests, on other branches before their MR, and on `main`. A branch's first push starts nothing; opening its MR does. Merge only when green (project setting `only_allow_merge_if_pipeline_succeeds`). Uses GitLab shared-runner minutes (free plan: 400 a month for the account) |
 | Commits | GitLab commits API (`POST /api/v4/projects/87806466/repository/commits`); see HANDOFF.md |
 
 Never push or merge on GitHub. Never change `applicationId`.

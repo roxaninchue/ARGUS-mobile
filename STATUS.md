@@ -47,7 +47,9 @@
 - Add nothing inside `Agent.runLoop`: it is at the JVM's 64 KB per-method limit.
 - Before cutting a behaviour, add a parity test that proves what must stay. For every key or behaviour removed, grep
   the tests (they read the source as text) and update them in the same commit.
-- Commit straight to `main`; work in progress carries `[skip ci]`.
+- **Since 2026-11-23 (Finn): branch -> merge request -> GitLab pipeline green -> merge into `main`.** No `[skip ci]` on
+  those branches; the merge commit carries `[skip ci]` so the GitHub mirror makes no APK. (Before: commit straight to
+  `main` with `[skip ci]`.) One Phase 0 removal per merge request (docs/PC-REPLACEMENT.md).
 - Versioning: patch +1 per release; after a .9 patch the next release rolls to the next minor (0.24.9 → 0.25.0).
 - Before a build commit, update: CHANGELOG.md, this file, overhaul.md (handoff log), the "New in" lines of the
   in-app about doc (about.md in the app's docs folder), the version pin in `SpaceWiringTest`, the rename-guard baseline
