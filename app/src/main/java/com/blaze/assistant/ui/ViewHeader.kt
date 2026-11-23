@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -143,7 +144,7 @@ fun OrbArt(modifier: Modifier = Modifier, accent: Color = spaceLook().accent) {
         drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(listOf(Color(0xFFBFE0FF), accent, Color(0xFF07112B)),
             androidx.compose.ui.geometry.Offset(c.x - r * 0.45f, c.y - r * 0.5f), r * 1.7f), r, c)
         drawCircle(accent.copy(alpha = 0.8f), r, c, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
-        androidx.compose.ui.graphics.drawscope.rotate(-18f, c) {
+        rotate(-18f, c) {
             drawOval(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(accent.copy(alpha = 0.1f), Color(0xFFBFE0FF), accent.copy(alpha = 0.2f))),
                 topLeft = androidx.compose.ui.geometry.Offset(c.x - r * 1.55f, c.y - r * 0.38f), size = androidx.compose.ui.geometry.Size(r * 3.1f, r * 0.76f),
                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx()))
