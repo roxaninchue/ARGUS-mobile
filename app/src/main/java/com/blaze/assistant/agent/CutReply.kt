@@ -37,8 +37,30 @@ object CutReply {
         val t = text.trimEnd()
         if (t.isEmpty() || Regex("```").findAll(t).count() % 2 == 1 || t.endsWith("```")) return null
         val last = t.last()
-        return if (last in "([{,:\u2013\u2014" || t.endsWith(" -")) STOPPED else null
+        return if (last in "([{,:\u2013\u2014" || t.endsWith(" -") || endsOnOpener(t)) STOPPED else null
     }
+
+    /**
+     * 0.55.10 (Finn, 23 Nov: after "Thought for 3m 1s" the whole reply was "So", shown as a finished answer): the last
+     * word is one that only ever starts more ("So", "and", "Let me", "the"; a sign-off word like "now" or "okay" is not one) and nothing closes the sentence after it.
+     */
+    private val openers = setOf("so", "and", "but", "or", "because", "if", "the", "a", "an", "to", "of", "let", "i", "i'll", "i'm", "we'll", "here's")
+    fun endsOnOpener(text: String): Boolean {
+        val t = text.trimEnd()
+        if (t.isEmpty() || !t.last().isLetter()) return false
+        val word = t.takeLastWhile { !it.isWhitespace() }.lowercase().replace('\u2019', '\'')
+        return word in openers
+    }
+
+    /** A reply that is only a few words and stops on an opener ("So", "Okay so", "Let me"): no answer was given yet. */
+    fun stub(text: String): Boolean {
+        val t = text.trim()
+        return t.isNotEmpty() && t.split(Regex("\\s+")).size <= 4 && endsOnOpener(t)
+    }
+
+    /** The one follow-up call after a [stub] reply. */
+    const val STUB_NUDGE = "[${com.blaze.assistant.BrandName.NAME}] Your last reply stopped after a few words, before any answer. Write the full answer to the user now, " +
+        "from the tool results above. Don't call a tool unless the answer truly needs one."
 
     /** The shown text with the cut line under it (unchanged when [reason] is null). */
     fun mark(text: String, reason: String?): String = when (reason) {

@@ -1674,7 +1674,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         // 0.53.7: per-turn flags live on the Session (reset at turn start), not as runLoop locals: every local that lives
         // across a suspension point is saved and restored at each one, and runLoop hit the JVM's 64 KB method limit.
         private var claimNudged = false; private var proofNudged = false; private var promiseNudged = false
-        private var emptyNudged = false; private var echoNudged = false; private var leakNudged = false
+        private var emptyNudged = false; private var echoNudged = false; private var leakNudged = false; private var stubNudged = false
         private var refusalNudged = false; private var credGuarded = false; private var ledgerAsks = 0
         /** 0.53.6: tool calls not run this turn (cut off / unreadable), by tool; two of the same tool end the turn (cutStopped). */
         private val cutFails = HashMap<String, Int>()
@@ -3487,7 +3487,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 var nudgeCount = 0
                 var rewroteClaim = false
                 // One re-ask each per turn (promiseNudged 0.49.0, ledgerAsks = owed-reply ledger, credGuarded = CredAsk 0.45.19); Session fields (0.53.7).
-                claimNudged = false; proofNudged = false; promiseNudged = false; emptyNudged = false; echoNudged = false
+                claimNudged = false; proofNudged = false; promiseNudged = false; emptyNudged = false; echoNudged = false; stubNudged = false
                 leakNudged = false; refusalNudged = false; credGuarded = false; ledgerAsks = 0
                 cutFails.clear(); cutStopped = false; cutCalls = emptyMap()
                 var lastOkStep = ""
@@ -4133,6 +4133,16 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             if (g != textOut) { CallState.current().errors.add("schedule answer didn't match the phone's schedule; rebuilt"); textOut = g; reply.put("content", g) }
                         }
                     } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("ScheduleTruth", e) }
+                    // 0.55.10 (Finn, 23 Nov: a reply that was only "So" after 3 minutes of thinking): a final reply of a few words that
+                    // stops on an opener is no answer. Ask once more for the full answer; if that is spent, CutReply marks it cut.
+                    if ((calls == null || calls.length() == 0) && !stubNudged && nudgesLeft > 0 && step < maxSteps - 2 &&
+                        CutReply.stub(RapidMessages.display(ReplyParts.split(textOut, final = true).text, final = true))) {
+                        stubNudged = true; nudgesLeft--
+                        if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
+                        add(Role.STEP, "Asking for the rest of the answer")
+                        history.put(JSONObject().put("role", "user").put("content", CutReply.STUB_NUDGE))
+                        continue
+                    }
                     // v0.26.2: an empty final answer (reasoning only, or only tags) is never shown as "Done.": a specific line
                     // when the user asked for an action and a tool succeeded; else ask the model once more, then fail plainly.
                     if ((calls == null || calls.length() == 0) && RapidMessages.display(ReplyParts.split(textOut, final = true).text).isBlank()) {

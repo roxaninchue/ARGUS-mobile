@@ -74,4 +74,19 @@ class CutReplyTest {
         assertNull(CutReply.unfinished("```\nfoo(\n"))
         assertNull(CutReply.unfinished(""))
     }
+
+    @Test fun aReplyOfJustSoIsNoAnswer() {
+        // 0.55.10 (Finn, 23 Nov): the whole reply was "So" after 3 minutes of thinking
+        assertTrue(CutReply.stub("So"))
+        assertTrue(CutReply.stub("Okay so"))
+        assertTrue(CutReply.stub("Let me"))
+        assertEquals(CutReply.STOPPED, CutReply.unfinished("The deck is ready and"))
+        assertFalse(CutReply.stub("Done."))
+        assertFalse(CutReply.stub("Want it now"))
+        assertFalse(CutReply.stub("Sounds good, okay"))
+        assertFalse(CutReply.stub("I fixed the typo in the card, and the deck now has 48 cards so"))
+        assertNull(CutReply.unfinished("Want me to send it now"))
+        assertTrue(java.io.File(listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory },
+            "com/blaze/assistant/agent/Agent.kt").readText().contains("CutReply.STUB_NUDGE"))
+    }
 }
