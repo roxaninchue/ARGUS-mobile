@@ -6,6 +6,7 @@ import android.content.Context
 import com.blaze.assistant.phone.BlazeAccessibilityService
 import com.blaze.assistant.phone.PhoneTools
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONArray
 import org.json.JSONObject
@@ -237,7 +238,32 @@ $skillRule"""
             }
             "skill" -> upsertSkill(o.optString("name"), o.optString("description"), o.optString("when"), o.optString("steps"), o.optJSONArray("replay"))
             "curator" -> ChatCurator.applyHeld(o)
+            // Through write_skill, so the skill syncs like one the main agent saved.
+            "pack" -> kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch { try { SkillPacks.run("write_skill", o) } catch (_: Throwable) { } }
         }
+    }
+
+    /**
+     * Finn 23 Nov 2026: the skill keeper's run ([SkillReview]) on the background lane, saving to the skill shelf like
+     * write_skill. With "Ask before saving" on, the skill waits in the pending list. Returns the chip for the reply, or null.
+     */
+    suspend fun skillReview(digest: String): String? {
+        if (!Settings.autoLearn) return null
+        val shelf = (try { SkillPacks.all().map { "${it.dir.name}: ${it.description.take(100)}" } } catch (_: Throwable) { emptyList() }) +
+            _skills.value.map { "${it.name}: ${it.description.take(100)}" }
+        val held = Settings.learnApproval
+        val done = SkillReview.run(digest, shelf,
+            call = { m, t -> try { LlmClient.complete(m, t, null, null, LlmClient.Lane.BACKGROUND) }
+                catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null } },
+            read = { n -> try { SkillPacks.use(n) } catch (_: Throwable) { "No skill \u201c$n\u201d." } },
+            save = { s ->
+                if (held) { queue(listOf(Pending(0, "pack", "Skill: ${s.name} \u2014 ${s.description}",
+                    JSONObject().put("name", s.name).put("description", s.description).put("instructions", s.instructions)))); "Held for the user's OK." }
+                else SkillPacks.run("write_skill", JSONObject().put("name", s.name).put("description", s.description).put("instructions", s.instructions))
+            })
+        val ok = done.filter { (_, r) -> r.startsWith("Skill ") || r.startsWith("Held") }.map { it.first.name }
+        if (ok.isEmpty()) return null
+        return if (held) "Skill to review in Settings: ${ok.joinToString()}" else "Skill saved: ${ok.joinToString()}"
     }
 
     /** Owner 16 Nov 2026: holds changes from the whole-chat review (ChatCurator) for the user's OK; ids are given here. */

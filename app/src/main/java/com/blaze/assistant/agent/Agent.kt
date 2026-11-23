@@ -1634,6 +1634,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         var titleSource = ""
         /** User turns when the title was last evaluated. */
         var titleTurns = 0
+        /** Finn 23 Nov 2026: the last message the skill keeper (SkillReview) has read up to; 0 = not this run. */
+        var skillReviewedTo = 0L
         var pinned = false
         /** One-line summary written with the title (used by search_past_chats). */
         var summary = ""
@@ -5719,7 +5721,22 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (n > 0) scope.launch { addMeta(reply.id, "Memory updated"); persist() }
                 }
             }
-            val d = if (Mind.ready) d0.copy(memory = false) else d0
+            // Finn 23 Nov 2026, Hermes-style: skills come from the skill keeper, every SkillReview.EVERY tool calls, not from
+            // words in the message; the review below only keeps memories (when the one mind is not ready).
+            if (agentId == null) {
+                val from = msgs.indexOfFirst { it.id == skillReviewedTo }
+                val slice = if (from >= 0) msgs.drop(from + 1) else msgs.takeLast(40)
+                if (savedSkill) skillReviewedTo = reply.id
+                else if (SkillReview.due(maxOf(ChatDigest.stats(slice).tools, slice.count { it.role == Role.STEP }))) {
+                    skillReviewedTo = reply.id
+                    val digest = ChatDigest.build(slice, SkillReview.DIGEST_CHARS)
+                    io.launch {
+                        val chip = try { Learning.skillReview(digest) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+                        if (chip != null) scope.launch { addMeta(reply.id, chip); persist() }
+                    }
+                }
+            }
+            val d = (if (Mind.ready) d0.copy(memory = false) else d0).copy(skill = false)
             if (!d.reflect || (!d.memory && !d.skill)) return
             val exchange = msgs.drop(maxOf(0, lastUser - 4)).joinToString("\n") { m ->
                 when (m.role) { Role.USER -> "User: "; Role.BLAZE -> "${BrandName.NAME}: "; Role.STEP -> "  (step) "; Role.ERROR -> "  (error) " } + m.text.take(1500) }
