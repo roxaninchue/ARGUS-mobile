@@ -750,9 +750,10 @@ private fun GalleryViewer(list: List<Entry>, start: Int, autoplay: String, origi
 /** Pinch to zoom, drag when zoomed, double-tap to zoom in/out. At 1× a sideways drag goes to the pager (next item). */
 @Composable
 private fun ZoomImage(e: Entry, current: Boolean, onTap: () -> Unit) {
+    var unreadable by remember(e.id) { mutableStateOf(false) }
     val full by produceState<ImageBitmap?>(GalleryRepo.cachedThumb(e, 256)?.asImageBitmap(), e.id) {
         val big = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { GalleryRepo.decode(e, 2048) }
-        if (big != null) value = big.asImageBitmap()
+        if (big != null) value = big.asImageBitmap() else if (value == null) unreadable = true
     }
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -787,7 +788,7 @@ private fun ZoomImage(e: Entry, current: Boolean, onTap: () -> Unit) {
         val b = full
         if (b != null) Image(b, contentDescription = e.title, contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale; translationX = offset.x; translationY = offset.y })
-        else Label(tr("Loading picture\u2026"), color = Color(0xCCFFFFFF), size = 11.sp)
+        else Label(tr(if (unreadable) "Couldn't open this picture" else "Loading picture\u2026"), color = Color(0xCCFFFFFF), size = 11.sp)
     }
 }
 

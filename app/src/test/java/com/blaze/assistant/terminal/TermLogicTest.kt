@@ -4,6 +4,11 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import java.io.File
+import java.util.Base64
 
 class TermLogicTest {
     @Test fun termuxKeyRows() {
@@ -68,5 +73,70 @@ class TermLogicTest {
         assertEquals("not built for this CPU", "alpine", TermLogic.setupDistro("fedora", listOf("alpine", "debian")))
         assertEquals("alpine", TermLogic.setupDistro("", listOf("alpine", "debian")))
         for (d in TermLogic.DISTROS) assertTrue("${d.id} has a logo", DistroLogos.of(d.id) != null)
+    }
+}
+
+/** fix/chat-picture-load: a picture fetched with http_request saves as a picture the chat and the phone can open. */
+class HttpBodyTest {
+    // A real 1x1 PNG, including bytes that are not valid UTF-8 (0x89, 0x9C, ...), which reading as text destroyed.
+    private val png = Base64.getDecoder().decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+    private val b64 = Base64.getEncoder().encodeToString(png)
+
+    @Test fun binaryPictureIsKeptByteForByte() {
+        val s = HttpBody.toSave("~/shot.png", png, "image/png")
+        assertArrayEquals(png, s.bytes)
+        assertEquals("", s.note)
+        // The old path (read as UTF-8 text, written back) did not survive the round trip.
+        assertFalse(png.contentEquals(String(png, Charsets.UTF_8).toByteArray()))
+    }
+
+    @Test fun pictureInsideJsonIsSavedAsThePicture() {
+        val raw = """{"success":true,"image":"$b64","mime_type":"image/png","width":1,"height":1}"""
+        val s = HttpBody.toSave("~/argus-cloud-screenshot.png", raw.toByteArray(), "application/json")
+        assertArrayEquals(png, s.bytes)
+        assertTrue(s.note.contains("picture"))
+    }
+
+    @Test fun dataUrlIsDecodedToo() {
+        val raw = """{"image":"data:image/png;base64,$b64"}"""
+        assertArrayEquals(png, HttpBody.toSave("x.png", raw.toByteArray(), "application/json").bytes)
+    }
+
+    @Test fun jsonWithoutAPictureWarnsInsteadOfPretending() {
+        val raw = """{"success":true,"image":"/api/storage/ws/2026-11-23_abc.png"}"""
+        val s = HttpBody.toSave("shot.png", raw.toByteArray(), "application/json")
+        assertArrayEquals(raw.toByteArray(), s.bytes)
+        assertTrue(s.note.contains("not a picture"))
+    }
+
+    @Test fun nonPictureNamesAreSavedAsIs() {
+        val raw = """{"image":"$b64"}""".toByteArray()
+        val s = HttpBody.toSave("reply.json", raw, "application/json")
+        assertArrayEquals(raw, s.bytes)
+        assertEquals("", s.note)
+    }
+
+    @Test fun binaryBodiesAreNotDumpedIntoTheChat() {
+        assertNotNull(HttpBody.standIn(png, "image/png"))
+        assertNotNull(HttpBody.standIn(png, ""))
+        assertNull(HttpBody.standIn("""{"ok":true}""".toByteArray(), "application/json; charset=utf-8"))
+        assertNull(HttpBody.standIn("hello".toByteArray(), "text/plain"))
+    }
+
+    @Test fun recognisesCommonPictureFormats() {
+        assertTrue(HttpBody.looksLikeImage(png))
+        assertTrue(HttpBody.looksLikeImage(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte())))
+        assertTrue(HttpBody.looksLikeImage("RIFF\u0000\u0000\u0000\u0000WEBPVP8 ".toByteArray(Charsets.ISO_8859_1)))
+        assertFalse(HttpBody.looksLikeImage("""{"image":"x"}""".toByteArray()))
+    }
+
+    @Test fun devToolsWritesBytesNotText() {
+        val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
+        val src = root.walk().first { it.name == "DevTools.kt" }.readText()
+        val http = src.substringAfter("private fun http(").substringBefore("private fun download(")
+        assertTrue(http.contains("readBytes()"))
+        assertTrue(http.contains("HttpBody.toSave("))
+        assertFalse(http.contains("f.writeText(text)"))
     }
 }

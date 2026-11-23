@@ -225,10 +225,17 @@ object DevTools {
         }
         val code = c.responseCode
         val stream = if (code >= 400) c.errorStream else c.inputStream
-        val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
+        // fix/chat-picture-load: keep the body's bytes (a picture read as text came out broken), see HttpBody.
+        val bytes = stream?.use { it.readBytes() } ?: ByteArray(0)
         val type = c.contentType.orEmpty()
+        a.optString("save_to").takeIf { it.isNotBlank() }?.let { p ->
+            val f = resolve(p); f.parentFile?.mkdirs()
+            val saved = HttpBody.toSave(p, bytes, type); f.writeBytes(saved.bytes)
+            return "HTTP $code $type, ${saved.bytes.size} bytes saved to ${show(f)}.${saved.note}"
+        }
+        HttpBody.standIn(bytes, type)?.let { return "HTTP $code $type\n$it" }
+        val text = String(bytes, Charsets.UTF_8)
         val shown = if (type.contains("json")) try { if (text.trimStart().startsWith("[")) JSONArray(text).toString(1) else JSONObject(text).toString(1) } catch (_: Exception) { text } else text
-        a.optString("save_to").takeIf { it.isNotBlank() }?.let { p -> val f = resolve(p); f.parentFile?.mkdirs(); f.writeText(text); return "HTTP $code $type, ${text.length} chars saved to ${show(f)}." }
         return "HTTP $code $type\n" + if (shown.length > 12_000) shown.take(12_000) + "\n[cut; pass save_to to keep it all]" else shown
     }
 
@@ -312,4 +319,66 @@ object DevTools {
             JSONObject().put("path", p("string", "File in ${BrandName.NAME}'s home")).put("share", p("boolean", "Open the share sheet")), listOf("path")),
         fn("terminal_status", "Check the terminal: shell, Linux, which tools are installed (python, node, git...), free space, running jobs. Call before assuming a tool exists.", JSONObject(), emptyList()),
     )
+}
+
+/**
+ * How http_request keeps a response body (fix/chat-picture-load).
+ *
+ * The body used to be read as UTF-8 text and saved with writeText, so a picture an API sent (for example a cloud
+ * computer's screenshot) came out as a broken file: the chat card waited on "Loading picture…" forever and the phone's
+ * viewer showed a broken image. Now the bytes are kept as they came; when the model saves a JSON reply to a picture
+ * name, the picture inside it (raw base64 or a data: URL) is written instead; and when the file still isn't a picture,
+ * the tool result says so, so the model doesn't show the user a picture that won't open.
+ */
+object HttpBody {
+    private val imageExt = setOf("png", "jpg", "jpeg", "webp", "gif", "bmp", "heic", "heif")
+    private val imageKeys = listOf("image", "b64_json", "base64", "screenshot", "data")
+
+    fun isImagePath(name: String): Boolean = name.substringAfterLast('.', "").lowercase() in imageExt
+
+    fun isText(type: String): Boolean {
+        val t = type.lowercase()
+        return t.isBlank() || t.startsWith("text/") || "json" in t || "xml" in t || "javascript" in t || "urlencoded" in t
+    }
+
+    private fun ascii(b: ByteArray, from: Int, n: Int) = if (b.size >= from + n) String(b, from, n, Charsets.US_ASCII) else ""
+
+    /** True when [b] starts like a PNG, JPEG, WebP, GIF, BMP or HEIC/AVIF file. */
+    fun looksLikeImage(b: ByteArray): Boolean = when {
+        b.size >= 8 && b[0] == 0x89.toByte() && ascii(b, 1, 3) == "PNG" -> true
+        b.size >= 3 && b[0] == 0xFF.toByte() && b[1] == 0xD8.toByte() && b[2] == 0xFF.toByte() -> true
+        ascii(b, 0, 4) == "RIFF" && ascii(b, 8, 4) == "WEBP" -> true
+        ascii(b, 0, 6) == "GIF87a" || ascii(b, 0, 6) == "GIF89a" -> true
+        b.size >= 26 && ascii(b, 0, 2) == "BM" -> true
+        ascii(b, 4, 4) == "ftyp" -> true
+        else -> false
+    }
+
+    /** The picture a JSON reply carries inline (raw base64 or a data: URL under a usual key), or null. */
+    fun inlineImage(text: String): ByteArray? {
+        val o = try { JSONObject(text.trim()) } catch (_: Exception) { return null }
+        for (k in imageKeys) {
+            val s = (o.opt(k) as? String)?.trim().orEmpty()
+            if (s.length < 32) continue
+            val raw = if (s.startsWith("data:")) s.substringAfter(",", "") else s
+            val bytes = try { java.util.Base64.getMimeDecoder().decode(raw) } catch (_: IllegalArgumentException) { continue }
+            if (looksLikeImage(bytes)) return bytes
+        }
+        return null
+    }
+
+    /** What gets written for a save_to of [path], and a note for the tool result (empty when nothing to say). */
+    class Saved(val bytes: ByteArray, val note: String)
+
+    fun toSave(path: String, body: ByteArray, type: String): Saved {
+        if (!isImagePath(path) || looksLikeImage(body)) return Saved(body, "")
+        inlineImage(String(body, Charsets.UTF_8))?.let { return Saved(it, " Saved the picture from the JSON reply.") }
+        return Saved(body, " Warning: this is not a picture (${type.ifBlank { "unknown type" }}), so it won't open as one. " +
+            "Ask the API for the image itself (a binary or base64 format, or its image URL) before showing it.")
+    }
+
+    /** null when the body reads as text; otherwise a one-line stand-in, so bytes are never dumped into the chat. */
+    fun standIn(body: ByteArray, type: String): String? =
+        if (isText(type) && !looksLikeImage(body)) null
+        else "[${type.ifBlank { "binary" }} body, ${body.size} bytes; pass save_to to keep it as a file]"
 }
