@@ -1,3 +1,26 @@
+## 0.55.11 (versionCode 220, 2026-11-24): Music is YouTube only, with songs on every page
+Branch `music-youtube-only` (merge request into main; not merged).
+- One music source: Jamendo and Internet Archive audio are gone (source, Jamendo setup card and `jamendo_setup` tool,
+  `BuildConfig.JAMENDO_CLIENT_ID`, the CI secret line, notices, tests). Video keeps its public-domain films and Blender
+  movies. Songs on the phone (Library, Gallery, imports) stay: they are the user's own files, not a provider.
+- Songs on every page, always (`MusicFeed`, `MusicFeedPlan`): Home opens on song shelves (Because you listened to …,
+  Trending now, Top hits in <country>, New releases, genres, styles from what you play first) under the library's parts;
+  Search opens on Trending plus genre and mood tiles and searches YouTube with every query (song rows, a pasted YouTube
+  link too); an empty Library says so once and offers two shelves to start with. The last good shelves are kept on disk
+  (`mediaapps/music-feed.json`) and show at once (also offline), refreshed in the background when older than 6 h, when
+  the plan changes or when the phone comes back online; skeleton shelves while the first load runs, an offline card with
+  Try again only when nothing is saved. "Jump back in" / "Your recent songs" keeps what you played from YouTube.
+- Song data from YouTube Music (`YtMusic`, WEB_REMIX "Songs" search, no sign-in): title, artists, album, length and a
+  square cover at 544 px; the plain YouTube search is the fallback, cleaned.
+- Clean titles everywhere (`SongTitle`): "(Official Video)", "[Lyrics]", "Official Audio", "HD / 4K", hashtags,
+  "| YouTube", "VEVO", " - Topic" go; "Artist - Title" splits into title and artist; "ft." becomes "(feat. …)". Used in
+  the new rows and cards, the library rows, Recently played and the player (downloads and streams; the user's own files
+  stay as named). No "YouTube" label, licence or view count in Music's rows.
+- Playing: a tap plays the song at once and queues the next 8 of its shelf / results behind it; ⋮ has Play next and
+  Download (best quality, small on Data Saver). The old Store grid is no longer part of Music ("store" opens Search).
+- Tests: SongTitleTest (7), YtMusicParseTest (3, recorded reply), MusicFeedPlanTest (5); StoreSourcesTest / ToolPickSizeTest
+  updated. CI: `.github/workflows/build.yml` also builds this branch (never publishes).
+
 ## 0.55.10 (versionCode 219, 2026-11-23): Stop never crashes, readable status bar over sheets, no "So" replies
 - Stop: pressing Stop while a reply was being written could close the app. Stop now cancels the turn first and every
   clean-up step after it is guarded (`StopSafe`), so a failure is logged instead of crashing; a stopped turn skips the

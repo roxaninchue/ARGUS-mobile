@@ -97,6 +97,9 @@ object ToolRegistry {
             "stage_close", "stage_layout", "stage_move", "stage_show", "stage_update", "start_agent", "terminal_stop", "update_agent",
             "update_brief", "update_job", "update_task", "watch", "write_skill", "home_widget_add", "home_widget_update", "set_alarm", "set_timer",
             "beat_lab", "clip_studio", "video_ops", "music_ops")
+        // SkillReview (the background skill keeper): reads a saved skill, saves one in the local library.
+        one("read_skill", Decl(READ))
+        one("save_skill", Decl(WRITE_LOCAL))
         one("design", d(WRITE_LOCAL, "read" to READ, "list" to READ, "open" to READ))
         one("flashcards", d(WRITE_LOCAL, "list" to READ, "due" to READ, "delete_deck" to DELETE))
         one("follow_ups", d(WRITE_LOCAL, "list" to READ))
