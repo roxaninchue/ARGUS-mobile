@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.55.10: pressing Stop mid-reply no longer closes the app, the clock and battery stay readable when a sheet like the model picker is open, and a reply that stops after a word like "So" asks again for the full answer.
 - New in 0.55.9: Music, Movies and Studying have a new look (a hero card up top, wide rows, a fresh Now Playing) and one top bar everywhere: your profile on the left, the view's name, then search and notifications. Long reasoning stays in Thoughts, swipes in the chat no longer get ignored, and the status bar shows in Music, Video and Browser.
 - New in 0.55.8: the model list is calmer (no boxes, clean columns), uses both sides of the screen in landscape, and closes with its X instead of a swipe down.
 - New in 0.55.7: the model list is grouped by maker with filters for Tools, Vision and Fast, shows your recent picks and each model's reply time, and keeps a model that is failing visible (marked "Failing") instead of hiding it.

@@ -1,3 +1,13 @@
+## 0.55.10 (versionCode 219, 2026-11-23): Stop never crashes, readable status bar over sheets, no "So" replies
+- Stop: pressing Stop while a reply was being written could close the app. Stop now cancels the turn first and every
+  clean-up step after it is guarded (`StopSafe`), so a failure is logged instead of crashing; a stopped turn skips the
+  after-turn learning that stalled the main thread right after Stop (StopSafeTest).
+- Status bar over sheets: a bottom sheet (the model picker and every `ArgusSheet`) draws in its own window, which took
+  its icon colour from the phone's dark mode, so the clock / battery went white over a light sheet. The sheet window now
+  follows ARGUS's light / dark (`SyncDialogBarIcons`).
+- Cut-off replies: a final reply of a few words that stops on an opener ("So", "Let me") is no answer. The model is asked
+  once for the full answer; if that is spent, the reply shows the Continue chip (`CutReply.stub` / `endsOnOpener`).
+
 ## 0.55.9 (versionCode 218, 2026-11-23): new look for Music, Movies and Studying, plus phone fixes
 - Views redesign (Finn's mockups): one shared top bar (`ViewHeader`): profile icon far left (menu: account, light / dark,
   back to chat), the view's name ("Music", "Movies", "Studying"), then search and a notifications bell (downloads; cards
