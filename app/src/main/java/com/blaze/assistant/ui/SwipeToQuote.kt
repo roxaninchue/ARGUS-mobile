@@ -54,7 +54,7 @@ fun SwipeToQuote(enabled: Boolean, onQuote: () -> Unit, content: @Composable () 
         Box(Modifier.fillMaxWidth()
             .offset { IntOffset(x.value.roundToInt(), 0) }
             .pointerInput(Unit) {
-                // 0.55.9 (Finn: "sometimes the screen stops reading my swipes"): detectHorizontalDragGestures claimed ANY
+                // 0.55.9 (Finn: "sometimes the screen stops reading my swipes"): the old horizontal-drag detector claimed ANY
                 // gesture whose sideways movement crossed the touch slop first, leftward or diagonal included, and
                 // consumed it, so the chat list never got that swipe. Now the bubble only takes a drag that is clearly
                 // rightward (more sideways than down); everything else is left untouched for the list to scroll.
