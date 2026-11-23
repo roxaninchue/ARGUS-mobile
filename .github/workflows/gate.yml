@@ -1,0 +1,154 @@
+# The merge gate (Finn, 2026-11-23). GitLab (argus-mobile) is the source of truth and push-mirrors every
+# branch to this public GitHub repo, where Actions minutes are free. GitLab's own CI has no minutes left this month, so
+# THIS workflow is the gate: a branch merges into main only when the Gate run for its head commit is green. Nothing
+# enforces that on GitLab; whoever merges checks it first (AGENTS.md, "Merge rule"):
+#   GET https://api.github.com/repos/roxaninchue/ARGUS-mobile/actions/runs?head_sha=<sha>   -> Gate, conclusion success
+#
+# Runs on every branch push except main (main keeps build.yml, which builds the APK) and on pull requests from forks
+# (a same-repo PR is already covered by the push run). No APK, no signing, no publishing, no secrets, read-only token.
+# A head commit whose message has [skip ci] does not run (GitHub honours it), so WIP commits can skip; the last commit
+# before a merge must not.
+#
+# Steps: Node checks (rename guard, do-not-port, design JS) -> Go jniLibs -> :app:compileDebugKotlin +
+# :app:compileDebugUnitTestKotlin -> :app:testDebugUnitTest --continue. Any failure fails the run. Failing tests and
+# compile errors go to the run summary and to ::error annotations; the totals go to a ::notice annotation. Annotations
+# are readable without a sign-in: GET /repos/roxaninchue/ARGUS-mobile/check-runs/<job id>/annotations.
+name: Gate
+
+on:
+  push:
+    branches-ignore: [main, apk, shots]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_FLAGS: --console=plain --no-daemon -Pkotlin.jvm.target.validation.mode=warning -Pkotlin.compiler.execution.strategy=in-process
+
+jobs:
+  gate:
+    # Same-repo pull requests: the push run on the branch is the gate, so only fork PRs run here.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # ---- cheap checks first (node is preinstalled)
+      - name: Rename guard
+        run: |
+          node tools/check-no-blaze.test.mjs
+          node tools/check-no-blaze.mjs
+      - name: Do-not-port check
+        run: |
+          node tools/check-do-not-port.mjs
+          node --test tools/check-do-not-port.test.mjs
+      - name: Design JS tests
+        run: node app/src/test/js/design-safe.test.mjs
+
+      # ---- toolchain (JDK 21: LocalLanguagesTest needs JDK 20+ grapheme clusters; the project targets 17)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          # The gate never runs on main, so branch runs must be allowed to write the cache or it stays cold.
+          cache-read-only: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: wgproxy/go.mod
+          cache-dependency-path: '**/go.sum'
+      - name: Android SDK 34
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0" > /dev/null
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          chmod +x gradlew
+
+      # The two jniLibs the repo gitignores (browser VPN and the router); same commands as build.yml, without the Go tests.
+      - name: Go libraries (browser VPN, router)
+        run: |
+          VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          J=$PWD/app/src/main/jniLibs
+          for D in wgproxy blazerouter; do
+            X=""; [ "$D" = wgproxy ] || X="-X main.version=$VER"
+            (cd "$D" && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w $X" -o "$J/arm64-v8a/lib$D.so" . \
+              && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w $X" -o "$J/armeabi-v7a/lib$D.so" .)
+          done
+          ls -la "$J"/*/
+
+      # Robolectric fetches its Android jars mid-test with no retry; fetch them first, with retries (see build.yml).
+      - name: Cache Robolectric Android jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric/android-all-instrumented
+          key: robolectric-android-all-4.13-33-34
+      - name: Pre-fetch Robolectric Android jars
+        run: |
+          for V in 13-robolectric-9030017-i6 14-robolectric-10818077-i6; do
+            D=~/.m2/repository/org/robolectric/android-all-instrumented/$V; mkdir -p "$D"
+            for EXT in pom jar; do
+              F="$D/android-all-instrumented-$V.$EXT"
+              [ -s "$F" ] && continue
+              curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$F.part" \
+                "https://repo1.maven.org/maven2/org/robolectric/android-all-instrumented/$V/android-all-instrumented-$V.$EXT"
+              mv "$F.part" "$F"
+            done
+          done
+
+      # ---- compile, then the debug unit suite
+      - name: Compile (app + unit-test sources)
+        run: |
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin :app:compileDebugUnitTestKotlin $GRADLE_FLAGS \
+            "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee compile.log
+      - name: Unit tests (:app:testDebugUnitTest)
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --continue $GRADLE_FLAGS \
+            "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee test.log
+
+      # ---- readable results without a sign-in: run summary + annotations (check-runs API is public)
+      - name: Results
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, os, re
+          from xml.etree import ElementTree as ET
+          t = f = e = s = 0; bad = []
+          for p in sorted(glob.glob("app/build/test-results/testDebugUnitTest/*.xml")):
+              try: r = ET.parse(p).getroot()
+              except Exception: continue
+              t += int(r.get("tests", 0)); f += int(r.get("failures", 0)); e += int(r.get("errors", 0)); s += int(r.get("skipped", 0))
+              for c in r.iter("testcase"):
+                  for fl in list(c.findall("failure")) + list(c.findall("error")):
+                      msg = (fl.get("message") or fl.text or "").strip().splitlines()
+                      bad.append((c.get("classname", "") + "." + c.get("name", ""), " | ".join(msg[:3])[:400]))
+          errs = []
+          for log in ("compile.log", "test.log"):
+              if os.path.exists(log):
+                  for line in open(log, errors="replace"):
+                      if re.match(r"^(e: |FAILURE:|\* What went wrong|> Task .* FAILED|.*OutOfMemory|.*StackOverflow)", line):
+                          errs.append(line.rstrip()[:300])
+          totals = f"tests={t} failures={f} errors={e} skipped={s}"
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
+              out.write(f"## Gate: {totals}\n\n")
+              if bad:
+                  out.write(f"### Failed tests ({len(bad)})\n")
+                  for n, m in bad[:60]: out.write(f"- `{n}`: {m}\n")
+              if errs:
+                  out.write("\n### Build errors\n```\n" + "\n".join(errs[:60]) + "\n```\n")
+          clean = lambda x: x.replace("%", "%25").replace("\r", "").replace("\n", " ")
+          print(f"::notice title=Gate units::{totals}")
+          for n, m in bad[:40]: print(f"::error title=FAIL {clean(n[-200:])}::{clean(m)}")
+          for x in errs[:20]: print(f"::error title=build::{clean(x)}")
+          PY

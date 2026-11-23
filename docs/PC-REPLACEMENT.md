@@ -48,7 +48,7 @@ Everything on the desk must work without touching the phone:
 
 | Phase | What ships | Version |
 |---|---|---|
-| **0** | Slim-down (the removals below, one per branch / merge request) and a gated CI pipeline: every change goes through a merge request whose pipeline (compile + unit tests) must be green before it merges into `main` | 0.55.x patches |
+| **0** | Slim-down (the removals below, one per branch / merge request) and a gated CI pipeline: every change goes through a merge request whose Gate run (GitHub Actions on the mirror: compile + unit tests) must be green before it merges into `main` | 0.55.x patches |
 | **1** | Argus Desk on the second display + keyboard and mouse (section 1a and 1b) | next minor (Finn's plan said 0.55.0; `main` had already reached 0.55.10 when this was written, so this is 0.56.0) |
 | **2** | File manager and code editor as desk windows (section 1c, first half) | following minor |
 | **3** | Office documents (Word / Excel / PDF) and the remote PC window over Argus Desktop link (1c second half, 1d) | following minor |
@@ -84,9 +84,12 @@ What "the store" is, checked 2026-11-23, so the right thing goes:
 
 ## 4. How changes land from now on
 
-- Every change goes on its own branch, then a merge request into `main`. The GitLab pipeline (`.gitlab-ci.yml`)
-  compiles the app and runs `:app:testDebugUnitTest`; the merge request merges only when it is green. Whether the
-  pipeline can run right now (runner minutes, project settings) is recorded in STATUS.md "Current state".
-- No `[skip ci]` on these branches: the point is that the pipeline runs.
+- Every change goes on its own branch, then a merge request into `main`. GitLab mirrors the branch to the public
+  GitHub repo, where the `Gate` workflow (`.github/workflows/gate.yml`, free minutes) runs the node checks, compiles
+  the app and runs `:app:testDebugUnitTest`. The merge request merges only when the Gate run for its head commit is
+  green; we check that through the GitHub API before merging (AGENTS.md "Merge rule"). GitLab's own CI is parked
+  (no minutes this month); STATUS.md "Current state" has the details.
+- WIP commits may carry `[skip ci]`; the last commit before a merge must run the Gate. The merge commit itself carries
+  `[skip ci]` (no APK build on `main` until Finn says build).
 - One removal per merge request; each removal is a patch version with CHANGELOG and STATUS entries.
 - The full build procedure is in [BUILDING.md](../BUILDING.md); the current CI state is in STATUS.md.

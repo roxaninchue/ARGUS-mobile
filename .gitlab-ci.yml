@@ -1,19 +1,22 @@
-# Argus gated pipeline (Finn, 2026-11-23): every change goes on its own branch -> merge request -> this pipeline
-# green -> merge into main. The merge request may only merge when the pipeline succeeds (project setting
-# only_allow_merge_if_pipeline_succeeds). Do not put [skip ci] on these branches.
+# Argus GitLab pipeline: PARKED (Finn, 2026-11-23). The free GitLab compute minutes ran out for November (quota
+# resets 1 Dec), so the merge gate moved to GitHub Actions on the public push-mirror: .github/workflows/gate.yml, same
+# checks, same compile, same :app:testDebugUnitTest. A branch merges into main only when the Gate run for its head
+# commit is green on https://github.com/roxaninchue/ARGUS-mobile/actions (AGENTS.md, "Merge rule").
 #
-# Jobs (kept to what is needed, runner minutes are limited):
-#   checks      node only, ~1 min: rename guard, do-not-port check, design JS tests
-#   build-test  compile (:app:compileDebugKotlin + the unit-test sources), then :app:testDebugUnitTest
-# Any failure fails the pipeline. No APK, screenshot or publish job runs here; release APKs are still built by
-# GitHub Actions on the mirror, only when Finn says build.
+# This file creates NO pipeline unless the CI/CD variable ARGUS_GITLAB_CI is "on" (project variable, or set it when
+# running a pipeline by hand). That keeps failed ci_quota_exceeded pipelines out of the merge requests. The jobs below
+# are kept so GitLab CI can come back with one variable once minutes exist again; they mirror gate.yml.
 #
-# Nothing here signs with a production key, reads a secret, or publishes anywhere.
+# Jobs: checks (node only: rename guard, do-not-port, design JS tests); build-test (compile, then
+# :app:testDebugUnitTest). No APK, screenshot or publish job, no production key, no secrets.
 stages: [check, test]
 
 workflow:
   rules:
-    # Merge request pipelines: this is the gate.
+    # Parked: no pipeline at all unless ARGUS_GITLAB_CI == "on" (see the header).
+    - if: $ARGUS_GITLAB_CI != "on"
+      when: never
+    # Merge request pipelines.
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     # A branch push while that branch has an open merge request: the MR pipeline above covers it (no double run).
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
@@ -21,9 +24,7 @@ workflow:
     # Creating a branch (no new commit yet) starts nothing; its first commit or its merge request does.
     - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000" && $CI_PIPELINE_SOURCE == "push"
       when: never
-    # Other branches (before their merge request is opened) and main.
     - if: $CI_COMMIT_BRANCH
-    # Run pipeline by hand from the web UI or the API.
     - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
   auto_cancel:
     on_new_commit: interruptible
@@ -85,19 +86,14 @@ build-test:
       echo "--- memory ---"; free -h || true; nproc || true
     - |
       set -e
-      # Go builds the two jniLibs the repo gitignores (libwgproxy.so, libblazerouter.so).
-      if ! command -v go >/dev/null 2>&1; then
-        echo "Installing Go $GO_VERSION"
-        wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tgz
-        tar -C /usr/local -xzf /tmp/go.tgz
-        export PATH="/usr/local/go/bin:$PATH"
-      fi
-      go version
+      # Go builds the two jniLibs the repo gitignores (browser VPN and the router), same loop as gate.yml.
       VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-      (cd wgproxy && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/arm64-v8a/libwgproxy.so . \
-        && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/armeabi-v7a/libwgproxy.so .)
-      (cd blazerouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libblazerouter.so . \
-        && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .)
+      J=$PWD/app/src/main/jniLibs
+      for D in wgproxy blazerouter; do
+        X=""; [ "$D" = wgproxy ] || X="-X main.version=$VER"
+        (cd "$D" && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w $X" -o "$J/arm64-v8a/lib$D.so" . \
+          && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w $X" -o "$J/armeabi-v7a/lib$D.so" .)
+      done
       ls -la app/src/main/jniLibs/arm64-v8a/
     - |
       set -e
