@@ -1,6 +1,7 @@
 package com.blaze.assistant.agent
 
 import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * When Argus should learn on its own (port of Argus Desktop v0.7 internal/learn, same rules as the CLI):
@@ -164,5 +165,95 @@ MEMORY & SKILLS (learn as you go; nobody has to ask)
         val steps = b.lines().map { it.trim() }.count { l -> l.length > 2 && (l[0].isDigit() || l.startsWith("- ") || l.startsWith("* ")) }
         return kebab.matches(name) && !name.contains("--") && description.trim().split(Regex("\\s+")).size >= 4 &&
             b.length >= 60 && steps >= 3 && !secretRe.containsMatchIn(b)
+    }
+}
+
+/**
+ * Finn 23 Nov 2026, after Hermes Agent's background review: the skill keeper. Every [EVERY] tool calls in a chat
+ * (counted from the reply traces since its last review), one light background agent reads that stretch of the chat
+ * ([ChatDigest]) next to the names of the skills already saved, and decides by itself whether it taught a reusable
+ * procedure. It has two tools and nothing else: [READ] (an existing skill, to improve it instead of duplicating it)
+ * and [SAVE]. At most [MAX_STEPS] model calls and [MAX_SAVES] saves; most stretches teach nothing, and then it saves
+ * nothing. No words in the user's message decide anything (docs/MODEL-FIRST.md): this replaces the "teach" word list
+ * that used to gate skill learning. The loop is pure; the model, the reader and the saver are passed in
+ * (Learning.skillReview wires them; SkillReviewTest).
+ */
+object SkillReview {
+    const val EVERY = 8
+    const val MAX_STEPS = 3
+    const val MAX_SAVES = 2
+    const val DIGEST_CHARS = 12_000
+    const val SHELF_MAX = 80
+    const val READ = "read_skill"
+    const val SAVE = "save_skill"
+
+    /** Due once at least [every] tool calls happened since the last review. */
+    fun due(toolCalls: Int, every: Int = EVERY): Boolean = every > 0 && toolCalls >= every
+
+    const val PROMPT = "You keep the skill library of a phone assistant. Below is a stretch of one chat: the user's messages, " +
+        "the assistant's replies, and each tool it called with the outcome. Decide whether this stretch taught a reusable procedure: " +
+        "a multi-step workflow that worked, a dead end and the way around it, or a correction the user gave about how to do something. " +
+        "Most stretches teach nothing: then answer \"nothing\" and call no tool.\n" +
+        "A skill holds lessons, not logs: when to use it, numbered steps with the exact commands, endpoints, settings and checks that mattered, " +
+        "and the pitfalls hit with how they were solved. Leave out secrets (keys, tokens, passwords, codes), one-off values and today's results.\n" +
+        "If a saved skill already covers this, read_skill it first and save the improved version under the same name; never save a near-duplicate. " +
+        "Save at most 2 skills."
+
+    data class Save(val name: String, val description: String, val instructions: String)
+
+    private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function",
+        JSONObject().put("name", name).put("description", desc).put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
+    private fun str(d: String) = JSONObject().put("type", "string").put("description", d)
+
+    /** The reviewer's only tools. */
+    fun tools(): JSONArray = JSONArray()
+        .put(fn(READ, "Read a saved skill in full, to improve it instead of writing a duplicate.", JSONObject().put("name", str("The skill's name as listed")), listOf("name")))
+        .put(fn(SAVE, "Save a skill (a new one, or a better version of a saved one under the same name).",
+            JSONObject().put("name", str("short-kebab-name")).put("description", str("One line: when to use it"))
+                .put("instructions", str("Markdown: numbered steps, checks, pitfalls and how they were solved")), listOf("name", "description", "instructions")))
+
+    fun request(digest: String, shelf: List<String>): JSONArray = JSONArray()
+        .put(JSONObject().put("role", "system").put("content", PROMPT))
+        .put(JSONObject().put("role", "user").put("content",
+            "Saved skills:\n" + (shelf.take(SHELF_MAX).joinToString("\n") { "- $it" }.ifEmpty { "(none)" }) + "\n\nThe chat:\n" + digest.takeLast(DIGEST_CHARS)))
+
+    private fun slug(s: String) = s.trim().lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').take(60)
+
+    /**
+     * Runs the review. [call] answers one request with an OpenAI-shaped assistant message (null when nothing answered),
+     * [read] returns a skill's text, [save] stores one and says what happened. Returns each save attempted with its outcome.
+     */
+    suspend fun run(digest: String, shelf: List<String>, call: suspend (JSONArray, JSONArray) -> JSONObject?,
+                    read: (String) -> String, save: suspend (Save) -> String): List<Pair<Save, String>> {
+        if (digest.isBlank()) return emptyList()
+        val msgs = request(digest, shelf)
+        val tools = tools()
+        val done = ArrayList<Pair<Save, String>>()
+        for (step in 0 until MAX_STEPS) {
+            val reply = call(msgs, tools) ?: break
+            val calls = reply.optJSONArray("tool_calls")
+            if (calls == null || calls.length() == 0) break
+            msgs.put(JSONObject().put("role", "assistant").put("content", reply.optString("content", "")).put("tool_calls", calls))
+            for (i in 0 until calls.length()) {
+                val c = calls.optJSONObject(i) ?: continue
+                val f = c.optJSONObject("function") ?: JSONObject()
+                val a = try { JSONObject(f.optString("arguments", "{}").ifBlank { "{}" }) } catch (_: Exception) { JSONObject() }
+                val out = when (f.optString("name")) {
+                    READ -> read(a.optString("name")).take(8_000)
+                    SAVE -> {
+                        val s = Save(slug(a.optString("name")), a.optString("description").trim(), a.optString("instructions").trim())
+                        when {
+                            done.size >= MAX_SAVES -> "Not saved: at most $MAX_SAVES skills per review."
+                            !Learn.goodSkill(s.name, s.description, s.instructions) ->
+                                "Not saved: needs a kebab-case name, a description of 4+ words, 3+ numbered steps and no secrets."
+                            else -> save(s).also { done += s to it }
+                        }
+                    }
+                    else -> "Unknown tool. Only $READ and $SAVE exist."
+                }
+                msgs.put(JSONObject().put("role", "tool").put("tool_call_id", c.optString("id")).put("content", out))
+            }
+        }
+        return done
     }
 }
