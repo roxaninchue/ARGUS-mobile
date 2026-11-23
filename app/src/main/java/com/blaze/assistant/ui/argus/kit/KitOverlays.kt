@@ -114,6 +114,7 @@ fun ArgusSheet(
             else Box(Modifier.size(12.dp))
         },
     ) { androidx.compose.runtime.CompositionLocalProvider(LocalSheetClose provides close) {
+        com.blaze.assistant.ui.SyncDialogBarIcons(c.dark)   // 0.55.10: the sheet's own window keeps readable status bar icons
         Column(Modifier.fillMaxWidth().navigationBarsPadding().then(if (dragToClose) Modifier else Modifier.holdSheet())) {
             if (!title.isNullOrBlank()) Text(tr(title), style = ArgusType.sheetTitle, color = c.ink,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).semantics { heading() })

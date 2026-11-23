@@ -54,6 +54,38 @@ fun DarkSystemBars() {
     }
 }
 
+/**
+ * 0.55.10 (Finn, 23 Nov, model picker open: "I cannot see the time, battery... everything is white"): a bottom sheet or
+ * dialog draws in its OWN window, and Material3's ModalBottomSheet sets that window's status bar icons from the PHONE's
+ * dark mode, so a light ARGUS on a dark phone got white icons over the light scrim again. Called inside the sheet, this
+ * sets the sheet window's icons from ARGUS's theme, as [SyncSystemBarIcons] does for the activity.
+ */
+@Composable
+fun SyncDialogBarIcons(dark: Boolean) {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    val darkIcons = SystemBarIcons.darkIcons(dark, SystemBarIcons.darkScreens.intValue > 0)
+    SideEffect {
+        val window = view.dialogWindow() ?: return@SideEffect
+        try {
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                if (isAppearanceLightStatusBars != darkIcons) isAppearanceLightStatusBars = darkIcons
+                if (isAppearanceLightNavigationBars != darkIcons) isAppearanceLightNavigationBars = darkIcons
+            }
+        } catch (_: Throwable) { }
+    }
+}
+
+/** The window of the dialog / sheet [this] view sits in, or null when it is in the activity's own window. */
+private fun android.view.View.dialogWindow(): android.view.Window? {
+    var v: android.view.ViewParent? = this as? android.view.ViewParent ?: parent
+    while (v != null) {
+        if (v is androidx.compose.ui.window.DialogWindowProvider) return v.window
+        v = v.parent
+    }
+    return null
+}
+
 private tailrec fun Context.barsActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.barsActivity()

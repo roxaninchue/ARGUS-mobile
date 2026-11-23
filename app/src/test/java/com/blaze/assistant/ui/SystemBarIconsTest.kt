@@ -22,6 +22,12 @@ class SystemBarIconsTest {
         assertTrue(src("MainActivity.kt").contains("SyncSystemBarIcons("))
     }
 
+    @Test fun sheetsKeepReadableIcons() {
+        // 0.55.10 (Finn, model picker): a sheet's own window took its icons from the phone's dark mode
+        assertTrue(src("ui/argus/kit/KitOverlays.kt").contains("SyncDialogBarIcons(c.dark)"))
+        assertTrue(src("ui/SystemBarIcons.kt").contains("is androidx.compose.ui.window.DialogWindowProvider"))
+    }
+
     @Test fun theModePagerJumpsStraightToFarModes() {
         // Team to Life must not scroll through Chat (an old chat flashed past)
         assertTrue(src("ui/ArgusModes.kt").contains("pager.scrollToPage(want)"))
