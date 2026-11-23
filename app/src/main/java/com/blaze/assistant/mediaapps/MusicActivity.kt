@@ -271,7 +271,15 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
     val c = LocalBlaze.current
     val ctx = LocalContext.current
     val np = remember { NowPlaying() }
-    val store = remember { StoreState("audio") }
+    // 0.55.11: songs from YouTube on every page. The saved shelves show at once; they refresh when stale and when the
+    // phone comes back online. A song tap plays it (and queues the rest of its shelf); no Store sheet in between.
+    val scope = rememberCoroutineScope()
+    val songActions = remember(ctl) { SongActions(
+        play = { list, i, from -> MusicOnline.play(ctx, scope, ctl, list, i, from) },
+        playNext = { MusicOnline.playNext(ctx, scope, ctl, it) },
+        download = { MusicOnline.download(ctx, scope, it) }) }
+    val netOn by remember { NetWatch.start(ctx) }.collectAsState()
+    LaunchedEffect(netOn) { MusicFeed.open(ctx) }
     // 0.46.4 revamp: Home · Search · Library · Create in a bottom nav; the full player is a sheet over the page [under] it.
     var under by remember { mutableStateOf(MusicNav.normalize(tab).let { if (it == "player") "home" else it }) }
     var open by remember { mutableStateOf<MusicHome.Tile?>(null) }
@@ -326,12 +334,12 @@ fun MusicApp(ctl: MediaController?, tab: String, onTab: (String) -> Unit, onClos
                     if (MotionTokens.enabled) fadeIn(tween(MotionTokens.MEDIUM)) togetherWith fadeOut(tween(MotionTokens.SHORT)) else fadeIn(tween(0)) togetherWith fadeOut(tween(0))
                 }, label = "musicTab") { t ->
                     when (t) {
-                        "store" -> StoreView("audio", store) { item, d, src -> playStream(ctl, item, d, src); MusicContext.set("Search"); onTab("player") }
-                        "search" -> MusicSearchPage(::playList, openTile = { open = it }, onStore = { go("store") },
-                            onVibe = { v -> MusicService.current?.djFresh(v) ?: run { BlazeDj.setVibe(ctx, v); djOpen = true } })
-                        "library" -> LibraryPage(np, ::playList, openTile = { open = it })
+                        // 0.55.11: "store" (old links, the agent) opens Search, which searches YouTube itself.
+                        "search", "store" -> MusicSearchPage(::playList, openTile = { open = it },
+                            onVibe = { v -> MusicService.current?.djFresh(v) ?: run { BlazeDj.setVibe(ctx, v); djOpen = true } }, actions = songActions)
+                        "library" -> LibraryPage(np, ::playList, openTile = { open = it }, actions = songActions)
                         "create" -> MusicCreatePage(onCreated = { open = it }, onAskBlaze = ::askBlaze)
-                        else -> MusicHomePage(np, openTile = { open = it }, playList = ::playList, onDj = { djOpen = true })
+                        else -> MusicHomePage(np, openTile = { open = it }, playList = ::playList, onDj = { djOpen = true }, actions = songActions)
                     }
                 }
                 // Mini-player docked above the nav; tap re-opens the full player.
@@ -396,17 +404,6 @@ private fun AddSongsDialog(playlistId: String, onDismiss: () -> Unit) {
             }
         }
     }
-}
-
-private fun playStream(ctl: MediaController?, item: StoreItem, d: StoreDetail, src: StoreSource) {
-    val p = ctl ?: return
-    // v0.34.0 data saver: the smallest stream on mobile data.
-    val f = VideoSmart.streamFor("audio", d, src, MusicService.current?.let { MediaPrefs.saving(it) } ?: false).firstOrNull() ?: return
-    MusicService.current?.streamUa(src.userAgent)
-    Taste.note(MusicService.current, "audio", d.title.ifBlank { item.title }, d.author.ifBlank { item.author }, Taste.PLAY)
-    val t = Track("stream:${item.source}:${item.id}", f.url, d.title.ifBlank { item.title }, d.author.ifBlank { item.author }, item.extra["album"].orEmpty(),
-        d.lengthSec * 1000L, item.thumb, "stream", 0, item.id, "audio", d.licence.ifBlank { item.licence }, item.source)
-    p.setMediaItem(MusicService.streamItem(t, f.url)); p.prepare(); p.play()
 }
 
 @Composable
@@ -521,8 +518,9 @@ internal fun PlayerPage(ctl: MediaController?, np: NowPlaying, playList: (List<T
             Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    MText(t.title, 21.sp, c.ink, FontWeight.Bold, maxLines = 2)
-                    MText(t.artist, 14.sp, c.sub)
+                    val shown = remember(t) { SongTitle.forTrack(t) }   // 0.55.11: song title + artist, no video words
+                    MText(shown.title, 21.sp, c.ink, FontWeight.Bold, maxLines = 2)
+                    MText(shown.artist, 14.sp, c.sub)
                 }
                 val on = t.key in liked
                 RoundIcon(if (on) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, if (on) "Remove from Liked" else "Add to Liked",
@@ -732,7 +730,9 @@ private fun LyricsView(t: Track, pos: Long, karaoke: Boolean = false) {
 // ---------------- Library ----------------
 
 @Composable
-private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit, openTile: (MusicHome.Tile) -> Unit = {}) {
+private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) -> Unit, openTile: (MusicHome.Tile) -> Unit = {},
+                        actions: SongActions = SongActions({ _, _, _ -> }, {}, {})) {
+    val feed by MusicFeed.shelves.collectAsState()
     val c = LocalBlaze.current
     val ctx = LocalContext.current
     val songs by MediaLib.songs.collectAsState()
@@ -866,7 +866,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 150.dp)) {
             when {
                 q.isNotBlank() -> {
-                    if (found.isEmpty()) item { EmptyState("No match", "Nothing in your library matches \u201c$q\u201d. Try the Store.") }
+                    if (found.isEmpty()) item { EmptyState("No match", "Nothing in your library matches \u201c$q\u201d. Search finds songs to stream.") }
                     itemsIndexed(found, key = { _, t -> "q" + t.key }) { i, t -> SongRow(t, found, i) }
                 }
                 section == "foryou" -> item { ForYou(songs, liked, playList) }
@@ -905,7 +905,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         }
                     }
                     if (songs.isEmpty()) item {
-                        EmptyState("No songs yet", "Songs you download in the Store, and music in ${BrandName.NAME}'s Gallery, show up here and play offline.")
+                        EmptyState("No songs yet", "Songs you download from Search, and music in ${BrandName.NAME}'s Gallery, show up here and play offline.")
                     }
                     itemsIndexed(sortedSongs, key = { _, t -> t.key }) { i, t -> SongRow(t, sortedSongs, i) }
                 }
@@ -920,7 +920,7 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                     val groups = if (section == "artists") LibraryGroups.artists(songs) else LibraryGroups.albums(songs)
                     val g = group
                     if (g == null) {
-                        if (groups.isEmpty()) item { EmptyState("Nothing here yet", "Download some music in the Store.") }
+                        if (groups.isEmpty()) item { EmptyState("Nothing here yet", "Download songs from Search (\u22ee \u2192 Download) and they show up here.") }
                         items(groups, key = { section + it.first }) { (name, list) ->
                             Row(Modifier.fillMaxWidth().clip(BlazeShapes.small).clickable { group = name }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Art(list.first(), Modifier.size(52.dp), if (section == "artists") BlazeShapes.pill else BlazeShapes.small, target = 140)
@@ -991,6 +991,11 @@ private fun LibraryPage(np: NowPlaying, playList: (List<Track>, Int, Boolean) ->
                         }
                     }
                 }
+            }
+            // 0.55.11: a library with nothing in it says so once and offers songs to start with (never a blank page).
+            if (songs.isEmpty() && lists.isEmpty() && q.isBlank() && section == "playlists") {
+                item(key = "lib-empty") { EmptyState("Your library is empty", "Songs you download, like or add to a playlist live here. Start with these:", mark = false) }
+                songShelves(feed, false, false, actions, onRetry = { MusicFeed.open(ctx, force = true) }, max = 2)
             }
         }
     }

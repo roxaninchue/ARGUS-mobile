@@ -810,9 +810,10 @@ fun TrackRow(t: Track, playing: Boolean, onClick: () -> Unit, onLongClick: (() -
         .padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Art(t, Modifier.size(46.dp), target = 140)
         Spacer(Modifier.width(12.dp))
+        val shown = remember(t) { SongTitle.forTrack(t) }   // 0.55.11: song title + artist, no video words
         Column(Modifier.weight(1f)) {
-            MText(t.title, 14.sp, if (playing) c.accent else c.ink, FontWeight.Medium)
-            MText(listOf(t.artist, if (t.durationMs > 0) TimeText.clock(t.durationMs) else "").filter { it.isNotBlank() }.joinToString(" \u00b7 "), 12.sp, c.sub)
+            MText(shown.title, 14.sp, if (playing) c.accent else c.ink, FontWeight.Medium)
+            MText(listOf(shown.artist, if (t.durationMs > 0) TimeText.clock(t.durationMs) else "").filter { it.isNotBlank() }.joinToString(" \u00b7 "), 12.sp, c.sub)
         }
         if (selected != null) Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { SelectMark(selected) } else trailing()
     }

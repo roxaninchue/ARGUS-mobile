@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -197,8 +198,15 @@ fun rememberCoverTint(t: Track?): Color {
 // ---------------------------------------------------------------- Home
 
 @Composable
-internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, playList: (List<Track>, Int, Boolean) -> Unit, onDj: () -> Unit) {
+internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, playList: (List<Track>, Int, Boolean) -> Unit, onDj: () -> Unit,
+                           actions: SongActions = SongActions({ _, _, _ -> }, {}, {})) {
     val c = LocalBlaze.current
+    val ctx = LocalContext.current
+    // 0.55.11: songs from YouTube on Home always (the saved copy first, refreshed in the background), after the library's parts.
+    val shelves by MusicFeed.shelves.collectAsState()
+    val feedLoading by MusicFeed.loading.collectAsState()
+    val offline by MusicFeed.offline.collectAsState()
+    val played by MusicFeed.recent.collectAsState()
     val songs by MediaLib.songs.collectAsState()
     val lists by MediaLib.playlists.collectAsState()
     val recent by MediaLib.recent.collectAsState()
@@ -212,19 +220,13 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
     val tiles = remember(chip, songs, lists, smart, recent) { MusicHome.tiles(chip, songs, lists, smart, recent) }
     val mixes = remember(songs, plays.size) { MusicHome.mixes(songs, plays, now / 86_400_000L, hour) }
     val recentSongs = remember(songs, recent) { MusicHome.recentlyPlayed(songs, recent) }
-    if (songs.isEmpty() && lists.isEmpty()) {
-        Column(Modifier.fillMaxSize()) {
-            FilterChips(MusicHome.chips, chip) { chip = it }
-            EmptyState("No music yet", "Find songs in Search, or put music files on the phone.", mark = false)
-        }
-        return
-    }
+    val hasLibrary = songs.isNotEmpty() || lists.isNotEmpty()
     var allRecent by remember { mutableStateOf(false) }
     // 23 Nov 2026 redesign (Finn's Music mockup): chips, the Argus DJ hero (a carousel with the top mixes after it),
     // Mixes for you, Recently played as rows with a play button. A chip other than All shows that kind as the tile grid.
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 150.dp)) {
-        item { FilterChips(MusicHome.chips, chip) { chip = it } }
-        if (chip != "all") {
+        if (hasLibrary) item { FilterChips(MusicHome.chips, chip) { chip = it } }
+        if (hasLibrary && chip != "all") {
             items(tiles.chunked(2)) { row ->
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { t -> HomeTile(t, byKey, Modifier.weight(1f)) { openTile(t) } }
@@ -233,7 +235,7 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
             }
             return@LazyColumn
         }
-        item { DjHero(hour, mixes.take(3), byKey, onDj = onDj, playMix = { m -> MusicContext.set(m.name); playList(m.keys.mapNotNull { byKey[it] }, 0, false) }) }
+        if (songs.isNotEmpty()) item { DjHero(hour, mixes.take(3), byKey, onDj = onDj, playMix = { m -> MusicContext.set(m.name); playList(m.keys.mapNotNull { byKey[it] }, 0, false) }) }
         if (mixes.isNotEmpty()) item {
             SeeAllHeader("Mixes for you", onSeeAll = { chip = "playlists" })
             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -263,6 +265,8 @@ internal fun MusicHomePage(np: NowPlaying, openTile: (MusicHome.Tile) -> Unit, p
                 }
             }
         }
+        if (played.isNotEmpty()) item(key = "played") { SongShelf(if (recentSongs.isEmpty()) "Recently played" else "Your recent songs", played.take(12), actions) }
+        songShelves(shelves, feedLoading, offline, actions, onRetry = { MusicFeed.open(ctx, force = true) })
     }
 }
 
@@ -304,9 +308,10 @@ private fun RecentRow(t: Track, liked: Boolean, playing: Boolean, onPlay: () -> 
     Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Play ${t.title}") { onPlay() }.padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Art(t, Modifier.size(60.dp), RoundedCornerShape(14.dp), 200)
+        val shown = remember(t) { SongTitle.forTrack(t) }
         Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-            Text(t.title, style = SpaceType.body(16.sp, if (playing) look.accent else look.ink, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(t.artist, style = SpaceType.body(13.sp, look.sub), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(shown.title, style = SpaceType.body(16.sp, if (playing) look.accent else look.ink, FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(shown.artist, style = SpaceType.body(13.sp, look.sub), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         SpaceRoundButton("Play ${t.title}", onPlay) { Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = look.ink, modifier = Modifier.size(24.dp)) }
         Box {
@@ -332,27 +337,58 @@ private fun HomeTile(t: MusicHome.Tile, byKey: Map<String, Track>, modifier: Mod
 // ---------------------------------------------------------------- Search
 
 @Composable
-internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, openTile: (MusicHome.Tile) -> Unit, onStore: () -> Unit, onVibe: (DjPlan.Vibe) -> Unit) {
+internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, openTile: (MusicHome.Tile) -> Unit, onVibe: (DjPlan.Vibe) -> Unit,
+                             actions: SongActions = SongActions({ _, _, _ -> }, {}, {})) {
     val c = LocalBlaze.current
     val songs by MediaLib.songs.collectAsState()
     val lists by MediaLib.playlists.collectAsState()
+    val shelves by MusicFeed.shelves.collectAsState()
     var q by remember { mutableStateOf("") }
     var cat by remember { mutableStateOf("all") }
     val found = remember(songs, q) { LibraryGroups.search(songs, q) }
     val byKey = remember(songs) { songs.associateBy { it.key } }
+    // 0.55.11: every search also asks YouTube (songs, cleaned), 350 ms after the last key; a newer search replaces it.
+    var online by remember { mutableStateOf<List<com.blaze.assistant.mediaapps.store.StoreItem>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+    var failed by remember { mutableStateOf(false) }
+    var retry by remember { mutableStateOf(0) }
+    LaunchedEffect(q, retry) {
+        val t = q.trim()
+        failed = false
+        if (t.isEmpty()) { online = emptyList(); searching = false; return@LaunchedEffect }
+        searching = true
+        kotlinx.coroutines.delay(350)
+        val r = runCatching {
+            val vid = com.blaze.assistant.mediaapps.store.LinkParse.firstUrl(t)?.let { com.blaze.assistant.mediaapps.store.LinkParse.youtubeId(it) }
+            if (vid != null) {   // a pasted YouTube link: that one song
+                val (title, ch) = com.blaze.assistant.mediaapps.store.LinkYt.oembed(vid)
+                listOf(com.blaze.assistant.mediaapps.store.YtMusicParse.fromVideo(com.blaze.assistant.mediaapps.store.StoreItem("youtube", vid, title, ch,
+                    thumb = "https://i.ytimg.com/vi/$vid/mqdefault.jpg")))
+            } else MusicFeed.search(t)
+        }
+        online = r.getOrDefault(emptyList()); failed = r.isFailure; searching = false
+    }
     Column(Modifier.fillMaxSize()) {
-        KitSearch(q, { q = it }, "Songs, artists, albums", Modifier.padding(horizontal = 14.dp).fillMaxWidth())
-        if (q.trim().length < 1) {
-            SectionTitle("Browse")
-            val tiles = listOf(Triple("Online music", Color(0xFF5B6CFF), Icons.Rounded.Language)) +
-                DjPlan.Vibe.values().filter { it != DjPlan.Vibe.AUTO }.mapIndexed { i, v -> Triple(v.label, listOf(Color(0xFF7C4DFF), Color(0xFF2E7DBA), Color(0xFFE0603A), Color(0xFF3D3A8C))[i % 4], Icons.Rounded.Headphones) }
-            LazyColumn(contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 150.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        KitSearch(q, { q = it }, "What do you want to listen to?", Modifier.padding(horizontal = 14.dp).fillMaxWidth())
+        if (q.trim().isEmpty()) {
+            // Browse: genres (search them) and moods (Argus DJ with a library, else a search), then what's trending.
+            val palette = listOf(Color(0xFFE8115B), Color(0xFF1E3264), Color(0xFF8D67AB), Color(0xFFE1118C), Color(0xFF148A08), Color(0xFFBA5D07),
+                Color(0xFF503750), Color(0xFF0D73EC), Color(0xFF477D95), Color(0xFFAF2896))
+            val genreTiles = MusicFeedPlan.genres.map { it to Icons.Rounded.MusicNote }
+            val moodTiles = DjPlan.Vibe.values().filter { it != DjPlan.Vibe.AUTO }.map { it.label to Icons.Rounded.Headphones }
+            val tiles = (genreTiles + moodTiles).mapIndexed { i, (n, ic) -> Triple(n, palette[i % palette.size], ic) }
+            val trending = shelves.firstOrNull { it.id == "trending" && it.items.isNotEmpty() } ?: shelves.firstOrNull { it.items.isNotEmpty() }
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 150.dp)) {
+                if (trending != null) item(key = "trend") { SongShelf(trending.title, trending.items, actions) }
+                else item(key = "trend-sk") { ShelfSkeleton("Trending now") }
+                item { SectionTitle("Browse all") }
                 items(tiles.chunked(2)) { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.padding(horizontal = 14.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { (name, col, icon) ->
-                            Box(Modifier.weight(1f).height(92.dp).clip(BlazeShapes.small).background(Brush.linearGradient(listOf(col, col.copy(alpha = 0.55f))))
+                            Box(Modifier.weight(1f).height(92.dp).clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(col, col.copy(alpha = 0.6f))))
                                 .clickable(role = Role.Button, onClickLabel = name) {
-                                    if (name == "Online music") onStore() else DjPlan.Vibe.values().firstOrNull { it.label == name }?.let(onVibe)
+                                    val vibe = DjPlan.Vibe.values().firstOrNull { it.label == name }
+                                    if (vibe != null && songs.isNotEmpty()) onVibe(vibe) else q = if (vibe != null) "$name music" else name
                                 }.padding(12.dp)) {
                                 Text(name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.align(Alignment.BottomEnd).size(30.dp))
@@ -369,18 +405,23 @@ internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, open
         val albums = remember(found) { MusicHome.tiles("albums", found, emptyList(), emptyList(), emptyList(), 20) }
         val pls = remember(lists, q) { lists.filter { it.name.contains(q.trim(), ignoreCase = true) }.map { MusicHome.Tile(it.id, it.name, it.keys, "playlist") } }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 150.dp)) {
-            if (found.isEmpty() && pls.isEmpty()) item {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Nothing in your library", color = c.sub, fontSize = 13.sp)
-                    Spacer(Modifier.height(8.dp))
-                    PillButton("Search online", primary = true, icon = Icons.Rounded.Search) { onStore() }
-                }
-            }
             if (cat in listOf("all", "artists")) items(artists.take(if (cat == "all") 3 else 20), key = { it.id }) { t -> ResultRow(t, byKey, round = true) { openTile(t) } }
             if (cat in listOf("all", "albums")) items(albums.take(if (cat == "all") 3 else 20), key = { it.id }) { t -> ResultRow(t, byKey) { openTile(t) } }
             if (cat in listOf("all", "playlists")) items(pls, key = { it.id }) { t -> ResultRow(t, byKey) { openTile(t) } }
-            if (cat in listOf("all", "songs")) items(found.take(if (cat == "all") 30 else 200), key = { "s-" + it.key }) { t ->
-                TrackRow(t, onClick = { MusicContext.set("Search"); playList(found, found.indexOf(t), false) })
+            if (cat in listOf("all", "songs")) {
+                if (found.isNotEmpty()) item { SectionTitle("In your library") }
+                items(found.take(if (cat == "all") 5 else 200), key = { "s-" + it.key }) { t ->
+                    TrackRow(t, onClick = { MusicContext.set("Search"); playList(found, found.indexOf(t), false) })
+                }
+                item { SectionTitle("Songs") }
+                if (searching && online.isEmpty()) items(6, key = { "sk$it" }) { SongRowSkeleton() }
+                else if (online.isEmpty()) item {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Text(if (failed) "Couldn't search right now. Check the connection." else "No songs found for \u201c${q.trim()}\u201d.", color = c.sub, fontSize = 13.sp)
+                        if (failed) { Spacer(Modifier.height(8.dp)); PillButton("Try again", primary = true, icon = Icons.Rounded.Refresh) { retry++ } }
+                    }
+                }
+                itemsIndexed(online, key = { _, s -> "o-" + s.id }) { n, s -> SongRow(s, menu = actions.menu(s)) { actions.play(online, n, "Search") } }
             }
         }
     }
@@ -407,9 +448,10 @@ internal fun TrackRow(t: Track, playing: Boolean = false, menu: List<Pair<String
     Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Play ${t.title}") { onClick() }.padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
         Art(t, Modifier.size(48.dp), BlazeShapes.xs, 160)
+        val shown = remember(t) { SongTitle.forTrack(t) }   // 0.55.11: song title + artist, no video words
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
-            Text(t.title, color = if (playing) c.accent else c.ink, fontSize = 15.sp, fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (t.artist.isNotBlank()) Text(t.artist, color = c.sub, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(shown.title, color = if (playing) c.accent else c.ink, fontSize = 15.sp, fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (shown.artist.isNotBlank()) Text(shown.artist, color = c.sub, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (menu.isNotEmpty()) Box {
             RoundIcon(Icons.Rounded.MoreVert, "More for ${t.title}", tint = c.sub) { open = true }

@@ -94,7 +94,7 @@ object MusicExtras {
             }
             else -> return@withContext "That isn't a YouTube or Spotify playlist link."
         }
-        if (picks.isEmpty()) return@withContext "Couldn't read any songs from that playlist" + (if (skipped.isNotEmpty()) " (no clear YouTube match for ${skipped.size})." else ". It may be private.")
+        if (picks.isEmpty()) return@withContext "Couldn't read any songs from that playlist" + (if (skipped.isNotEmpty()) " (no clear match for ${skipped.size})." else ". It may be private.")
         val plName = name.ifBlank { "Imported playlist" }
         val id = MediaLib.newPlaylistId()
         MediaLib.setPlaylists(PlaylistOps.create(MediaLib.playlists.value, plName, id))

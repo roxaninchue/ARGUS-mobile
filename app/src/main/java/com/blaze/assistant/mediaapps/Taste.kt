@@ -125,6 +125,12 @@ object Taste {
     fun chips(ctx: Context, kind: String): List<String> { init(ctx); return ForYou.chips(kind, events, System.currentTimeMillis()) }
     fun seeds(ctx: Context, kind: String): List<String> { init(ctx); return ForYou.seeds(kind, events, System.currentTimeMillis()) }
 
+    /** 0.55.11: the artists and styles played most, for Music's "Because you listened to" and genre shelves. */
+    fun favourites(ctx: Context, kind: String): Pair<List<String>, List<String>> {
+        init(ctx); val now = System.currentTimeMillis()
+        return TasteLogic.topAuthors(events, kind, now, 2) to TasteLogic.topStyles(events, kind, now, 3)
+    }
+
     @Synchronized fun note(ctx: Context?, kind: String, title: String, author: String, weight: Int) {
         if (ctx != null) init(ctx)
         if (file == null) return
