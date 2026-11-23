@@ -30,6 +30,17 @@
   flag that asked for trimming, `ToolWire.mayTrim` is always false). Not done: changing the lane recheck interval.
 - The `gateway/` folder in this project is an old 0.3.1 copy; it is not the live code.
 
+**CI gate (2026-11-23 21:55 CAT)**
+- GitLab CI/CD is now enabled on the project (it was disabled) and `only_allow_merge_if_pipeline_succeeds` = true,
+  `allow_merge_on_skipped_pipeline` = false: an MR merges only on a green pipeline.
+- The new `.gitlab-ci.yml` is on branch `ci/gated-pipeline`, **MR !75, not merged**. Its first pipeline (3105188261)
+  failed before any job ran: **`ci_quota_exceeded`**. The `blazeinchue` namespace (free plan) has used 413 compute
+  minutes this month against the free plan's 400; other projects in the account hit the same wall on 2026-11-20.
+  Unblocks when: the monthly minutes reset (1 December), Finn buys minutes, or a project runner (his PC) is
+  registered. Then re-run the MR pipeline (`POST /projects/87806466/pipelines` is not enough for MRs; push a commit
+  without `[skip ci]` to the branch or press "Run pipeline" on the MR).
+- Removal 1 (phone control) is **not started**: it waits for a green MR !75.
+
 **Plans**
 - **PC replacement (Finn, 2026-11-23): the current direction.** Plan, phases and the Phase 0 removals in
   [docs/PC-REPLACEMENT.md](docs/PC-REPLACEMENT.md). Phase 0 = slim-down (one removal per merge request) + gated GitLab CI.
