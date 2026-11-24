@@ -13,7 +13,7 @@ class MoviesLegalTest {
     private val app = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }.absoluteFile
     private val repoRoot = app.parentFile.parentFile.parentFile
     private val banned = Regex("""(?i)zenda|vega-org|vega-providers|vegamovies|moviesmod|hdhub|multimovies|uhdmovies|katmovie|goodbyedpi|byedpi|zapret|warp-plus|cloudflare warp""")
-    private val okHosts = setOf("archive.org", "blazeinchue.pages.dev", "github.com", "raw.githubusercontent.com", "gitlab.com", "codeberg.org", "bitbucket.org", "192.168.1.20", "schemas.android.com")
+    private val okHosts = setOf("archive.org", "blazeinchue.pages.dev", "github.com", "raw.githubusercontent.com", "gitlab.com", "codeberg.org", "bitbucket.org", "192.168.1.20", "schemas.android.com", "api.github.com")
 
     private fun scanned(): List<File> = (listOf(File(app, "java/com/blaze/assistant/movies"), File(app, "assets/movies"), File(app, "assets/skills/reverse-engineer-anything"))
         .flatMap { d -> d.walkTopDown().filter { it.isFile }.toList() } + File(app, "java/com/blaze/assistant/mediaapps/MoviesUi.kt") + File(app, "java/com/blaze/assistant/mediaapps/VideoShell.kt") +

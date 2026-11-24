@@ -36,6 +36,9 @@ class ProviderStore(private val dir: File, private val kv: Kv,
         /** 0.55.14: private sources' tokens, sealed, by repo base (kept apart from the state so they never land in a log or export). */
         const val TOKENS_KEY = "movies_source_tokens_v1"
         const val MAX_MODULE = 3 * 1024 * 1024
+        /** 0.55.17: manifest folders tried per source (an author name tries several repo names, each on main / master, root / dist). */
+        const val MAX_BASES = 24
+        const val MAX_LISTED = 6
         fun defaultFetch(url: String, extra: Map<String, String> = emptyMap()): String {
             UrlGuard.check(url)?.let { throw IllegalArgumentException(it) }
             val r = DefaultSandboxHttp.request(SandboxHttp.Req(url, headers = mapOf("Cache-Control" to "no-cache") + extra))
@@ -93,15 +96,51 @@ class ProviderStore(private val dir: File, private val kv: Kv,
             val e = ProviderRepo.parseManifest(get(spec.manifest, spec.authPrefix, tok))
             if (e.isNotEmpty()) return Found(spec.bases.first(), e, spec)
         } catch (e: Exception) { last = e }
-        for (base in spec.bases.take(8)) {
+        for (base in spec.bases.take(MAX_BASES)) {
             try {
                 val entries = ProviderRepo.parseManifest(get(ProviderRepo.manifestUrl(base), spec.authPrefix, tok))
                 if (entries.isNotEmpty()) return Found(base, entries, spec.copy(manifest = ""))
             } catch (e: Exception) { last = e }
         }
+        // 0.55.17: a bare GitHub author name whose guessed repos have no manifest: look through the author's own repos.
+        if (spec.author.isNotBlank()) {
+            val tried = spec.bases.toSet()
+            for ((name, branch) in authorRepoList(spec.author, tok)) {
+                for (base in listOf(SourceInput.raw(SourceInput.Host.GITHUB, spec.author, name, branch)).flatMap { listOf(it, "$it/dist") }) {
+                    if (base in tried) continue
+                    try {
+                        val entries = ProviderRepo.parseManifest(get(ProviderRepo.manifestUrl(base), spec.authPrefix, tok))
+                        if (entries.isNotEmpty()) return Found(base, entries, spec.copy(manifest = ""))
+                    } catch (e: Exception) { last = e }
+                }
+            }
+        }
         val why = last?.message?.let { " ($it)" } ?: ""
         throw IllegalStateException(if (tok.isEmpty() && spec.privateOk && why.contains("40")) "No manifest.json found at ${spec.label}$why. If the repo is private, add it as Private with a token."
             else "No manifest.json found at ${spec.label}$why")
+    }
+
+    /**
+     * 0.55.17: an author's GitHub repos that look like provider sources (name has "provider", "plugin", "source" or
+     * "extension"; templates last), as (name, default branch), at most [MAX_LISTED]. The public API first, the profile
+     * page when the API is rate-limited. Empty on any failure.
+     */
+    internal fun authorRepoList(owner: String, token: String = ""): List<Pair<String, String>> {
+        val hint = Regex("(?i)provider|plugin|source|extension")
+        fun rank(n: String) = (if (n.contains("template", true)) 2 else 0) + (if (n.contains("provider", true)) 0 else 1)
+        val found: List<Pair<String, String>> = try {
+            val a = JSONArray(fetch("https://api.github.com/users/$owner/repos?per_page=100&sort=pushed"))
+            (0 until a.length()).mapNotNull { a.optJSONObject(it) }.filter { !it.optBoolean("archived") }
+                .map { it.optString("name") to it.optString("default_branch", "main").ifBlank { "main" } }
+        } catch (_: Exception) {
+            try {
+                val html = fetch("https://github.com/$owner?tab=repositories")
+                Regex("href=\"/" + Regex.escape(owner) + "/([A-Za-z0-9._-]{1,100})\"[^>]*itemprop=\"name codeRepository\"", RegexOption.IGNORE_CASE)
+                    .findAll(html).map { it.groupValues[1] to "main" }.toList()
+            } catch (_: Exception) { emptyList() }
+        }
+        return found.filter { (n, _) -> hint.containsMatchIn(n) && ProviderRepo.SAFE_ID.matches(n) }
+            .distinctBy { it.first.lowercase() }.sortedBy { rank(it.first) }.take(MAX_LISTED)
     }
 
     /** Kept for callers that only want the folder and its providers. */

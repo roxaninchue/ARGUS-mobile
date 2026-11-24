@@ -94,4 +94,30 @@ class SourceInputTest {
         val s2 = ProviderStore(Files.createTempDirectory("src3").toFile(), MemKv()) { u -> if (u.contains("/someone/providers/main/manifest.json")) """[{"value":"y"}]""" else throw IllegalStateException("404") }
         s2.addRepo("someone"); assertEquals("someone", s2.state.repos.single().label)
     }
+
+    @Test fun anOrgNameFindsItsProvidersRepoLikeOtherApps() {
+        // 0.55.17 (Finn): typing just the org name finds `<first part>-providers`.
+        assertEquals(listOf("providers", "team-providers", "team-org-providers"), SourceInput.authorRepos("team-org"))
+        assertEquals(listOf("providers", "someone-providers"), SourceInput.authorRepos("someone"))
+        val asked = ArrayList<String>()
+        val s = ProviderStore(Files.createTempDirectory("src4").toFile(), MemKv()) { u -> asked += u
+            if (u == "https://raw.githubusercontent.com/team-org/team-providers/main/manifest.json") """[{"value":"a"},{"value":"b"}]""" else throw IllegalStateException("404") }
+        val (base, entries) = s.addRepo("team-org")
+        assertEquals("https://raw.githubusercontent.com/team-org/team-providers/main", base)
+        assertEquals(2, entries.size)
+        assertEquals("team-org", s.state.repos.single().label)
+        assertTrue(asked.none { it.contains("api.github.com") })   // found by name, no listing needed
+    }
+
+    @Test fun whenNoNameFitsTheAuthorsReposAreSearched() {
+        val api = """[{"name":"website","default_branch":"main"},{"name":"providers-template","default_branch":"main"},
+            {"name":"stream-plugins","default_branch":"dev"},{"name":"old-providers","default_branch":"main","archived":true}]"""
+        val s = ProviderStore(Files.createTempDirectory("src5").toFile(), MemKv()) { u -> when (u) {
+            "https://api.github.com/users/crew/repos?per_page=100&sort=pushed" -> api
+            "https://raw.githubusercontent.com/crew/stream-plugins/dev/manifest.json" -> """[{"value":"z"}]"""
+            else -> throw IllegalStateException("404") } }
+        val (base, _) = s.addRepo("crew")
+        assertEquals("https://raw.githubusercontent.com/crew/stream-plugins/dev", base)
+        assertEquals(listOf("stream-plugins", "providers-template"), s.authorRepoList("crew").map { it.first })
+    }
 }

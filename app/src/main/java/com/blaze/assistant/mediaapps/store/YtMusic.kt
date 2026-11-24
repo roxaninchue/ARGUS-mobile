@@ -19,10 +19,12 @@ object YtMusic {
     /** The "Songs" filter of a YouTube Music search. */
     const val SONGS = "EgWKAQIIAWoKEAoQCRADEAQQBRAF"
 
-    suspend fun searchRaw(query: String): String = withContext(Dispatchers.IO) {
+    /** [continuation] = the next page of an earlier search (its token from [YtMusicParse.songs]). */
+    suspend fun searchRaw(query: String, continuation: String = ""): String = withContext(Dispatchers.IO) {
         val body = JSONObject().put("context", JSONObject().put("client", JSONObject().put("clientName", "WEB_REMIX")
             .put("clientVersion", VERSION).put("hl", "en").put("gl", "US"))).put("query", query).put("params", SONGS)
-        val h = URL("https://music.youtube.com/youtubei/v1/search?prettyPrint=false").openConnection() as HttpURLConnection
+        val more = if (continuation.isBlank()) "" else java.net.URLEncoder.encode(continuation, "UTF-8").let { "&ctoken=$it&continuation=$it&type=next" }
+        val h = URL("https://music.youtube.com/youtubei/v1/search?prettyPrint=false$more").openConnection() as HttpURLConnection
         try {
             h.requestMethod = "POST"; h.doOutput = true; h.connectTimeout = 12_000; h.readTimeout = 15_000
             h.setRequestProperty("Content-Type", "application/json")
@@ -46,4 +48,23 @@ object YtMusic {
         val page = LinkParse.ytSearch(LinkYt.search(q, ""), YouTubeStoreSource.id)
         return page.items.filter { it.durationSec in 1..20 * 60 }.map { YtMusicParse.fromVideo(it) }.take(max)
     }
+
+    /**
+     * 0.55.17 (Finn: a genre opens its own endless page): one page of songs for [query]. [token] "" = the first page;
+     * the returned `next` continues it: "m:<ctoken>" = YouTube Music's next page; "y" / "y:<token>" = the plain YouTube
+     * search (titles cleaned), used when YouTube Music fails or has no more. An empty `next` = nothing more anywhere.
+     */
+    suspend fun songsPage(query: String, token: String = ""): StorePage {
+        val q = query.trim(); if (q.isEmpty()) return StorePage(emptyList(), "")
+        if (token == "y" || token.startsWith("y:")) {
+            val p = LinkParse.ytSearch(LinkYt.search(q, token.removePrefix("y").removePrefix(":")), YouTubeStoreSource.id)
+            return StorePage(p.items.filter { it.durationSec in 1..20 * 60 }.map { YtMusicParse.fromVideo(it) }, if (p.next.isBlank()) "" else "y:" + p.next)
+        }
+        val r = runCatching { YtMusicParse.songs(searchRaw(q, token.removePrefix("m:")), YouTubeStoreSource.id) }.getOrNull()
+        if (r != null && r.items.isNotEmpty()) return StorePage(r.items, nextAfterMusic(r.next))
+        return songsPage(q, "y")
+    }
+
+    /** After a YouTube Music page: its next page, or the plain search once it has no more. */
+    fun nextAfterMusic(next: String) = if (next.isNotBlank()) "m:$next" else "y"
 }

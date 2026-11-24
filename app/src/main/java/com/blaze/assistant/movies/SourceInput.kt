@@ -37,7 +37,9 @@ object SourceInput {
      * [manifest] is set only when the input named a manifest file other than `<base>/manifest.json`.
      * [authPrefix] is the only URL prefix a private token may be sent to ("" = this host can't take a token).
      */
-    data class Spec(val key: String, val label: String, val host: Host, val bases: List<String>, val manifest: String = "", val authPrefix: String = "") {
+    data class Spec(val key: String, val label: String, val host: Host, val bases: List<String>, val manifest: String = "", val authPrefix: String = "",
+                    /** 0.55.17: set for a bare GitHub author name: when no guessed repo has a manifest, the author's repos are listed and searched. */
+                    val author: String = "") {
         val privateOk: Boolean get() = authPrefix.isNotEmpty()
     }
 
@@ -64,7 +66,7 @@ object SourceInput {
                 val suffix = m.groupValues[2]
                 val host = if (suffix.isEmpty()) Host.GITHUB else Host.ofSuffix(suffix)
                     ?: return Parsed(null, "\u201c@$suffix\u201d isn't a host. Use @cb (Codeberg), @bb (Bitbucket) or @gl (GitLab), or nothing for GitHub.")
-                return Parsed(repo(host, m.groupValues[1], DEFAULT_REPO, "", ""))
+                return Parsed(author(host, m.groupValues[1]))
             }
             OWNER_REPO.matchEntire(s)?.let { m -> return Parsed(repo(Host.GITHUB, m.groupValues[1], m.groupValues[2], m.groupValues[3].trim('/'), "")) }
             // "github.com/o/r", "example.org/folder": a link without its https://
@@ -117,6 +119,26 @@ object SourceInput {
                 Parsed(repo(h, project.dropLast(1).joinToString("/"), project.last().removeSuffix(".git"), branch, path.joinToString("/")))
             }
         }
+    }
+
+    /**
+     * 0.55.17 (Finn: "in Vega I just type the org name and its providers show"): the repo names a bare author name is
+     * tried as, in order: `providers`, then `<prefix>-providers` for each leading part of the name (`team-org` tries
+     * `team-providers` and `team-org-providers`), then `<author>-providers`. The common conventions, no repo named by us.
+     * For a GitHub author, [ProviderStore.resolveSource] then lists the author's repos when none of these has a manifest.
+     */
+    fun authorRepos(owner: String): List<String> {
+        val parts = owner.split('-', '_').filter { it.isNotEmpty() }
+        val prefixes = (1..parts.size).map { n -> owner.substring(0, parts.take(n).sumOf { it.length } + (n - 1)) }
+        return (listOf(DEFAULT_REPO) + prefixes.map { "$it-$DEFAULT_REPO" } + "$owner-$DEFAULT_REPO").map { it.lowercase() }.distinct()
+    }
+
+    private fun author(h: Host, owner: String): Spec {
+        val first = repo(h, owner, DEFAULT_REPO, "", "")
+        val bases = authorRepos(owner).flatMap { name -> repo(h, owner, name, "", "").bases }.distinct()
+        val auth = if (h == Host.GITHUB) "https://raw.githubusercontent.com/$owner/" else ""
+        return first.copy(key = (h.suffix + ":" + owner + "@author").lowercase(), bases = bases, authPrefix = auth,
+            author = if (h == Host.GITHUB) owner else "")
     }
 
     /** A repo on a git host. No branch = try main, then master. */

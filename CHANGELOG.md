@@ -1,4 +1,4 @@
-## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines
+## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines; org-name providers; genre pages
 Finn (24 Nov 13:46): "Cloud sync should now cover all important things like bots too". His Health team was gone after
 clearing storage for the sign-in crash, while memory (which syncs) still mentioned it. Bots, teams and routines lived
 only on the phone (team.db and the `routines` pref), so nothing could bring them back.
@@ -11,7 +11,22 @@ only on the phone (team.db and the `routines` pref), so nothing could bring them
   (`Routines.save`). A bot that arrives reloads the Team screen without a second hello.
 - Same end-to-end encryption and gateway API as the other kinds; no gateway change. An older Argus ignores the new kinds.
 - Not synced yet: bot conversation threads, jobs, and anything deleted before this build.
-- Tests: BotRoutineSyncTest. Not compiled with Gradle here; CI is the first compile (no build until Finn says).
+- Tests: BotRoutineSyncTest.
+
+**Movie: an org name finds its providers** (Finn: "in Vega I just type the org name and its providers show"). A bare
+author name now tries `providers`, then `<first part>-providers` and `<name>-providers` (main / master, root / dist), and
+when none has a manifest, lists the author's GitHub repos (API, then the profile page) and tries the ones named like
+provider sources. Typing just the org name of a source that follows this common convention now lists its providers.
+(SourceInput.authorRepos, ProviderStore.authorRepoList; SourceInputTest.)
+
+**Music: genre tiles open real genre pages** (Finn: "give them cover images, and they should not be a quick button to
+Argus playing random downloaded music"). Every Browse all tile (genres and moods, "Chill" now once) shows the cover of
+that genre's top song on YouTube (kept a week) and opens its own page: a cover header, Play, and that genre's songs from
+YouTube Music, loading more as you scroll, then the plain YouTube search when YouTube Music runs out, until YouTube has
+no more. The tiles no longer start the DJ on the library. (MusicGenres.kt, MusicGenrePage.kt, YtMusic.songsPage;
+MusicGenresTest.)
+
+Not compiled with Gradle here; CI is the first compile (no build until Finn says).
 
 ## 0.55.16 (versionCode 225, 2026-11-24): fix the crash right after sign-in
 Finn's crash report from the 0.55.15 crash screen (24 Nov 11:03, Samsung A12, Android 12): `VerifyError: Verifier

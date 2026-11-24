@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
@@ -368,15 +369,19 @@ internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, open
         }
         online = r.getOrDefault(emptyList()); failed = r.isFailure; searching = false
     }
+    // 0.55.17 (Finn): a genre or mood tile opens its own page of that genre's songs (MusicGenrePage), never the DJ.
+    var genre by remember { mutableStateOf<MusicGenres.Tile?>(null) }
+    val covers by MusicGenres.covers.collectAsState()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(Unit) { MusicGenres.open(ctx) }
+    genre?.let { g -> MusicGenrePage(g, covers[g.name].orEmpty(), actions) { genre = null }; return }
     Column(Modifier.fillMaxSize()) {
         KitSearch(q, { q = it }, "What do you want to listen to?", Modifier.padding(horizontal = 14.dp).fillMaxWidth())
         if (q.trim().isEmpty()) {
-            // Browse: genres (search them) and moods (Argus DJ with a library, else a search), then what's trending.
+            // Browse: genres and moods, each with its cover, each opening its own page; then what's trending.
             val palette = listOf(Color(0xFFE8115B), Color(0xFF1E3264), Color(0xFF8D67AB), Color(0xFFE1118C), Color(0xFF148A08), Color(0xFFBA5D07),
                 Color(0xFF503750), Color(0xFF0D73EC), Color(0xFF477D95), Color(0xFFAF2896))
-            val genreTiles = MusicFeedPlan.genres.map { it to Icons.Rounded.MusicNote }
-            val moodTiles = DjPlan.Vibe.values().filter { it != DjPlan.Vibe.AUTO }.map { it.label to Icons.Rounded.Headphones }
-            val tiles = (genreTiles + moodTiles).mapIndexed { i, (n, ic) -> Triple(n, palette[i % palette.size], ic) }
+            val tiles = MusicGenres.tiles().mapIndexed { i, t -> Triple(t, palette[i % palette.size], covers[t.name].orEmpty()) }
             val trending = shelves.firstOrNull { it.id == "trending" && it.items.isNotEmpty() } ?: shelves.firstOrNull { it.items.isNotEmpty() }
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 150.dp)) {
                 if (trending != null) item(key = "trend") { SongShelf(trending.title, trending.items, actions) }
@@ -384,14 +389,15 @@ internal fun MusicSearchPage(playList: (List<Track>, Int, Boolean) -> Unit, open
                 item { SectionTitle("Browse all") }
                 items(tiles.chunked(2)) { row ->
                     Row(Modifier.padding(horizontal = 14.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEach { (name, col, icon) ->
+                        row.forEach { (t, col, cover) ->
                             Box(Modifier.weight(1f).height(92.dp).clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(col, col.copy(alpha = 0.6f))))
-                                .clickable(role = Role.Button, onClickLabel = name) {
-                                    val vibe = DjPlan.Vibe.values().firstOrNull { it.label == name }
-                                    if (vibe != null && songs.isNotEmpty()) onVibe(vibe) else q = if (vibe != null) "$name music" else name
-                                }.padding(12.dp)) {
-                                Text(name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.align(Alignment.BottomEnd).size(30.dp))
+                                .clickable(role = Role.Button, onClickLabel = "Open ${t.name}") { genre = t }) {
+                                // The genre's top song cover, tilted into the corner (the way music apps show genres).
+                                if (cover.isNotBlank()) Art(songTrack(com.blaze.assistant.mediaapps.store.StoreItem("youtube", "cover:" + t.name, t.name, "", thumb = cover, square = true)),
+                                    Modifier.size(70.dp).align(Alignment.BottomEnd).offset(x = 14.dp, y = 6.dp).graphicsLayer { rotationZ = 22f }, RoundedCornerShape(6.dp), 300)
+                                else Icon(if (t.mood) Icons.Rounded.Headphones else Icons.Rounded.MusicNote, contentDescription = null, tint = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp).size(30.dp))
+                                Text(t.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(12.dp))
                             }
                         }
                         if (row.size == 1) Spacer(Modifier.weight(1f))
