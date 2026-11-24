@@ -98,4 +98,25 @@ class LiveModelsTest {
         assertEquals("groq/openai/gpt-oss-120b", ModelRoute.livePrefer(L, ModelRoute.task("quick", false, false), hasTools = false))
         assertNull(ModelRoute.livePrefer(emptyList(), agent, hasTools = true))
     }
+
+    @Test fun gatewayRefreshStampRefetchesAtOnce() {   // 0.55.15: admin "Refresh models now" (gateway 0.9.42 X-Blaze-Models-At)
+        var t = 1_000_000L
+        val c = LiveModels.Cache(now = { t })
+        var calls = 0
+        assertTrue(c.refresh { calls++; live.toString() })
+        assertFalse("first stamp right after a fetch is the same list", c.gatewayChanged(500L))
+        t += 10_000
+        assertFalse(c.gatewayChanged(500L)); assertFalse(c.refresh { calls++; null })
+        assertTrue("a newer stamp makes the list due now", c.gatewayChanged(900L)); assertTrue(c.refresh { calls++; live.toString() })
+        assertEquals(2, calls)
+        assertFalse("an older stamp changes nothing", c.gatewayChanged(800L))
+    }
+
+    @Test fun pickerForceRefetchesAtMostEveryFiveSeconds() {
+        var t = 1_000_000L
+        val c = LiveModels.Cache(now = { t })
+        assertTrue(c.refresh { live.toString() })
+        t += 1_000; assertFalse(c.force())
+        t += LiveModels.FORCE_GAP_MS; assertTrue(c.force()); assertTrue(c.refresh { live.toString() })
+    }
 }

@@ -35,6 +35,10 @@ object LiveModels {
     const val AVOID_MAX = 8
     const val SKIP_ERR_MS = 5 * 60_000L
     const val SKIP_PLAN_MS = 24 * 3_600_000L
+    /** 0.55.15: the picker's own refresh at most this often (a quick re-open doesn't refetch). */
+    const val FORCE_GAP_MS = 5_000L
+    /** 0.55.15: gateway 0.9.42 response header: when its live model list last changed (ms since epoch). */
+    const val MODELS_AT = "x-blaze-models-at"
 
     data class Member(val key: String, val pref: String?, val name: String, val prov: String, val model: String = "", val route: String = "",
                       val lanes: List<String> = emptyList(), val ms: Int = 0, val success: Double? = null, val tools: Boolean = false, val vision: Boolean = false,
@@ -181,6 +185,29 @@ object LiveModels {
         @Volatile private var triedAt = Long.MIN_VALUE / 2
 
         fun due(): Boolean = now() - triedAt >= ttlMs
+
+        /** 0.55.15: the newest X-Blaze-Models-At seen (gateway 0.9.42+): when the gateway's live list last changed. */
+        @Volatile private var modelsAt = 0L
+
+        /**
+         * 0.55.15: a gateway response said its live list changed at [at] (admin "Refresh models now", or a health tick).
+         * Newer than what this list was fetched after: the list is due now. True when a refetch should start.
+         */
+        @Synchronized fun gatewayChanged(at: Long): Boolean {
+            if (at <= modelsAt) return false
+            val first = modelsAt == 0L
+            modelsAt = at
+            if (first && members.isNotEmpty() && now() - triedAt < ttlMs) return false   // first header after a fresh fetch: same list
+            triedAt = Long.MIN_VALUE / 2
+            return true
+        }
+
+        /** 0.55.15: the picker opened: fetch now, at most once every [FORCE_GAP_MS]. */
+        @Synchronized fun force(): Boolean {
+            if (now() - triedAt < FORCE_GAP_MS) return false
+            triedAt = Long.MIN_VALUE / 2
+            return true
+        }
 
         /** Ticks after every fetch (good or not), so the chip re-reads the list the moment it lands, not on its next open. */
         val changes = kotlinx.coroutines.flow.MutableStateFlow(0L)

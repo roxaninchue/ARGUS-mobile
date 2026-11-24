@@ -18,6 +18,7 @@ object LiveModelsFeed {
     /** 0.53.0 model picker: refresh the list now (the picker opened), with the signed-in gateway session. */
     fun touchNow() {
         if (!on()) return
+        if (!LiveModels.shared.force()) return   // 0.55.15: really refetch (refresh() alone skipped while the list was < 5 min old)
         val key = try { Settings.gatewayToken() } catch (_: Throwable) { "" }
         if (key.isBlank()) return
         Thread { LiveModels.shared.refresh { get(Providers.GATEWAY_BASE, key) } }.start()
@@ -48,8 +49,22 @@ object LiveModelsFeed {
      * the live list, so it only shows with `live_models` on.
      */
     fun served(headers: Map<String?, List<String>>?): Pair<String, String>? {
+        modelsChanged(headers)
         val a = LiveModels.answered(headers, if (on()) LiveModels.shared.list() else emptyList())
         if (a.route.isEmpty()) return null
         return a.route to (a.model?.let { "${it.prov} · ${it.name}" + if (a.fallback) " (fallback)" else "" } ?: "")
+    }
+
+    /**
+     * 0.55.15 (owner: "app models refresh the second I click"): gateway 0.9.42 stamps X-Blaze-Models-At on every response.
+     * A newer stamp than the list was fetched after (the admin pressed Refresh models now) refetches the list right away.
+     */
+    fun modelsChanged(headers: Map<String?, List<String>>?) {
+        if (!on() || headers == null) return
+        val v = headers.entries.firstOrNull { it.key?.equals(LiveModels.MODELS_AT, ignoreCase = true) == true }?.value?.firstOrNull()?.trim()?.toLongOrNull() ?: return
+        if (!LiveModels.shared.gatewayChanged(v)) return
+        val key = try { Settings.gatewayToken() } catch (_: Throwable) { "" }
+        if (key.isBlank()) return
+        Thread { LiveModels.shared.refresh { get(Providers.GATEWAY_BASE, key) } }.start()
     }
 }
