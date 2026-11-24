@@ -28,6 +28,7 @@ How to update: type /update in the chat (or Settings › Updates › Check for u
 - Linux: Alpine Linux in proot (terminal, Python, Node, git). The on-phone Linux desktop was removed in wave B-4.
 
 ## Feature map
+- New in 0.55.14: deleting or moving a calendar event acts on that exact event (Argus asks when two match), all-day events show as all day, and Movie's Add source takes an author name, owner/repo or any repo link, public or private with a token.
 - New in 0.55.13: Video is now Argus Movie (just "Movie" in the app). Movies come from YouTube, your own videos, Jellyfin and open-source providers you add; Internet Archive and Blender are gone. Ask Argus to add, test or remove a source in chat, and it does it for you.
 - New in 0.55.12: the model list stays open until you tap its X (or go Back), scrolls smoothly even on a slow drag, and the opening ARGUS animation fills the whole screen with no black bars.
 - New in 0.55.11: Music plays songs from YouTube on every page: Home, Search and an empty Library open on shelves of songs (trending, new releases, genres, picks from what you play), saved so they show offline too, with clean song titles and square covers. Jamendo and Internet Archive music are gone.

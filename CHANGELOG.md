@@ -1,3 +1,32 @@
+## 0.55.14 (versionCode 223, 2026-11-24): calendar deletes the right event, Vega-style Add source
+Plans: docs/plans/CALENDAR-DELETE-FIX.md and docs/plans/MOVIE-SOURCE-ADDER.md (Finn approved 2026-11-24). Phone report
+24 Nov 02:15-02:21: asked to watch a build, Argus said "I didn't actually get that running", claimed a routine made a
+duplicate calendar event, then "deleted the duplicate" "Go home" (the only one) and reported it at "02:00".
+- Calendar:
+  - `calendar_events` lists each event with its id (`[id 41]`) and says two lines are two events only when their ids
+    differ, so two reads of one event are never "a duplicate" (`EventLines.idNote`).
+  - `delete_event` / `move_event` take `event_id` (best) or a title. Without an id, several different events matching
+    is never guessed between: the reply lists them with ids and asks (`EventLines.pick`, `manyText`). A named day is
+    matched by the event's own date (all-day by UTC date). The delete reply says how many events with that title are
+    left, so "deleted the duplicate" can't be said about the only one.
+  - All-day events read "Wed 25 Nov, all day", never a local clock time like 02:00 (`EventLines.whenText`).
+- Tool rows: a call row only takes a result stamped at or after the call (`ToolTrail.pick`, used by ChatToolRows and
+  LivingModel), so older turns' results with the same arguments no longer show under a new step ("Checked your calendar · 2").
+- Claim check: on a bare "Yes", a reply reporting a status ("build #131 is running") is no longer read as a claim that
+  Argus started something; a first-person "I started it" is still checked (`ClaimCheck`, FIRST_PERSON).
+- Argus Movie, Add source (Vega-style, rules reimplemented, no Vega code; Vega is PolyForm Noncommercial now):
+  - `SourceInput` reads every shared form: an author name (`author` = GitHub, `author@cb` Codeberg, `author@bb`
+    Bitbucket, `author@gl` GitLab; a bare author means their `vega-providers` repo), `owner/repo[@branch]`, repo links on
+    GitHub / Codeberg / Bitbucket / GitLab (subgroups, branches, folders), raw links, any https manifest or folder.
+    `ProviderRepo.candidates` and `ProviderStore.resolveSource` use it; a manifest file with another name is remembered.
+  - Private sources: the Add source dialog has Public / Private; Private takes an access token, sealed with the Android
+    Keystore (`Secrets`) and stored apart from the provider state; it is sent only to that repo's own URL prefix
+    (GitHub raw or the user's own https folder), never another repo or host. Removing the source deletes the token.
+  - Dialog wording: "Enter an author name, repo URL or manifest URL", hint "author, author@cb or repo URL".
+  - `movie_sources` (catalog tool) describes the new forms; tokens never go through chat.
+- Tests: CalendarDeleteFixTest (3), ToolTrailPickTest (2), ClaimCheckShortYesTest (2), SourceInputTest (7, new).
+  Not compiled with Gradle here; CI is the first compile.
+
 ## 0.55.13 (versionCode 222, 2026-11-24): Argus Movie, with tools Argus can use
 Branch `argus-movie` (MR !78; written as 0.55.12 / 221 in parallel with !77, renumbered and brought into main on top of 0.55.12; not built yet, Finn wants one build after the next feature branches). Phone report 2026-11-24 01:47-01:55: asked to add a
 provider, Argus said it had no tool for it, guessed a website URL that the Add source field can't read ("No manifest.json
