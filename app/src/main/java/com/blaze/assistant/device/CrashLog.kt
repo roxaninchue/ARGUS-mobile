@@ -114,7 +114,7 @@ object CrashLog {
         return String(buf, 0, n, Charsets.UTF_8)
     }
 
-    private fun checkLastExit(ctx: Context) {
+    @Synchronized private fun checkLastExit(ctx: Context) {
         val mark = File(ctx.filesDir, "blaze_inflight.txt")
         val during = if (mark.exists()) mark.readText().lines().filter { it.isNotBlank() }.joinToString("; ") else null
         mark.delete()
@@ -133,6 +133,41 @@ object CrashLog {
         }
         if (!wrote && during != null) { writeNow(redact(scrubSecrets("CRASH (previous run ended while running: $during)"), secrets)); wrote = true }
         if (wrote) { markPending(); pendingChanged?.invoke() }
+    }
+
+    // ---------------- 0.55.15: crash-loop safe screen (24 Nov report: "keeps crashing" after sign-in, no way to send logs) ----------------
+
+    /** How long a launch must stay up before it counts as surviving (a crash sooner is a crash loop). */
+    const val SURVIVE_MS = 20_000L
+
+    /**
+     * Pure: whether this launch should open the crash screen instead of Argus. [lastLaunchUnfinished] = the previous
+     * launch never reached [SURVIVE_MS] (its marker is still there); [pending] = a crash is recorded and unreported.
+     */
+    fun safeScreen(lastLaunchUnfinished: Boolean, pending: Boolean): Boolean = lastLaunchUnfinished && pending
+
+    /**
+     * Called first thing in MainActivity.onCreate. Marks this launch as running and returns true when the previous launch
+     * died quickly with a crash on record: show [com.blaze.assistant.device.CrashReportActivity] so the report can be
+     * shared even though Argus itself closes at once. Never throws.
+     */
+    fun launchBegan(ctx: Context): Boolean = try {
+        val f = File(ctx.filesDir, "blaze_launch")
+        val unfinished = f.exists()
+        f.writeText(System.currentTimeMillis().toString())
+        // A native crash is only known from Android's exit record: read it now (synchronized with the start-up check).
+        if (unfinished && !pendingReport()) try { checkLastExit(ctx) } catch (_: Throwable) { }
+        safeScreen(unfinished, pendingReport())
+    } catch (_: Throwable) { false }
+
+    /** This launch stayed up [SURVIVE_MS]: not a crash loop. Never throws. */
+    fun launchSurvived(ctx: Context) { try { File(ctx.filesDir, "blaze_launch").delete() } catch (_: Throwable) { } }
+
+    /** Pure: the part of the log the crash screen shows: the newest CRASH / CAUGHT entry and what follows it, at most [max] chars. */
+    fun lastCrash(log: String, max: Int = 6000): String {
+        val i = maxOf(log.lastIndexOf("CRASH"), log.lastIndexOf("CAUGHT on main (giving up)"))
+        val from = if (i < 0) maxOf(0, log.length - max) else maxOf(0, log.lastIndexOf('\n', i).let { if (it < 0) 0 else it + 1 })
+        return log.substring(from).take(max).trim()
     }
 
     /**

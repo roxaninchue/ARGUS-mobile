@@ -288,6 +288,12 @@
             </intent-filter>
         </activity>
 
+        <!-- 0.55.15: the crash screen after a crash right at start (CrashLog.launchBegan); plain views. -->
+        <activity
+            android:name=".device.CrashReportActivity"
+            android:exported="false"
+            android:label="ARGUS crash report"
+            android:theme="@style/Theme.Blaze" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

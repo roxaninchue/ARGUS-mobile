@@ -3,6 +3,7 @@
 ## Current state (2026-11-22, 21:35 CAT)
 
 **App**
+- 2026-11-24: 0.55.15 (224) adds a crash screen (`CrashReportActivity`) when Argus crashes within 20 s of starting, so a crash loop (Finn's report: crashes after sign-in, Google and GitHub) can still be shared. Root cause of that crash still unknown, waiting on the shared trace.
 - **Latest green build for Finn's phone check: 0.55.5 (versionCode 214)**, commit `8ffac6ee`, GitHub Actions "Build APK" run 45057221018 on the
   mirror `roxaninchue/ARGUS-mobile` (success). What it carries: CHANGELOG 0.55.5 (team tools and every tool area in the
   lean chat, no-lost-tools parity test, the app never asks the gateway to trim tools) plus 0.55.4's ghost-alarm fix.

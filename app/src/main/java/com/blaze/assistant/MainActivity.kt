@@ -43,6 +43,14 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         // startAssistantActivity, which Android puts in a separate (assistant) task even with singleTask, so two Argus
         // cards showed in Recents. If another task already holds MainActivity, hand it this intent and close this copy.
         if (savedInstanceState == null && joinExistingTask()) return
+        // 0.55.15: Argus died right after starting last time with a crash on record: open the crash screen (plain views,
+        // none of Argus's start-up) so the report can still be shared; it offers to open Argus again.
+        if (savedInstanceState == null && !intent.getBooleanExtra(com.blaze.assistant.device.CrashReportActivity.EXTRA_SKIP, false) &&
+            com.blaze.assistant.device.CrashLog.launchBegan(this)) {
+            try { startActivity(android.content.Intent(this, com.blaze.assistant.device.CrashReportActivity::class.java)); finish(); return }
+            catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("crash screen", t) }
+        }
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ com.blaze.assistant.device.CrashLog.launchSurvived(applicationContext) }, com.blaze.assistant.device.CrashLog.SURVIVE_MS)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)

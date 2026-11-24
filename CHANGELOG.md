@@ -1,3 +1,13 @@
+## 0.55.15 (versionCode 224, 2026-11-24): crash screen when Argus crashes right at start
+Phone report 24 Nov 10:14: after signing in (Google, then GitHub after clearing storage) Argus closes at once on every
+start, so "Send crash report" never shows and no log can be shared.
+- `CrashLog.launchBegan` (first thing in MainActivity): when the previous launch died within 20 s (`SURVIVE_MS`) with a
+  crash on record (Java crash, or a native crash / ANR read from Android's exit record), Argus opens
+  `CrashReportActivity` instead: plain Android views, none of Argus's start-up, the newest CRASH entry
+  (`CrashLog.lastCrash`), and Share crash report / Copy / Open ARGUS. Nothing leaves the phone until the user shares it;
+  saved secrets are scrubbed as before. A launch that stays up 20 s clears the marker (`launchSurvived`).
+- Tests: CrashScreenTest (3). Not compiled with Gradle here; CI is the first compile.
+
 ## 0.55.14 (versionCode 223, 2026-11-24): calendar deletes the right event, Vega-style Add source
 Plans: docs/plans/CALENDAR-DELETE-FIX.md and docs/plans/MOVIE-SOURCE-ADDER.md (Finn approved 2026-11-24). Phone report
 24 Nov 02:15-02:21: asked to watch a build, Argus said "I didn't actually get that running", claimed a routine made a
