@@ -293,7 +293,7 @@
             android:name=".device.CrashReportActivity"
             android:exported="false"
             android:label="ARGUS crash report"
-            android:theme="@style/Theme.Blaze" />
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

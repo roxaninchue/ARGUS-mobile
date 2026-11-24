@@ -16,3 +16,4 @@ blaze://  # deep links and QR codes already in the wild
 "BLAZE"  # chat JSON role wire value, read forever
 blaze\.db  # database file name kept (plan Phase 5, option A)
 blaze-app\.workers\.dev  # account-wide workers.dev subdomain, not renamed
+[Xx]-[Bb]laze-[Mm]odels-[Aa]t  # gateway wire header (blaze-gateway 0.9.42), renamed only with the gateway

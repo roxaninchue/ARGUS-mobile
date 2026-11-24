@@ -54,7 +54,8 @@ class CrashReportActivity : Activity() {
         }
         button("Open ${BrandName.NAME}") {
             CrashLog.dismissReport()
-            startActivity(Intent(this, com.blaze.assistant.MainActivity::class.java).putExtra(EXTRA_SKIP, true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+            (packageManager.getLaunchIntentForPackage(packageName) ?: Intent(Intent.ACTION_MAIN).setPackage(packageName))
+                .let { startActivity(it.putExtra(EXTRA_SKIP, true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)) }
             finish()
         }
         root.gravity = Gravity.TOP

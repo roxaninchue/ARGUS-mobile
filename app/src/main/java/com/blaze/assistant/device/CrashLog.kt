@@ -148,11 +148,11 @@ object CrashLog {
 
     /**
      * Called first thing in MainActivity.onCreate. Marks this launch as running and returns true when the previous launch
-     * died quickly with a crash on record: show [com.blaze.assistant.device.CrashReportActivity] so the report can be
+     * died quickly with a crash on record: show [CrashReportActivity] so the report can be
      * shared even though Argus itself closes at once. Never throws.
      */
     fun launchBegan(ctx: Context): Boolean = try {
-        val f = File(ctx.filesDir, "blaze_launch")
+        val f = File(ctx.filesDir, "argus_launch")
         val unfinished = f.exists()
         f.writeText(System.currentTimeMillis().toString())
         // A native crash is only known from Android's exit record: read it now (synchronized with the start-up check).
@@ -161,7 +161,7 @@ object CrashLog {
     } catch (_: Throwable) { false }
 
     /** This launch stayed up [SURVIVE_MS]: not a crash loop. Never throws. */
-    fun launchSurvived(ctx: Context) { try { File(ctx.filesDir, "blaze_launch").delete() } catch (_: Throwable) { } }
+    fun launchSurvived(ctx: Context) { try { File(ctx.filesDir, "argus_launch").delete() } catch (_: Throwable) { } }
 
     /** Pure: the part of the log the crash screen shows: the newest CRASH / CAUGHT entry and what follows it, at most [max] chars. */
     fun lastCrash(log: String, max: Int = 6000): String {

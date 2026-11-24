@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import com.blaze.assistant.ui.BlazeTheme
 import com.blaze.assistant.ui.ChatScreen
+import com.blaze.assistant.device.CrashLog
+import com.blaze.assistant.device.CrashReportActivity
 
 class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled {
     private val locked = mutableStateOf(false)
@@ -45,12 +47,12 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         if (savedInstanceState == null && joinExistingTask()) return
         // 0.55.15: Argus died right after starting last time with a crash on record: open the crash screen (plain views,
         // none of Argus's start-up) so the report can still be shared; it offers to open Argus again.
-        if (savedInstanceState == null && !intent.getBooleanExtra(com.blaze.assistant.device.CrashReportActivity.EXTRA_SKIP, false) &&
-            com.blaze.assistant.device.CrashLog.launchBegan(this)) {
-            try { startActivity(android.content.Intent(this, com.blaze.assistant.device.CrashReportActivity::class.java)); finish(); return }
-            catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("crash screen", t) }
+        if (savedInstanceState == null && !intent.getBooleanExtra(CrashReportActivity.EXTRA_SKIP, false) &&
+            CrashLog.launchBegan(this)) {
+            try { startActivity(android.content.Intent(this, CrashReportActivity::class.java)); finish(); return }
+            catch (t: Throwable) { CrashLog.quiet("crash screen", t) }
         }
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ com.blaze.assistant.device.CrashLog.launchSurvived(applicationContext) }, com.blaze.assistant.device.CrashLog.SURVIVE_MS)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ CrashLog.launchSurvived(applicationContext) }, CrashLog.SURVIVE_MS)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -58,7 +60,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         locked.value = com.blaze.assistant.agent.Settings.appLock
         gate.value = com.blaze.assistant.connect.AccountGate.recompute()
         preLock.value = try { com.blaze.assistant.ui.space.SpaceOnboarding.beforeLock(com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_ONBOARDED, false),
-            com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)) } catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("MainActivity preLock", t); false }
+            com.blaze.assistant.agent.Settings.bool(com.blaze.assistant.ui.space.SpaceOnboarding.PREF_INTRO_SEEN, false)) } catch (t: Throwable) { CrashLog.quiet("MainActivity preLock", t); false }
         lifecycleScope.launch { com.blaze.assistant.connect.AccountGate.lock.collect { gate.value = it } }
         setContent { BlazeTheme {
             // Owner 2026-11-18: the status bar icons follow ARGUS's own light / dark, not the phone's (SystemBarIcons.kt)
@@ -78,15 +80,15 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                 }
                 if (pip.value && !locked.value && gate.value == null) { if (videoPip.value) com.blaze.assistant.ui.StageVideoPip() else com.blaze.assistant.browser.phone.PhonePipView() }
                 // 0.46.5: after a crash (also a native one, read on the next start), offer the local report once; the user chooses
-                val crash = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(com.blaze.assistant.device.CrashLog.pendingReport()) }
+                val crash = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(CrashLog.pendingReport()) }
                 androidx.compose.runtime.DisposableEffect(Unit) {
-                    com.blaze.assistant.device.CrashLog.pendingChanged = { runOnUiThread { crash.value = com.blaze.assistant.device.CrashLog.pendingReport() } }
-                    onDispose { com.blaze.assistant.device.CrashLog.pendingChanged = null }
+                    CrashLog.pendingChanged = { runOnUiThread { crash.value = CrashLog.pendingReport() } }
+                    onDispose { CrashLog.pendingChanged = null }
                 }
                 if (crash.value && !locked.value && !pip.value && gate.value == null) com.blaze.assistant.ui.BlazeDialog(CRASH_TITLE, CRASH_BODY, confirm = "Send crash report",
-                    onConfirm = { com.blaze.assistant.device.CrashLog.dismissReport(); crash.value = false
-                        try { com.blaze.assistant.device.CrashLog.shareIntent(this@MainActivity)?.let { startActivity(it) } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("crash report share", e) } },
-                    dismiss = "Not now", onDismiss = { com.blaze.assistant.device.CrashLog.dismissReport(); crash.value = false })
+                    onConfirm = { CrashLog.dismissReport(); crash.value = false
+                        try { CrashLog.shareIntent(this@MainActivity)?.let { startActivity(it) } } catch (e: Throwable) { CrashLog.quiet("crash report share", e) } },
+                    dismiss = "Not now", onDismiss = { CrashLog.dismissReport(); crash.value = false })
             }
         } }
         watchFirstFrame()
@@ -124,15 +126,15 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
                 // posted: runs once this frame's traversal is over (a draw listener can't remove itself while drawing)
                 decor.post {
                     try { android.util.Log.i("BlazeStart", "first frame ${android.os.SystemClock.elapsedRealtime() - android.os.Process.getStartElapsedRealtime()} ms after process start") }
-                    catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("first frame log", e) }
+                    catch (e: Throwable) { CrashLog.quiet("first frame log", e) }
                     com.blaze.assistant.device.StartLater.firstFrameDrawn()
                 }
             }
         }
         try {
             decor.viewTreeObserver.addOnDrawListener(listener)
-            com.blaze.assistant.device.StartLater.onFirstFrame { try { decor.viewTreeObserver.removeOnDrawListener(listener) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("first frame listener", e) } }
-        } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("watchFirstFrame", e); com.blaze.assistant.device.StartLater.firstFrameDrawn() }
+            com.blaze.assistant.device.StartLater.onFirstFrame { try { decor.viewTreeObserver.removeOnDrawListener(listener) } catch (e: Throwable) { CrashLog.quiet("first frame listener", e) } }
+        } catch (e: Throwable) { CrashLog.quiet("watchFirstFrame", e); com.blaze.assistant.device.StartLater.firstFrameDrawn() }
     }
 
     /** True when an older Argus task was brought to the front and this duplicate task is being closed. */
@@ -200,7 +202,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
         val chatId = i.getStringExtra(Notifier.EXTRA_OPEN_CHAT)
         val askedListen = i.getBooleanExtra(EXTRA_LISTEN, false) || i.action == ACTION_CALL
         i.removeExtra(Notifier.EXTRA_OPEN_FORM); i.removeExtra(Notifier.EXTRA_OPEN_CHAT); i.removeExtra(EXTRA_LISTEN); i.removeExtra(IntentKey.EXTRA)
-        if (askedListen && !ok.listen && !ok.call) com.blaze.assistant.device.CrashLog.write("Ignored a listen/call request from outside ${BrandName.NAME}")
+        if (askedListen && !ok.listen && !ok.call) CrashLog.write("Ignored a listen/call request from outside ${BrandName.NAME}")
         // "Action required" notification: open the chat that's waiting on the secure form (the card shows there).
         if (ok.openForm) { Agent.showFormChat(); Notifier.clearAction(); com.blaze.assistant.ui.space.SpaceNav.showChat() }
         // v0.28.3: a reply notification from a project chat opens that chat in Projects (the shell follows Agent's chat).
@@ -257,7 +259,7 @@ class MainActivity : FragmentActivity(), com.blaze.assistant.ui.BackRule.Shelled
             !com.blaze.assistant.browser.phone.PhonePipHost.working() && com.blaze.assistant.browser.phone.PhonePipHost.supported(this)) {
             videoPip.value = true
             val ok = try { enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build()) }
-                catch (t: Throwable) { com.blaze.assistant.device.CrashLog.quiet("MainActivity.videoPip", t); false }
+                catch (t: Throwable) { CrashLog.quiet("MainActivity.videoPip", t); false }
             if (!ok) videoPip.value = false
         }
     }
