@@ -135,7 +135,7 @@ class ModelFirstTest {
         assertTrue(main("phone/Skills.kt").contains("before move_event reschedules it or delete_event removes it"))
         assertTrue(main("routine/Routines.kt").contains("Delete a reminder or routine by name, for example one whose event has happened"))
         assertTrue(main("routine/Routines.kt").contains("before delete_routine removes it or process (by its ID) pauses or reschedules it"))
-        assertTrue(main("phone/PimEdit.kt").contains("Delete a phone calendar event, for example one that is cancelled"))
+        assertTrue(main("phone/PimEdit.kt").contains("Delete one phone calendar event, for example one that is cancelled"))
     }
 
     @Test fun theRuleIsWrittenDownForOtherAgents() {

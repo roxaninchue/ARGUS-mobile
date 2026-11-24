@@ -12,11 +12,11 @@ class SourceInputTest {
     private fun spec(s: String) = SourceInput.parse(s).spec!!
 
     @Test fun authorNamesPickTheHost() {
-        assertEquals("https://raw.githubusercontent.com/someone/vega-providers/main", spec("someone").bases[0])
+        assertEquals("https://raw.githubusercontent.com/someone/providers/main", spec("someone").bases[0])
         assertEquals("someone", spec("someone").label)
-        assertEquals("https://codeberg.org/someone/vega-providers/raw/branch/main", spec("someone@cb").bases[0])
-        assertEquals("https://bitbucket.org/someone/vega-providers/raw/main", spec("someone@bb").bases[0])
-        assertEquals("https://gitlab.com/someone/vega-providers/-/raw/main", spec("someone@gl").bases[0])
+        assertEquals("https://codeberg.org/someone/providers/raw/branch/main", spec("someone@cb").bases[0])
+        assertEquals("https://bitbucket.org/someone/providers/raw/main", spec("someone@bb").bases[0])
+        assertEquals("https://gitlab.com/someone/providers/-/raw/main", spec("someone@gl").bases[0])
         assertEquals("someone@cb", spec("someone@cb").label)
         assertTrue(SourceInput.parse("someone@zz").error.contains("isn't a host"))
     }
@@ -91,7 +91,7 @@ class SourceInputTest {
         assertEquals("https://example.org/p", base)
         assertEquals("https://example.org/p/list.json", store.state.repos.single().manifest)
         assertEquals("x", store.manifest(base).single().value)
-        val s2 = ProviderStore(Files.createTempDirectory("src3").toFile(), MemKv()) { u -> if (u.contains("/someone/vega-providers/main/manifest.json")) """[{"value":"y"}]""" else throw IllegalStateException("404") }
+        val s2 = ProviderStore(Files.createTempDirectory("src3").toFile(), MemKv()) { u -> if (u.contains("/someone/providers/main/manifest.json")) """[{"value":"y"}]""" else throw IllegalStateException("404") }
         s2.addRepo("someone"); assertEquals("someone", s2.state.repos.single().label)
     }
 }

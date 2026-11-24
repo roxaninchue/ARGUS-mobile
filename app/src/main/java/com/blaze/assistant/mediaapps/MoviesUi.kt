@@ -558,6 +558,8 @@ internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String, String) -> Un
     var url by remember { mutableStateOf("") }
     var priv by remember { mutableStateOf(false) }
     var token by remember { mutableStateOf("") }
+    var revealToken by remember { mutableStateOf(false) }
+    val ink = LocalBlaze.current
     // 0.55.14 the Vega-style adder: an author name, owner/repo, a repo link or a manifest link; Public, or Private with a token.
     // The field starts empty: the hint shows the shape of a source, never a third-party repo.
     BlazeDialog("Add source", "Enter an author name, repo URL or manifest URL. ${BrandName.NAME} finds the manifest.",
@@ -570,11 +572,12 @@ internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String, String) -> Un
         }
         if (priv) {
             Spacer(Modifier.height(8.dp))
-            BlazeTextField(token, { token = it }, "Access token", visualTransformation = PasswordVisualTransformation())
+            BlazeTextField(token, { token = it }, "Access token", visualTransformation = if (revealToken) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation())
+            Text(if (revealToken) "Hide token" else "Show token", color = ink.accent, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp).clickable { revealToken = !revealToken })
             Text("Private sources work with GitHub repos or your own https link. The token is kept encrypted on this phone and only sent to that source.",
-                color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+                color = ink.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
         } else Text("Examples: author, author@cb (Codeberg), owner/repo@branch, a GitHub, GitLab, Codeberg or Bitbucket link. You can also ask ${BrandName.NAME} in chat to add one.",
-            color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+            color = ink.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
 

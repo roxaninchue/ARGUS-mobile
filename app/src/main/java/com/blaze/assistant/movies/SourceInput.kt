@@ -8,7 +8,8 @@ import java.net.URLDecoder
  *
  * The forms other provider apps accept, so a source someone shares works here as typed:
  * - an author name: `author` (GitHub), `author@cb` (Codeberg), `author@bb` (Bitbucket), `author@gl` (GitLab). A bare author
- *   means that author's `vega-providers` repo, the conventional repo name for a provider source, on its default branch.
+ *   means that author's `providers` repo ([DEFAULT_REPO]) on its default branch. Argus names no third-party provider repo
+ *   (MoviesLegalTest); any other repo is typed as owner/repo or a link.
  *   The `@` suffix names the HOST, not a branch.
  * - `owner/repo`, and `owner/repo@branch` for a branch (GitHub).
  * - a repo link on GitHub, Codeberg, Bitbucket or GitLab (subgroups too), with or without a branch and a folder
@@ -25,7 +26,7 @@ object SourceInput {
     }
 
     /** The repo name a bare author name points at. */
-    const val DEFAULT_REPO = "vega-providers"
+    const val DEFAULT_REPO = "providers"
     /** Branches tried, in order, when the input names none. */
     val DEFAULT_BRANCHES = listOf("main", "master")
     const val MAX_TOKEN = 255

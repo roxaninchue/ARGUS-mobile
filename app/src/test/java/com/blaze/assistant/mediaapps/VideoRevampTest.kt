@@ -48,7 +48,7 @@ class VideoRevampTest {
         val info = MovieInfo("The Stranger", "x", "", "movie", emptyList(), listOf("Film noir", "1946", "1 h 35 min"), "PG", licence = "Public domain")
         assertEquals(listOf("1946", "1 h 35 min", "PG", "Public domain"), VideoDetailsLogic.chips(info))
         val p = post(1)
-        assertEquals(listOf("archive:2", "archive:3"), VideoDetailsLogic.moreLikeThis(p, listOf(p, post(2), post(3), post(2))).map { it.link })
+        assertEquals(listOf("youtube:2", "youtube:3"), VideoDetailsLogic.moreLikeThis(p, listOf(p, post(2), post(3), post(2))).map { it.link })
         assertEquals("Resume", VideoDetailsLogic.playLabel(60_000)); assertEquals("Play", VideoDetailsLogic.playLabel(0))
     }
 

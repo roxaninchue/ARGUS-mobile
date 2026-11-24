@@ -110,7 +110,7 @@ class ViewRedesignTest {
     @Test fun everyViewUsesTheSharedHeader() {
         assertTrue("ViewHeader(" in src("mediaapps/MusicShell.kt"))
         assertTrue("MediaTopBar(\"Music\"" in src("mediaapps/MusicActivity.kt"))
-        assertTrue("MediaTopBar(\"Movies\"" in src("mediaapps/VideoActivity.kt"))
+        assertTrue("MediaTopBar(\"Movie\"" in src("mediaapps/VideoActivity.kt"))
         assertTrue("ViewHeader(\"Studying\"" in src("ui/LearnPage.kt"))
         assertTrue("page != \"learn\"" in src("ui/SettingsSheet.kt"))
     }

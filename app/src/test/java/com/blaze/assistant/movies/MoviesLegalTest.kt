@@ -7,13 +7,13 @@ import java.io.File
 
 /**
  * 0.46.2 legal guard: Argus ships, suggests and links no third-party provider repo or streaming site, and no anti-censorship
- * tunnel. The only Vega link allowed anywhere is the vega-app source repo in THIRD_PARTY_NOTICES.md (Apache-2.0 attribution).
+ * tunnel. Code forges (GitHub, GitLab, Codeberg, Bitbucket: 0.55.14 Add source) are allowed hosts. The only Vega link allowed anywhere is the vega-app source repo in THIRD_PARTY_NOTICES.md (Apache-2.0 attribution).
  */
 class MoviesLegalTest {
     private val app = listOf(File("src/main"), File("app/src/main")).first { it.isDirectory }.absoluteFile
     private val repoRoot = app.parentFile.parentFile.parentFile
     private val banned = Regex("""(?i)zenda|vega-org|vega-providers|vegamovies|moviesmod|hdhub|multimovies|uhdmovies|katmovie|goodbyedpi|byedpi|zapret|warp-plus|cloudflare warp""")
-    private val okHosts = setOf("archive.org", "blazeinchue.pages.dev", "github.com", "raw.githubusercontent.com", "gitlab.com", "192.168.1.20", "schemas.android.com")
+    private val okHosts = setOf("archive.org", "blazeinchue.pages.dev", "github.com", "raw.githubusercontent.com", "gitlab.com", "codeberg.org", "bitbucket.org", "192.168.1.20", "schemas.android.com")
 
     private fun scanned(): List<File> = (listOf(File(app, "java/com/blaze/assistant/movies"), File(app, "assets/movies"), File(app, "assets/skills/reverse-engineer-anything"))
         .flatMap { d -> d.walkTopDown().filter { it.isFile }.toList() } + File(app, "java/com/blaze/assistant/mediaapps/MoviesUi.kt") + File(app, "java/com/blaze/assistant/mediaapps/VideoShell.kt") +
