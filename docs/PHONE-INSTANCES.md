@@ -30,7 +30,7 @@ whole can move out of `browser/` in one rename).
 | `ArgusPhone.kt` | yes | Binds the core to `PhoneBrowser` (wrapped with three small functions: `scrollY`, `restorePage`, `releaseNow`) and to the service; runs phone_* tools inside the active instance |
 | `ArgusPhoneService.kt` | yes | The foreground service and its notification |
 
-Tests: `PhoneInstancesTest` (JVM, 26 tests).
+Tests: `PhoneInstancesTest` (JVM, 26 tests). The existing phone tests (PhoneBrowserTest, PhoneToolSimTest, SiteResolverTest, PhonePerfTest) run unchanged over the wrapped tools.
 
 ## Rules it keeps
 
