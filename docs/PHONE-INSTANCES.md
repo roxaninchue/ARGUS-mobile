@@ -119,6 +119,13 @@ the owner" below). `WaveB4NoLinuxTest` now allows exactly one `specialUse` servi
 
 ## Phone check (after a build)
 
+**Build to check (24 Nov 2026, 22:31 CAT):** commit `5459ca2c`, GitHub Actions Build APK run 45478728211 and Gate run
+45478727974 both green on the mirror `roxaninchue/ARGUS-mobile`. APK: artifact `argus-debug-signed-5459ca2c…` (52 MB zip),
+https://nightly.link/roxaninchue/ARGUS-mobile/actions/runs/45478728211/argus-debug-signed-5459ca2c8f32b10c841af2b33933357044456f8f.zip
+(debug-signed with the public CI debug key; the unit suite for this branch runs in the sharded Gate, not in Build APK).
+
+**Results:** pending (owner, on the phone). Record each as pass / fail with a note next to its number.
+
 1. In chat: "open the-internet.herokuapp.com on your phone". The notification "Argus Phone · 1 instance running" shows
    what Argus is doing.
 2. "Start a second Argus Phone instance called Shop and open example.com in it", then "go back to the first one": the
