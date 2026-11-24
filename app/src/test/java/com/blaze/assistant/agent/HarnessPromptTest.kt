@@ -15,12 +15,13 @@ class HarnessPromptTest {
         assertFalse(c.contains("only when the answer needs fresh"))
     }
 
-    @Test fun phoneControlOffStillLeavesEveryOtherTool() {
-        val off = HarnessPrompt.phone(false, false)
-        assertFalse(off.contains("only chat"))
-        assertTrue(off.contains("every other tool works"))
-        assertTrue(HarnessPrompt.phone(true, false).contains("run_shell"))
-        assertFalse(HarnessPrompt.phone(true, true).contains("run_shell"))
+    @Test fun noPhoneControlInThePrompt() {
+        // 0.55.18: phone control left the app; the block names no screen tool and says the screen can't be used.
+        val p = HarnessPrompt.phone(false)
+        for (t in listOf("run_plan", "read_screen", "look_at_screen", "type_text", "do_actions", "press_button")) assertFalse(t, p.contains(t))
+        assertTrue(p.contains("can't see, read or tap"))
+        assertTrue(p.contains("run_shell"))
+        assertFalse(HarnessPrompt.phone(true).contains("run_shell"))
     }
 
     private val names = listOf("blaze-voice", "blaze-task-workflow", "blaze-views", "blaze-specialists", "blaze-workflow-builder", "blaze-coding-workflow")   // CoreSkills.NAMES
@@ -33,6 +34,6 @@ class HarnessPromptTest {
     @Test fun leanerThanTheStackItReplaces() {
         // CORE + phone block replaced ~16k chars of stable rules (talk, self, remember, again, ask, control, pim, load_tools,
         // weather, phone_save, leak, verify, ids, know, search, calls, autonomy, yes) plus ~6k of pinned core skills.
-        assertTrue(HarnessPrompt.CORE.length + HarnessPrompt.phone(true, false).length < 7_500)
+        assertTrue(HarnessPrompt.CORE.length + HarnessPrompt.phone(false).length < 7_500)
     }
 }

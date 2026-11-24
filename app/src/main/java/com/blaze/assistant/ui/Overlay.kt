@@ -96,7 +96,6 @@ import com.blaze.assistant.agent.Mood
 import com.blaze.assistant.agent.Role
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.assist.BlazeInteractionService
-import com.blaze.assistant.phone.BlazeAccessibilityService
 import com.blaze.assistant.voice.Voice
 import androidx.compose.foundation.shape.RoundedCornerShape
 
@@ -133,7 +132,6 @@ object Overlay {
 
     /** A context + window type that may draw over other apps, or null. */
     private fun host(ctx: Context): Pair<Context, Int>? {
-        BlazeAccessibilityService.instance?.let { return it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
         if (canDrawOverApps(ctx)) return ctx.applicationContext to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         return null
     }

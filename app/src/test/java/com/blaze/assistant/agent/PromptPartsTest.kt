@@ -113,15 +113,6 @@ class PromptPartsTest {
         assertTrue(kept.toString().startsWith(s1))
     }
 
-    @Test fun screenReadReuseOnlyWhenNothingCanHaveChanged() {
-        assertTrue(ScreenReadCache.reusable(sameWindow = true, eventSince = false, actedSince = false, ageMs = 300))
-        assertFalse(ScreenReadCache.reusable(false, false, false, 300))
-        assertFalse(ScreenReadCache.reusable(true, true, false, 300))
-        assertFalse(ScreenReadCache.reusable(true, false, true, 300))
-        assertFalse(ScreenReadCache.reusable(true, false, false, ScreenReadCache.MAX_AGE_MS + 1))
-        assertFalse(ScreenReadCache.reusable(true, false, false, -1))
-        assertTrue(ScreenReadCache.reusable(true, false, false, ScreenReadCache.MAX_AGE_MS))
-    }
 
     @Test fun screenLine() {
         assertEquals("", SpeedLog.screenLine(0, 0, 0))

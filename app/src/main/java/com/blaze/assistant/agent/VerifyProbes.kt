@@ -7,14 +7,14 @@ import java.util.Calendar
 
 /**
  * v0.44.0: the phone side of [ToolVerify.Probes]: what is in front (phone control), the next system alarm, and whether
- * a written file is there. Each check is cheap and returns null when it can't tell (no accessibility), so the result
+ * a written file is there. Each check is cheap and returns null when it can't tell, so the result
  * stays "couldn't confirm" instead of guessing.
  */
 class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
     override val self: String get() = ctx.packageName
 
-    override suspend fun foreground(): String? =
-        com.blaze.assistant.phone.BlazeAccessibilityService.instance?.currentPkg()?.takeIf { it.isNotBlank() }
+    // 0.55.11: no phone control, so the app in front, the Clock app's list and the screen's words can't be read (null = can't tell).
+    override suspend fun foreground(): String? = null
 
     override suspend fun nextAlarm(): Pair<Int, Int>? = try {
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -39,12 +39,7 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
 
     // ---------- v0.45.13 verify-after-act ----------
 
-    override suspend fun clockAlarmOn(pid: String, hhmm: String): Boolean? = try {
-        val r = com.blaze.assistant.phone.ClockUi.read(ctx, pid, hhmm)
-        // Back to Argus after looking (the alarm was set with the Clock UI skipped).
-        try { ctx.startActivity(android.content.Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
-        r?.first
-    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { null }
+    override suspend fun clockAlarmOn(pid: String, hhmm: String): Boolean? = null
 
     override suspend fun calendarHas(title: String, startMs: Long): Boolean? = try {
         if (ctx.checkSelfPermission(android.Manifest.permission.READ_CALENDAR) != android.content.pm.PackageManager.PERMISSION_GRANTED) null
@@ -98,9 +93,7 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
         }
     } catch (_: Throwable) { null }
 
-    override suspend fun screenWords(): String? = try {
-        com.blaze.assistant.phone.BlazeAccessibilityService.instance?.visibleWords()?.joinToString(" ")?.lowercase()
-    } catch (_: Throwable) { null }
+    override suspend fun screenWords(): String? = null
 
     override fun fileSize(path: String): Long? = try {
         val f = File(path)

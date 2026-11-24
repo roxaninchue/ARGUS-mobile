@@ -726,11 +726,10 @@ private fun scanFrame(scanner: com.google.mlkit.vision.barcode.BarcodeScanner, i
     } catch (e: Throwable) { CameraSupport.log("barcode scan failed", e); img.close() }
 }
 
-/** On-device OCR with Magic Hand's warm ML Kit recogniser, lines in reading order. */
+/** On-device OCR (phone/TextOcr, warm ML Kit recogniser), lines in reading order. */
 private suspend fun readText(f: File): String = try {
     val bmp = BitmapFactory.decodeFile(f.path) ?: throw IllegalStateException("couldn't decode the photo")
-    val lines = com.blaze.assistant.phone.MagicHandScreen.lines(bmp)
-    com.blaze.assistant.phone.MagicHandOcr.keep(lines, com.blaze.assistant.phone.MagicHandLogic.Box(0, 0, bmp.width, bmp.height), 0.01f)
+    com.blaze.assistant.phone.TextOcr.readAll(bmp)
 } catch (e: Throwable) { CameraSupport.log("OCR failed", e); "" }
 
 private fun flashMode(f: String) = when (f) { "on" -> ImageCapture.FLASH_MODE_ON; "auto" -> ImageCapture.FLASH_MODE_AUTO; else -> ImageCapture.FLASH_MODE_OFF }

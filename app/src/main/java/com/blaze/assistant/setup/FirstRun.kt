@@ -40,7 +40,6 @@ object FirstRun {
             wakeWord = ok("wake") { Settings.wakeWord && com.blaze.assistant.voice.WakeModel.ready(ctx) },
             defaultAssistant = ok("assistant") { com.blaze.assistant.assist.BlazeInteractionService.isDefault(ctx) },
             desktopPaired = ok("desktop") { com.blaze.assistant.link.DesktopLink.paired },
-            phoneControl = ok("a11y") { com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx) },
         )
     }
 

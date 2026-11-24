@@ -195,7 +195,7 @@ object Conversations {
     fun tools(): List<JSONObject> = listOf(
         fn("notif_conversations", "Chat conversations the user got messages in (WhatsApp, SMS, Telegram, Messenger…), newest first, from notifications. Each has an id for notif_read / notif_reply and says whether it can be answered from the notification.",
             JSONObject().put("app", str("Optional app filter, e.g. WhatsApp")).put("hours", JSONObject().put("type", "number").put("description", "How far back, default 24")), emptyList()),
-        fn("notif_read", "Read one chat conversation: the recent messages from its notifications plus the longer rolling log ${BrandName.NAME} kept, and what memory says about the sender. If it says context is thin, ask the user (ask_user) or open the chat with phone control and read the screen before drafting a reply.",
+        fn("notif_read", "Read one chat conversation: the recent messages from its notifications plus the longer rolling log ${BrandName.NAME} kept, and what memory says about the sender. If it says context is thin, ask the user (ask_user) before drafting a reply.",
             JSONObject().put("conversation", str("Id from notif_conversations, or the person's / group's name")).put("limit", JSONObject().put("type", "integer").put("description", "Messages, default 30")),
             listOf("conversation")),
         fn("notif_reply", "Send a reply in a chat conversation through its notification's reply box, without opening the app. The user sees a confirm card first (unless they turned on auto-reply for this conversation). Draft the text in the user's voice; read the conversation first.",
@@ -247,8 +247,8 @@ object Conversations {
         val mem = senders.flatMap { s -> try { d?.search(s, "person", 2) ?: emptyList() } catch (_: Exception) { emptyList() } }.distinctBy { it.id }
         if (mem.isNotEmpty()) sb.append("\nMemory about them:\n").append(mem.joinToString("\n") { Mind.line(it) })
         else sb.append("\nNothing saved about ${senders.firstOrNull() ?: title} yet; save who they are to the user with memory_save once you know.")
-        if (thin(msgs.size)) sb.append("\nContext is thin (${msgs.size} message${if (msgs.size == 1) "" else "s"}). Before drafting a reply, ask the user what to say (ask_user with 2-3 draft options), or open the chat in ${c?.app ?: "the app"} with phone control and read the screen for more.")
-        if (c != null && c.reply == null) sb.append("\nThis conversation has no live reply box right now (the notification was dismissed). To answer, open the app with phone control, or use message_contact.")
+        if (thin(msgs.size)) sb.append("\nContext is thin (${msgs.size} message${if (msgs.size == 1) "" else "s"}). Before drafting a reply, ask the user what to say (ask_user with 2-3 draft options).")
+        if (c != null && c.reply == null) sb.append("\nThis conversation has no live reply box right now (the notification was dismissed). To answer, open the app (open_app) for the user, or use message_contact.")
         if (c != null && isAuto(c.key) && !c.group) sb.append("\nThe user turned on auto-reply for this conversation: notif_reply sends without a card.")
         if (c?.group == true) {
             val lines = msgs.map { ChatThreads.Line(it.at, it.sender, it.text, it.self) }
@@ -265,7 +265,7 @@ object Conversations {
     suspend fun reply(ctx: Context, q: String, text: String): String {
         if (off()) return "Notification access is off. Ask the user to turn it on in ${BrandName.NAME} \u203a Settings \u203a Notification replies."
         val c = find(q) ?: return "No conversation matches \u201c$q\u201d. Call notif_conversations for the ids."
-        val action = c.reply ?: return "${c.title}'s notification has no live reply box (it was dismissed). Open ${c.app} with phone control instead, or use message_contact."
+        val action = c.reply ?: return "${c.title}'s notification has no live reply box (it was dismissed). Open ${c.app} for the user instead (open_app), or use message_contact."
         val t = text.trim(); if (t.isEmpty()) return "Nothing to send."
         if (Sensitive.isSensitive(t)) return "Not sent: that reply looks like it contains a code or bank details. ${BrandName.NAME} never sends those from a notification."
         // v0.45.5: a group never gets an automatic reply; the card always shows the exact text first.
@@ -280,6 +280,6 @@ object Conversations {
             action.actionIntent.send(ctx, 0, intent)
             add(c.pkg, c.app, c.title, c.group, listOf(Msg(System.currentTimeMillis(), "You", t, true)), null)
             "Replied to ${c.title} in ${c.app}${if (auto) " (auto-reply)" else ""}."
-        } catch (_: PendingIntent.CanceledException) { "That notification is gone, so I couldn't reply. Open ${c.app} with phone control instead." }
+        } catch (_: PendingIntent.CanceledException) { "That notification is gone, so I couldn't reply. Open ${c.app} for the user instead (open_app)." }
     }
 }

@@ -3,7 +3,6 @@ package com.blaze.assistant.agent
 import com.blaze.assistant.browser.SecureInput
 import com.blaze.assistant.browser.SignInHints
 import com.blaze.assistant.browser.Vault
-import com.blaze.assistant.phone.PhoneControl
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
@@ -122,14 +121,6 @@ class OrientBrowserTest {
         assertTrue(SignInHints.blocked("Password sign-in is disabled for your organisation"))
     }
 
-    // ---------- phone control, heads-ups ----------
-    @Test fun phoneControlStates() {
-        assertEquals(PhoneControl.State.CONNECTED, PhoneControl.state(connected = true, enabledInSettings = false))
-        assertEquals(PhoneControl.State.RECONNECTING, PhoneControl.state(connected = false, enabledInSettings = true))
-        assertEquals(PhoneControl.State.OFF, PhoneControl.state(connected = false, enabledInSettings = false))
-        assertEquals("", PhoneControl.banner(PhoneControl.State.CONNECTED).first)
-        assertEquals("Turn on", PhoneControl.banner(PhoneControl.State.OFF).second)
-    }
 
     @Test fun headsUpsOnlySpeakWhenSwitchedOn() {
         assertFalse(com.blaze.assistant.proactive.Proactive.shouldSpeak(speakOn = false, canTalk = true))

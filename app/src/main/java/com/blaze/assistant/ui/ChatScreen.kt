@@ -129,7 +129,6 @@ import com.blaze.assistant.agent.ChatNav
 import com.blaze.assistant.agent.Mood
 import com.blaze.assistant.agent.Role
 import com.blaze.assistant.agent.Settings
-import com.blaze.assistant.phone.BlazeAccessibilityService
 import com.blaze.assistant.voice.Voice
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -276,17 +275,6 @@ fun ChatScreen() {
         addUris(uris, hint)
     }
 
-    var a11yOn by remember { mutableStateOf(BlazeAccessibilityService.isEnabled(ctx)) }
-    var control by remember { mutableStateOf(com.blaze.assistant.phone.PhoneControl.state(ctx)) }
-    LaunchedEffect(Unit) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            while (true) {
-                a11yOn = BlazeAccessibilityService.isEnabled(ctx)
-                control = com.blaze.assistant.phone.PhoneControl.state(ctx).also { com.blaze.assistant.phone.PhoneControl.note(it) }
-                delay(2500)
-            }
-        }
-    }
 
     // v0.24.1: the composer's rotating placeholder, rebuilt from on-device data each time Argus comes to the front.
     var hints by remember { mutableStateOf(emptyList<String>()) }
@@ -964,22 +952,6 @@ fun ChatScreen() {
             }
             if (chatBody && viewShowing.isEmpty()) {
                 if (voiceState == Voice.State.LISTENING) ListeningStrip(onStop = { Voice.stopByTap() })
-                LaunchedEffect(a11yOn) { if (a11yOn) Settings.setBool("a11y_seen", true) }
-                LaunchedEffect(control) { if (control == com.blaze.assistant.phone.PhoneControl.State.CONNECTED) Settings.setBool("a11y_seen", true) }
-                // v0.20.0: say which way it dropped and fix it in one tap (Argus's own switch, not the whole list).
-                if (control != com.blaze.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
-                    PhoneControlBanner(control) {
-                        ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
-                        try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) }
-                        catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    }
-                // 0.46.3: the one-time phone control explainer (a phone task needed control and it was off).
-                val explain by com.blaze.assistant.phone.flash.PhoneExplainer.requested.collectAsState()
-                if (explain) PhoneExplainerDialog(onOpenSettings = {
-                    ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
-                    try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) }
-                    catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                }, onClose = { com.blaze.assistant.phone.flash.PhoneExplainer.requested.value = false; Settings.setBool("a11y_seen", true) })
                 // v0.45.4: "Blaze X.Y.Z is available" (once a day on app open, dismissible, silent offline).
                 if (!ChatExpand.on) UpdateBanner()
             }
@@ -1204,8 +1176,7 @@ fun ChatScreen() {
             onOpenView = { id -> appsOpen = false; Views.find(id)?.let { openView(it) } })
         settingsPage?.let { start ->
             androidx.compose.runtime.key(start) {
-                SettingsScreen(start, a11yOn,
-                    onOpenAccessibility = { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
+                SettingsScreen(start,
                     onDismiss = { settingsPage = null },
                     onTab = { t -> settingsPage = null; exitView(); go(navNow().switchTab(t)) },
                     onSearch = { settingsPage = null; composer.query = ""; composer.openSpotlight() })
@@ -1942,16 +1913,10 @@ const val STREAM_STALE_MS = 2200L
  */
 @Composable
 private fun WaitingCards(listening: Boolean,
-                         control: com.blaze.assistant.phone.PhoneControl.State, viewOffer: Views.Offer?, showing: String,
+                         viewOffer: Views.Offer?, showing: String,
                          onOpenOffer: (Views.Offer) -> Unit) {
     val ctx = LocalContext.current
     if (listening) ListeningStrip(onStop = { Voice.stopByTap() })
-    if (control != com.blaze.assistant.phone.PhoneControl.State.CONNECTED && Settings.phoneControl && Settings.bool("a11y_seen", false))
-        PhoneControlBanner(control) {
-            ComeBack.watch(ctx) { BlazeAccessibilityService.instance != null }
-            try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) }
-            catch (_: Exception) { ctx.startActivity(Intent(AndroidSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        }
     UpdateBanner()
     ConfirmCard()
     com.blaze.assistant.ui.team.cards.ArgusCards(dark = LocalBlaze.current.dark)   // P2-SF-02

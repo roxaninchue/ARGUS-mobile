@@ -228,12 +228,4 @@ class PhoneControlSweepTest {
         assertEquals("device", js.getString("kind")); assertEquals("req-1", js.getJSONArray("runs").getJSONObject(0).getJSONArray("request_ids").getString(0))
     }
 
-    @Test fun sourceKeepsTheRules() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
-        val pr = src("agent/Processes.kt")
-        assertTrue(pr.contains("ClockUi.alarmOff(ctx, p.id"))
-        assertFalse("no drop before the read-back", pr.contains("dismissAlarm(ctx, p); drop(p.id)"))
-        assertTrue(src("agent/ToolVerify.kt").contains("Opening an app or a settings page is only the first step"))
-        assertTrue(src("phone/PhoneTools.kt").contains("Alarm set for \${"))
-    }
 }

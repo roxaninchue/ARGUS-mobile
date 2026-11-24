@@ -39,8 +39,7 @@ object ClipAccess {
     /** Run [block] while Argus holds input focus, so Android allows clipboard reads. */
     private suspend fun <T> withFocus(ctx: Context, block: () -> T): T = withContext(Dispatchers.Main) {
         if (Agent.inForeground) return@withContext block()
-        val (host, type) = BlazeAccessibilityService.instance?.let { it to WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY }
-            ?: if (android.provider.Settings.canDrawOverlays(ctx)) ctx.applicationContext to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        val (host, type) = if (android.provider.Settings.canDrawOverlays(ctx)) ctx.applicationContext to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else return@withContext block() // no way to take focus; try anyway (works on older Android)
         val wm = host.getSystemService(WindowManager::class.java)
         val focused = CompletableDeferred<Unit>()

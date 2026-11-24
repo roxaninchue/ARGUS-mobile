@@ -265,12 +265,12 @@
     {
       "name": "blaze-task-workflow",
       "version": 1,
-      "sha256": "89a8221c620d3e5985b1e9e4163cb6287be449db9e7e952156a07cf820388788"
+      "sha256": "59af1ee32e12c313a3617940f516582d1527bd64f90c79dd56466d6ad8b3b6bb"
     },
     {
       "name": "blaze-coding-workflow",
       "version": 3,
-      "sha256": "3eda189b3b6cb8f6ea2dc2b2e6f2f16094904b2f9f538da4b5e60c132c88d1d3"
+      "sha256": "38364a917190e8d8f3cc384a751620fb2e3831139e7a2c62454b4ee2fc485cb5"
     },
     {
       "name": "blaze-views",
@@ -311,11 +311,6 @@
       "name": "wf-make-and-share",
       "version": 2,
       "sha256": "9ed49f432b7010e716cf1a0f17af3d7623f633ec5dc8292968222bdd63807a6c"
-    },
-    {
-      "name": "wf-do-it-on-screen",
-      "version": 2,
-      "sha256": "26fb021d531d5ec99fd85eddacbb3a582d5bf1c3442f40b7b368a5dd49cd7680"
     },
     {
       "name": "paperwork-mode",

@@ -54,37 +54,21 @@ object SettingsJump {
             ?: return "Unknown settings page \u201c$raw\u201d. Pages: ${SettingsRoute.pageNames.joinToString(", ")}."
         val plan = SettingsRoute.plan(page, pkg, Build.VERSION.SDK_INT)
             ?: return "That page needs an app: call open_settings again with app=\u2026"
-        val svc = BlazeAccessibilityService.instance
         var used = -1
         for ((i, l) in plan.launches.withIndex()) {
             val intent = intentOf(l)
             // No resolveActivity check: package visibility (Android 11+) can hide Settings from queries, while
             // startActivity with an implicit intent still works. A missing page throws and the next one is tried.
-            val before = svc?.currentPkg().orEmpty()
             try { com.blaze.assistant.device.ActivityStart.start(ctx, intent) } catch (_: Exception) { continue }   // 0.49.0: from the open Argus screen when there is one
             used = i
-            if (svc != null) {
-                val end = android.os.SystemClock.uptimeMillis() + 2500
-                while (svc.currentPkg() == before && android.os.SystemClock.uptimeMillis() < end) kotlinx.coroutines.delay(60)
-                svc.settle(1200, 200)
-            }
             break
         }
         val what = (if (pkg != null) "$appLabel \u203a " else "") + (SettingsRoute.appPages[page] ?: page.replace('_', ' '))
         if (used < 0) return "Couldn't open $what: this phone has no page for it. Open the app's App info with open_settings page=app_details" +
             (if (pkg != null) " app=$appQ" else "") + " and tap from there."
-        if (svc == null) return "Opened $what. (Phone control is off, so I can't read or change the page; the user can flip it now.)"
-        var via = "direct"
-        if (used >= plan.tapFrom && plan.thenTap.isNotEmpty()) {
-            via = "App info"
-            val row = plan.thenTap.firstNotNullOfOrNull { r -> svc.reveal(r, maxScrolls = 6)?.let { r to it } }
-            if (row != null) {
-                val name = svc.labelOf(row.second).ifBlank { row.first }
-                svc.tap(row.second)
-                svc.settle(1200, 200)
-                via = "App info \u203a $name"
-            } else via = "App info (couldn't find the ${plan.thenTap.first()} row; it's on this page somewhere)"
-        }
-        return "Opened $what ($via). Screen now:\n" + svc.readScreen()
+        // 0.55.11: no phone control, so a page reached through App info names the row the user taps next.
+        if (used >= plan.tapFrom && plan.thenTap.isNotEmpty())
+            return "Opened $what (App info). The user taps \u201c${plan.thenTap.first()}\u201d on that page to finish."
+        return "Opened $what."
     }
 }

@@ -54,20 +54,7 @@ class StateCheckTest {
 
     // ---------- verified by state ----------
 
-    @Test fun darkModeOnBySystemState() = fiveOfFive { c, l ->
-        // Samsung "Use Dark theme": the tapped switch node is stale after the theme change (reread = null), the state says on
-        val phone = FakePhone(c, l, nightMode = 1 to 2, configNight = false to true)
-        val r = toggle("Use Dark theme", true, phone, c)
-        r.verified && r.how == "state" && r.word == "Dark mode" && r.tookMs <= l + 100 &&
-            ToggleVerify.marker(r) == "Checked on the phone: Dark mode is on (read from the system theme)."
-    }
 
-    @Test fun darkModeOffBySystemState() = fiveOfFive { c, l ->
-        // nightMode AUTO / CUSTOM: the configuration is the truth
-        val phone = FakePhone(c, l, nightMode = 0 to 0, configNight = true to false)
-        val r = toggle("Dark mode", false, phone, c)
-        r.verified && r.how == "state" && ToggleVerify.marker(r).endsWith("Dark mode is off (read from the system theme).")
-    }
 
     @Test fun wifiByWifiManager() = fiveOfFive { c, l ->
         val phone = FakePhone(c, l, settings = mapOf(StateCheck.Setting.WIFI to (false to true)))
@@ -96,12 +83,6 @@ class StateCheckTest {
 
     // ---------- in-app toggles: no system state, the switch is re-found and re-read ----------
 
-    @Test fun inAppToggleOnByReRead() = fiveOfFive { c, l ->
-        // the old node is stale (null) until the screen redraws, then the re-found switch reads checked
-        val r = toggle("Show previews", true, FakePhone(c, l), c, reread = { if (c.now >= l) true else null })
-        r.verified && r.how == "switch" && r.word == "Show previews" &&
-            ToggleVerify.marker(r) == "Checked on the phone: Show previews is on (read from the switch)."
-    }
 
     @Test fun inAppToggleOffByReRead() = fiveOfFive { c, l ->
         // the switch still reads on for a while (animation), then off
@@ -111,33 +92,7 @@ class StateCheckTest {
 
     // ---------- not verified: contradicted, unknown ----------
 
-    @Test fun stateThatNeverAgreesIsContradicted() {
-        val c = Clock()
-        val r = toggle("Wi-Fi", true, FakePhone(c, 10_000, settings = mapOf(StateCheck.Setting.WIFI to (false to true))), c)
-        assertEquals(StateCheck.Status.CONTRADICTED, r.status)
-        assertTrue(r.tookMs in 1500..1600)
-        assertEquals("Not confirmed: Wi-Fi still reads off. Next step: read_screen, then tap the switch itself.", ToggleVerify.marker(r))
-        assertEquals("I tried to turn Wi-Fi on, but it still reads off.", StateCheck.contradicted(r))
-    }
 
-    @Test fun honestFallbackWhenNothingCanBeRead() {
-        var pass = 0
-        for (l in latencies) {
-            val c = Clock()
-            val r = toggle("Use Dark theme", true, FakePhone(c, l), c, reread = { null })
-            assertEquals(StateCheck.Status.UNKNOWN, r.status)
-            val result = "Tapped \u201cUse Dark theme\u201d. " + ToggleVerify.marker(r)
-            val v = ActCheck.verdictOf(result)!!
-            assertEquals(ToolVerify.Status.UNVERIFIED, v.status)
-            val done = listOf(ClaimCheck.Done("tap", v.status, v.why))
-            // whatever the model wrote, the user reads ONE honest line
-            for (reply in listOf("Dark mode is now turned on.", "Done! Dark mode is on.", "I've turned on dark mode.", "Dark mode is on now \ud83c\udf19", "All set."))
-                assertEquals(reply, "I turned it on but couldn't check it; it should be on.", UnconfirmedEcho.fix(reply, done))
-            pass++
-        }
-        assertEquals(5, pass)
-        assertEquals("I turned it off but couldn't check it; it should be off.", StateCheck.honest(false))
-    }
 
     @Test fun noContradictionEver() {
         // the exact 0.45.18 reply from the phone
@@ -185,15 +140,4 @@ class StateCheckTest {
         assertNull(StateCheck.parseEvidence("the switch reads OFF"))
     }
 
-    @Test fun agentUsesStateVerification() {
-        fun src(p: String) = listOf(File("src/main/java/com/blaze/assistant/$p"), File("app/src/main/java/com/blaze/assistant/$p")).first { it.exists() }.readText()
-        val a = src("agent/Agent.kt")
-        assertFalse("the old stale-node read-back is gone", a.contains("couldn't read the switch back"))
-        assertTrue(a.contains("com.blaze.assistant.phone.ToggleVerify.after(app, svc, label, wantId, want)"))
-        assertTrue(a.contains("ToggleReply.fix(textOut, synchronized(turnDone) { turnDone.toList() })"))
-        assertTrue("run_plan switch steps are verified too", a.contains("planChecks += com.blaze.assistant.phone.ToggleVerify.marker(vr)"))
-        val r = src("phone/PhoneStateReader.kt")
-        for (api in listOf("nightMode", "Configuration.UI_MODE_NIGHT_MASK", "isWifiEnabled", "BluetoothManager", "AIRPLANE_MODE_ON", "SCREEN_BRIGHTNESS", "ringerMode"))
-            assertTrue(api, r.contains(api))
-    }
 }

@@ -59,7 +59,6 @@ class BlazeApp : Application() {
             Settings.setStr("mig_steps_auto", "1")
         }
         com.blaze.assistant.device.StartGuard.step("agent.IntentCache.init") { com.blaze.assistant.agent.IntentCache.init(this) }
-        com.blaze.assistant.device.StartGuard.step("phone.Watchers.init") { com.blaze.assistant.phone.Watchers.init(this) }
         com.blaze.assistant.device.StartGuard.step("agent.Autonomy.init") { com.blaze.assistant.agent.Autonomy.init(this) }
         com.blaze.assistant.device.StartGuard.step("agent.Processes.init") { com.blaze.assistant.agent.Processes.init(this) }
         // One mind (v0.18.0): blaze.db first (mind.db until it is copied); Memory is now a view of its memories table.

@@ -24,7 +24,7 @@ class ComposerKeysTest {
 
     /** The composer, the assist panel, page chat, specialist Steer and Design's ask box: no Send action, no Enter key handler. */
     @Test fun noMessageBoxSendsOnEnter() {
-        for (p in listOf("ui/Shell.kt", "ui/AssistPanel.kt", "browser/PageAskSheet.kt", "ui/AgentCard.kt", "ui/DesignView.kt", "phone/MagicHandUi.kt")) {
+        for (p in listOf("ui/Shell.kt", "ui/AssistPanel.kt", "browser/PageAskSheet.kt", "ui/AgentCard.kt", "ui/DesignView.kt")) {
             val s = src(p)
             assertFalse("$p uses ImeAction.Send", s.contains("ImeAction.Send"))
             assertFalse("$p sends from KeyboardActions", Regex("""KeyboardActions\([^)]*onSend""").containsMatchIn(s))

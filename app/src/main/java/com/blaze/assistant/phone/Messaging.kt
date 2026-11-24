@@ -93,27 +93,8 @@ object Messaging {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try { ctx.startActivity(intent.setPackage(pkg)) } catch (e: Exception) { return "Couldn't open $label: ${e.message}. Nothing was sent." }
 
-        val svc = BlazeAccessibilityService.instance
-            ?: return "Not sent yet: $label is open on ${contact.first}'s chat with it ready, but phone control is off, so the user must tap Send. Tell them exactly that."
-        // Only press Send inside the right chat. A wrong chat, a chooser or a "not on WhatsApp" screen stops here.
-        val send = svc.waitFor("Send", 9000)
-            ?: return "Couldn't send: $label opened but its Send button never appeared (the number may not be on $label). Nothing was sent; tell the user and offer SMS or the right number."
-        val words = svc.visibleWords()
-        if (image == null && !SendCheck.chatOpenFor(contact.first, number, words))
-            return "Couldn't send: $label didn't open ${contact.first}'s chat, so I didn't press Send. Nothing was sent."
-        svc.tap(send)
-        kotlinx.coroutines.delay(1200)
-        svc.settle(1500)
-        var v = SendCheck.verdict(text, image != null, svc.fieldText(), svc.visibleWords())
-        if (v == SendCheck.Verdict.UNSURE) {
-            // One more press when the preview or draft is still there (the first tap can land during an animation).
-            svc.waitFor("Send", 1500)?.let { svc.tap(it); kotlinx.coroutines.delay(1200); svc.settle(1500) }
-            v = SendCheck.verdict(text, image != null, svc.fieldText(), svc.visibleWords())
-        }
-        if (v != SendCheck.Verdict.SENT)
-            return "Couldn't confirm it was sent: I pressed Send in ${contact.first}'s $label chat but the ${if (image != null) "picture" else "message"} still looks unsent. Tell the user to check $label; do NOT say it was sent."
-        try { svc.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK) } catch (_: Exception) { }
-        return "Sent to ${contact.first} on $label: ${if (image != null) "the picture" + (if (text.isNotEmpty()) " with \u201c$text\u201d" else "") else "\u201c$text\u201d"} (seen leaving the chat)."
+        // 0.55.11: phone control is gone, so the user presses Send in the app themselves.
+        return "Not sent yet: $label is open on ${contact.first}'s chat with it ready; the user must tap Send. Tell them exactly that."
     }
 
     /** WhatsApp needs the country code: 0760… in Zambia → 260760… */

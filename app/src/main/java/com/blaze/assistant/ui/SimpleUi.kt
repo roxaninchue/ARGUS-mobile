@@ -184,7 +184,6 @@ private fun SideButton(icon: androidx.compose.ui.graphics.vector.ImageVector, la
 fun fixIntent(ctx: android.content.Context, k: FixCards.Kind): Intent {
     val pkg = Uri.parse("package:" + ctx.packageName)
     return when (k) {
-        FixCards.Kind.PHONE_CONTROL -> try { com.blaze.assistant.phone.PhoneControl.fixIntent(ctx) } catch (_: Throwable) { Intent(k.action) }
         FixCards.Kind.OVERLAY, FixCards.Kind.APP_PERMISSION -> Intent(k.action, pkg)
         // 0.53.4: the per-app All files access page (Android 11+); Android 8-10 grant storage on the app's page.
         FixCards.Kind.ALL_FILES -> if (android.os.Build.VERSION.SDK_INT >= 30) Intent(k.action, pkg)

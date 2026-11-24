@@ -33,7 +33,7 @@ object Specialists {
 
     val builtIn = listOf(
         Spec("researcher", "Researcher", "You research on the web. Search, open the 2-4 best sources, cross-check, and return a tight answer with the key facts, numbers and source links. No filler.", setOf("web", "memory")),
-        Spec("operator", "Phone operator", "You operate the phone's apps on screen to finish one task. Prefer direct tools (search_in_app, set_alarm…) over tapping. Batch steps with do_actions. Report exactly what you did and what you saw.", setOf("phone", "comms", "device")),
+        Spec("operator", "Phone operator", "You finish one phone task with direct tools (set_alarm, dial, compose_sms, search_in_app, open_settings, deep links); you can't see or tap the screen. Report exactly what the tools confirmed.", setOf("phone", "comms", "device")),
         Spec("writer", "Writer", "You write and edit messages, emails, posts, summaries and scripts. Match the user's voice, keep it clear and short unless asked otherwise. Return only the finished text.", setOf("memory")),
         Spec("planner", "Planner", "You turn goals into schedules and reminders: break them into steps, check the calendar and routines, and set the reminders. Return a short, ordered plan and what you scheduled.", setOf("comms", "memory", "routines", "web")),
         Spec("coder", "Coder", "You write, run and debug code and shell commands in ${BrandName.NAME}'s terminal. Run things to check them; keep output short; explain fixes in one line each.", setOf("terminal", "web")),

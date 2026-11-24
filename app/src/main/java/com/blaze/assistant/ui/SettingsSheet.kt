@@ -72,7 +72,7 @@ import androidx.compose.ui.draw.clip
  * opens Spotlight from the profile's floating Search pill.
  */
 @Composable
-fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit,
+fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                    onTab: (String) -> Unit = {}, onSearch: () -> Unit = {}) {
     val c = LocalBlaze.current.mono
     val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -143,7 +143,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                 when (page) {
                     com.blaze.assistant.ui.space.SpaceProfile.SYSTEM_PAGE -> com.blaze.assistant.ui.space.SpaceSystemPage { page = it }
                     com.blaze.assistant.ui.space.SpaceProfile.FEEDBACK_PAGE -> com.blaze.assistant.ui.space.SpaceFeedbackPage(version)
-                    "permissions" -> { PermissionsPage { page = it }; ControlPage(a11yOn, onOpenAccessibility) }
+                    "permissions" -> { PermissionsPage { page = it }; ControlPage() }
                     "updates" -> UpdatesPage()
                     "developer" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
                         com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
@@ -164,7 +164,7 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "connections" -> ConnectionsPage()
                     "desktop" -> DesktopPage()
                     "persona" -> PersonaSection()
-                    "control" -> ControlPage(a11yOn, onOpenAccessibility)
+                    "control" -> ControlPage()
                     "skills" -> SkillLibraryPage()
                     "voice" -> { VoiceSection(); MyVoiceSection(); VoiceTuning(); VoiceExtras() }
                     "orb" -> OrbSection()
@@ -212,7 +212,6 @@ fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> U
                     "logins" -> SavedLoginsPage()
                     "secrets" -> SavedSecretsPage()
                     "phonebrowser" -> PhoneBrowserSettingsPage()
-                    "watches" -> com.blaze.assistant.phone.MagicHandWatchesPage()
                 }
                 Spacer(Modifier.height(30.dp))
             }
@@ -233,26 +232,10 @@ private fun SpeedStatsPage() {
     }
 }
 
+/** Settings > Phone skills: the skill permissions and notification access (0.55.11: phone control is gone). */
 @Composable
-private fun ControlPage(a11yOn: Boolean, onOpenAccessibility: () -> Unit) {
-    val c = LocalBlaze.current.mono
-    var control by remember { mutableStateOf(Settings.phoneControl) }
+private fun ControlPage() {
     Spacer(Modifier.height(8.dp))
-    ToggleRow("Phone control", "Open apps, tap, type and scroll for you", control) { control = !control; Settings.phoneControl = control }
-    // v0.24.5: the pointer is always shown while Argus controls apps (no switch; the old show_pointer pref is ignored).
-    Text(tr("{0}'s mascot pointer is always on screen while it controls your phone. It never blocks your taps or {1}'s. Tap the small Stop chip at the bottom-left to stop.", BrandName.NAME, BrandName.NAME),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.weak))
-    Spacer(Modifier.height(12.dp))
-    Row(Modifier.fillMaxWidth().hairline(if (a11yOn) c.hair else c.accent).clickable(onClick = onOpenAccessibility).padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(6.dp).background(if (a11yOn) c.accent else c.weak, BlazeShapes.pill))
-        Spacer(Modifier.width(10.dp))
-        Text(if (a11yOn) "Accessibility access is on" else "Turn on \u201cBlaze phone control\u201d in Accessibility",
-            modifier = Modifier.weight(1f), style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
-        Label(tr("Open →"), color = c.accent)
-    }
-    if (!a11yOn) Text(tr("If Android calls it a restricted setting: App info → {0} → ⋮ → Allow restricted settings, then try again.", BrandName.NAME),
-        style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, lineHeight = 18.sp, color = c.sub), modifier = Modifier.padding(top = 8.dp))
     SkillsSection()
     NotificationAccessRow()
 }

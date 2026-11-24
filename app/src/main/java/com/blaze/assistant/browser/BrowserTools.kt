@@ -119,7 +119,7 @@ object BrowserTools {
                 val text = a.optString("text").ifBlank { null }
                 val label = BrowserEngine.labelOf(n, text).ifBlank { text.orEmpty() }
                 val site = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { BrowserEngine.host() }.ifBlank { "this page" }
-                if (com.blaze.assistant.phone.Pointer.risky(label) &&
+                if (RiskyLabel.risky(label) &&
                     !com.blaze.assistant.agent.Agent.confirm("Click \u201c${label.trim().take(40)}\u201d on $site?",
                         "This looks like it pays, sends, posts or deletes something.", "Click", always = true))
                     "The user did NOT approve clicking \"${label.trim().take(40)}\". Don't retry; tell them it's ready for them to finish (browser_show)."
@@ -134,7 +134,7 @@ object BrowserTools {
                 val k = a.optString("key")
                 val focused = if (k.equals("Enter", true) || k.equals("Space", true)) BrowserEngine.focusedLabel() else ""
                 val site = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { BrowserEngine.host() }.ifBlank { "this page" }
-                if (focused.isNotBlank() && com.blaze.assistant.phone.Pointer.risky(focused) &&
+                if (focused.isNotBlank() && RiskyLabel.risky(focused) &&
                     !com.blaze.assistant.agent.Agent.confirm("Press \u201c${focused.trim().take(40)}\u201d on $site?",
                         "This looks like it pays, sends, posts or deletes something.", "Press", always = true))
                     "The user did NOT approve pressing \"${focused.trim().take(40)}\". Don't retry; tell them it's ready for them to finish (browser_show)."

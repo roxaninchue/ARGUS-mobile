@@ -1,3 +1,23 @@
+## 0.55.18 (versionCode 227, 2026-11-24): phone control removed from the app
+Finn (24 Nov 23:14 / 23:15): "remove phone control from Argus completely", "remove it permanently from the app".
+Picks up the half-done branch `remove/phone-control` (7420c119) on top of main 0.55.17 and finishes it.
+- Gone: the Accessibility service (`phone/BlazeAccessibilityService.kt`, its manifest entry and
+  `res/xml/accessibility_config.xml`), Magic Hand, the pointer, screen readers (ScreenTree, ScreenReadCache, ScreenHeat,
+  PhoneStateReader, ToggleVerify), the flash engine (`phone/flash/`), screen watchers, Screen memory (setting, tool,
+  snapshots page), the phone-control banner, the explainer dialog and the in-chat "Needs phone control" card
+  (PermissionGate), and the onboarding page that asked for Accessibility.
+- Tools gone: read_screen, look_at_screen, tap, type_text, scroll, press_button, wait, run_plan, do_actions, watch,
+  the flash tool, search_screen_memory. The intent tools stay (open_app, search_in_app, open_url, open_settings, dial,
+  compose_sms, alarms, timers): they never needed the screen.
+- Prompt: the phone block (HarnessPrompt.phone) now says Argus can't see, read or tap the screen and names the direct
+  tools; the Orient / FastActions rules, the orient read and the saved tap-plan hint are no longer sent. The operator
+  specialist, the task and coding core skills, the phone-task starter skill and Conversations' hints no longer mention
+  phone control; the wf-do-it-on-screen skill is deleted.
+- Settings: `phone_control` and `screen_memory` prefs are gone (old values are ignored).
+- Tests for removed code deleted (MagicHand*, ScreenTree, Pointer, Heat, flash bench, PermissionGate) or trimmed.
+- Left inert for a later tidy (pure helpers, no screen access): TapLoop, Orient, FastActions, ConfirmGate.screenActs,
+  DeviceLast, BankMode's service toggle.
+
 ## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines; org-name providers; genre pages
 Finn (24 Nov 13:46): "Cloud sync should now cover all important things like bots too". His Health team was gone after
 clearing storage for the sign-in crash, while memory (which syncs) still mentioned it. Bots, teams and routines lived

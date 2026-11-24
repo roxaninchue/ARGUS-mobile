@@ -108,7 +108,7 @@ object SelfControl {
         "voice_on" -> { Settings.speakReplies = true; "Okay, I'll read answers aloud when you ask by voice." }
         "status", "setup_check" -> SelfSetup.report(ctx)
         "open" -> SelfSetup.open(ctx, args.optString("target"))
-        "speed_stats" -> SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } + SpeedLog.timingLines() + SpeedLog.screenLine()
+        "speed_stats" -> SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } + SpeedLog.timingLines()
         // v0.33.1: where the tokens go, per feature, plus the tool cache and the learned router.
         "token_ledger" -> TokenLedger.report() + "\n" + ToolCache.stats() + "\n" + LearnedRoutes.stats()
         "tool_stats" -> ToolStats.report() + (LlmClient.lastHealed.takeIf { it.isNotBlank() }?.let { "\n\nLast self-healed error: ${it.take(200)}" } ?: "")
@@ -125,9 +125,9 @@ object SelfControl {
     }
 
     private val boolKeys = mapOf(
-        "phone_control" to "phone control", "speak_replies" to "read replies aloud", "followups" to "follow-up chips",
+        "speak_replies" to "read replies aloud", "followups" to "follow-up chips",
         "show_reasoning" to "show thinking", "particles" to "background dots", "fast_lane" to "fast lane", "auto_learn" to "auto-learning",
-        "screen_memory" to "screen memory", "confirm_risky" to "confirm risky taps", "voice_loop" to "conversation mode",
+        "voice_loop" to "conversation mode",
         "show_taps" to "show where I tap", "sounds" to "sounds", "compact_panel" to "compact panel",
         "wake_gate" to "wake sound gate", "wake_screen_off" to "listen with screen off", "wake_charging" to "listen while charging", "wake_pocket" to "pause in pocket",
         "digest_mode" to "save non-urgent heads-ups for the briefs", "evening_brief" to "evening brief", "morning_brief" to "morning brief", "home_headsups" to "heads-ups about new things on Home", "headsups_paused" to "pause every message you start on your own (heads-ups)", "speed_mode" to "speed mode (no animations)",
@@ -148,8 +148,7 @@ object SelfControl {
         val v = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrDefault("?")
         return buildString {
             append("${BrandName.NAME} $v. Brain: ${BrandName.NAME} Cloud (picks the best free model per message). Personality: ${Personas.byId(Settings.personaId).name}.\n")
-            append("Phone control ${if (Settings.phoneControl && com.blaze.assistant.phone.BlazeAccessibilityService.instance != null) "on" else "off"}, ")
-            append("wake word ${if (Settings.wakeWord) "on" else "off"}, read aloud ${if (Settings.speakReplies) "on" else "off"}, ")
+            append("Wake word ${if (Settings.wakeWord) "on" else "off"}, read aloud ${if (Settings.speakReplies) "on" else "off"}, ")
             append("fast lane ${if (Settings.fastLane) "on" else "off"}, orb ${if (Overlay.orbShowing) "showing" else "hidden"}.\n")
             append("Changeable with set_setting: ${boolKeys.keys.joinToString()}.")
         }
