@@ -59,8 +59,21 @@ android {
             // (Gate #1 and #2). 2 GB of heap, a fresh JVM every 100 classes so Robolectric's per-class state can't pile up,
             // and a hard cap so a hang fails the run instead of eating it.
             it.maxHeapSize = "2g"
-            it.setForkEvery(100L)
-            it.timeout.set(Duration.ofMinutes(60))
+            // Gate: -PtestForkEvery=1 gives every test class its own JVM, so a coroutine one class leaks can't fail the next.
+            it.setForkEvery((project.findProperty("testForkEvery") as String?)?.toLongOrNull() ?: 100L)
+            it.timeout.set(Duration.ofMinutes((project.findProperty("testTimeoutMin") as String?)?.toLongOrNull() ?: 60L))
+            // Gate quarantine (src/test/gate-quarantine.txt, one class per line): tests known to hang or break the run, set
+            // aside so they report without blocking. -PtestQuarantine=skip leaves them out, =only runs just them.
+            val quarantine = project.file("src/test/gate-quarantine.txt").takeIf { f -> f.exists() }?.readLines()
+                ?.map { l -> l.substringBefore('#').trim() }?.filter { l -> l.isNotEmpty() }.orEmpty()
+            when (project.findProperty("testQuarantine")) {
+                "skip" -> quarantine.forEach { q -> it.exclude("**/${q.replace('.', '/')}.class", "**/${q.replace('.', '/')}$*.class") }
+                "only" -> {
+                    it.filter.isFailOnNoMatchingTests = false
+                    if (quarantine.isEmpty()) it.include("gate/quarantine/none/**")
+                    else quarantine.forEach { q -> it.include("**/${q.replace('.', '/')}.class", "**/${q.replace('.', '/')}$*.class") }
+                }
+            }
             // Gate shards (24 Nov): -PtestShard=i -PtestShards=n runs only the test classes whose outer class name hashes to
             // shard i, so the Gate splits the suite (~4,200 tests, over an hour on one runner) across parallel jobs.
             // Without the properties every test runs, as before.
