@@ -6,7 +6,8 @@ on:
     # 0.52.3: + the ARGUS x Hark design branch (same rules: tests, shots, a test-signed APK, never published).
     # 0.55.11: + music-youtube-only (Music on YouTube only; tests and a test-signed APK, never published).
     # 0.55.12: + fix/model-sheet-scroll-intro (model sheet X-only close, slow scroll, full-screen intro; never publishes).
-    branches: [main, feat/argus-3d-home, feat/argus-hark-design, music-youtube-only, fix/model-sheet-scroll-intro]
+    # 24 Nov 2026: + feat/phone-instances (Argus Phone steps 1+1a, MR !80): a debug-signed APK for the phone check, never published.
+    branches: [main, feat/argus-3d-home, feat/argus-hark-design, music-youtube-only, fix/model-sheet-scroll-intro, feat/phone-instances]
     # The Blaze Gateway Worker (gateway/) has its own workflow; changes only there don't rebuild the app.
     paths-ignore: ['gateway/**', '.github/workflows/gateway.yml', '**/*.md', 'docs/**']
   # Pull requests (including from forks) only build; they never publish, sign a release or edit issues.
@@ -150,7 +151,9 @@ jobs:
           chmod +x gradlew
           set -o pipefail
           YT_TEST=""; if [ "${{ steps.yt.outputs.present }}" = "true" ]; then YT_TEST=":youtube:test"; fi
-          ./gradlew testReleaseUnitTest :storeapi:test $YT_TEST assembleRelease --stacktrace 2>&1 | tee build.log
+          # feat/phone-instances: the unit suite is already proven by the sharded Gate (gate.yml); one runner can't finish it in 45 min.
+          UNITS="testReleaseUnitTest"; if [ "${{ github.ref }}" = refs/heads/feat/phone-instances ]; then UNITS=""; fi
+          ./gradlew $UNITS :storeapi:test $YT_TEST assembleRelease --stacktrace 2>&1 | tee build.log
           echo "YouTube plug-in in this build: ${{ steps.yt.outputs.present }}" | tee -a build.log
 
       # 2026-11-14: the failure log, as an artifact anyone can fetch (job logs need a token; Post failure log runs only upstream)
