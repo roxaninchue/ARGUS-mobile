@@ -33,7 +33,16 @@ object PhoneBrowserTools {
         "sub-page (e.g. the login form). If it says it can't tell which site, ask the user; never guess or invent a URL. " +
         "No games; on banking sites open and read only, never move money."
 
-    fun definitions(): List<JSONObject> = listOf(
+    /** The phone_* tools that can name an Argus Phone instance (browser/phone/instances); without it they use the active one. */
+    private val IN_INSTANCE = setOf("phone_open", "phone_read", "phone_act", "phone_screenshot", "phone_wait")
+
+    fun definitions(): List<JSONObject> = defs().onEach { d ->
+        val f = d.getJSONObject("function")
+        if (f.getString("name") in IN_INSTANCE) f.getJSONObject("parameters").getJSONObject("properties")
+            .put("instance", p("string", "${BrandName.NAME} Phone instance name or id (default: the active one)"))
+    }
+
+    private fun defs(): List<JSONObject> = listOf(
         fn("phone_open", "$RULE Opens a site on ${BrandName.NAME} Phone: a URL, or what the user called it (resolved for you), and returns the page: a VERIFIED/NOT VERIFIED line, " +
             "elements with ids like [e12], and the text.",
             JSONObject().put("url", p("string", "A URL, or the site as the user named it: 'the booking site', 'my bank', 'github login'")), listOf("url")),

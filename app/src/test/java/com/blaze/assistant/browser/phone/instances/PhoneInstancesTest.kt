@@ -109,8 +109,9 @@ class PhoneInstancesTest {
         assertEquals("id0002", r.find("SHOPPING").instance?.id)
         assertEquals("id0001", r.find("book a table at nando's").instance?.id)
         assertEquals("id0001", r.find("id0001").instance?.id)
-        assertEquals(2, r.find("phone").ambiguous.size)   // "Phone" by name and "phone case" by task: ambiguous
-        assertNull(r.find("phone").instance)
+        assertEquals("an exact name wins", "id0001", r.find("phone").instance?.id)
+        assertEquals(2, r.find("pho").ambiguous.size)   // "Phone" by name and "phone case" by task: ambiguous
+        assertNull(r.find("pho").instance)
         assertNull(r.find("").instance)
     }
 
