@@ -64,7 +64,7 @@ object Skills {
             JSONObject().put("limit", p("integer", "How many, default 10"))),
         fn("call_number", "Place a phone call. The user is asked to approve first.",
             JSONObject().put("to", p("string", "Phone number or contact name")), listOf("to")),
-        fn("calendar_events", "List the phone calendar's events from about an hour ago through the next N days (title, time, place). Find an event here before move_event reschedules it or delete_event removes it (for example one that is over or cancelled).",
+        fn("calendar_events", "List the phone calendar's events from about an hour ago through the next N days (title, time, place, event id). Find an event here before move_event reschedules it or delete_event removes it (for example one that is over or cancelled).",
             JSONObject().put("days", p("integer", "Days ahead, default 1 (today)"))),
         // 18 Nov 2026 (owner): a reminder belongs on the calendar, where it reaches the user offline and on every device.
         fn("add_calendar_event", "Add an event to the user's calendar. With reminder_minutes the calendar app alerts the user itself, offline and on their other devices; repeat makes it recurring.",
@@ -241,10 +241,10 @@ object Skills {
         val evs = mutableListOf<EventLines.Event>()
         ctx.contentResolver.query(b.build(),
             arrayOf(CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN, CalendarContract.Instances.END,
-                CalendarContract.Instances.ALL_DAY, CalendarContract.Instances.EVENT_LOCATION),
+                CalendarContract.Instances.ALL_DAY, CalendarContract.Instances.EVENT_LOCATION, CalendarContract.Instances.EVENT_ID),
             null, null, "${CalendarContract.Instances.BEGIN} ASC")?.use {
             while (it.moveToNext() && evs.size < 40) {
-                evs += EventLines.Event(it.getString(0).orEmpty(), it.getLong(1), it.getLong(2), it.getInt(3) == 1, it.getString(4))
+                evs += EventLines.Event(it.getString(0).orEmpty(), it.getLong(1), it.getLong(2), it.getInt(3) == 1, it.getString(4), it.getLong(5))
             }
         }
         // 18 Nov 2026: the result opens with today's date and marks each event's day (today / tomorrow / in N days), so
@@ -267,7 +267,9 @@ object Skills {
     fun eventsResult(lines: List<String>, now: java.time.ZonedDateTime? = null): String {
         // 18 Nov 2026: with [now], the result starts with "Today is Wed 18 Nov 2026, 10:51 (Africa/Lusaka)." (EventLines.header).
         val head = now?.let { EventLines.header(it) + "\n" }.orEmpty()
-        return if (lines.isEmpty()) head + EVENTS_NONE else head + "Calendar events (tell the user each one with its time and place):\n" + lines.joinToString("\n")
+        if (lines.isEmpty()) return head + EVENTS_NONE
+        // 0.55.14: with ids listed, say what they mean: one line per event, so two reads of this list are never "a duplicate".
+        return head + EventLines.idNote(lines) + "Calendar events (tell the user each one with its time and place):\n" + lines.joinToString("\n")
     }
 
     /** 0.55.2: same title (case and spaces ignored) and a start within a minute. Pure; SameEventTest. */

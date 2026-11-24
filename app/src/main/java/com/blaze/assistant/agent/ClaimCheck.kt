@@ -52,6 +52,9 @@ object ClaimCheck {
 
     val ACTIONS: List<ActionProof.Action> = ActionProof.ACTIONS + RUNNING + BOOKED
 
+    /** 0.55.14: a sentence where the reply says it did the starting itself ("I started", "Launched it"). */
+    private val FIRST_PERSON = r("""\b(?:i|i've|i have|i just|we've)\s|^\s*(?:started|launched|booted)\b""")
+
     private fun sentences(text: String): List<String> = text.split(Regex("""(?<=[.!?…])\s+|\n+""")).map { it.trim() }.filter { it.isNotEmpty() }
 
     /** The newest call of [a]'s kind this turn, or null. */
@@ -66,6 +69,11 @@ object ClaimCheck {
             if (!ActionProof.asked(userText, a, intentTools)) continue
             // 0.45.29: on a bare "yes" turn a booking claim is checked even when Argus Phone never ran.
             if (a.id == "booked" && done.none { it.name in a.tools } && !FollowUpBind.isShortYes(userText)) continue
+            // 0.55.14 (phone 24 Nov 02:18: "Yes" to a build watch; the reply said build #131 "is running" and became "I didn't actually
+            // get that running"): on a bare "yes", "X is running" is a status the reply reports, not a claim of starting it, unless a
+            // tool that starts things ran this turn. A first-person "I started it" is still checked.
+            if (a.id == "running" && FollowUpBind.isShortYes(userText) && done.none { it.name in a.tools } &&
+                ActionProof.claims(text, a).none { FIRST_PERSON.containsMatchIn(it) }) continue
             // 0.45.29: a bare "Done." needs any tool that was verified this turn.
             if (a.id == "done") {
                 if (ActionProof.claims(text, a).isEmpty() || done.any { it.status == ToolVerify.Status.VERIFIED }) continue

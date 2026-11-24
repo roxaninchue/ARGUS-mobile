@@ -16,6 +16,23 @@ import kotlinx.coroutines.flow.asStateFlow
 object ToolTrail {
     data class Result(val exact: String, val output: String, val failed: Boolean, val at: Long)
 
+    /** 0.55.14: how much earlier than its call row a result may be stamped and still belong to it (the two clocks are a tick apart). */
+    const val SKEW_MS = 2_000L
+
+    /**
+     * 0.55.14 (phone 24 Nov 02:20: "Checked your calendar · 2" showed the 01:43 and 02:18 reads under a 02:20 step): the
+     * result for one call row. A result is only ever this call's when it came at or after the call (an older turn's result
+     * with the same args is not), and the same text is preferred over the same tool. Marks it [used]. Pure; ToolTrailPickTest.
+     */
+    fun pick(exact: String, name: String, at: Long, results: List<Result>, used: BooleanArray, nameOf: (String) -> String?): Int? {
+        val e = exact.trim()
+        fun fresh(i: Int) = at <= 0L || results[i].at >= at - SKEW_MS
+        val hit = results.indices.firstOrNull { !used[it] && fresh(it) && results[it].exact == e }
+            ?: results.indices.firstOrNull { !used[it] && fresh(it) && nameOf(results[it].exact) == name }
+        hit?.let { used[it] = true }
+        return hit
+    }
+
     const val PER_CHAT = 200
     const val CHATS = 6
     const val OUTPUT_MAX = 4_000

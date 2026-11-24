@@ -82,10 +82,7 @@ object ChatToolRows {
     fun stepOf(m: Msg, results: List<ToolTrail.Result>, used: BooleanArray, live: Boolean): Step? {
         val name = toolOf(m.meta) ?: return null
         val l = StepTool.label(name)
-        var hit = results.indices.firstOrNull { !used[it] && results[it].exact == m.meta.trim() }
-        if (hit == null) hit = results.indices.firstOrNull { !used[it] && toolOf(results[it].exact) == name && results[it].at >= m.at }
-        hit?.let { used[it] = true }
-        val r = hit?.let { results[it] }
+        val r = ToolTrail.pick(m.meta, name, m.at, results, used, ::toolOf)?.let { results[it] }
         val state = when {
             r != null -> if (r.failed) State.FAILED else State.DONE
             live -> State.RUNNING

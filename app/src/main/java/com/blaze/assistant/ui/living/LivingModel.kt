@@ -311,10 +311,7 @@ object LivingModel {
     }
 
     private fun match(m: Msg, name: String, results: List<ToolTrail.Result>, used: BooleanArray): ToolTrail.Result? {
-        var hit = results.indices.firstOrNull { !used[it] && results[it].exact == m.meta.trim() }
-        if (hit == null) hit = results.indices.firstOrNull { !used[it] && toolOf(results[it].exact) == name && results[it].at >= m.at }
-        hit?.let { used[it] = true }
-        return hit?.let { results[it] }
+        return ToolTrail.pick(m.meta, name, m.at, results, used) { toolOf(it) }?.let { results[it] }
     }
 
     /** A page result → (title, text). The first short line is the title when the result starts with one. */

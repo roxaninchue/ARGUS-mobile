@@ -24,8 +24,8 @@ object PimEdit {
     fun describe(name: String, a: JSONObject): Pair<String, String> = when (name) {
         "add_contact" -> "Add contact?" to listOf(a.optString("name"), a.optString("phone"), a.optString("email")).filter { it.isNotBlank() }.joinToString(" · ")
         "edit_contact" -> "Change contact?" to "${a.optString("name")} → " + listOf(a.optString("new_name"), a.optString("phone"), a.optString("email")).filter { it.isNotBlank() }.joinToString(" · ")
-        "move_event" -> "Move event?" to "${a.optString("title")} → ${a.optString("new_start")}"
-        else -> "Delete event?" to a.optString("title")
+        "move_event" -> "Move event?" to "${a.optString("title").ifBlank { "event " + a.optString("event_id") }} → ${a.optString("new_start")}"
+        else -> "Delete event?" to listOf(a.optString("title"), a.optString("day")).filter { it.isNotBlank() }.joinToString(" \u00b7 ").ifBlank { "event ${a.optString("event_id")}" }
     }
 
     suspend fun run(ctx: Context, name: String, a: JSONObject): String = try {
@@ -93,38 +93,75 @@ object PimEdit {
 
     // ---------- calendar ----------
 
-    private data class Ev(val id: Long, val title: String, val start: Long, val end: Long)
-
-    private fun findEvent(ctx: Context, title: String, day: String): Ev? {
+    /**
+     * 0.55.14 (phone 24 Nov 02:20: "Deleted the duplicate" removed the only "Go home"): events are found with their ids and
+     * all-day flag. [day] narrows to one day; with [id] the event is fetched by id whatever its title.
+     */
+    private fun findEvents(ctx: Context, title: String, day: String, id: Long): List<EventLines.Event> {
         val from: Long; val to: Long
-        if (day.isNotBlank()) {
-            val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(day.take(10)) ?: return null
-            from = d.time; to = d.time + 86_400_000L
-        } else { from = System.currentTimeMillis() - 86_400_000L; to = System.currentTimeMillis() + 60L * 86_400_000L }
+        if (day.isNotBlank() && id <= 0) {
+            val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(day.take(10)) ?: return emptyList()
+            // all-day events are UTC midnights: widen by a day each side so the local/UTC offset never hides one
+            from = d.time - 86_400_000L; to = d.time + 2 * 86_400_000L
+        } else { from = System.currentTimeMillis() - 2 * 86_400_000L; to = System.currentTimeMillis() + 366L * 86_400_000L }
         val b = CalendarContract.Instances.CONTENT_URI.buildUpon()
         ContentUris.appendId(b, from); ContentUris.appendId(b, to)
-        return ctx.contentResolver.query(b.build(), arrayOf(CalendarContract.Instances.EVENT_ID, CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN, CalendarContract.Instances.END),
-            "${CalendarContract.Instances.TITLE} LIKE ?", arrayOf("%$title%"), "${CalendarContract.Instances.BEGIN} ASC")?.use {
-            if (it.moveToFirst()) Ev(it.getLong(0), it.getString(1) ?: title, it.getLong(2), it.getLong(3)) else null
+        val (where, args) = if (id > 0) "${CalendarContract.Instances.EVENT_ID} = ?" to arrayOf(id.toString())
+            else "${CalendarContract.Instances.TITLE} LIKE ?" to arrayOf("%$title%")
+        val out = ArrayList<EventLines.Event>()
+        ctx.contentResolver.query(b.build(), arrayOf(CalendarContract.Instances.EVENT_ID, CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN,
+            CalendarContract.Instances.END, CalendarContract.Instances.ALL_DAY, CalendarContract.Instances.EVENT_LOCATION),
+            where, args, "${CalendarContract.Instances.BEGIN} ASC")?.use {
+            while (it.moveToNext() && out.size < 50) out += EventLines.Event(it.getString(1) ?: title, it.getLong(2), it.getLong(3), it.getInt(4) == 1, it.getString(5), it.getLong(0))
+        }
+        // a day was named: keep the events on that day (all-day by their UTC date, others by the phone's)
+        if (day.isNotBlank() && id <= 0) {
+            val want = day.take(10)
+            return out.filter { e ->
+                val z = if (e.allDay) java.time.ZoneOffset.UTC else java.time.ZoneId.systemDefault()
+                java.time.Instant.ofEpochMilli(e.begin).atZone(z).toLocalDate().toString() == want
+            }
+        }
+        return out
+    }
+
+    private fun idOf(a: JSONObject): Long = a.optString("event_id").trim().removePrefix("id").trim().toLongOrNull() ?: a.optLong("event_id", 0L)
+
+    private fun pickEvent(ctx: Context, a: JSONObject, verb: String): Pair<EventLines.Event?, String> {
+        val id = idOf(a); val title = a.optString("title").trim()
+        if (id <= 0 && title.isBlank()) return null to "Which event? Give its event_id from calendar_events (or its title)."
+        val zone = java.time.ZoneId.systemDefault()
+        return when (val p = EventLines.pick(findEvents(ctx, title, a.optString("day"), id), id)) {
+            is EventLines.Pick.One -> p.event to ""
+            is EventLines.Pick.Many -> null to EventLines.manyText(verb, title, p.events, zone)
+            EventLines.Pick.None -> null to (if (id > 0) "No calendar event with id $id (it may already be gone). Call calendar_events to see what's there."
+                else "No event matching \u201c$title\u201d" + (a.optString("day").takeIf { it.isNotBlank() }?.let { " on $it" } ?: "") + ".")
         }
     }
 
     private suspend fun moveEvent(ctx: Context, a: JSONObject): String {
         if (!Perms.ensure(ctx, Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)) return Perms.denied("calendar")
-        val ev = findEvent(ctx, a.optString("title"), a.optString("day")) ?: return "No upcoming event matching \u201c${a.optString("title")}\u201d."
+        val (ev, why) = pickEvent(ctx, a, "move_event"); if (ev == null) return why
         val start = fmt.parse(a.optString("new_start"))?.time ?: return "new_start must be yyyy-MM-dd HH:mm."
-        val len = a.optInt("duration_minutes", 0).takeIf { it > 0 }?.times(60_000L) ?: (ev.end - ev.start).coerceAtLeast(15 * 60_000L)
+        val len = a.optInt("duration_minutes", 0).takeIf { it > 0 }?.times(60_000L) ?: (ev.end - ev.begin).coerceAtLeast(15 * 60_000L)
         val n = ctx.contentResolver.update(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, ev.id),
-            ContentValues().apply { put(CalendarContract.Events.DTSTART, start); put(CalendarContract.Events.DTEND, start + len) }, null, null)
+            ContentValues().apply { put(CalendarContract.Events.DTSTART, start); put(CalendarContract.Events.DTEND, start + len)
+                if (ev.allDay) { put(CalendarContract.Events.ALL_DAY, 0); put(CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id) } }, null, null)
         val f = SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault())
-        return if (n > 0) "Moved \u201c${ev.title}\u201d to ${f.format(Date(start))}–${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(start + len))}." else "Couldn't move \u201c${ev.title}\u201d (it may belong to a read-only calendar)."
+        return if (n > 0) "Moved \u201c${ev.title}\u201d to ${f.format(Date(start))}\u2013${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(start + len))}." else "Couldn't move \u201c${ev.title}\u201d (it may belong to a read-only calendar)."
     }
 
     private suspend fun deleteEvent(ctx: Context, a: JSONObject): String {
         if (!Perms.ensure(ctx, Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)) return Perms.denied("calendar")
-        val ev = findEvent(ctx, a.optString("title"), a.optString("day")) ?: return "No upcoming event matching \u201c${a.optString("title")}\u201d."
+        val (ev, why) = pickEvent(ctx, a, "delete_event"); if (ev == null) return why
         val n = ctx.contentResolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, ev.id), null, null)
-        return if (n > 0) "Deleted \u201c${ev.title}\u201d (${SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault()).format(Date(ev.start))})." else "Couldn't delete \u201c${ev.title}\u201d (read-only calendar?)."
+        val zone = java.time.ZoneId.systemDefault()
+        // what's left with that title, so the reply never claims a "duplicate" was removed when it was the only one
+        val left = runCatching { findEvents(ctx, ev.title, "", 0).count { it.title.equals(ev.title, true) && it.id != ev.id } }.getOrDefault(0)
+        return if (n > 0) "Deleted \u201c${ev.title}\u201d (${EventLines.whenText(ev, zone)}) [id ${ev.id}]. " +
+            (if (left == 0) "No other event with that title is left on the calendar." else "$left other event${if (left == 1) "" else "s"} with that title remain${if (left == 1) "s" else ""}.") +
+            (ev.location?.takeIf { it.isNotBlank() }?.let { " It was at $it." } ?: "")
+        else "Couldn't delete \u201c${ev.title}\u201d (read-only calendar?)."
     }
 
     fun tools(): List<JSONObject> {
@@ -135,9 +172,10 @@ object PimEdit {
             fn("add_contact", "Save a new contact on the phone. Asks the user first.", JSONObject().put("name", s("Full name")).put("phone", s("Phone number")).put("email", s("Email")), listOf("name")),
             fn("edit_contact", "Change an existing phone contact's name, number or email. Asks the user first.", JSONObject().put("name", s("Current name (or part)")).put("new_name", s("New name"))
                 .put("phone", s("New phone number")).put("email", s("New email")), listOf("name")),
-            fn("move_event", "Move a phone calendar event to a new time. Asks the user first.", JSONObject().put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd it's on now, if known"))
-                .put("new_start", s("yyyy-MM-dd HH:mm")).put("duration_minutes", JSONObject().put("type", "integer").put("description", "New length; default keeps it")), listOf("title", "new_start")),
-            fn("delete_event", "Delete a phone calendar event, for example one that is cancelled or no longer wanted (find it with calendar_events). Asks the user first.", JSONObject().put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd, if known")), listOf("title")),
+            fn("move_event", "Move a phone calendar event to a new time. Asks the user first.", JSONObject().put("event_id", s("The event's id from calendar_events ([id N]); best")).put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd it's on now, if known"))
+                .put("new_start", s("yyyy-MM-dd HH:mm")).put("duration_minutes", JSONObject().put("type", "integer").put("description", "New length; default keeps it")), listOf("new_start")),
+            fn("delete_event", "Delete one phone calendar event, for example one that is cancelled or no longer wanted. Find it with calendar_events and pass its event_id. Asks the user first.",
+                JSONObject().put("event_id", s("The event's id from calendar_events ([id N])")).put("title", s("Event title (or part), when there's no id")).put("day", s("yyyy-MM-dd, if known")), emptyList()),
         )
     }
 }
