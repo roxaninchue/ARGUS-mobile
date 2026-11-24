@@ -1,3 +1,22 @@
+## Unreleased: Argus Phone instances (steps 1 + 1a, branch feat/phone-instances, MR !80)
+Jake (24 Nov): Argus Phone becomes a light phone of Argus's own, with instances that break and restore like terminal
+tabs, a background service until shut down, and Argus in control of all of it (docs/ARGUS-PHONE.md).
+- **Instances**: each holds its own browser state (page, title, site, scroll), recent steps, lock, waiting card and last
+  error. One is attached to the one WebView; switching checkpoints it and restores the other (per-site sign-ins as
+  before). Cold / warm / live budget: 1 / 2 on a low-RAM phone, 2 / 4 otherwise; idle 5 min goes cold. Checkpoints are
+  small versioned JSON under `filesDir/phone/instances/`, written atomically, with the previous one kept for recovery.
+- **Crash isolation**: a failure inside an instance is recorded as its last error and it is marked restorable; the
+  chat, the agent loop and the other instances carry on. After Android ends the process, instances come back cold.
+- **Locks and deep state**: Argus, a background agent, a team member or a routine can lock an instance as a lease
+  (renewed by its own steps, freed after a checkpoint when it runs out, breakable by the user with an approval card);
+  others may read but not act. `phone_instances list` returns a compact deep-state snapshot per instance.
+- **Background service** `ArgusPhoneService` (foreground, `specialUse`): "Argus Phone · N instances running" with what
+  Argus is doing or "Waiting on you"; tap opens the instance watched last; Shut down and Close all instances.
+- **Tools** (catalog only, found with find_tools): `phone_power` (on / off / status) and `phone_instances` (list, new,
+  use, lock, unlock, renew, open, close, close_all, checkpoint, restore, reset, duplicate). phone_open / read / act /
+  screenshot / wait take an optional `instance` and refuse to act in an instance someone else has locked.
+- Details and the phone check: docs/PHONE-INSTANCES.md. Tests: PhoneInstancesTest. Not built (no version bump).
+
 ## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines; org-name providers; genre pages
 Finn (24 Nov 13:46): "Cloud sync should now cover all important things like bots too". His Health team was gone after
 clearing storage for the sign-in crash, while memory (which syncs) still mentioned it. Bots, teams and routines lived
