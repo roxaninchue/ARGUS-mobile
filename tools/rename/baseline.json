@@ -1717,6 +1717,7 @@
 "evals/README.md":1,
 "evals/test/v212.test.mjs":7,
 "evals/vendor/models.js":8,
+"failures/2026-11-24-verifyerror-after-sign-in.md":2,
 "gateway/migrations/0001_init.sql":3,
 "gateway/migrations/0002_models.sql":1,
 "gateway/migrations/0003_access.sql":5,

@@ -3,6 +3,7 @@
 Start with **STATUS.md** ("Current state" and "Standing rules") and **HANDOFF.md** (how to build, test, check CI and
 commit). **Since 2026-11-23 (Finn): every change goes on its own branch, then a merge request into `main`.**
 Direction: docs/PC-REPLACEMENT.md.
+**Failures (Finn, 2026-11-24):** every crash, broken flow, red build or bad deploy gets a write-up in `failures/` (template and index in failures/README.md) the day its cause is known.
 
 **Merge rule.** GitLab pushes every branch to the public mirror `roxaninchue/ARGUS-mobile`, where
 `.github/workflows/gate.yml` ("Gate": rename guard, do-not-port, design JS tests, `:app:compileDebugKotlin`, then

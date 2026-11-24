@@ -58,6 +58,7 @@
   ArgusXHark (axh) port is **stopped**.
 
 ## Standing rules (Finn)
+- Failures (Finn, 2026-11-24): document every crash, red build or bad deploy in `failures/` (failures/README.md has the template and index).
 
 - **No APK builds until Finn says so** (2026-11-22 21:26 CAT). Every commit message ends with `[skip ci]` until then.
 - UI rules (2026-11-24): the model selector closes only with its X (Back too), never by swipe / drag / scrim; lists in sheets
