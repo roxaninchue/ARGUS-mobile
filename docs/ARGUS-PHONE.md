@@ -1,6 +1,6 @@
 # Argus Phone: the vision
 
-Owner vision (Jake, 2026-11-24; sections 3g, 3h, 5d to 5g added the same day). Jake: "After all, it is its phone.". **This is a plan, not code.** Nothing here is built yet. Read it before you touch
+Owner vision (Jake, 2026-11-24; sections 3g, 3h, 5d to 5g added the same day). Jake: "After all, it is its phone.". **This is a plan, not code**, except steps 1 and 1a (instances, locks, deep state, the background service), which are on branch `feat/phone-instances` (MR !80): [PHONE-INSTANCES.md](PHONE-INSTANCES.md). Read it before you touch
 `browser/phone/`, `terminal/`, `mediaapps/`, the Home board, or how the chat hands work to the user, and check new
 Argus Phone work against the hard rules in section 1.
 
@@ -304,8 +304,8 @@ build (AGENTS.md).
 
 | Step | What ships |
 |---|---|
-| 1 | Instance manager around today's browser: cold / warm / live, checkpoint, restore, reset, crash isolation; background service and notification; `phone_power`, `phone_instances` |
-| 1a | Instance locks (leases) and the deep state snapshot (5g) |
+| 1 | Instance manager around today's browser: cold / warm / live, checkpoint, restore, reset, crash isolation; background service and notification; `phone_power`, `phone_instances`. Built: [PHONE-INSTANCES.md](PHONE-INSTANCES.md) (MR !80) |
+| 1a | Instance locks (leases) and the deep state snapshot (5g). Built with step 1: [PHONE-INSTANCES.md](PHONE-INSTANCES.md) |
 | 1b | Shared workspace, Recovered folder, write leases, conflict copies, per-distro install locks (5e) |
 | 2 | Credentials card from the page's own field flags, then choice and approval cards; `phone_handoff` kinds |
 | 3 | The app contract, the Argus Phone home screen, the browser as the first app |
