@@ -692,6 +692,25 @@ object PhoneBrowser {
         return any
     }
 
+    // ------------------------------------------------------------------ instances (instances/ArgusPhone)
+    /** The live page's vertical scroll (CSS px), for an instance's checkpoint; 0 with no page. */
+    suspend fun scrollY(): Int = try { (js("Math.round(window.scrollY||0)") as? Number)?.toInt() ?: 0 } catch (_: Throwable) { 0 }
+
+    /**
+     * Puts an instance's page back: opens [url] in its site's own profile (as [open] does) and scrolls to [y] once it
+     * has loaded. Doesn't wait for the user: the instance manager never switches while the user drives.
+     */
+    suspend fun restorePage(ctx: Context, url: String, y: Int) {
+        init(ctx)
+        if (!url.startsWith("https://") && !url.startsWith("http://")) return
+        withContext(Dispatchers.Main) { val w = ensure(url); expectLoad(w); w.loadUrl(url); touch() }
+        withTimeoutOrNull(10_000) { loaded.await() }
+        if (y > 0) try { js("window.scrollTo(0,$y)") } catch (_: Throwable) { }
+    }
+
+    /** [release] from any thread (the instance manager switching or going cold). */
+    suspend fun releaseNow() = withContext(Dispatchers.Main) { release() }
+
     /** Live-view watchers (the chat tile, the full screen): frames are only made while someone watches. */
     @Synchronized fun watch(on: Boolean) { watchers = (watchers + if (on) 1 else -1).coerceAtLeast(0); surface?.watching = watchers }
 

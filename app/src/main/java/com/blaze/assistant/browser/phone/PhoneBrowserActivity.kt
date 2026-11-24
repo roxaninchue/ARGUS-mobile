@@ -66,6 +66,7 @@ import com.blaze.assistant.ui.GlassIconButton
 import com.blaze.assistant.ui.PhoneFrame
 import com.blaze.assistant.ui.StatusPill
 import com.blaze.assistant.ui.Type
+import com.blaze.assistant.browser.phone.instances.ArgusPhone
 
 /**
  * 0.45.19 Argus Phone full screen. Watching: Argus's screen, live, with the step it's on and "Take control". In control:
@@ -81,6 +82,11 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
             ctx.startActivity(Intent(ctx, PhoneBrowserActivity::class.java).putExtra(EXTRA_CONTROL, control)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
         }
+        /** Which Argus Phone instance to show (the notification's tap, phone_instances open). */
+        const val EXTRA_INSTANCE = "instance"
+        fun instanceIntent(ctx: Context, id: String?): Intent = Intent(ctx, PhoneBrowserActivity::class.java).putExtra(EXTRA_INSTANCE, id)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        fun openInstance(ctx: Context, id: String) { try { ctx.startActivity(instanceIntent(ctx, id)) } catch (_: Exception) { } }
     }
 
     private val control = mutableStateOf(false)
@@ -91,7 +97,10 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
         if (com.blaze.assistant.connect.AccountGate.bounce(this)) return   // account lock: the lock screen instead
         PhoneBrowser.init(this)
         // Opened by the user with nothing running: their own Argus Phone session, in control from the start.
-        if (!PhoneBrowser.hasPage()) { PhoneBrowser.openForUser(this); take() }
+        // Instances (instances/ArgusPhone): reopen the instance asked for, or the one watched last, where it was.
+        val inst = intent?.getStringExtra(EXTRA_INSTANCE)
+        if (!PhoneBrowser.hasPage()) { PhoneBrowser.openForUser(this, ArgusPhone.resumeUrl(this, inst)); take() }
+        else if (inst != null) ArgusPhone.showFromNotification(this, inst)
         else if (intent?.getBooleanExtra(EXTRA_CONTROL, false) == true) take()
         else if (PhoneBrowser.live.value.mode == PhonePolicy.Mode.USER) take()   // re-host the WebView in this window
         setContent { BlazeTheme(statusBars = true) {
@@ -107,7 +116,11 @@ class PhoneBrowserActivity : ComponentActivity(), BackRule.ToChat {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.getBooleanExtra(EXTRA_CONTROL, false)) take()
+        else intent.getStringExtra(EXTRA_INSTANCE)?.let { ArgusPhone.showFromNotification(this, it) }
     }
+
+    override fun onStart() { super.onStart(); ArgusPhone.watching(this, true) }
+    override fun onStop() { ArgusPhone.watching(this, false); super.onStop() }
 
     private fun take() {
         if (PhoneBrowser.takeControl(this) != null) {
