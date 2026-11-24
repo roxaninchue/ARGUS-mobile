@@ -32,9 +32,20 @@
   flag that asked for trimming, `ToolWire.mayTrim` is always false). Not done: changing the lane recheck interval.
 - The `gateway/` folder in this project is an old 0.3.1 copy; it is not the live code.
 
+**CI gate (2026-11-23, updated 22:30 CAT)**
+- **The gate is GitHub Actions `Gate` (`.github/workflows/gate.yml`)** on the public mirror `roxaninchue/ARGUS-mobile`
+  (free minutes). GitLab push-mirrors every branch; Gate runs on each branch push except `main`: node checks, Go
+  jniLibs, compile, `:app:testDebugUnitTest --continue`. A branch merges only when the Gate run for its head sha is
+  green, checked through the public API right before the merge (AGENTS.md "Merge rule"). Nothing on GitLab enforces it.
+- **GitLab CI is parked**: the account's free plan used its 400 November minutes (MR !75's first pipeline failed with
+  `ci_quota_exceeded`; resets 1 Dec). `.gitlab-ci.yml` creates no pipeline unless the CI/CD variable
+  `ARGUS_GITLAB_CI` = `on`. Project settings: `only_allow_merge_if_pipeline_succeeds` = **false** (set back on
+  2026-11-23), `allow_merge_on_skipped_pipeline` = false, CI/CD enabled. To bring GitLab CI back: set the variable and
+  turn `only_allow_merge_if_pipeline_succeeds` on again.
+
 **Plans**
 - **PC replacement (Finn, 2026-11-23): the current direction.** Plan, phases and the Phase 0 removals in
-  [docs/PC-REPLACEMENT.md](docs/PC-REPLACEMENT.md). Phase 0 = slim-down (one removal per merge request) + gated GitLab CI.
+  [docs/PC-REPLACEMENT.md](docs/PC-REPLACEMENT.md). Phase 0 = slim-down (one removal per merge request) + a gated CI (GitHub Actions `Gate` on the mirror).
 - Living UI is at **0.2.4** (`LivingSpec.VERSION`). The 0.3.0 plan is docs/overhaul/living-ui-0.3.0-plan.md:
   proposed 2026-11-22, **not started**.
 - The overhaul plan and its decisions D1–D12 in overhaul.md are **not approved** as of 2026-11-22 (the file still
@@ -51,7 +62,10 @@
 - Add nothing inside `Agent.runLoop`: it is at the JVM's 64 KB per-method limit.
 - Before cutting a behaviour, add a parity test that proves what must stay. For every key or behaviour removed, grep
   the tests (they read the source as text) and update them in the same commit.
-- Commit straight to `main`; work in progress carries `[skip ci]`.
+- **Since 2026-11-23 (Finn): branch -> merge request -> GitHub `Gate` run green for the head sha -> merge into
+  `main`.** WIP commits may carry `[skip ci]`; the last one before the merge must not. The merge commit carries
+  `[skip ci]` so the mirror's Build APK makes no APK. (Before: commit straight to
+  `main` with `[skip ci]`.) One Phase 0 removal per merge request (docs/PC-REPLACEMENT.md).
 - Versioning: patch +1 per release; after a .9 patch the next release rolls to the next minor (0.24.9 → 0.25.0).
 - Before a build commit, update: CHANGELOG.md, this file, overhaul.md (handoff log), the "New in" lines of the
   in-app about doc (about.md in the app's docs folder), the version pin in `SpaceWiringTest`, the rename-guard baseline

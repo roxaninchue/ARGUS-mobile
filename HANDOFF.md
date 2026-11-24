@@ -10,9 +10,15 @@ This is the one current handoff. Older handoffs are listed in [docs/README.md](d
 4. [CHANGELOG.md](CHANGELOG.md) for the last few versions; docs/LEAN-HARNESS.md for how a chat turn works today.
 
 ## 2. Rules that catch newcomers
-- **No APK builds until Finn says so** (standing rule, 2026-11-22 21:26 CAT). Every commit message ends with
-  `[skip ci]`. Docs-only commits (`*.md`, `docs/`) start no build either, but add `[skip ci]` anyway.
-- Commit straight to `main`. Never push or merge on the GitHub mirror.
+- **Branch -> merge request -> green GitHub `Gate` run for the head sha -> merge** (Finn, 2026-11-23; AGENTS.md
+  "Merge rule"). Create the branch with its first commit through the commits API (`"branch": "<new>",
+  "start_branch": "main"`), open the MR. The mirror runs `.github/workflows/gate.yml` on each branch push; check
+  `api.github.com/repos/roxaninchue/ARGUS-mobile/actions/runs?head_sha=<sha>` before merging. Merge with
+  `PUT .../merge_requests/<iid>/merge` and a `merge_commit_message` ending in `[skip ci]`. GitLab CI is parked.
+- **No APK builds until Finn says so** (standing rule, 2026-11-22 21:26 CAT): the merge commit into `main` carries
+  `[skip ci]`, so the GitHub mirror's Build APK does not run. WIP commits on a branch may carry `[skip ci]`; the last
+  one before the merge must run the Gate.
+- Never push or merge on the GitHub mirror.
 - No trigger words, no text routing, no local model, no keep-warm ping.
 - `Agent.runLoop` is at the JVM's 64 KB method limit: add nothing inside it (a build once failed with
   `MethodTooLargeException`).

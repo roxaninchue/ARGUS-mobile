@@ -1,31 +1,71 @@
-# 0.51.0 / 0.52.0 verification: unit suite, screenshot/graphics tests, test-signed release APK.
+# Argus GitLab pipeline: PARKED (Finn, 2026-11-23). The free GitLab compute minutes ran out for November (quota
+# resets 1 Dec), so the merge gate moved to GitHub Actions on the public push-mirror: .github/workflows/gate.yml, same
+# checks, same compile, same :app:testDebugUnitTest. A branch merges into main only when the Gate run for its head
+# commit is green on https://github.com/roxaninchue/ARGUS-mobile/actions (AGENTS.md, "Merge rule").
 #
-# Nothing here signs with the production key, reads keystore/, or publishes anywhere.
-# The release APK is signed with a throwaway key generated inside the job, so it installs on a
-# test phone and cannot be shipped. No secret is stored in this file or in the repo.
-stages: [test, build]
+# This file creates NO pipeline unless the CI/CD variable ARGUS_GITLAB_CI is "on" (project variable, or set it when
+# running a pipeline by hand). That keeps failed ci_quota_exceeded pipelines out of the merge requests. The jobs below
+# are kept so GitLab CI can come back with one variable once minutes exist again; they mirror gate.yml.
+#
+# Jobs: checks (node only: rename guard, do-not-port, design JS tests); build-test (compile, then
+# :app:testDebugUnitTest). No APK, screenshot or publish job, no production key, no secrets.
+stages: [check, test]
+
+workflow:
+  rules:
+    # Parked: no pipeline at all unless ARGUS_GITLAB_CI == "on" (see the header).
+    - if: $ARGUS_GITLAB_CI != "on"
+      when: never
+    # Merge request pipelines.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # A branch push while that branch has an open merge request: the MR pipeline above covers it (no double run).
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    # Creating a branch (no new commit yet) starts nothing; its first commit or its merge request does.
+    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000" && $CI_PIPELINE_SOURCE == "push"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "api"
+  auto_cancel:
+    on_new_commit: interruptible
+
+default:
+  interruptible: true
 
 variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
-  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8"
-  # NOTE: the Kotlin daemon stack flag is NOT in this variable. GRADLE_FLAGS is expanded unquoted,
-  # and shell word splitting does not honour quotes inside a variable, so
-  # -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" would arrive as a bare "-X" and Gradle would reject it
-  # ("Unknown command-line option '-X'"). It is written literally, quoted, at each call site.
-  GRADLE_FLAGS: "--no-daemon --console=plain -Pkotlin.jvm.target.validation.mode=warning --max-workers=2"
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8"
+  # NOTE: the Kotlin daemon stack flag is NOT in this variable. GRADLE_FLAGS is expanded unquoted, and shell word
+  # splitting does not honour quotes inside a variable, so -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" would arrive as a
+  # bare "-X". It is written literally, quoted, at each call site.
+  GRADLE_FLAGS: "--no-daemon --console=plain -Pkotlin.jvm.target.validation.mode=warning -Pkotlin.compiler.execution.strategy=in-process --max-workers=2"
   GO_VERSION: "1.26.10"
 
-.setup: &setup
+# ---------------------------------------------------------------- cheap checks (no Android SDK)
+checks:
+  stage: check
+  image: node:22-bookworm-slim
+  timeout: 10m
+  script:
+    - node tools/check-no-blaze.test.mjs
+    - node tools/check-no-blaze.mjs
+    - node tools/check-do-not-port.mjs
+    - node app/src/test/js/design-safe.test.mjs
+
+# ---------------------------------------------------------------- compile + unit tests
+build-test:
+  stage: test
   image: ghcr.io/cirruslabs/android-sdk:34
+  timeout: 90m
+  needs: []
   cache:
-    key: gradle-051
-    paths: [".gradle/caches", ".gradle/wrapper"]
+    key: gradle-gated-1
+    paths: [".gradle/caches", ".gradle/wrapper", ".m2/repository/org/robolectric"]
   before_script:
     - |
       set -e
-      # JDK 21: the suite needs it (LocalLanguagesTest relies on JDK 20+ grapheme clusters for ZWJ
-      # emoji; JDK 17's BreakIterator splits them). The project targets 17, so the 17/21 mix is
-      # allowed with -Pkotlin.jvm.target.validation.mode=warning, as the GitHub workflow does.
+      # JDK 21: the suite needs it (LocalLanguagesTest relies on JDK 20+ grapheme clusters for ZWJ emoji). The project
+      # targets 17; the mix is allowed with -Pkotlin.jvm.target.validation.mode=warning.
       JDK21=/usr/lib/jvm/temurin-21-jdk-amd64
       if [ ! -x "$JDK21/bin/javac" ]; then
         echo "Installing Temurin 21"
@@ -46,55 +86,54 @@ variables:
       echo "--- memory ---"; free -h || true; nproc || true
     - |
       set -e
-      # Go builds the two jniLibs the repo gitignores (libwgproxy.so, libblazerouter.so).
-      if ! command -v go >/dev/null 2>&1; then
-        echo "Installing Go $GO_VERSION"
-        wget -q "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tgz
-        tar -C /usr/local -xzf /tmp/go.tgz
-        export PATH="/usr/local/go/bin:$PATH"
-      fi
-      go version
+      # Go builds the two jniLibs the repo gitignores (browser VPN and the router), same loop as gate.yml.
       VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-      (cd wgproxy && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/arm64-v8a/libwgproxy.so . \
-        && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w" -o ../app/src/main/jniLibs/armeabi-v7a/libwgproxy.so .) || echo "wgproxy build skipped"
-      (cd blazerouter && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/arm64-v8a/libblazerouter.so . \
-        && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w -X main.version=$VER" -o ../app/src/main/jniLibs/armeabi-v7a/libblazerouter.so .) || echo "blazerouter build skipped"
-      ls -la app/src/main/jniLibs/arm64-v8a/ || true
-
-# ---------------------------------------------------------------- unit suite
-unit-tests:
-  <<: *setup
-  stage: test
-  timeout: 2h
-  rules:
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
+      J=$PWD/app/src/main/jniLibs
+      for D in wgproxy blazerouter; do
+        X=""; [ "$D" = wgproxy ] || X="-X main.version=$VER"
+        (cd "$D" && CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags "-s -w $X" -o "$J/arm64-v8a/lib$D.so" . \
+          && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags "-s -w $X" -o "$J/armeabi-v7a/lib$D.so" .)
+      done
+      ls -la app/src/main/jniLibs/arm64-v8a/
+    - |
+      set -e
+      # Robolectric downloads its Android jars from Maven Central mid-test with no retry; one failed fetch fails every
+      # sdk=33 test at once. Fetch them first, with retries, into the cached ~/.m2 Robolectric reads.
+      mkdir -p "$CI_PROJECT_DIR/.m2/repository" "$HOME"
+      rm -rf "$HOME/.m2"; ln -s "$CI_PROJECT_DIR/.m2" "$HOME/.m2"
+      for V in 13-robolectric-9030017-i6 14-robolectric-10818077-i6; do
+        D="$HOME/.m2/repository/org/robolectric/android-all-instrumented/$V"; mkdir -p "$D"
+        for EXT in pom jar; do
+          F="$D/android-all-instrumented-$V.$EXT"
+          [ -s "$F" ] && continue
+          curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$F.part" \
+            "https://repo1.maven.org/maven2/org/robolectric/android-all-instrumented/$V/android-all-instrumented-$V.$EXT"
+          mv "$F.part" "$F"
+        done
+      done
   script:
     - |
+      export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64; export PATH="$JAVA_HOME/bin:$PATH"
       set +e
-      # Scrubed copy: gateway/, keystore/, HANDOFF*.md and STATUS.md are private paths the GitHub
-      # mirror never carries. OwnerName19Test and UpdateKeysTest scan the tree and fail on them by
-      # design (docs/BUILD-LOCAL.md), so the documented local procedure leaves them out. This is not
-      # a test change: the same suite runs, on the same code.
-      # tar, not rsync: the android-sdk image has no rsync.
-      mkdir -p /tmp/bb
-      tar -cf - --exclude='./.git' --exclude='./build' --exclude='./app/build' --exclude='./.gradle' \
-        --exclude='./gateway' --exclude='./keystore' --exclude='./HANDOFF.md' --exclude='./HANDOFF-gallery.md' \
-        --exclude='./docs/HANDOFF-0.52.md' \
-        --exclude='./STATUS.md' --exclude='./.github' . | tar -xf - -C /tmp/bb
-      cd /tmp/bb
-      ls -la | head -20
+      mkdir -p out
+      echo "=== 1/2 compile: app + unit-test sources ==="
+      ./gradlew :app:compileDebugKotlin :app:compileDebugUnitTestKotlin $GRADLE_FLAGS \
+        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > out/compile.log 2>&1
+      STATUS=$?
+      grep -nE "^e: |error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory" out/compile.log | head -60 || true
+      tail -25 out/compile.log
+      if [ $STATUS -ne 0 ]; then echo "=== compile FAILED ($STATUS) ==="; exit $STATUS; fi
+      echo "=== 2/2 :app:testDebugUnitTest ==="
       ./gradlew :app:testDebugUnitTest --continue $GRADLE_FLAGS \
-        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > test.log 2>&1
+        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > out/test.log 2>&1
       STATUS=$?
       echo "=== gradle exit: $STATUS ==="
-      grep -nE "^e: |error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory" test.log | head -40 || true
-      tail -30 test.log
+      grep -nE "^e: |FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory| FAILED$" out/test.log | head -60 || true
+      tail -30 out/test.log
       exit $STATUS
   after_script:
     - |
-      cd /tmp/bb 2>/dev/null || exit 0
-      python3 - > units.txt <<'PY'
+      python3 - > out/units.txt <<'PY' || true
       import glob, xml.etree.ElementTree as ET
       t=f=e=s=0; bad=[]
       for p in glob.glob('app/build/test-results/testDebugUnitTest/*.xml'):
@@ -106,136 +145,12 @@ unit-tests:
       print(f"UNITS tests={t} failures={f} errors={e} skipped={s}")
       for b in bad: print("FAIL", b)
       PY
-      cat units.txt
-      mkdir -p "$CI_PROJECT_DIR/out"
-      cp units.txt "$CI_PROJECT_DIR/out/" 2>/dev/null || true
-      cp test.log "$CI_PROJECT_DIR/out/" 2>/dev/null || true
-      cp -r app/build/test-results/testDebugUnitTest "$CI_PROJECT_DIR/out/xml" 2>/dev/null || true
+      cat out/units.txt || true
+      cp -r app/build/test-results/testDebugUnitTest out/xml 2>/dev/null || true
   artifacts:
-    name: "blaze-units-$CI_COMMIT_SHORT_SHA"
+    name: "argus-units-$CI_COMMIT_SHORT_SHA"
     when: always
     paths: ["out/"]
+    reports:
+      junit: app/build/test-results/testDebugUnitTest/*.xml
     expire_in: 1 week
-
-# ---------------------------------------------------------------- screenshot / graphics tests
-shots:
-  <<: *setup
-  stage: test
-  timeout: 2h
-  rules:
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
-  variables:
-    BLAZE_SHOTS: "1"
-  script:
-    - |
-      set +e
-      # The runner is x86-64, so Robolectric 4.13's NATIVE graphics runtime is available directly.
-      # No qemu-user and no aarch64 workaround: the drawing tests run natively here.
-      ./gradlew :app:testDebugUnitTest \
-        --tests 'com.blaze.assistant.ui.ShotsTest' \
-        --tests 'com.blaze.assistant.ui.Shots375Test' \
-        --tests 'com.blaze.assistant.ui.StageShotsTest' \
-        --tests 'com.blaze.assistant.ui.MoviesShotsTest' \
-        --tests 'com.blaze.assistant.ui.MediaRevampShotsTest' \
-        --tests 'com.blaze.assistant.ui.SecretCardsShotsTest' \
-        --tests 'com.blaze.assistant.ui.HomeRedesignShotsTest' \
-        --tests 'com.blaze.assistant.ui.ComposerShotsTest' \
-        --tests 'com.blaze.assistant.ui.Blaze050ShotsTest' \
-        --tests 'com.blaze.assistant.ui.RichMediaShotsTest' \
-        --continue $GRADLE_FLAGS \
-        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > shots.log 2>&1
-      STATUS=$?
-      echo "=== gradle exit: $STATUS ==="
-      grep -nE "^e: |error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory" shots.log | head -40 || true
-      tail -30 shots.log
-      exit $STATUS
-  after_script:
-    - |
-      python3 - > shots.txt <<'PY'
-      import glob, xml.etree.ElementTree as ET
-      t=f=e=s=0; bad=[]
-      for p in glob.glob('app/build/test-results/testDebugUnitTest/*.xml'):
-          r=ET.parse(p).getroot()
-          t+=int(r.get('tests',0)); f+=int(r.get('failures',0)); e+=int(r.get('errors',0)); s+=int(r.get('skipped',0))
-          for c in r.iter('testcase'):
-              if c.find('failure') is not None or c.find('error') is not None:
-                  bad.append(c.get('classname')+'.'+c.get('name'))
-      print(f"SHOTS tests={t} failures={f} errors={e} skipped={s}")
-      for b in bad: print("FAIL", b)
-      PY
-      cat shots.txt
-      mkdir -p "$CI_PROJECT_DIR/out"
-      cp shots.txt "$CI_PROJECT_DIR/out/" 2>/dev/null || true
-      cp shots.log "$CI_PROJECT_DIR/out/" 2>/dev/null || true
-      (cd app/build && zip -qr "$CI_PROJECT_DIR/out/shots.zip" shots) 2>/dev/null || true
-      ls -la "$CI_PROJECT_DIR/out" || true
-  artifacts:
-    name: "blaze-shots-$CI_COMMIT_SHORT_SHA"
-    when: always
-    paths: ["out/"]
-    expire_in: 1 week
-
-# ---------------------------------------------------------------- release APK (test key)
-release-apk:
-  <<: *setup
-  stage: build
-  timeout: 2h
-  # Built regardless of the test stage: a red unit suite must not hide the APK.
-  needs: []
-  rules:
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.51"
-    - if: $CI_COMMIT_BRANCH == "feat/blaze-0.52"
-  script:
-    - |
-      set +e
-      ./gradlew :app:assembleRelease $GRADLE_FLAGS \
-        -Pkotlin.daemon.jvmargs="-Xmx4g -Xss32m" > rel.log 2>&1
-      STATUS=$?
-      echo "=== gradle exit: $STATUS ==="
-      grep -nE "^e: |error:|FAILURE:|What went wrong|Caused by:|StackOverflow|OutOfMemory" rel.log | head -40 || true
-      tail -30 rel.log
-      if [ $STATUS -ne 0 ]; then mkdir -p out; cp rel.log out/; exit $STATUS; fi
-
-      VER=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-      VC=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
-      echo "version=$VER versionCode=$VC"
-      mkdir -p out
-      BT="$ANDROID_HOME/build-tools/34.0.0"
-      UNSIGNED=$(ls app/build/outputs/apk/release/*-unsigned.apk | head -1)
-      echo "unsigned: $UNSIGNED"
-      "$BT/zipalign" -f -p 4 "$UNSIGNED" out/aligned.apk
-      "$BT/zipalign" -c -p 4 out/aligned.apk && echo "zipalign -p 4: ok"
-
-      # Throwaway key, generated here and thrown away with the container. keystore/ in the repo is
-      # never read, and no password is stored anywhere.
-      keytool -genkeypair -keystore /tmp/test.p12 -storetype PKCS12 \
-        -storepass testonly -keypass testonly -alias test \
-        -keyalg RSA -keysize 2048 -validity 30 -dname "CN=Blaze test" 2>&1 | tail -2
-      APK="out/Blaze-v${VER}-vc${VC}-test-signed.apk"
-      java -jar "$BT/lib/apksigner.jar" sign --ks /tmp/test.p12 --ks-pass pass:testonly \
-        --out "$APK" out/aligned.apk
-      java -jar "$BT/lib/apksigner.jar" verify --print-certs "$APK" | head -8
-      "$BT/aapt2" dump badging "$APK" > out/badging.txt 2>&1 || true
-      grep -E "package:|sdkVersion|targetSdkVersion" out/badging.txt || true
-      if grep -q "application-debuggable" out/badging.txt; then echo "ERROR: debuggable"; exit 1; fi
-      rm -f out/aligned.apk
-      (cd out && sha256sum *.apk | tee SHA256SUMS)
-      ls -la out/
-      echo "${CI_COMMIT_SHA}" > out/COMMIT
-      cp rel.log out/
-
-      # Generic package registry. Uses the job token: no stored credential.
-      echo "=== package registry upload ==="
-      for f in out/*.apk out/SHA256SUMS; do
-        code=$(curl -sS -o /tmp/up.txt -w '%{http_code}' --header "JOB-TOKEN: $CI_JOB_TOKEN" \
-          --upload-file "$f" \
-          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/blaze-android/${VER}/$(basename "$f")")
-        echo "upload $(basename "$f") -> HTTP $code"
-        [ "$code" = "201" ] || [ "$code" = "200" ] || cat /tmp/up.txt
-      done
-  artifacts:
-    name: "blaze-release-apk-$CI_COMMIT_SHORT_SHA"
-    when: always
-    paths: ["out/"]
-    expire_in: 1 month

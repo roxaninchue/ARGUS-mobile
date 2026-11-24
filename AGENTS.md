@@ -1,7 +1,20 @@
 # For agents working in this repo
 
 Start with **STATUS.md** ("Current state" and "Standing rules") and **HANDOFF.md** (how to build, test, check CI and
-commit). Every commit message ends with `[skip ci]` until Finn says build.
+commit). **Since 2026-11-23 (Finn): every change goes on its own branch, then a merge request into `main`.**
+Direction: docs/PC-REPLACEMENT.md.
+
+**Merge rule.** GitLab pushes every branch to the public mirror `roxaninchue/ARGUS-mobile`, where
+`.github/workflows/gate.yml` ("Gate": rename guard, do-not-port, design JS tests, `:app:compileDebugKotlin`, then
+`:app:testDebugUnitTest`) runs on every branch except `main`. A merge request merges only when the Gate run for its
+**head commit** is green. GitLab does not enforce this (its own CI has no minutes this month and is parked), so check
+it yourself right before merging:
+`curl -s "https://api.github.com/repos/roxaninchue/ARGUS-mobile/actions/runs?head_sha=<sha>"` -> the run named
+`Gate` has `conclusion: success`. Failing tests are readable without a sign-in as annotations:
+`/repos/roxaninchue/ARGUS-mobile/check-runs/<job id>/annotations` (job id from `/actions/runs/<id>/jobs`).
+WIP commits may carry `[skip ci]` (no Gate run); the last commit before the merge must not. Merge with
+`PUT /projects/87806466/merge_requests/<iid>/merge` and a `merge_commit_message` ending in `[skip ci]`, so the merge
+into `main` starts no APK build until Finn says build.
 
 Read **docs/MODEL-FIRST.md** before changing anything the model sees or anything that routes a user's message.
 Build the system around the model. No keyword routers that guess intent, no shouting or contradictory prompt rules,

@@ -2,7 +2,8 @@
 
 > **Updated 2026-11-22.** Work happens on `main` of GitLab `argus-mobile`; the branch rules this file was first written
 > for (`feat/argus-3d-home`, `feat/argus-hark-design`, 0.52.x) are history. **Standing rule: no APK builds until Finn
-> says so**, so every commit message ends with `[skip ci]`. The error table and the checklists below still apply.
+> says so**: commits to `main` (merge commits) end with `[skip ci]`. Since 2026-11-23 changes land through a branch +
+> merge request gated by the GitHub `Gate` workflow (table below). The error table and the checklists below still apply.
 
 Every build push costs a 20–25 minute CI round, so the cheapest build is the one you check before you push.
 
@@ -12,7 +13,8 @@ Every build push costs a 20–25 minute CI round, so the cheapest build is the o
 |---|---|
 | Source of truth | GitLab `blazeinchue/argus-mobile` (project id 87806466), branch `main` |
 | CI | GitHub Actions on the mirror `roxaninchue/ARGUS-mobile` (GitLab mirrors `main` within minutes) |
-| GitLab CI | Not used for app builds. `.gitlab-ci.yml` is left alone |
+| Merge gate | **GitHub Actions `Gate` (`.github/workflows/gate.yml`) since 2026-11-23.** GitLab push-mirrors every branch; Gate runs on every branch push except `main` (and on fork PRs): node checks (rename guard, do-not-port, design JS), Go jniLibs, `:app:compileDebugKotlin :app:compileDebugUnitTestKotlin`, `:app:testDebugUnitTest --continue`. JDK 21, SDK 34, no APK, no secrets, ~20 min. A merge request merges only when the Gate run for its head sha is green; we check that through the public API before merging (AGENTS.md "Merge rule"). Failures: run summary + `::error` annotations (public: `/check-runs/<job id>/annotations`), totals in a `::notice` |
+| GitLab CI | **Parked.** `.gitlab-ci.yml` keeps the same two jobs but creates no pipeline unless the CI/CD variable `ARGUS_GITLAB_CI` = `on` (the free plan's 400 minutes ran out in November; quota resets 1 Dec). Project setting `only_allow_merge_if_pipeline_succeeds` = false, so GitLab does not block merges |
 | Commits | GitLab commits API (`POST /api/v4/projects/87806466/repository/commits`); see HANDOFF.md |
 
 Never push or merge on GitHub. Never change `applicationId`.
@@ -108,7 +110,8 @@ The deep-link scheme stays `blaze://` (any case) after the rename; don't rename 
 8. Push, then wait for **all nine** check runs before the next push (a new push cancels the running round).
 9. A failure that survives two fix attempts: stop and report instead of guessing a third time.
 10. Smoke used to cancel on a new push (66ed074d cancelled 21e7f293's smoke, so that fix was never judged). It now queues instead, but still batch fixes into one push.
-11. Docs-only pushes (`*.md`, `docs/`) start no build: all app workflows have `paths-ignore` for them. A commit message with `[skip ci]` skips every workflow (use it for workflow/tooling edits that need no app round).
+11. Docs-only pushes (`*.md`, `docs/`) start no APK build: the app workflows have `paths-ignore` for them. `gate.yml` has
+   none on purpose: every branch head needs its own Gate run before it merges. A commit message with `[skip ci]` skips every workflow (use it for workflow/tooling edits that need no app round).
 12. Changing `tools/smoke/app_stall.py`? Run `python3 tools/smoke/test_app_stall.py` first (seconds, no emulator; the smoke job also runs it first). Add a case with the new run's numbers.
 13. Releasing a feature-branch build: `release-apk.yml` failed twice on v0.52.3 with `HTTP 403: Resource not accessible by integration` in "Create or update the release" (the repo's Workflow permissions setting is not the cause: the workflow sets `contents: write` itself). Until that is understood, publish by hand: download the `argus-hark-design-test-signed-<sha>` artifact from the Build APK run, then Releases, Draft a new release, the tag, attach the APK, pre-release, Publish.
 14. Removing a feature (a view, a tool, a page, a button) or bumping the version: the unit tests read the source as text, so update them in the same commit. v0.53.6 failed 5 tests this way: `SimpleMode.TECH_VIEWS` still listed removed views (`commands`, `agents`; `SimpleModeTest.everyHiddenViewStillExists`), `ActionClass.kt` still declared `blaze_command` (`ToolRegistryTest.noStaleDeclarations`), `AwarenessTest` expected the old `(/id)` view format, `AccountLockTest` matched "Skip for now" inside a code comment, and `SpaceWiringTest` pins `versionCode` / `versionName`. Before pushing: `git grep` the removed id/string across `app/src` (tests and comments included) and update the version test with the bump.
