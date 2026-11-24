@@ -51,6 +51,8 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RadioButtonChecked
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Tune
@@ -497,8 +499,8 @@ internal fun ProvidersScreen(onBack: () -> Unit) {
         onSettings = { settingsFor = it })
     if (notice) BlazeDialog("Before you add a source", SourceNotice.TEXT, confirm = "I understand", onConfirm = { store.markNoticeSeen(); refreshState(); notice = false; adding = true },
         dismiss = "Cancel", onDismiss = { notice = false })
-    if (adding) AddSourceDialog(onCancel = { adding = false }, onAdd = { url -> adding = false
-        run("add") { val r = withContext(Dispatchers.IO) { store.addRepo(url) }; offer = r; "Found ${r.second.size} provider${if (r.second.size == 1) "" else "s"}." } })
+    if (adding) AddSourceDialog(onCancel = { adding = false }, onAdd = { url, token -> adding = false
+        run("add") { val r = withContext(Dispatchers.IO) { store.addRepo(url, token) }; offer = r; "Found ${r.second.size} provider${if (r.second.size == 1) "" else "s"}." } })
     offer?.let { (base, entries) -> InstallDialog(entries, st.installed.map { it.value }.toSet(), onCancel = { offer = null },
         install = { e -> withContext(Dispatchers.IO) { store.install(base, e) }; refreshState() },
         onDone = { m -> offer = null; refreshState(); msg = m }) }
@@ -520,7 +522,7 @@ internal fun ProvidersList(st: ProviderStore.State, busy: List<String>, msg: Str
         Text("Built in: YouTube, your videos" + (if (Movies.jellyfinAccount() != null) ", Jellyfin" else "") + ".",
             color = c.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
         if (msg.isNotBlank()) Text(msg, color = c.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-        if (st.installed.isEmpty()) { EmptyState("No added sources", "Add a source by its URL with the + button. ${BrandName.NAME} doesn't suggest or check sources.", mark = false); return@Column }
+        if (st.installed.isEmpty()) { EmptyState("No added sources", "Add a source with the + button: an author name, owner/repo or a repo link. ${BrandName.NAME} doesn't suggest or check sources.", mark = false); return@Column }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 10.dp, end = 6.dp, bottom = 90.dp)) {
             items(st.installed, key = { it.value }) { i ->
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -550,13 +552,40 @@ private fun StatusIcon(s: ProviderStore.Status) {
 }
 
 @Composable
-internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String) -> Unit) {
+internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String, String) -> Unit) {
     var url by remember { mutableStateOf("") }
-    // The field starts empty: the hint shows the shape of a link, never a third-party repo.
-    BlazeDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. ${BrandName.NAME} finds the manifest.",
-        confirm = "Add", onConfirm = { if (url.isNotBlank()) onAdd(url.trim()) }, dismiss = "Cancel", onDismiss = onCancel) {
+    var priv by remember { mutableStateOf(false) }
+    var token by remember { mutableStateOf("") }
+    // 0.55.14 the Vega-style adder: an author name, owner/repo, a repo link or a manifest link; Public, or Private with a token.
+    // The field starts empty: the hint shows the shape of a source, never a third-party repo.
+    BlazeDialog("Add source", "Enter an author name, repo URL or manifest URL. ${BrandName.NAME} finds the manifest.",
+        confirm = "Confirm", onConfirm = { if (url.isNotBlank() && (!priv || token.isNotBlank())) onAdd(url.trim(), if (priv) token.trim() else "") },
+        dismiss = "Cancel", onDismiss = onCancel) {
         BlazeTextField(url, { url = it }, ProviderRepo.EXAMPLE, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-        Text("Example: " + ProviderRepo.EXAMPLE + ". You can also ask ${BrandName.NAME} in chat to add one.", color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SourceKindPill("Public", Icons.Rounded.Public, !priv, Modifier.weight(1f)) { priv = false }
+            SourceKindPill("Private", Icons.Rounded.Lock, priv, Modifier.weight(1f)) { priv = true }
+        }
+        if (priv) {
+            Spacer(Modifier.height(8.dp))
+            BlazeTextField(token, { token = it }, "Access token", visualTransformation = PasswordVisualTransformation())
+            Text("Private sources work with GitHub repos or your own https link. The token is kept encrypted on this phone and only sent to that source.",
+                color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+        } else Text("Examples: author, author@cb (Codeberg), owner/repo@branch, a GitHub, GitLab, Codeberg or Bitbucket link. You can also ask ${BrandName.NAME} in chat to add one.",
+            color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+@Composable
+private fun SourceKindPill(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val c = LocalBlaze.current
+    val shape = RoundedCornerShape(14.dp)
+    Row(modifier.clip(shape).background(if (on) c.field else Color.Transparent, shape).border(1.dp, if (on) c.ink else c.fieldLine, shape)
+        .clickable(role = Role.RadioButton) { onClick() }.padding(vertical = 12.dp).semantics { contentDescription = if (on) "$label, selected" else label },
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = c.ink, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(label, color = c.ink, fontSize = 14.sp)
     }
 }
 

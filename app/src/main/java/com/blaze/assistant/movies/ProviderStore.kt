@@ -10,12 +10,18 @@ import java.security.MessageDigest
  * State (one JSON blob via [kv]) + module files under [dir]/<repo-hash>/<provider>/<file>.js. Network via [fetch] (guarded by
  * [UrlGuard]). Pure JVM (no Android): ProviderStoreTest runs it against the local mock repo.
  */
-class ProviderStore(private val dir: File, private val kv: Kv, private val fetch: (String) -> String = { url -> defaultFetch(url) }) {
+class ProviderStore(private val dir: File, private val kv: Kv,
+                    /** 0.55.14: how a private source's token is kept at rest (the app seals it with the Android Keystore). */
+                    private val seal: (String) -> String = { it }, private val unseal: (String) -> String = { it },
+                    /** 0.55.14: a fetch that sends headers (a private source's Authorization); null = [defaultFetch]. */
+                    private val fetchAuth: ((String, Map<String, String>) -> String)? = null,
+                    private val fetch: (String) -> String = { url -> defaultFetch(url) }) {
     interface Kv { fun get(key: String): String; fun put(key: String, value: String) }
 
     enum class Status(val label: String) { NOT_TESTED("Not tested"), WORKING("Working"), FAILING("Failing") }
 
-    data class Repo(val base: String, val label: String, val added: Long)
+    /** [manifest] = a manifest file the user linked other than <base>/manifest.json; [auth] = the only URL prefix its token may go to. */
+    data class Repo(val base: String, val label: String, val added: Long, val manifest: String = "", val auth: String = "", val isPrivate: Boolean = false)
     data class Installed(val entry: ProviderRepo.Entry, val repo: String, val status: Status = Status.NOT_TESTED, val detail: String = "",
                          val enabled: Boolean = true, val hangs: Int = 0, val latest: String = "", val settings: Map<String, String> = emptyMap()) {
         val value get() = entry.value
@@ -27,17 +33,20 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
 
     companion object {
         const val KEY = "movies_providers_v1"
+        /** 0.55.14: private sources' tokens, sealed, by repo base (kept apart from the state so they never land in a log or export). */
+        const val TOKENS_KEY = "movies_source_tokens_v1"
         const val MAX_MODULE = 3 * 1024 * 1024
-        fun defaultFetch(url: String): String {
+        fun defaultFetch(url: String, extra: Map<String, String> = emptyMap()): String {
             UrlGuard.check(url)?.let { throw IllegalArgumentException(it) }
-            val r = DefaultSandboxHttp.request(SandboxHttp.Req(url, headers = mapOf("Cache-Control" to "no-cache")))
+            val r = DefaultSandboxHttp.request(SandboxHttp.Req(url, headers = mapOf("Cache-Control" to "no-cache") + extra))
             if (r.status !in 200..299) throw IllegalStateException("The source answered ${r.status}")
             return r.body
         }
         fun hash(s: String): String = MessageDigest.getInstance("SHA-1").digest(s.toByteArray()).take(6).joinToString("") { "%02x".format(it) }
 
         fun encode(s: State): String = JSONObject().put("v", 1).put("active", s.active).put("notice", s.noticeSeen).put("seeded", s.seeded)
-            .put("repos", JSONArray(s.repos.map { JSONObject().put("base", it.base).put("label", it.label).put("added", it.added) }))
+            .put("repos", JSONArray(s.repos.map { JSONObject().put("base", it.base).put("label", it.label).put("added", it.added)
+                .put("manifest", it.manifest).put("auth", it.auth).put("private", it.isPrivate) }))
             .put("installed", JSONArray(s.installed.map { i -> JSONObject().put("value", i.entry.value).put("name", i.entry.name).put("version", i.entry.version)
                 .put("icon", i.entry.icon).put("type", i.entry.type).put("repo", i.repo).put("status", i.status.name).put("detail", i.detail).put("enabled", i.enabled)
                 .put("hangs", i.hangs).put("latest", i.latest).put("settings", JSONObject(i.settings as Map<*, *>)) })).toString()
@@ -45,7 +54,8 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
         fun decode(json: String?): State = try {
             val o = JSONObject(json ?: "")
             val repos = o.optJSONArray("repos")?.let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { r ->
-                r.optString("base").takeIf { it.isNotBlank() }?.let { Repo(it, r.optString("label", ProviderRepo.label(it)), r.optLong("added")) } } }.orEmpty()
+                r.optString("base").takeIf { it.isNotBlank() }?.let { Repo(it, r.optString("label", ProviderRepo.label(it)), r.optLong("added"),
+                    r.optString("manifest"), r.optString("auth"), r.optBoolean("private")) } } }.orEmpty()
             val inst = o.optJSONArray("installed")?.let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { i ->
                 val v = i.optString("value"); if (!ProviderRepo.SAFE_ID.matches(v)) return@mapNotNull null
                 val st = runCatching { Status.valueOf(i.optString("status")) }.getOrDefault(Status.NOT_TESTED)
@@ -64,28 +74,73 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
 
     fun markNoticeSeen() = save(state.copy(noticeSeen = true))
 
+    /** 0.55.14 what [resolveSource] found: the folder, its providers, and how it was written ([SourceInput.Spec]). */
+    data class Found(val base: String, val entries: List<ProviderRepo.Entry>, val spec: SourceInput.Spec)
+
     /**
-     * Find a repo's manifest from what the user typed or a link carried: "owner/repo", a GitHub / GitLab page, a raw folder or
-     * the manifest itself; tries the repo root, dist/, and the main / master branches. Doesn't save anything.
+     * Find a source's manifest from what the user typed or a link carried, the forms provider apps share: an author name
+     * (`author`, `author@cb`, `author@bb`, `author@gl`), `owner/repo[@branch]`, a GitHub / Codeberg / Bitbucket / GitLab repo
+     * link, a raw folder or a manifest link ([SourceInput]). Tries the repo root, dist/, and main / master. Saves nothing.
+     * [token] = a private source's access token (sent only under [SourceInput.Spec.authPrefix]).
      */
-    fun resolve(input: String): Pair<String, List<ProviderRepo.Entry>> {
-        val (cands, why) = ProviderRepo.candidates(input)
-        if (cands.isEmpty()) throw IllegalArgumentException(why)
+    fun resolveSource(input: String, token: String = ""): Found {
+        val p = SourceInput.parse(input)
+        val spec = p.spec ?: throw IllegalArgumentException(p.error)
+        val tok = if (token.isBlank()) "" else SourceInput.token(token) ?: throw IllegalArgumentException(SourceInput.BAD_TOKEN)
+        if (tok.isNotEmpty() && !spec.privateOk) throw IllegalArgumentException(SourceInput.PRIVATE_HOSTS)
         var last: Exception? = null
-        for (base in cands.take(8)) {
+        if (spec.manifest.isNotBlank()) try {
+            val e = ProviderRepo.parseManifest(get(spec.manifest, spec.authPrefix, tok))
+            if (e.isNotEmpty()) return Found(spec.bases.first(), e, spec)
+        } catch (e: Exception) { last = e }
+        for (base in spec.bases.take(8)) {
             try {
-                val entries = ProviderRepo.parseManifest(fetch(ProviderRepo.manifestUrl(base)))
-                if (entries.isNotEmpty()) return base to entries
+                val entries = ProviderRepo.parseManifest(get(ProviderRepo.manifestUrl(base), spec.authPrefix, tok))
+                if (entries.isNotEmpty()) return Found(base, entries, spec.copy(manifest = ""))
             } catch (e: Exception) { last = e }
         }
-        throw IllegalStateException("No manifest.json found there" + (last?.message?.let { " ($it)" } ?: ""))
+        val why = last?.message?.let { " ($it)" } ?: ""
+        throw IllegalStateException(if (tok.isEmpty() && spec.privateOk && why.contains("40")) "No manifest.json found at ${spec.label}$why. If the repo is private, add it as Private with a token."
+            else "No manifest.json found at ${spec.label}$why")
     }
 
-    /** Add a repo (the user typed / pasted it, or opened an add-source link) and read its manifest. Returns the providers it offers. */
-    fun addRepo(input: String): Pair<String, List<ProviderRepo.Entry>> {
-        val (base, entries) = resolve(input)
-        if (state.repos.none { it.base == base }) save(state.copy(repos = state.repos + Repo(base, ProviderRepo.label(base), System.currentTimeMillis())))
-        return base to entries
+    /** Kept for callers that only want the folder and its providers. */
+    fun resolve(input: String): Pair<String, List<ProviderRepo.Entry>> = resolveSource(input).let { it.base to it.entries }
+
+    /** Add a source (the user typed / pasted it, or opened an add-source link) and read its manifest. Returns the providers it offers. */
+    fun addRepo(input: String, token: String = ""): Pair<String, List<ProviderRepo.Entry>> {
+        val f = resolveSource(input, token)
+        val tok = SourceInput.token(token).orEmpty()
+        val repo = Repo(f.base, f.spec.label, state.repos.firstOrNull { it.base == f.base }?.added ?: System.currentTimeMillis(),
+            f.spec.manifest, if (tok.isEmpty()) "" else f.spec.authPrefix, tok.isNotEmpty())
+        save(state.copy(repos = state.repos.filterNot { it.base == f.base } + repo))
+        setToken(f.base, tok)
+        return f.base to f.entries
+    }
+
+    // ---------- 0.55.14 private sources ----------
+
+    private fun tokens(): Map<String, String> = try {
+        val o = JSONObject(kv.get(TOKENS_KEY).ifBlank { "{}" }); o.keys().asSequence().associateWith { o.optString(it) }
+    } catch (_: Exception) { emptyMap() }
+
+    private fun setToken(base: String, token: String) {
+        val m = tokens().toMutableMap()
+        if (token.isEmpty()) { if (m.remove(base) == null) return } else m[base] = seal(token)
+        kv.put(TOKENS_KEY, JSONObject(m as Map<*, *>).toString())
+    }
+
+    private fun tokenFor(repo: String): String = tokens()[repo]?.let { runCatching { unseal(it) }.getOrDefault("") }.orEmpty()
+
+    /** GET [url]; a token goes along only when [url] sits under that source's own [authPrefix] (never another repo or host). */
+    private fun get(url: String, authPrefix: String, token: String): String =
+        if (token.isNotEmpty() && SourceInput.authAllowed(authPrefix, url)) (fetchAuth ?: { u, h -> defaultFetch(u, h) })(url, SourceInput.authHeader(token))
+        else fetch(url)
+
+    /** A fetch for a saved repo's files (its token, if it's private). */
+    private fun repoGet(repo: String, url: String): String {
+        val r = state.repos.firstOrNull { it.base == repo } ?: return fetch(url)
+        return if (r.isPrivate) get(url, r.auth, tokenFor(repo)) else fetch(url)
     }
 
     /** Add and install every provider of a repo in one go (the add-source link's single Install button). */
@@ -105,7 +160,10 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
             removeRepo(ProviderRepo.LEGACY_OFFICIAL_BASE)
     }
 
-    fun manifest(base: String): List<ProviderRepo.Entry> = ProviderRepo.parseManifest(fetch(ProviderRepo.manifestUrl(base)))
+    fun manifest(base: String): List<ProviderRepo.Entry> {
+        val m = state.repos.firstOrNull { it.base == base }?.manifest?.takeIf { it.isNotBlank() } ?: ProviderRepo.manifestUrl(base)
+        return ProviderRepo.parseManifest(repoGet(base, m))
+    }
 
     private fun moduleDir(repo: String, value: String) = File(dir, hash(repo) + "/" + value)
 
@@ -115,7 +173,7 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
         val got = LinkedHashMap<String, String>()
         for (f in ProviderRepo.REQUIRED + ProviderRepo.OPTIONAL) {
             var err: Exception? = null
-            val text = ProviderRepo.moduleUrls(repo, e.value, f).firstNotNullOfOrNull { u -> try { fetch(u) } catch (x: Exception) { err = x; null } }
+            val text = ProviderRepo.moduleUrls(repo, e.value, f).firstNotNullOfOrNull { u -> try { repoGet(repo, u) } catch (x: Exception) { err = x; null } }
                 ?: if (f in ProviderRepo.REQUIRED) throw IllegalStateException("${e.name}: couldn't get $f.js (${err?.message})") else null
             if (text != null) { if (text.length > MAX_MODULE) throw IllegalStateException("${e.name}: $f.js is too big"); got[f] = text }
         }
@@ -137,6 +195,7 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
     fun removeRepo(base: String) {
         state.installed.filter { it.repo == base }.forEach { remove(it.value) }
         save(state.copy(repos = state.repos.filterNot { it.base == base }))
+        setToken(base, "")
     }
 
     fun setActive(value: String) = save(state.copy(active = value))

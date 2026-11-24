@@ -33,7 +33,9 @@ object Movies {
         store ?: ProviderStore(File((ctx ?: app)!!.filesDir, "movie_providers"), object : ProviderStore.Kv {
             override fun get(key: String) = runCatching { Settings.str(key, "") }.getOrDefault("")
             override fun put(key: String, value: String) { runCatching { Settings.setStr(key, value) } }
-        }).also { st ->
+        },
+            // 0.55.14: a private source's token is sealed with the Android Keystore key before it is stored.
+            seal = { t -> com.blaze.assistant.agent.Secrets.encrypt(t) }, unseal = { t -> com.blaze.assistant.agent.Secrets.decrypt(t) }).also { st ->
             // 0.55.13: nothing is preinstalled; the old "Blaze Official" example repo (Internet Archive + Blender) is dropped once.
             runCatching { st.dropLegacyOfficial() }
             store = st

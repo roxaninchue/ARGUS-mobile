@@ -21,11 +21,11 @@ object MovieSourceTools {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
         .put("description", "${BrandName.NAME} Movie sources (Providers): list, add a provider repo, remove, turn on/off, test, update. " +
-            "add takes a repo with manifest.json: owner/repo, a GitHub/GitLab link or a folder URL, not a website or app homepage; " +
+            "add takes a source with manifest.json: an author name (author, author@cb), owner/repo, a GitHub/GitLab/Codeberg link or a folder URL, not a website; " +
             "if you only know a name, find its GitHub provider repo with web_search first. Built in: YouTube, the phone's videos, Jellyfin.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("list", "add", "remove", "enable", "disable", "test", "update", "open"))))
-            .put("url", JSONObject().put("type", "string").put("description", "add / remove: the repo (owner/repo, GitHub or GitLab link, folder URL)"))
+            .put("url", JSONObject().put("type", "string").put("description", "add / remove: the source (author, author@cb, owner/repo, repo link, manifest URL)"))
             .put("provider", JSONObject().put("type", "string").put("description", "enable / disable / test / remove: a provider's name or id")))
             .put("required", JSONArray(listOf("action")))))
 
@@ -37,7 +37,7 @@ object MovieSourceTools {
     /** What a failed add says, so the model can fix it on the next step instead of guessing. Pure; MovieSourceToolsTest. */
     fun addFailed(input: String, why: String): String =
         "Couldn't add \u201c${input.take(120)}\u201d: $why. A source must be a repo folder with manifest.json " +
-            "(owner/repo, a GitHub or GitLab repo link, or a raw folder URL). A website or an app's download page isn't one: " +
+            "(an author name like author or author@cb, owner/repo, a GitHub / GitLab / Codeberg repo link, or a raw folder URL). A website or an app's download page isn't one: " +
             "find the project's provider repo (web_search \"<name> providers github manifest.json\") or ask the user for the repo link."
 
     /** One line per provider for list. Pure; MovieSourceToolsTest. */

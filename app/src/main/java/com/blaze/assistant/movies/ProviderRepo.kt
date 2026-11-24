@@ -41,39 +41,16 @@ object ProviderRepo {
     /** 0.55.13: the old preinstalled example repo (Internet Archive + Blender). Only used to remove it from phones that had it. */
     const val LEGACY_OFFICIAL_BASE = "https://blazeinchue.pages.dev/providers/blaze-official"
     /** What the Add source field shows as its example: the shape of a link, never a real third-party repo. */
-    const val EXAMPLE = "owner/repo or https://github.com/owner/repo"
-
-    private val SHORTHAND = Regex("^([A-Za-z0-9][A-Za-z0-9-]{0,38})/([A-Za-z0-9._-]{1,100})$")
-    private val GH = Regex("(?i)^https?://(?:www\\.)?github\\.com/([^/]+)/([^/]+?)(?:\\.git)?(?:/(?:tree|blob)/([^/]+)(/.*)?)?$")
-    private val GH_RAW = Regex("(?i)^https?://raw\\.githubusercontent\\.com/([^/]+)/([^/]+)/([^/]+)(/.*)?$")
-    private val GL = Regex("(?i)^https?://(?:www\\.)?gitlab\\.com/((?:[^/-][^/]*/)+?[^/]+?)(?:\\.git)?(?:/-/(?:tree|blob|raw)/([^/]+)(/.*)?)?$")
+    const val EXAMPLE = "author, author@cb or repo URL"
 
     /**
      * What the user typed / a link carried -> the base URLs to try, in order (each is a folder that may hold manifest.json).
-     * "owner/repo" means GitHub. A GitHub or GitLab repo page becomes its raw files on the named branch, else main, then master;
-     * each also with dist/. Any other http(s) URL is tried as given, then with dist/. Returns (candidates, why-not).
+     * 0.55.14: parsed by [SourceInput] (author names like `author` / `author@cb`, owner/repo[@branch], GitHub / Codeberg /
+     * Bitbucket / GitLab links, raw folders, manifest links). Returns (candidates, why-not).
      */
     fun candidates(input: String): Pair<List<String>, String> {
-        var s = input.trim().trim('"', '\'', '<', '>').substringBefore('#')
-        if (s.isEmpty()) return emptyList<String>() to "Paste the source's URL."
-        SHORTHAND.matchEntire(s)?.let { m -> if (!m.groupValues[1].contains('.')) s = "https://github.com/${m.groupValues[1]}/${m.groupValues[2]}" }
-        if (!Regex("(?i)^[a-z][a-z0-9+.-]*://").containsMatchIn(s)) s = "https://$s"
-        UrlGuard.check(s)?.let { return emptyList<String>() to it }
-        s = s.substringBefore('?').trimEnd('/')
-        if (s.endsWith("/manifest.json", true)) s = s.dropLast("/manifest.json".length)
-        fun withDist(bases: List<String>) = bases.flatMap { listOf(it, "$it/dist") }.distinct()
-        GH.matchEntire(s)?.let { m ->
-            val (o, r, br, rest) = m.destructured
-            val path = rest.trimEnd('/')
-            return withDist((listOf(br).filter { it.isNotBlank() } + listOf("main", "master")).distinct().map { "https://raw.githubusercontent.com/$o/$r/$it$path" }) to ""
-        }
-        GH_RAW.matchEntire(s)?.let { return withDist(listOf(s)) to "" }
-        GL.matchEntire(s)?.let { m ->
-            val (proj, br, rest) = m.destructured
-            val path = rest.trimEnd('/')
-            return withDist((listOf(br).filter { it.isNotBlank() } + listOf("main", "master")).distinct().map { "https://gitlab.com/$proj/-/raw/$it$path" }) to ""
-        }
-        return withDist(listOf(s)) to ""
+        val p = SourceInput.parse(input)
+        return (p.spec?.bases ?: emptyList()) to p.error
     }
 
     /** The first candidate (kept for callers that want one URL without network). */
