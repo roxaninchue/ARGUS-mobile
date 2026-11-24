@@ -1,4 +1,5 @@
 import java.security.MessageDigest
+import java.time.Duration
 
 plugins {
     id("com.android.application")
@@ -55,11 +56,11 @@ android {
             it.systemProperty("robolectric.graphicsMode", "NATIVE")
             // Gate (24 Nov): the test JVM ran on Gradle's 512 MB default and the Robolectric Compose tests (KitShotsTest,
             // LifeShotsTest) died with OutOfMemoryError in ShadowTrace, then hung in waitForIdle until the 75-min timeout
-            // (Gate #1 and #2). 2 GB of heap, a fresh JVM every 100 classes so Robolectric's per-class state can't pile up,
+            // (Gate #1 and #2). More heap, a fresh JVM every 100 classes so Robolectric's per-class state can't pile up,
             // and a hard cap so a hang fails the run instead of eating it.
             it.maxHeapSize = "2g"
             it.setForkEvery(100L)
-            it.timeout.set(java.time.Duration.ofMinutes(40))
+            it.timeout.set(Duration.ofMinutes(40))
             // v0.45.0 (#28): Robolectric ships no Conscrypt JNI for linux-aarch64 (it only turns Conscrypt off by itself on
             // arm Macs), so on ARM Linux boxes every Robolectric test died with UnsatisfiedLinkError. Off there; x86 CI unchanged.
             if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })
