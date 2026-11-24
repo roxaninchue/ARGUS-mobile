@@ -3,7 +3,8 @@
 ## Current state (2026-11-22, 21:35 CAT)
 
 **App**
-- 2026-11-24: 0.55.15 (224) adds a crash screen (`CrashReportActivity`) when Argus crashes within 20 s of starting, so a crash loop (Finn's report: crashes after sign-in, Google and GitHub) can still be shared. Root cause of that crash still unknown, waiting on the shared trace.
+- 2026-11-24: 0.55.16 (225) fixes the crash after sign-in: VerifyError on `Agent.Session.runLoop` after R8 inlined its local functions (Finn's trace from the 0.55.15 crash screen); a keep rule in proguard-rules.pro stops the inlining. Phone check: sign in on Finn's Samsung A12, chat opens and answers.
+- 2026-11-24: 0.55.15 (224) adds a crash screen (`CrashReportActivity`) when Argus crashes within 20 s of starting, so a crash loop (Finn's report: crashes after sign-in, Google and GitHub) can still be shared. Root cause found from its trace; fixed in 0.55.16.
 - **Latest green build for Finn's phone check: 0.55.5 (versionCode 214)**, commit `8ffac6ee`, GitHub Actions "Build APK" run 45057221018 on the
   mirror `roxaninchue/ARGUS-mobile` (success). What it carries: CHANGELOG 0.55.5 (team tools and every tool area in the
   lean chat, no-lost-tools parity test, the app never asks the gateway to trim tools) plus 0.55.4's ghost-alarm fix.
@@ -25,7 +26,7 @@
 - **0.55.11 / vc 220 (2026-11-24, branch `music-youtube-only`, MR !76, CI green on 25427bcf (run 45284656462), brought into main on Finn's approval)**: Music is YouTube only (Jamendo and Internet Archive audio removed; Video keeps its films), song shelves on Home / Search / empty Library from a disk copy refreshed in the background (MusicFeed), YouTube Music song data (YtMusic), clean titles (SongTitle); CHANGELOG 0.55.11. Phone check after: open Music with no library (Home, Search, Library all show songs), airplane mode after one load (shelves stay), tap a shelf song (plays, next ones queue), ⋮ Download, titles without "Official Video".
 - **0.55.10 / vc 219 (2026-11-23, Finn said build)**: Stop crash guards (StopSafe), sheet status bar icons (SyncDialogBarIcons), stub-reply re-ask (CutReply.stub); CHANGELOG 0.55.10. Not compiled here; CI is the first compile. Phone check after: Stop mid-reply, open the model picker on a dark-mode phone with light ARGUS, a long tool task ending in a full answer.
 - **0.55.9 / vc 218 (2026-11-23, Finn said build)**: views redesign (CHANGELOG 0.55.9) on top of Finn's phone fixes, see CHANGELOG "Unreleased" (reasoning to Thoughts, chat scroll / swipe-to-quote, sheet height, status bar in Music / Video / Browser, landscape rail insets, auto fit). Not compiled here; CI is the first compile when Finn says build. Phone check after: a long tool task (only short status lines in the chat, the rest under Thoughts), swipe up mid-stream, open the model picker, Music in light mode, Living in landscape with 3-button nav.
-- Version pins: `app/build.gradle.kts` versionName "0.55.14" / versionCode 223; `SpaceWiringTest.theVersionIs05514` pins the same.
+- Version pins: `app/build.gradle.kts` versionName "0.55.16" / versionCode 225; `SpaceWiringTest.theVersionIs05516` pins the same.
 
 **Gateway** (separate GitLab project, `gateway/` path there; a Cloudflare Worker deployed by hand with wrangler)
 - **0.9.41 deployed 2026-11-22 21:22 CAT:** health v2 live model list; `providerProven` lists every confirmed-free

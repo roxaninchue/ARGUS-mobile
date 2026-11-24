@@ -1,3 +1,12 @@
+## 0.55.16 (versionCode 225, 2026-11-24): fix the crash right after sign-in
+Finn's crash report from the 0.55.15 crash screen (24 Nov 11:03, Samsung A12, Android 12): `VerifyError: Verifier
+rejected class Agent$Session ... runLoop ... copy-reference type=Undefined`. R8 had inlined runLoop's local functions
+(`pickTools`, `call`, `model`, `callPlain`) into `Agent.Session.runLoop` until Android's verifier refused the method, so
+the chat session class never loaded and Argus closed as soon as the signed-in chat started (0.55.14 and 0.55.15; 0.55.12
+was just under the line).
+- `app/proguard-rules.pro`: `runLoop$*` local functions are kept as their own methods (no inlining into runLoop).
+- Test: RunLoopKeepTest pins the rule. Not compiled with Gradle here; CI is the first compile.
+
 ## 0.55.15 (versionCode 224, 2026-11-24): crash screen when Argus crashes right at start
 Phone report 24 Nov 10:14: after signing in (Google, then GitHub after clearing storage) Argus closes at once on every
 start, so "Send crash report" never shows and no log can be shared.

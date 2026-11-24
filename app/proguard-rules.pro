@@ -37,3 +37,11 @@
 -keep class com.dokar.quickjs.** { *; }
 -dontwarn com.google.re2j.**
 -dontwarn org.jspecify.**
+
+# 0.55.16 (Finn's crash report 24 Nov 11:03, Samsung A12 / Android 12): R8 inlined runLoop's local functions (pickTools,
+# call, model, callPlain) into Agent.Session.runLoop until the method was so big Android's verifier rejected it
+# ("VerifyError: Verifier rejected class Agent$Session ... runLoop ... copy-reference type=Undefined"), so the whole chat
+# session class failed to load right after sign-in. Keeping these local functions as their own methods stops that inlining.
+-keepclassmembers,allowobfuscation,allowshrinking class com.blaze.assistant.agent.Agent$Session {
+    *** runLoop$*(...);
+}
