@@ -36,7 +36,7 @@ jobs:
     # Same-repo pull requests: the push run on the branch is the gate, so only fork PRs run here.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 95
     steps:
       - uses: actions/checkout@v4
         with:

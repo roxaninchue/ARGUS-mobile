@@ -15,8 +15,10 @@ tabs, a background service until shut down, and Argus in control of all of it (d
 - **Tools** (catalog only, found with find_tools): `phone_power` (on / off / status) and `phone_instances` (list, new,
   use, lock, unlock, renew, open, close, close_all, checkpoint, restore, reset, duplicate). phone_open / read / act /
   screenshot / wait take an optional `instance` and refuse to act in an instance someone else has locked.
-- **Gate fix**: unit tests get a 2 GB heap, a fresh JVM every 100 test classes and a 40-min cap (app/build.gradle.kts). The
-  Robolectric Compose tests ran out of memory on the 512 MB default and hung the Gate to its 75-min timeout.
+- **Gate fix**: unit tests get a 2 GB heap, a fresh JVM every 100 test classes and a 60-min cap (app/build.gradle.kts); the Gate job
+  timeout goes 75 to 95 min. The Robolectric Compose tests ran out of memory on the 512 MB default and hung the Gate.
+  The full suite (4,232 tests) then needed over 40 min. KitShotsTest.everyClickableIs48dp takes the larger of a
+  clickable's touch bounds and its laid-out size, so a tile clipped at the LazyRow's edge no longer reads 24 dp wide.
 - Details and the phone check: docs/PHONE-INSTANCES.md. Tests: PhoneInstancesTest. Not built (no version bump).
 
 ## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines; org-name providers; genre pages

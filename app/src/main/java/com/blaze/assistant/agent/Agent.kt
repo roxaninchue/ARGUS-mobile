@@ -5010,11 +5010,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** Wi-Fi or another unmetered network (speculative fetches only run there). */
         private fun unmetered(): Boolean = try { app.getSystemService(android.net.ConnectivityManager::class.java)?.isActiveNetworkMetered == false } catch (_: Throwable) { false }
 
-        /**
-         * A phone_* browser tool, run in the active (or `instance`-named) Argus Phone instance: its lock is checked, its
-         * step recorded, and a failure stays in that instance (browser/phone/instances/ArgusPhone). Kept out of
-         * runToolRaw, which is near the JVM's method size limit.
-         */
+        /** A phone_* tool in the active (or named) Argus Phone instance (browser/phone/instances); out of runToolRaw (size limit). */
         private suspend fun phoneInInstance(name: String, args: JSONObject, shots: MutableList<String>): String {
             val drv = com.blaze.assistant.browser.phone.PhoneBrowser.Driver(app) { reason, site ->
                 if (!inForeground) Notifier.actionRequired("Take control: ${reason.take(50)}", site,

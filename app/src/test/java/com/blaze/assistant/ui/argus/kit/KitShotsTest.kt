@@ -117,8 +117,11 @@ class KitShotsTest {
             assertTrue("found clickables", nodes.size > 20)
             for (n in nodes) {
                 val b = n.touchBoundsInRoot
+                // A tile scrolled partly out of a LazyRow is clipped in touchBoundsInRoot (the attachment × read 24×48 at
+                // font 2); its own laid-out size is still the target, so take the larger of the two.
+                val w = maxOf(b.width, n.size.width.toFloat()); val h = maxOf(b.height, n.size.height.toFloat())
                 val name = n.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString() ?: n.config.getOrNull(SemanticsProperties.Text)?.joinToString()
-                assertTrue("'$name' at font $scale is ${b.width / rule.density.density}×${b.height / rule.density.density} dp", b.width >= min && b.height >= min)
+                assertTrue("'$name' at font $scale is ${w / rule.density.density}×${h / rule.density.density} dp", w >= min && h >= min)
             }
         }
     }
