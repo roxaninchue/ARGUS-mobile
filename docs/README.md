@@ -11,6 +11,7 @@ Note: every `.md` file under this folder is bundled into the app's built-in help
 |---|---|
 | [../failures/README.md](../failures/README.md) | Failures log (2026-11-24): one write-up per crash, red build or bad deploy, with cause, fix and guard |
 | [PC-REPLACEMENT.md](PC-REPLACEMENT.md) | Owner goal (2026-11-23): Argus as a PC replacement. Argus Desk, keyboard and mouse, desk apps, phases, Phase 0 removals |
+| [ARGUS-PHONE.md](ARGUS-PHONE.md) | Owner vision (Jake, 2026-11-24, plan only): Argus Phone becomes a light OS for the agent: home screen, recoverable instances, apps (Browser, Terminal, Files, Music, Movie, Calendar), credential cards in the chat. Hard rules: Argus controls everything fast, every instance stays light |
 | [UI-RULES.md](UI-RULES.md) | Owner UI rules (2026-11-24): the model sheet closes only with its X, lists scroll on slow drags, the intro fills the screen; each with its test |
 | [MODEL-FIRST.md](MODEL-FIRST.md) | Owner rule (2026-11-16): build around the model, no keyword routing; guarded by `ModelFirstTest` |
 | [LEAN-TOOLS.md](LEAN-TOOLS.md) | Owner rule (2026-11-24): new tools go in the discoverable catalog, never in every turn |
