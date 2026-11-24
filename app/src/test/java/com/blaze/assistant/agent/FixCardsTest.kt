@@ -9,7 +9,7 @@ import org.junit.Test
 class FixCardsTest {
     @Test fun matchesMissingAccess() {
         assertEquals(FixCards.Kind.NOTIFICATIONS, FixCards.kindOf("Notification access is off. Ask the user to turn it on in ${BrandName.NAME} › Settings."))
-        assertEquals(FixCards.Kind.PHONE_CONTROL, FixCards.kindOf("Phone control is off, so I can't take a screenshot."))
+        assertNull("phone control card is gone", FixCards.kindOf("Phone control is off, so I can't take a screenshot."))
         assertEquals(FixCards.Kind.USAGE, FixCards.kindOf("${BrandName.NAME} needs Usage access: I opened that page."))
         assertEquals(FixCards.Kind.APP_PERMISSION, FixCards.kindOf("Error: permission denied for contacts"))
         assertEquals(FixCards.Kind.ALL_FILES, FixCards.kindOf("[All files access is off: Android hides other apps' files]"))

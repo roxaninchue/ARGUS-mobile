@@ -112,10 +112,4 @@ class PromptPartsTest {
         val s1 = JSONArray().apply { put(tool("a")); put(tool("c")) }.toString().dropLast(1)
         assertTrue(kept.toString().startsWith(s1))
     }
-
-
-    @Test fun screenLine() {
-        assertEquals("", SpeedLog.screenLine(0, 0, 0))
-        assertEquals("\nScreen reads: 4 tree walks (avg 30 ms), 6 reused unchanged", SpeedLog.screenLine(4, 6, 120))
-    }
 }

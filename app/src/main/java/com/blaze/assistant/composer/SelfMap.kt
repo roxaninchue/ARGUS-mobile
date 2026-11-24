@@ -49,7 +49,7 @@ object SelfMap {
         Entry("setting:brain", Kind.SETTING, "Brain", "${BrandName.NAME} Cloud and models", "brain", listOf("models", "ai")),
         Entry("setting:sync", Kind.SETTING, "Cloud sync", "Keep phones the same", "sync", listOf("backup")),
         Entry("setting:logins", Kind.SETTING, "Saved logins", "Sign-ins from the secure form", "logins", listOf("passwords", "vault")),
-        Entry("setting:control", Kind.SETTING, "Phone control", "Accessibility and permissions", "control", listOf("permissions", "accessibility")),
+        Entry("setting:control", Kind.SETTING, "Permissions", "App permissions", "control", listOf("permissions", "accessibility")),
         Entry("setting:proactive", Kind.SETTING, "Proactive", "When ${BrandName.NAME} speaks up on its own", "proactive", listOf("notifications", "triggers")),
     )
 
