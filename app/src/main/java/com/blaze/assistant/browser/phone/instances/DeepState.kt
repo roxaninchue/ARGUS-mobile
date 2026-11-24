@@ -15,7 +15,7 @@ import org.json.JSONObject
  * Running terminal commands join when the Terminal app does (step 4).
  */
 object DeepState {
-    /** Rough RAM per tier (estimates until PhonePerf measures them per app on the A12, section 6). */
+    /** Rough RAM per tier (estimates until PhonePerf measures them per app on a low-RAM phone, section 6). */
     const val LIVE_BYTES = 90L * 1024 * 1024      // a WebView renderer + Argus Phone's frame buffers
     const val WARM_BASE_BYTES = 8L * 1024          // the state model in memory
     const val STEPS_SHOWN = 5

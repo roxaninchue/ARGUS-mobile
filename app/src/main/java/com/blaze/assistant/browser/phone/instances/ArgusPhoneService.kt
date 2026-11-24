@@ -104,7 +104,9 @@ class ArgusPhoneService : Service() {
         val c = ArgusPhone.core(this)
         val n = c.registry.size()
         val title = "${BrandName.NAME} Phone \u00b7 $n instance${if (n == 1) "" else "s"} running"
-        val text = c.doing(step)
+        // Account lock: no instance names or steps on the lock screen's shade.
+        val locked = try { com.blaze.assistant.connect.AccountGate.locked() } catch (_: Throwable) { false }
+        val text = if (locked) "Running" else c.doing(step)
         val watched = c.registry.watched ?: c.registry.active
         val open = PendingIntent.getActivity(this, 4711, PhoneBrowserActivity.instanceIntent(this, watched),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

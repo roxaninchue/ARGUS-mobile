@@ -387,7 +387,7 @@
 "app/src/main/java/com/blaze/assistant/browser/phone/DomCache.kt":2,
 "app/src/main/java/com/blaze/assistant/browser/phone/instances/ArgusPhone.kt":8,
 "app/src/main/java/com/blaze/assistant/browser/phone/instances/ArgusPhoneCore.kt":4,
-"app/src/main/java/com/blaze/assistant/browser/phone/instances/ArgusPhoneService.kt":7,
+"app/src/main/java/com/blaze/assistant/browser/phone/instances/ArgusPhoneService.kt":8,
 "app/src/main/java/com/blaze/assistant/browser/phone/instances/DeepState.kt":3,
 "app/src/main/java/com/blaze/assistant/browser/phone/instances/Instance.kt":3,
 "app/src/main/java/com/blaze/assistant/browser/phone/instances/InstanceRegistry.kt":4,
