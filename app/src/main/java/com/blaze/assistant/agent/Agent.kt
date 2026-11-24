@@ -1,6 +1,8 @@
 package com.blaze.assistant.agent
 
 
+import com.blaze.assistant.browser.phone.instances.ArgusPhone
+import com.blaze.assistant.browser.phone.instances.PhoneInstanceTools
 import com.blaze.assistant.BrandName
 import android.content.Context
 import com.blaze.assistant.notify.Notifier
@@ -1453,6 +1455,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(SecretDesk.toolDef())   // 0.46.6 Secure form
         com.blaze.assistant.appstore.StoreTools.definitions().forEach { t.put(it) }   // 0.45.19 App Store
         com.blaze.assistant.browser.phone.PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Argus Phone browser
+        PhoneInstanceTools.definitions().forEach { t.put(it) }   // Argus Phone power + instances (catalog, docs/PHONE-INSTANCES.md)
         // 16 Nov 2026 (Finn): the terminal and the specialists are always on (their switches left Settings with Jobs and Team & bots).
         com.blaze.assistant.terminal.Terminal.tools(app).forEach { t.put(it) }
         t.put(com.blaze.assistant.terminal.TermCheckpoints.tool())   // terminal checkpoints (rollbacks)
@@ -5007,6 +5010,21 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** Wi-Fi or another unmetered network (speculative fetches only run there). */
         private fun unmetered(): Boolean = try { app.getSystemService(android.net.ConnectivityManager::class.java)?.isActiveNetworkMetered == false } catch (_: Throwable) { false }
 
+        /**
+         * A phone_* browser tool, run in the active (or `instance`-named) Argus Phone instance: its lock is checked, its
+         * step recorded, and a failure stays in that instance (browser/phone/instances/ArgusPhone). Kept out of
+         * runToolRaw, which is near the JVM's method size limit.
+         */
+        private suspend fun phoneInInstance(name: String, args: JSONObject, shots: MutableList<String>): String {
+            val drv = com.blaze.assistant.browser.phone.PhoneBrowser.Driver(app) { reason, site ->
+                if (!inForeground) Notifier.actionRequired("Take control: ${reason.take(50)}", site,
+                    "${BrandName.NAME} needs you on ${BrandName.NAME} Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
+            return ArgusPhone.browserTool(app, name, args,
+                ArgusPhone.owner(id, agentId)) {
+                com.blaze.assistant.browser.phone.PhoneBrowserTools.run(drv, name, args, shots) { t, d, a -> confirm(t, d, a, always = true) }
+            }
+        }
+
         suspend fun runToolRaw(name: String, args: JSONObject, shots: MutableList<String>): String {
             turnTools.add(name)
             // 0.53.4: with GitHub connected, a GitHub link is read through the connection (private repos too), never scraped.
@@ -5391,10 +5409,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, com.blaze.assistant.browser.phone.PhoneBrowserTools.describe(name, args))
                     // 0.45.19 fix 4: who drives Argus Phone now, so the picture-in-picture Stop cancels exactly this turn.
                     com.blaze.assistant.browser.phone.PhoneBrowser.own(id, agentId)
-                    val drv = com.blaze.assistant.browser.phone.PhoneBrowser.Driver(app) { reason, site ->
-                        if (!inForeground) Notifier.actionRequired("Take control: ${reason.take(50)}", site,
-                            "${BrandName.NAME} needs you on ${BrandName.NAME} Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
-                    com.blaze.assistant.browser.phone.PhoneBrowserTools.run(drv, name, args, shots) { t, d, a -> confirm(t, d, a, always = true) }
+                    phoneInInstance(name, args, shots)
+                }
+                in PhoneInstanceTools.NAMES -> {
+                    add(Role.STEP, PhoneInstanceTools.describe(name, args))
+                    ArgusPhone.instancesTool(app, name, args,
+                        ArgusPhone.owner(id, agentId)) { t, d, a -> confirm(t, d, a, always = true) }
                 }
                 in com.blaze.assistant.browser.BrowserTools.names -> {
                     // v0.26.2: parallel specialists take turns with the one background browser (the first to use it holds it).
