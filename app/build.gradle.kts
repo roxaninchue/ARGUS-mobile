@@ -61,6 +61,15 @@ android {
             it.maxHeapSize = "2g"
             it.setForkEvery(100L)
             it.timeout.set(Duration.ofMinutes(60))
+            // Gate shards (24 Nov): -PtestShard=i -PtestShards=n runs only the test classes whose outer class name hashes to
+            // shard i, so the Gate splits the suite (~4,200 tests, over an hour on one runner) across parallel jobs.
+            // Without the properties every test runs, as before.
+            val shards = (project.findProperty("testShards") as String?)?.toIntOrNull() ?: 1
+            val shard = (project.findProperty("testShard") as String?)?.toIntOrNull() ?: 0
+            if (shards > 1) it.exclude { f ->
+                !f.isDirectory && f.name.endsWith(".class") &&
+                    (f.relativePath.pathString.substringBefore('$').removeSuffix(".class").hashCode() and Int.MAX_VALUE) % shards != shard
+            }
             // v0.45.0 (#28): Robolectric ships no Conscrypt JNI for linux-aarch64 (it only turns Conscrypt off by itself on
             // arm Macs), so on ARM Linux boxes every Robolectric test died with UnsatisfiedLinkError. Off there; x86 CI unchanged.
             if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })

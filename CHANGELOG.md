@@ -19,6 +19,9 @@ tabs, a background service until shut down, and Argus in control of all of it (d
   timeout goes 75 to 95 min. The Robolectric Compose tests ran out of memory on the 512 MB default and hung the Gate.
   The full suite (4,232 tests) then needed over 40 min. KitShotsTest.everyClickableIs48dp takes the larger of a
   clickable's touch bounds and its laid-out size, so a tile clipped at the LazyRow's edge no longer reads 24 dp wide.
+- **Gate shards**: the Gate runs as four parallel jobs, each with a quarter of the unit test classes
+  (`-PtestShard` / `-PtestShards` in app/build.gradle.kts, split by class name); 60 min per job. everyClickableIs48dp
+  is split per font scale (everyClickableIs48dpAtFont200), since Compose allows one setContent per test (Gate #5).
 - Details and the phone check: docs/PHONE-INSTANCES.md. Tests: PhoneInstancesTest. Not built (no version bump).
 
 ## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines; org-name providers; genre pages

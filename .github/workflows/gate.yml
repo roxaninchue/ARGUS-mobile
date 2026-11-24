@@ -36,7 +36,14 @@ jobs:
     # Same-repo pull requests: the push run on the branch is the gate, so only fork PRs run here.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 95
+    # Four runners in parallel, each with a quarter of the unit tests (-PtestShard, app/build.gradle.kts): one runner
+    # needed over an hour for the whole suite. The run is green only when every shard is.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    name: gate (shard ${{ matrix.shard }})
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,14 +51,17 @@ jobs:
 
       # ---- cheap checks first (node is preinstalled)
       - name: Rename guard
+        if: matrix.shard == 0
         run: |
           node tools/check-no-blaze.test.mjs
           node tools/check-no-blaze.mjs
       - name: Do-not-port check
+        if: matrix.shard == 0
         run: |
           node tools/check-do-not-port.mjs
           node --test tools/check-do-not-port.test.mjs
       - name: Design JS tests
+        if: matrix.shard == 0
         run: node app/src/test/js/design-safe.test.mjs
 
       # ---- toolchain (JDK 21: LocalLanguagesTest needs JDK 20+ grapheme clusters; the project targets 17)
@@ -114,7 +124,7 @@ jobs:
       - name: Unit tests (:app:testDebugUnitTest)
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --continue $GRADLE_FLAGS \
+          ./gradlew :app:testDebugUnitTest --continue -PtestShard=${{ matrix.shard }} -PtestShards=4 $GRADLE_FLAGS \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee test.log
 
       # ---- readable results without a sign-in: run summary + annotations (check-runs API is public)
@@ -139,7 +149,7 @@ jobs:
                   for line in open(log, errors="replace"):
                       if re.match(r"^(e: |FAILURE:|\* What went wrong|> Task .* FAILED|.*OutOfMemory|.*StackOverflow)", line):
                           errs.append(line.rstrip()[:300])
-          totals = f"tests={t} failures={f} errors={e} skipped={s}"
+          totals = f"shard ${{ matrix.shard }}: tests={t} failures={f} errors={e} skipped={s}"
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
               out.write(f"## Gate: {totals}\n\n")
               if bad:

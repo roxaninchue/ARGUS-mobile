@@ -109,20 +109,22 @@ class KitShotsTest {
 
     // ---------------- always run ----------------
 
-    @Test fun everyClickableIs48dp() {
-        for (scale in listOf(1f, 2f)) {
-            show(dark = true, fontScale = scale)
-            val min = 48 * rule.density.density - 0.5f
-            val nodes = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes()
-            assertTrue("found clickables", nodes.size > 20)
-            for (n in nodes) {
-                val b = n.touchBoundsInRoot
-                // A tile scrolled partly out of a LazyRow is clipped in touchBoundsInRoot (the attachment × read 24×48 at
-                // font 2); its own laid-out size is still the target, so take the larger of the two.
-                val w = maxOf(b.width, n.size.width.toFloat()); val h = maxOf(b.height, n.size.height.toFloat())
-                val name = n.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString() ?: n.config.getOrNull(SemanticsProperties.Text)?.joinToString()
-                assertTrue("'$name' at font $scale is ${w / rule.density.density}×${h / rule.density.density} dp", w >= min && h >= min)
-            }
+    // One setContent per test (Compose's rule allows only one), so each font scale is its own test (Gate #5).
+    @Test fun everyClickableIs48dp() = clickablesAre48dp(1f)
+    @Test fun everyClickableIs48dpAtFont200() = clickablesAre48dp(2f)
+
+    private fun clickablesAre48dp(scale: Float) {
+        show(dark = true, fontScale = scale)
+        val min = 48 * rule.density.density - 0.5f
+        val nodes = rule.onAllNodes(hasClickAction()).fetchSemanticsNodes()
+        assertTrue("found clickables", nodes.size > 20)
+        for (n in nodes) {
+            val b = n.touchBoundsInRoot
+            // A tile scrolled partly out of a LazyRow is clipped in touchBoundsInRoot (the attachment × read 24×48 at
+            // font 2); its own laid-out size is still the target, so take the larger of the two.
+            val w = maxOf(b.width, n.size.width.toFloat()); val h = maxOf(b.height, n.size.height.toFloat())
+            val name = n.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString() ?: n.config.getOrNull(SemanticsProperties.Text)?.joinToString()
+            assertTrue("'$name' at font $scale is ${w / rule.density.density}×${h / rule.density.density} dp", w >= min && h >= min)
         }
     }
 
