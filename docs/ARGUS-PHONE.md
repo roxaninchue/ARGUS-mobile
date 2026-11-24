@@ -1,6 +1,6 @@
 # Argus Phone: the vision
 
-Owner vision (Jake, 2026-11-24; section 3g, 5d, 5e and Argus's power over instances added the same day). **This is a plan, not code.** Nothing here is built yet. Read it before you touch
+Owner vision (Jake, 2026-11-24; sections 3g, 3h, 5d to 5g added the same day). Jake: "After all, it is its phone.". **This is a plan, not code.** Nothing here is built yet. Read it before you touch
 `browser/phone/`, `terminal/`, `mediaapps/`, the Home board, or how the chat hands work to the user, and check new
 Argus Phone work against the hard rules in section 1.
 
@@ -131,6 +131,29 @@ How they stay controllable and light:
   is shut down after.
 - Same apps as Argus Desk phase 3 (PC-REPLACEMENT.md 1c): one engine, a phone host and a desk host.
 
+### 3h. Custom apps Argus builds
+Argus can build its own apps inside Argus Phone, for the user or for itself, and they become first-class apps: on the
+home screen, in instances, and controllable like every other app (rule 1).
+- **Format**: a custom app is a small web app (HTML, CSS and JavaScript or TypeScript) in a sandboxed WebView, with a
+  manifest (name, icon, permissions, version) and an **app bridge** that implements the app contract (3c): the app
+  declares its `state()` and `actions()` so Argus drives it through `phone_app`, never by tapping. The bridge is
+  how an app reaches files, the terminal, the vault (through cards only) and other apps, each behind a permission
+  in its manifest.
+- **Right language for the job**: the UI is always web; heavy work runs as a backend in a Linux root (Python, Node,
+  Go, Rust, whatever fits, installed there on demand) and talks to the UI through the bridge. Argus picks the
+  language per app from what it must do (data and scripts: Python; real-time or web APIs: Node / TypeScript;
+  speed-critical: Go or Rust) and says why in the app's README.
+- **Designed properly**: every custom app uses the Argus design kit (BRAND.md tokens, the glass design system, the
+  UI-RULES.md sheet and scroll rules), light and dark, portrait and landscape, accessible labels. Argus checks its
+  own build with screenshots on the Argus Phone screen before calling it done.
+- **Built like real software**: each app is a folder in the shared workspace (`Apps/<name>/`) under git, with a test
+  page; every change is a commit, and a broken version rolls back to the last good one. Builds run in a Linux root
+  in Argus Phone, never in the chat.
+- **Light**: a custom app is cold (files only) until opened, shares the one WebView engine, and its backend process
+  stops when the app goes cold.
+- Built on what exists: the Design view's live preview and Site apps (`siteapps/`) are the starting point, not a
+  second app system.
+
 ## 4. Pillar 2: a smoother handoff between Argus and the user
 
 The aim: the user is asked for the least possible, in the easiest place, and Argus never stalls without saying why.
@@ -225,6 +248,18 @@ Argus can, on its own or on the user's word:
 - Anything that would discard unsaved work asks first, through an approval card; a plain close checkpoints and
   recovers as in 5e, so it needs no question.
 
+### 5g. Who owns an instance, and Argus's deep view of it
+- **Argus decides** whether a task gets a fresh instance or reuses one (Jake, 2026-11-24). No user setting.
+- **Locks**: Argus itself, a background agent, a team member or a routine can **lock an instance** for a long task.
+  A lock names its owner and task, and is renewed while the owner works (a lease); if the owner stops or crashes, the
+  lease runs out and the instance is free again, after a checkpoint. Others can read a locked instance but not act
+  in it; the user can always take control or break a lock, with an approval card if work is in progress.
+- **Deep state awareness**: Argus can read, for every instance, at any time and cheaply: owner and lock, cold / warm /
+  live, open apps and each app's state summary, the page or folder each is on, running terminal commands and their
+  exit codes, unsaved changes, pending cards (waiting on the user), memory use, last checkpoint, last error, and a
+  short history of recent steps. That snapshot is what `phone_instances` returns, so choosing "reuse or new" is
+  informed, never a guess.
+
 ## 6. Speed and lightness budgets
 
 Targets to measure on a low-RAM phone (A12 class) with `PhonePerf` extended to every app. Numbers are starting targets,
@@ -253,7 +288,9 @@ How to stay light:
 
 Kept small, all found with `find_tools`, all described in one line each on the shelf:
 - `phone_power`: on, off (checkpoints first), status (running or not, instances, what each is doing).
-- `phone_instances`: list, new, use (by name or task), open, close, close all, checkpoint, restore, reset, duplicate.
+- `phone_instances`: list (with the deep state of 5g), new, use (by name or task), lock / unlock, open, close, close all,
+  checkpoint, restore, reset, duplicate.
+- `phone_build_app`: create or change a custom app (3h); scaffolds, builds, screenshots and commits it.
 - `phone_app`: open an app in an instance, read its state, run one of its actions (or a batch of them). Office apps
   work through this too.
 - Today's browser tools (`phone_open`, `phone_read`, `phone_act`, `phone_wait`, `phone_screenshot`, `phone_handoff`,
@@ -268,12 +305,14 @@ build (AGENTS.md).
 | Step | What ships |
 |---|---|
 | 1 | Instance manager around today's browser: cold / warm / live, checkpoint, restore, reset, crash isolation; background service and notification; `phone_power`, `phone_instances` |
+| 1a | Instance locks (leases) and the deep state snapshot (5g) |
 | 1b | Shared workspace, Recovered folder, write leases, conflict copies, per-distro install locks (5e) |
 | 2 | Credentials card from the page's own field flags, then choice and approval cards; `phone_handoff` kinds |
 | 3 | The app contract, the Argus Phone home screen, the browser as the first app |
 | 4 | Files (root switch, install from inside, terminal link) and Terminal as apps |
 | 5 | Music, Movie, Calendar as apps |
 | 5b | Office: Docs, then Sheets, then Slides, then PDF (3g), each with its model, actions and OOXML import / export |
+| 5c | Custom apps: manifest, app bridge, design kit, build in a Linux root (3h) |
 | 6 | Instances as Argus Desk windows; Home board tile |
 
 ## 9. Do not
@@ -289,8 +328,7 @@ build (AGENTS.md).
 
 1. Today's rule says Argus Phone does no gaming and no banking (owner, 23 Oct). Does that still stand now that it is
    more than a browser?
-2. Should instances be per task by default (a fresh one for each task), or one long-lived instance that tasks share
-   unless asked?
+2. Answered (Jake, 2026-11-24): Argus decides per task, and any agent can lock an instance for a long task (5g).
 3. Should Files open the user's whole shared storage on first use, or only after they allow it once in Argus Phone?
 4. Keep the name "Argus Phone"?
 5. After Android kills the process, should Argus Phone restart itself, or wait until it is opened or a task needs it?
