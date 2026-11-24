@@ -3,7 +3,7 @@
 ## Current state (2026-11-22, 21:35 CAT)
 
 **App**
-- 2026-11-24: 0.55.17 (226) on main, building (Finn said build at 14:04 CAT): cloud sync carries bots, teams (with SOULs) and routines; Movie finds an org's providers from its name; Music genre tiles have covers and open endless genre pages (CHANGELOG 0.55.17). 0.55.16 confirmed on Finn's phone: sign-in and chat work.
+- 2026-11-24: 0.55.17 (226) on main, built #142 (run 45396664632), phone check pending: cloud sync carries bots, teams (with SOULs) and routines; Movie finds an org's providers from its name; Music genre tiles have covers and open endless genre pages (CHANGELOG 0.55.17). 0.55.16 confirmed on Finn's phone: sign-in and chat work.
 - 2026-11-24: 0.55.16 (225) fixes the crash after sign-in: VerifyError on `Agent.Session.runLoop` after R8 inlined its local functions (Finn's trace from the 0.55.15 crash screen); a keep rule in proguard-rules.pro stops the inlining. Phone check: sign in on Finn's Samsung A12, chat opens and answers.
 - 2026-11-24: 0.55.15 (224) adds a crash screen (`CrashReportActivity`) when Argus crashes within 20 s of starting, so a crash loop (Finn's report: crashes after sign-in, Google and GitHub) can still be shared. Root cause found from its trace; fixed in 0.55.16.
 - **Latest green build for Finn's phone check: 0.55.5 (versionCode 214)**, commit `8ffac6ee`, GitHub Actions "Build APK" run 45057221018 on the

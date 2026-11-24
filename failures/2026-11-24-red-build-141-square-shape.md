@@ -1,6 +1,6 @@
 # Build #141 red: a square corner on the new genre page (0.55.17, 2026-11-24)
 
-Status: fixed in 0.55.17 (rebuild running)
+Status: fixed in 0.55.17, build #142 (run 45396664632) green
 
 ## What the user saw
 No APK. Finn said build at 14:04 CAT; the build did not start until 14:2x and then failed unit tests.
