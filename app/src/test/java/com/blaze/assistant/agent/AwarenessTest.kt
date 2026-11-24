@@ -39,8 +39,8 @@ class AwarenessTest {
     @Test fun lineReadsNaturally() {
         val song = Awareness.Now("music", "Playing", "Blinding Lights", "${BrandName.NAME} Music", "by The Weeknd", 72_000, 200_000, true, t0)
         assertEquals("Playing \"Blinding Lights\" by The Weeknd in ${BrandName.NAME} Music, 1:12 of 3:20", Awareness.line(song, t0))
-        val film = Awareness.Now("video", "Paused", "Dune", "${BrandName.NAME} Video", "", 2_462_000, 9_312_000, false, t0)
-        assertEquals("Paused \"Dune\" in ${BrandName.NAME} Video, 41:02 of 2:35:12 (5 min ago)", Awareness.line(film, t0 + 5 * 60_000))
+        val film = Awareness.Now("video", "Paused", "Dune", "${BrandName.NAME} Movie", "", 2_462_000, 9_312_000, false, t0)
+        assertEquals("Paused \"Dune\" in ${BrandName.NAME} Movie, 41:02 of 2:35:12 (5 min ago)", Awareness.line(film, t0 + 5 * 60_000))
         val screen = Awareness.Now("screen", "On screen", "Chat", "${BrandName.NAME}", at = t0)
         assertEquals("On screen \"Chat\" in ${BrandName.NAME}", Awareness.line(screen, t0 + 5 * 60_000))
     }
@@ -51,11 +51,11 @@ class AwarenessTest {
             Awareness.Now("screen", "On screen", "Chat", "${BrandName.NAME}", at = t0 + 50_000),
             Awareness.Now("media:spotify", "Playing", "Song", "Spotify", "by X", 10_000, 180_000, true, t0),
         )
-        val ev = listOf(Awareness.Event("watched", "watched \"Dune\" in ${BrandName.NAME} Video, stopped at 41:02 of 2:35:12", t0 - 20 * 60_000))
+        val ev = listOf(Awareness.Event("watched", "watched \"Dune\" in ${BrandName.NAME} Movie, stopped at 41:02 of 2:35:12", t0 - 20 * 60_000))
         val s = Awareness.format(nows, ev, now)
         assertTrue(s.startsWith("\nWHAT'S GOING ON"))
         assertTrue(s.indexOf("Spotify") < s.indexOf("Chat"))
-        assertTrue(s.contains("Recently: watched \"Dune\" in ${BrandName.NAME} Video, stopped at 41:02 of 2:35:12 (21 min ago)"))
+        assertTrue(s.contains("Recently: watched \"Dune\" in ${BrandName.NAME} Movie, stopped at 41:02 of 2:35:12 (21 min ago)"))
         assertEquals("", Awareness.format(emptyList(), emptyList(), now))
         // Events older than three days are dropped.
         assertEquals("", Awareness.format(emptyList(), listOf(Awareness.Event("x", "old", now - 4 * 86_400_000L)), now))

@@ -43,7 +43,7 @@ object VideoHome {
     }
 
     /** Built-in source ids in Home order; the user's Jellyfin and installed providers follow, in the order they were added. */
-    private val builtIn = listOf("archive", "blender", "local")
+    private val builtIn = listOf("youtube", "local")
 
     fun order(ids0: List<String>): List<String> {
         val ids = ids0.distinct()   // 0.46.5: a source listed twice must not give two rows with the same key
@@ -52,10 +52,9 @@ object VideoHome {
         return known + jelly + ids.filter { it !in known && it !in jelly }
     }
 
-    /** Short row titles: Free films (Internet Archive), Blender open movies, My videos; other sources keep their own titles. */
+    /** Short row titles: YouTube rows keep their own title, My videos; other sources add their name. */
     fun rowTitle(sourceId: String, sourceName: String, row: String): String = when (sourceId) {
-        "archive" -> "Free films"
-        "blender" -> "Blender open movies"
+        "youtube" -> row.ifBlank { sourceName }
         "local" -> "My videos"
         else -> if (row.isBlank() || row == sourceName) sourceName else "$row \u00b7 $sourceName"
     }
@@ -63,8 +62,8 @@ object VideoHome {
     data class Hero(val title: String, val image: String, val post: MoviePost?, val resume: Progress?)
 
     /**
-     * The hero carousel: what you were watching first (Resume), then the first films with a picture from the official
-     * rows (Free films, Blender), then anything else with a picture; no duplicates, at most [n].
+     * The hero carousel: what you were watching first (Resume), then the first films with a picture from the built-in
+     * rows (YouTube), then anything else with a picture; no duplicates, at most [n].
      */
     fun hero(cont: List<Progress>, rows: Map<String, List<MoviePost>>, n: Int = 5): List<Hero> {
         val out = ArrayList<Hero>()

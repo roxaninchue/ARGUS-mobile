@@ -18,7 +18,7 @@ class SpotlightSearchTest {
         SelfMap.ViewInfo("home", "Home", "The Home cards"),
         SelfMap.ViewInfo("browser", "Browser", "${BrandName.NAME}'s own browser and tabs"),
         SelfMap.ViewInfo("music", "Music", "${BrandName.NAME} Music: your songs", listOf("songs", "player")),
-        SelfMap.ViewInfo("video", "Video", "${BrandName.NAME} Video: your videos", listOf("videos", "movies")),
+        SelfMap.ViewInfo("video", "Movie", "${BrandName.NAME} Movie: your videos", listOf("videos", "movies")),
         SelfMap.ViewInfo("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell", listOf("shell", "console")),
         SelfMap.ViewInfo("memory", "Memory", "What ${BrandName.NAME} remembers"),
         SelfMap.ViewInfo("look", "Look & feel", "Light / dark and accent", listOf("theme", "dark mode")),

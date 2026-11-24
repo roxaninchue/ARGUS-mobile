@@ -310,7 +310,7 @@ fun StageHost(lastMessage: String, chat: @Composable (Modifier) -> Unit) {
             }
             StageEvent.OpenFull -> if (i.kind == StageKind.BROWSER) com.blaze.assistant.browser.BrowserTools.show(ctx)
                 else if (i.kind == StageKind.VIDEO && com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"]) != null) {
-                    // 0.46.2: the movie goes on in Argus Video at the same spot (the card's player pauses).
+                    // 0.46.2: the movie goes on in Argus Movie at the same spot (the card's player pauses).
                     val m = com.blaze.assistant.movies.MoviePlay.parse(i.props["movie"])!!; val at = StageVideo.position(); StageVideo.pause()
                     com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, m, at)
                 } else i.kind.fullView?.let { Views.open(it) }

@@ -34,7 +34,7 @@ class VideoCrashHardeningTest {
         assertEquals(listOf("k1", "k2"), VideoKeys.unique(listOf("k1", "k2", "k1")) { it })
         assertEquals(2, VideoKeys.posts(listOf(a, a, sameLinkOtherSource)).size)
         // a source listed twice gives one row
-        assertEquals(listOf("archive", "p:x"), VideoHome.order(listOf("p:x", "archive", "p:x", "archive")))
+        assertEquals(listOf("youtube", "p:x"), VideoHome.order(listOf("p:x", "youtube", "p:x", "youtube")))
         // hero: never the same item twice
         val hero = VideoHome.hero(emptyList(), mapOf("p:x" to listOf(a.copy(image = "https://i/a.jpg"), a.copy(image = "https://i/a.jpg"))))
         assertEquals(1, hero.size)

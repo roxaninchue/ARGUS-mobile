@@ -9,7 +9,7 @@ import java.io.File
 
 /**
  * v0.30.5 (Blazeinchue: "let Blaze learn the style of music and videos the user listens to and watches", and the Store should
- * open on scrollable ideas instead of a blank search). Argus Music / Argus Video note what is played, streamed and
+ * open on scrollable ideas instead of a blank search). Argus Music / Argus Movie note what is played, streamed and
  * downloaded (title + artist / channel, on this phone only). [TasteLogic] turns that into search ideas for the Store
  * (favourite artists / channels and recurring styles first, then starter ideas) and a one-line summary Argus keeps in
  * memory, so the assistant knows the user's taste too.

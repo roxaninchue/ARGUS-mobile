@@ -20,7 +20,7 @@ object MediaFetch {
     const val MAX = 25
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Download songs (into ${BrandName.NAME} Music) or videos (into ${BrandName.NAME} Video) from YouTube, many at once. Give every song/video the user " +
+        .put("description", "Download songs (into ${BrandName.NAME} Music) or videos (into ${BrandName.NAME} Movie) from YouTube, many at once. Give every song/video the user " +
             "named as one item (\"Artist - Title\" when known). Clear matches are queued right away; for items the tool isn't sure about it returns " +
             "candidates: ask the user which one (or skip), then call again with items as {\"id\":\"<video id>\"}. quality: best, high (default), " +
             "small; or for video a height like 720 / 480 / 1080. Audio comes as m4a (plays everywhere) unless format=opus.")

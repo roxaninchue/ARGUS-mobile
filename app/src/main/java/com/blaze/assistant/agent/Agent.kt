@@ -662,12 +662,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app stage", e); "Couldn't put the browser card up: " + (e.message ?: "unknown error") + "." }
                         s.selfTurn(text.trim(), reply, byVoice, "\u26A1 ${BrandName.NAME} itself")
                     }
-                    is InAppRoute.Route.Movie -> scope.launch {
-                        // 0.46.2: "play the movie …", "search movies …", "continue watching" -> the Stage video card (official sources first).
-                        val reply = try { com.blaze.assistant.movies.MovieTools.route(app, r.action, r.query, text) }
-                            catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: in-app movies", e); "Couldn't reach Movies: " + (e.message ?: "unknown error") + "." }
-                        s.selfTurn(text.trim(), reply, byVoice, "\u26A1 ${BrandName.NAME} itself")
-                    }
                     is InAppRoute.Route.View -> {
                         val v = com.blaze.assistant.ui.Views.find(r.id)
                         if (v != null) com.blaze.assistant.ui.Views.open(v.id, if (v.id == "design") (try { Designs.current()?.path } catch (_: Exception) { null }).orEmpty() else "")
@@ -1502,6 +1496,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.mediaapps.MediaFetch.tool())
         t.put(com.blaze.assistant.mediaapps.VideoTools.tool())   // v0.34.0
         t.put(com.blaze.assistant.movies.MovieTools.tool())   // 0.46.2 Movies
+        t.put(com.blaze.assistant.movies.MovieSourceTools.tool())   // 0.55.13 Movie sources (catalog tool, docs/LEAN-TOOLS.md)
         t.put(com.blaze.assistant.mediaapps.MusicTools.tool())   // v0.34.0
         t.put(com.blaze.assistant.media.GalleryOps.tool())   // v0.34.0
         t.put(com.blaze.assistant.device.CameraMathTool.tool())   // v0.34.0
@@ -5505,7 +5500,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     name == com.blaze.assistant.mediaapps.VideoTools.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.VideoTools.describe(args))
                         com.blaze.assistant.mediaapps.VideoTools.run(app, args) }
                     name == com.blaze.assistant.movies.MovieTools.TOOL -> { add(Role.STEP, com.blaze.assistant.movies.MovieTools.describe(args))
-                        com.blaze.assistant.movies.MovieTools.run(app, args, lastUserText()) }
+                        com.blaze.assistant.movies.MovieTools.run(app, args) }
+                    name == com.blaze.assistant.movies.MovieSourceTools.TOOL -> { add(Role.STEP, com.blaze.assistant.movies.MovieSourceTools.describe(args))
+                        com.blaze.assistant.movies.MovieSourceTools.run(app, args) }
                     name == com.blaze.assistant.mediaapps.MediaFetch.TOOL -> { add(Role.STEP, com.blaze.assistant.mediaapps.MediaFetch.describe(args))
                         kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.mediaapps.MediaFetch.run(app, args) } }
                     name == com.blaze.assistant.life.LifeLogs.TOOL -> { add(Role.STEP, com.blaze.assistant.life.LifeLogs.describe(args))

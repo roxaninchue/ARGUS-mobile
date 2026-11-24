@@ -34,9 +34,8 @@ object Movies {
             override fun get(key: String) = runCatching { Settings.str(key, "") }.getOrDefault("")
             override fun put(key: String, value: String) { runCatching { Settings.setStr(key, value) } }
         }).also { st ->
-            // 0.46.2 Blaze Official (Argus's own example repo) comes preinstalled from the copy bundled in the app.
-            val c = (ctx ?: app)!!
-            runCatching { st.seedOfficial { path -> runCatching { c.assets.open("movies/blaze-official/$path").bufferedReader().use { it.readText() } }.getOrNull() } }
+            // 0.55.13: nothing is preinstalled; the old "Blaze Official" example repo (Internet Archive + Blender) is dropped once.
+            runCatching { st.dropLegacyOfficial() }
             store = st
         }
     }
@@ -71,10 +70,10 @@ object Movies {
         val tok = Secrets.decrypt(Settings.str(JF_TOKEN, "")); if (tok.isBlank()) null else JellyfinSource(a.server, a.userId, tok, a.name) }
 
     // ---------------- sources ----------------
-    /** Built-in official sources + the user's Jellyfin + (when [withProviders]) the user's enabled providers. */
+    /** Built-in sources (YouTube, the phone's videos) + the user's Jellyfin + (when [withProviders]) the user's enabled providers. */
     fun sources(withProviders: Boolean = true): List<MovieSource> {
         val out = ArrayList<MovieSource>()
-        out += ArchiveFeatureFilms; out += BlenderOpenMovies; out += LocalVideos
+        out += YouTubeMovies; out += LocalVideos
         jellyfin()?.let { out += it }
         if (withProviders) runCatching { out += providers().sources() }
         return out

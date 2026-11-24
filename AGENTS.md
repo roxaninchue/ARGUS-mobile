@@ -20,6 +20,9 @@ Read **docs/MODEL-FIRST.md** before changing anything the model sees or anything
 Build the system around the model. No keyword routers that guess intent, no shouting or contradictory prompt rules,
 and no second lane answering beside the main one. `ModelFirstTest` guards this.
 
+**Lean tools rule (docs/LEAN-TOOLS.md):** never add tools to every turn. A new feature's tools go in the discoverable
+catalog (registered in `Agent.tools()`, found with `find_tools`), not in `LeanTurn.CORE` or the prompt.
+
 Skills and specialists reach the model as shelves (docs/SKILL-SHELF.md): each line is the first sentence of a skill's
 description or a specialist's prompt, capped at 10 words after the dash, so write that sentence to say when to use it.
 

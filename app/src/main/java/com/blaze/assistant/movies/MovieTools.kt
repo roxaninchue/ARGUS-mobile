@@ -9,41 +9,36 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 0.46.2 agent tool `movies` (and the in-app route for "play the movie …", "search movies …", "continue watching"): everything
- * lands on the Stage video card (shown in place; its open-in-full-view button goes to Argus Video). Official sources only by
- * default: Internet Archive public-domain films, Blender open movies, the user's own videos, their Jellyfin server. Providers
- * the user installed are used only when the user asked for one (named it, or said "my providers").
+ * 0.46.2 agent tool `movies`: Argus Movie from the chat. Everything lands on the Stage video card (shown in place; its
+ * open-in-full-view button goes to Argus Movie). 0.55.13: built-in sources are YouTube, the user's own videos and their
+ * Jellyfin server (Internet Archive and Blender removed). The user's added providers join when the model asks for them
+ * (use_providers, or source = a provider's name); no regex on the user's words decides that any more (docs/MODEL-FIRST.md).
+ * Adding / removing sources is the separate catalog tool `movie_sources`.
  */
 object MovieTools {
     const val TOOL = "movies"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Movies in ${BrandName.NAME} Video, shown on the Stage video card. Sources: free public-domain films (Internet Archive), Blender open movies, " +
-            "the user's own videos, and their Jellyfin server. action: play (query = the title), search (query), continue (resume the last unfinished one), " +
-            "watchlist (list it). Sources the user added in Providers: only when the user asked for one by name or said to use their sources (use_providers=true, source=its name).")
+        .put("description", "${BrandName.NAME} Movie: find and play movies, shown on the Stage video card. action: play (query = title), search (query), " +
+            "continue (resume the last unfinished one), watchlist. Sources: YouTube, the user's videos, Jellyfin; providers the user added " +
+            "join with use_providers=true or source=<provider name>. Add or remove sources: movie_sources.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("play", "search", "continue", "watchlist"))))
             .put("query", JSONObject().put("type", "string"))
-            .put("source", JSONObject().put("type", "string").put("description", "optional: archive | blender | local | jellyfin | a provider the user named"))
+            .put("source", JSONObject().put("type", "string").put("description", "optional: youtube | local | jellyfin | a provider's name"))
             .put("use_providers", JSONObject().put("type", "boolean")))
             .put("required", JSONArray(listOf("action")))))
 
     fun describe(a: JSONObject): String = when (a.optString("action")) { "play" -> "Finding the movie"; "search" -> "Searching movies"; "continue" -> "Picking up where you left off"; else -> "Movies" }
 
-    /** Did the user ask for their added sources? ("use my providers", "on <provider name>"). Pure; MovieToolsTest. */
-    fun userAllows(text: String, installedNames: List<String>): Boolean {
-        val t = text.lowercase()
-        if (Regex("""\b(my|added|installed|third[- ]party|custom) (providers?|sources?|repos?)\b|\bproviders?\b""").containsMatchIn(t)) return true
-        return installedNames.any { n -> n.length >= 3 && Regex("\\b" + Regex.escape(n.lowercase()) + "\\b").containsMatchIn(t) }
-    }
+    /** Providers join when the model asked (use_providers) or named one as the source. Pure; MovieToolsTest. */
+    fun allowProviders(a: JSONObject, installedNames: List<String>): Boolean =
+        a.optBoolean("use_providers") || installedNames.any { it.equals(a.optString("source").trim(), true) }
 
-    suspend fun run(ctx: Context, a: JSONObject, userText: String = ""): String = withContext(Dispatchers.IO) {
+    suspend fun run(ctx: Context, a: JSONObject): String = withContext(Dispatchers.IO) {
         Movies.init(ctx)
         val installed = runCatching { Movies.providers().state.installed.map { it.entry.name } }.getOrDefault(emptyList())
-        // Added sources only when the user's own words asked for them (named one, or "my providers / sources").
-        val asked = userText.isNotBlank() && userAllows(userText, installed)
-        val allow = asked && (a.optBoolean("use_providers") || installed.any { it.equals(a.optString("source").trim(), true) })
-        val pool = MovieHub.allowed(Movies.sources(), allow, a.optString("source"))
+        val pool = MovieHub.allowed(Movies.sources(), allowProviders(a, installed), a.optString("source"))
         when (a.optString("action")) {
             "play" -> play(ctx, pool, a.optString("query"))
             "search" -> search(pool, a.optString("query"))
@@ -60,7 +55,7 @@ object MovieTools {
         val pick = MovieHub.best(s.posts, query)
         if (pick == null) {
             if (s.posts.isNotEmpty()) { withContext(Dispatchers.Main) { StageMovies.showResults(query, s) }; return "No exact match for \u201c$query\u201d; the closest results are on the video card." + failed(s) }
-            return "Couldn't find \u201c$query\u201d in the free film sources" + (if (pool.any { it.id == "jellyfin" }) ", Jellyfin" else "") + "." + failed(s)
+            return "Couldn't find \u201c$query\u201d in " + pool.joinToString(", ") { it.name }.ifBlank { "any source" } + "." + failed(s)
         }
         val src = pool.first { it.id == pick.source }
         val play = try { MovieHub.resolve(src, pick, Movies.maxHeight(ctx)).also { Movies.note(src, null) } }
@@ -87,11 +82,7 @@ object MovieTools {
 
     private fun show(ctx: Context, p: MoviePlay): String =
         if (com.blaze.assistant.stage.StageStore.enabled) StageMovies.show(p)
-        else { com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, p); "Playing \u201c${p.title}\u201d in ${BrandName.NAME} Video." }
+        else { com.blaze.assistant.mediaapps.VideoActivity.openMovie(ctx, p); "Playing \u201c${p.title}\u201d in ${BrandName.NAME} Movie." }
 
     private fun failed(s: MovieHub.Search) = if (s.failed.isEmpty()) "" else " (Didn't answer: " + s.failed.joinToString(", ") { it.source.name } + ".)"
-
-    /** The in-app route ("play the movie Nosferatu", "search movies about trains", "continue watching"). */
-    suspend fun route(ctx: Context, action: String, query: String, text: String): String =
-        run(ctx, JSONObject().put("action", action).put("query", query).put("use_providers", true), text)
 }

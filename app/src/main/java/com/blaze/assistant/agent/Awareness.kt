@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
  * v0.37.0 Awareness: Argus knows what's going on in Argus and on the phone right now, and what just happened. "Skip
  * this song", "what was the movie I was just watching", "turn this up", "what's on my screen" work without asking.
  *
- *  - [Now]: live things, one per source key (the song in Argus Music, the video in Argus Video, another app's media
+ *  - [Now]: live things, one per source key (the song in Argus Music, the video in Argus Movie, another app's media
  *    session, the Argus screen or view in front, the design open). Features call [set] /
  *    [clear] from their own callbacks; a playing item's position is worked out at read time, so nothing has to tick.
  *  - [Event]: what just happened ("watched Dune, stopped at 41:02 of 2:35:12"), newest first, kept 3 days on disk
@@ -158,7 +158,7 @@ object Awareness {
         append("## ${BrandName.NAME} apps\n")
         append("- Chat: talking to ${BrandName.NAME} (this). Projects and Home (widgets) are its other tabs.\n")
         append("- ${BrandName.NAME} Music: library, songs from YouTube on every page, playlists, smart mixes, DJ, equaliser, sleep timer, lyrics. Drive it with music_ops.\n")
-        append("- ${BrandName.NAME} Video: library, Store, series and episodes, subtitles (incl. AI translation), recaps, picture-in-picture, resume where you left off. Drive it with video_ops.\n")
+        append("- ${BrandName.NAME} Movie (the Movie view): movies from YouTube, the user's videos, Jellyfin and open-source providers the user adds; series, subtitles (incl. AI translation), recaps, picture-in-picture, resume. Drive it with movies, movie_sources (add / list / fix sources) and video_ops.\n")
         append("- Gallery: photos and everything ${BrandName.NAME} makes; clean-up, trash, editor. Drive it with gallery / gallery_ops.\n")
         append("- Camera: Photo (Night, HDR), Document, Text (prices, sums), barcodes. blaze_camera, camera_math.\n")
         append("- Browser: ${BrandName.NAME}'s own browser (browser_open / browser_show) and installed site apps.\n")
@@ -187,7 +187,7 @@ object Awareness {
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "What's going on in ${BrandName.NAME} and on the phone: what's playing (${BrandName.NAME} Music, ${BrandName.NAME} Video, Spotify, YouTube and other apps), where a video was left, the screen and view in front, the design open, what the user just did, and every ${BrandName.NAME} feature with the tool that drives it. Use it for 'this song', 'the movie I was watching', 'what am I looking at', 'what can you do'.")
+        .put("description", "What's going on in ${BrandName.NAME} and on the phone: what's playing (${BrandName.NAME} Music, ${BrandName.NAME} Movie, Spotify, YouTube and other apps), where a video was left, the screen and view in front, the design open, what the user just did, and every ${BrandName.NAME} feature with the tool that drives it. Use it for 'this song', 'the movie I was watching', 'what am I looking at', 'what can you do'.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject())))
 
     // ---------------- disk ----------------

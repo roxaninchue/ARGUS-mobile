@@ -5,7 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 subtitles, the pure side (SubsTest). Argus Video never handed YouTube's caption tracks to the player, so
+ * v0.34.0 subtitles, the pure side (SubsTest). Argus Movie never handed YouTube's caption tracks to the player, so
  * the subtitle menu had nothing to turn on. Now:
  *  - [ytTracks] reads the caption tracks out of a YouTube player reply (manual and auto-generated, with names),
  *  - [parse] reads YouTube's json3 / srv1 XML, WebVTT and SubRip into [Cue]s (auto-caption "rolling" lines cleaned up),

@@ -16,7 +16,7 @@ import java.io.File
 import java.nio.ByteBuffer
 
 /**
- * v0.30.1: where Argus Music and Argus Video keep what they download. Wave B 1: new downloads go to Argus's private
+ * v0.30.1: where Argus Music and Argus Movie keep what they download. Wave B 1: new downloads go to Argus's private
  * storage ([privateDir], .nomedia, no MediaStore); the shared folders below are now only the default Export targets
  * (older downloads already saved there keep working):
  *

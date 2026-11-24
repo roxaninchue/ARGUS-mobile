@@ -8,7 +8,7 @@ import android.provider.OpenableColumns
 
 /**
  * 0.46.2 "Open with Blaze" for a video file from another app (Files, a browser download, a share). The only exported entry for
- * Movies: it reads just the video URI (no extras are trusted), and hands it to Argus Video, which plays it and keeps its place.
+ * Movies: it reads just the video URI (no extras are trusted), and hands it to Argus Movie, which plays it and keeps its place.
  */
 class MovieOpenActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

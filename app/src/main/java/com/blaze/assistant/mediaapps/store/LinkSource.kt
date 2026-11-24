@@ -222,7 +222,7 @@ object LinkParse {
         if (out.isEmpty()) throw StoreError("YouTube only offered protected streams for this video")
         val thumbs = vd.optJSONObject("thumbnail")?.optJSONArray("thumbnails") ?: JSONArray()
         val thumb = if (thumbs.length() > 0) thumbs.optJSONObject(thumbs.length() - 1)?.optString("url").orEmpty() else "https://i.ytimg.com/vi/$vid/hqdefault.jpg"
-        // v0.34.0: the caption tracks go with the streams, so Argus Video can side-load them as subtitles.
+        // v0.34.0: the caption tracks go with the streams, so Argus Movie can side-load them as subtitles.
         return StoreDetail("yt:$vid", vd.optString("title").ifBlank { "YouTube video" }, vd.optString("author"), vd.optString("lengthSeconds").toIntOrNull() ?: 0,
             thumb, out, "YouTube", subtitles = com.blaze.assistant.mediaapps.Subs.ytTracks(root))
     }

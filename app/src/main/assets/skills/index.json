@@ -331,6 +331,11 @@
       "name": "reverse-engineer-anything",
       "version": 1,
       "sha256": "e186240dd3814745574dc529be8c4c9551fc8f4cada5c1ff3cc919f8be903c87"
+    },
+    {
+      "name": "argus-movie",
+      "version": 1,
+      "sha256": "10eb01ad130f96c883c1cee673d2b041cc64acf73ddb78941e204ff400dd19e8"
     }
   ]
 }

@@ -470,12 +470,12 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
                 StageIconButton(Icons.Rounded.Speed, "Playback speed", size = 40.dp) { on(StageEvent.Video("speed")) }
                 StageIconButton(if (item.immersive) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen, if (item.immersive) "Exit full screen" else "Full screen", size = 40.dp) {
                     on(StageEvent.Video("fullscreen")) }
-                StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open in ${BrandName.NAME} Video", size = 40.dp) { on(StageEvent.OpenFull) }
+                StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open in ${BrandName.NAME} Movie", size = 40.dp) { on(StageEvent.OpenFull) }
             }
         }
         return
     }
-    // 0.46.2 Movies: search results (tap = play here), else Continue watching, else the Argus Video button.
+    // 0.46.2 Movies: search results (tap = play here), else Continue watching, else the Argus Movie button.
     val busy = item.props["busy"] == "true"
     if (results.isNotEmpty() || item.props["query"] != null) {
         Column(Modifier.fillMaxSize()) {
@@ -495,18 +495,18 @@ private fun VideoFace(item: StageItem, d: StageData, video: (@Composable (Modifi
             d.movies.forEachIndexed { i, pr -> MovieRow(pr.play.title, (pr.fraction * 100).toInt().toString() + "% watched", busy) { on(StageEvent.Video("resume:$i")) } }
             if (err.isNotBlank()) Text(err, color = c.sub, fontSize = 12.sp, maxLines = 2)
             Spacer(Modifier.height(6.dp))
-            StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open Movies in ${BrandName.NAME} Video", size = 40.dp) { on(StageEvent.OpenFull) }
+            StageIconButton(Icons.AutoMirrored.Rounded.OpenInNew, "Open Movies in ${BrandName.NAME} Movie", size = 40.dp) { on(StageEvent.OpenFull) }
             return@Column
         }
         Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = if (c.dark) 0.6f else 0.85f)), contentAlignment = Alignment.Center) {
-            StageIconButton(Icons.Rounded.PlayArrow, "Open in ${BrandName.NAME} Video", primary = true, size = 60.dp) { on(StageEvent.OpenFull) }
+            StageIconButton(Icons.Rounded.PlayArrow, "Open in ${BrandName.NAME} Movie", primary = true, size = 60.dp) { on(StageEvent.OpenFull) }
         }
         Spacer(Modifier.height(8.dp))
-        Text(if (url.isBlank()) "No video picked" else if (StageVideoUrl.isYouTube(url)) "YouTube plays in ${BrandName.NAME} Video" else url.substringAfterLast('/').take(60), color = c.sub, fontSize = 13.sp, maxLines = 1)
+        Text(if (url.isBlank()) "No video picked" else if (StageVideoUrl.isYouTube(url)) "YouTube plays in ${BrandName.NAME} Movie" else url.substringAfterLast('/').take(60), color = c.sub, fontSize = 13.sp, maxLines = 1)
     }
 }
 
-private fun sourceName(id: String): String = when { id == "archive" -> "Internet Archive"; id == "blender" -> "Blender"; id == "local" -> "Your videos"; id == "jellyfin" -> "Jellyfin"; id.startsWith("p:") -> id.removePrefix("p:"); else -> id }
+private fun sourceName(id: String): String = when { id == "youtube" -> "YouTube"; id == "local" -> "Your videos"; id == "jellyfin" -> "Jellyfin"; id.startsWith("p:") -> id.removePrefix("p:"); else -> id }
 
 /** One movie line on the video card: title, a small detail line, and a play icon (the whole row plays it). */
 @Composable

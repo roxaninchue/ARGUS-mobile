@@ -3,7 +3,7 @@ package com.blaze.assistant.mediaapps
 import kotlin.random.Random
 
 /**
- * v0.30.1 Argus Music / Argus Video: the pure rules (no Android), unit tested in MediaLogicTest.
+ * v0.30.1 Argus Music / Argus Movie: the pure rules (no Android), unit tested in MediaLogicTest.
  * Playback itself is media3 ExoPlayer; these decide what the screens show and what gets stored.
  */
 

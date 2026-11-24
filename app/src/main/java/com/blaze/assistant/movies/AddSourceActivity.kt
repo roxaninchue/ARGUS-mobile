@@ -5,7 +5,7 @@ import android.os.Bundle
 
 /**
  * 0.46.2 one-tap add-source links (blaze://add-source?url=… and https://blazeinchue.pages.dev/add-source?url=…). Reads only the
- * url parameter ([AddSourceLink.parse]); Argus Video's Movies tab then shows the source URL, how many providers it has, the
+ * url parameter ([AddSourceLink.parse]); Argus Movie's Movies tab then shows the source URL, how many providers it has, the
  * one-time notice, and a single Install button. Nothing is installed without that tap.
  */
 class AddSourceActivity : Activity() {

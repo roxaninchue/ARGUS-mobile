@@ -133,7 +133,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.VpnKey
 
 /**
- * v0.30.1: pieces shared by Argus Music and Argus Video: the Library | Store pill (the same look as the
+ * v0.30.1: pieces shared by Argus Music and Argus Movie: the Library | Store pill (the same look as the
  * Chat | Projects | Home pill), cover art, rows, and the Store (search any StoreSource as a plain thumbnail grid with
  * licences, preview, quality choice, download queue). Never a web view. v0.34.1: the player is no longer a tab; it opens
  * as a sheet over the Library ([PlayerSheet]) and collapses into a mini-player ([MiniBar]).
@@ -296,8 +296,7 @@ class StoreState(kind: String) {
 }
 
 /**
- * The Store tab: pick a source (YouTube; for video also public-domain films and Blender open movies, and YouTube when
- * the plug-in is in this build), search, see results as a neat grid (picture, title, author, length, licence), the
+ * The Store tab: pick a source (YouTube, the only Store source since 0.55.13), search, see results as a neat grid (picture, title, author, length, licence), the
  * download queue on top. Tapping a result opens [PreviewSheet]. [onPlay] streams it right away.
  */
 @Composable
@@ -356,7 +355,7 @@ fun StoreView(kind: String, state: StoreState, onPlay: (StoreItem, StoreDetail, 
         val queries = ForYou.queries(typed, state.chip, seeds)
         val use = (if (src != null) listOf(src) else ready)
         if (use.isEmpty()) return
-        // One search per (source, query). In the For you mix a browsable catalogue (public-domain films, Blender)
+        // One search per (source, query). In the For you mix a browsable catalogue
         // lists its own picks instead of searching taste words it would never match.
         val pairs = use.flatMap { s -> if (mixMode && s.browsable) listOf(s to "") else queries.filter { it.isNotEmpty() || s.browsable }.map { q -> s to q } }
         if (pairs.isEmpty()) return

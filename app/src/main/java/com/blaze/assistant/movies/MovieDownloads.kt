@@ -13,8 +13,7 @@ import com.blaze.assistant.mediaapps.store.StoreFormat
 import com.blaze.assistant.mediaapps.store.StoreItem
 
 /**
- * 0.46.2 Movies downloads. Internet Archive / Blender files go through Argus's own download queue (resumable, verified, saved to
- * Videos); other direct files (Jellyfin, a provider's mp4) are queued with Android's DownloadManager (with the source's headers).
+ * 0.46.2 Movies downloads (0.55.13: the Internet Archive / Blender branch is gone). Direct files (YouTube, Jellyfin, a provider's mp4) are queued with Android's DownloadManager (with the source's headers).
  * Adaptive streams (HLS / DASH) can't be saved as one file and say so.
  */
 object MovieDownloads {
@@ -26,17 +25,6 @@ object MovieDownloads {
 
     fun start(ctx: Context, src: MovieSource, play: MoviePlay, s: MovieStream): String {
         why(s)?.let { return it }
-        if (src.id == "archive" || src.id == "blender") {
-            val id = play.ref.removePrefix("archive:")
-            val name = Uri.parse(s.link).lastPathSegment.orEmpty().ifBlank { "$id.mp4" }
-            val ext = name.substringAfterLast('.', "mp4").lowercase()
-            val f = StoreFormat(name, s.link, if (ext == "ogv") "video/ogg" else "video/mp4", contentLength = s.bytes, hasAudio = true, hasVideo = true,
-                height = MovieJson.qualityRank(s.quality), name = play.title)
-            val item = StoreItem("archive-films", id, play.title, "", thumb = play.image, licence = if (src.id == "blender") "CC BY" else "Public domain")
-            val d = StoreDetail(id, play.title, "", 0, play.image, listOf(f), item.licence, "")
-            Downloads.add(ctx, item, d, Choice("f:$name", s.quality.ifBlank { "Video" }, ext, listOf(name), ext, s.bytes, height = f.height), "video")
-            return "Downloading \u201c${play.title}\u201d to Videos."
-        }
         val dm = ctx.getSystemService(DownloadManager::class.java) ?: return "Downloads aren't available on this phone"
         val file = (play.title.replace(Regex("[^\\p{L}\\p{N} ._-]"), "").trim().ifBlank { "video" }.take(80)) + "." + s.type.lowercase().ifBlank { "mp4" }.take(5)
         val r = DownloadManager.Request(Uri.parse(s.link)).setTitle(play.title).setDescription("${BrandName.NAME} Movies")

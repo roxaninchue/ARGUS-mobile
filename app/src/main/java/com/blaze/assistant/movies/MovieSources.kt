@@ -7,9 +7,9 @@ import java.net.URL
 import java.net.URLEncoder
 
 /**
- * 0.46.2 a place movies come from. Built in (official / legal only): Internet Archive public-domain feature films, the Blender
- * open movies, the user's own videos, and a Jellyfin server the user adds. Plus any provider the user installed from a source
- * repo they added themselves ([JsProviderSource]). [official] is false only for those user-installed providers.
+ * 0.46.2 a place movies come from. Built in (0.55.13): YouTube ([YouTubeMovies]), the user's own videos, and a Jellyfin server
+ * the user adds. Plus any open-source provider the user installed from a source repo they added ([JsProviderSource]).
+ * [official] is false only for those user-installed providers. Internet Archive and Blender were removed in 0.55.13.
  */
 interface MovieSource {
     val id: String
@@ -23,7 +23,7 @@ interface MovieSource {
     suspend fun streams(link: MovieLink): List<MovieStream>
 }
 
-/** Small blocking HTTP GET for the official sources (archive.org JSON, a Jellyfin server); call off the main thread. */
+/** Small blocking HTTP GET for the official sources (a Jellyfin server); call off the main thread. */
 object MovieHttp {
     @Volatile var override: ((String, Map<String, String>) -> String)? = null
     fun get(url: String, headers: Map<String, String> = emptyMap()): String = override?.invoke(url, headers) ?: send("GET", url, headers, null)
@@ -43,92 +43,6 @@ object MovieHttp {
         } finally { c.disconnect() }
     }
     fun enc(s: String): String = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
-}
-
-// ---------------------------------------------------------------- Internet Archive
-
-/** Pure parsers for archive.org advancedsearch + metadata JSON (ArchiveMoviesTest, recorded fixtures). */
-object ArchiveMovieParse {
-    fun thumb(id: String) = "https://archive.org/services/img/$id"
-    fun fileUrl(id: String, name: String) = "https://archive.org/download/$id/" + name.split('/').joinToString("/") { MovieHttp.enc(it) }
-    private fun str(o: JSONObject, k: String): String = when (val v = o.opt(k)) { is JSONArray -> if (v.length() > 0) v.optString(0) else ""; null, JSONObject.NULL -> ""; else -> v.toString() }
-
-    fun search(json: String, source: String): List<MoviePost> {
-        val docs = JSONObject(json).optJSONObject("response")?.optJSONArray("docs") ?: return emptyList()
-        return (0 until docs.length()).mapNotNull { i -> docs.optJSONObject(i)?.let { d ->
-            val id = str(d, "identifier"); if (id.isBlank()) null
-            else MoviePost(str(d, "title").ifBlank { id }.take(200), "archive:$id", thumb(id), source, str(d, "year").take(4))
-        } }
-    }
-
-    private fun clean(html: String): String = org.jsoup.Jsoup.parse(html.replace("\n", "<br>")).wholeText().replace(Regex("[ \\t]+"), " ").replace(Regex("\\n{3,}"), "\n\n").trim()
-
-    fun info(json: String, licenceDefault: String): MovieInfo {
-        val root = JSONObject(json); val md = root.optJSONObject("metadata") ?: JSONObject()
-        val id = str(md, "identifier")
-        val subj = str(md, "subject").split(';', ',').map { it.trim() }.filter { it.isNotEmpty() && !it.equals("pdmovies", true) }.take(6)
-        val lic = str(md, "licenseurl").let { if (it.contains("publicdomain", true)) "Public domain" else if (it.contains("creativecommons", true)) "Creative Commons" else licenceDefault }
-        val year = str(md, "year").take(4)
-        return MovieInfo(str(md, "title").ifBlank { id }, clean(str(md, "description")).take(3000), thumb(id), "movie",
-            listOf(MovieGroup("Watch", direct = listOf(MovieLink("Play", "archive:$id")))), (listOf(year) + subj).filter { it.isNotBlank() }, "", emptyList(), lic)
-    }
-
-    /** Playable derivatives: h.264 / MPEG4 mp4, Ogg Video; best first by height. Subtitles from .srt / .vtt files in the item. */
-    fun streams(json: String): List<MovieStream> {
-        val root = JSONObject(json); val md = root.optJSONObject("metadata") ?: JSONObject()
-        val id = str(md, "identifier")
-        val files = root.optJSONArray("files") ?: JSONArray()
-        val subs = ArrayList<MovieSubtitle>(); val out = ArrayList<MovieStream>()
-        for (i in 0 until files.length()) {
-            val f = files.optJSONObject(i) ?: continue
-            val name = f.optString("name"); val fmt = f.optString("format").lowercase(); val ext = name.substringAfterLast('.', "").lowercase()
-            val size = f.optString("size").toLongOrNull() ?: 0L
-            val h = f.optString("height").toIntOrNull() ?: 0
-            when {
-                ext == "vtt" || ext == "srt" -> subs += MovieSubtitle(fileUrl(id, name), langOf(name), if (fmt.contains("asr") || name.contains(".asr.")) "Auto captions" else name.substringAfterLast('/').substringBeforeLast('.').take(40), MovieJson.subMime(name))
-                (ext == "mp4" || ext == "m4v") && (fmt.contains("mpeg4") || fmt.contains("h.264") || fmt.contains("mp4")) ->
-                    out += MovieStream(if (fmt.contains("512kb")) "Archive (small)" else "Archive", fileUrl(id, name), "mp4", if (h > 0) "${h}p" else "", bytes = size)
-                ext == "ogv" || fmt == "ogg video" -> out += MovieStream("Archive (Ogg)", fileUrl(id, name), "ogv", if (h > 0) "${h}p" else "", bytes = size)
-            }
-        }
-        val s = subs.sortedBy { if (it.label == "Auto captions") 1 else 0 }
-        return out.sortedWith(compareBy<MovieStream> { if (it.type == "mp4") 0 else 1 }.thenByDescending { MovieJson.qualityRank(it.quality) }).map { it.copy(subtitles = s) }
-    }
-
-    private fun langOf(name: String): String = Regex("""[._-](en|es|fr|de|it|pt|ru|ja|zh|nl|sv|pl)\.(?:srt|vtt)$""", RegexOption.IGNORE_CASE).find(name)?.groupValues?.get(1)?.lowercase() ?: if (name.contains(".asr.")) "en" else ""
-
-    fun words(q: String) = q.replace(Regex("""[():"\\\[\]{}^~*?]"""), " ").replace(Regex("\\s+"), " ").trim()
-
-    fun searchUrl(query: String, sort: String = "downloads desc", rows: Int = 30): String =
-        "https://archive.org/advancedsearch.php?q=" + MovieHttp.enc(query) + listOf("identifier", "title", "year", "downloads").joinToString("") { "&fl%5B%5D=$it" } +
-            "&sort%5B%5D=" + MovieHttp.enc(sort) + "&rows=$rows&page=1&output=json"
-}
-
-open class ArchiveMovieSource(override val id: String, override val name: String, private val base: String, private val licence: String,
-                              private val homeRows: List<Pair<String, Pair<String, String>>>) : MovieSource {
-    override val official = true
-    private fun q(user: String) = ArchiveMovieParse.words(user).let { w -> (if (w.isEmpty()) "" else "($w) AND ") + base }
-    override suspend fun rows() = homeRows.map { (title, qs) -> title to runCatching { ArchiveMovieParse.search(MovieHttp.get(ArchiveMovieParse.searchUrl(q(qs.first), qs.second, 24)), id) }.getOrDefault(emptyList()) }
-    override suspend fun search(query: String) = ArchiveMovieParse.search(MovieHttp.get(ArchiveMovieParse.searchUrl(q(query))), id)
-    private fun meta(link: String) = MovieHttp.get("https://archive.org/metadata/" + MovieHttp.enc(link.removePrefix("archive:")))
-    override suspend fun info(post: MoviePost) = ArchiveMovieParse.info(meta(post.link), licence)
-    override suspend fun streams(link: MovieLink) = ArchiveMovieParse.streams(meta(link.link))
-}
-
-/** Internet Archive feature films: the public-domain Feature Films collection (+ Movies & Films items marked public domain). */
-object ArchiveFeatureFilms : ArchiveMovieSource("archive", "Internet Archive",
-    "(collection:feature_films OR (collection:moviesandfilms AND licenseurl:*publicdomain*)) AND mediatype:movies", "Public domain",
-    listOf("Most watched" to ("" to "downloads desc"), "Film noir" to ("subject:noir" to "downloads desc"), "Comedy" to ("subject:comedy" to "downloads desc"),
-        "Sci-fi" to ("subject:(science fiction)" to "downloads desc"), "Silent films" to ("subject:silent" to "downloads desc")))
-
-/** The Blender Studio open movies (CC BY) as archive.org hosts them. */
-object BlenderOpenMovies : ArchiveMovieSource("blender", "Blender open movies",
-    "identifier:(" + com.blaze.assistant.movies.BlenderIds.ids.joinToString(" OR ") + ")", "Creative Commons (CC BY)",
-    listOf("Blender open movies" to ("" to "downloads desc")))
-
-object BlenderIds {
-    val ids = listOf("BigBuckBunny_124", "ElephantsDream", "Sintel", "Tears-of-Steel", "CosmosLaundromatFirstCycle",
-        "spring_blenderopenmovie", "agent327operationbarbershop", "sprite-fright", "Caminandes1LlamaDrama", "Caminandes2GranDillama", "CaminandesLlamigos")
 }
 
 // ---------------------------------------------------------------- Jellyfin

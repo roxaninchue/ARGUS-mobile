@@ -69,7 +69,7 @@ object SelfMap {
         ViewInfo("home", "Home", "The ARGUS orb Home"),
         ViewInfo("browser", "Browser", "${BrandName.NAME}'s own browser and tabs"),
         ViewInfo("music", "Music", "${BrandName.NAME} Music: your songs and playlists", listOf("songs", "player")),
-        ViewInfo("video", "Video", "${BrandName.NAME} Video: your videos", listOf("videos", "movies")),
+        ViewInfo("video", "Movie", "${BrandName.NAME} Movie: movies and your videos", listOf("video", "videos", "movies")),
         ViewInfo("terminal", "Terminal", "A real terminal: your Alpine Linux or the phone shell", listOf("shell", "console")),
         ViewInfo("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made"),
         ViewInfo("look", "Look & feel", "Light / dark and accent", listOf("theme", "dark mode")),

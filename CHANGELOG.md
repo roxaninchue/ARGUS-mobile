@@ -1,3 +1,31 @@
+## 0.55.13 (versionCode 222, 2026-11-24): Argus Movie, with tools Argus can use
+Branch `argus-movie` (MR !78; written as 0.55.12 / 221 in parallel with !77, renumbered and brought into main on top of 0.55.12; not built yet, Finn wants one build after the next feature branches). Phone report 2026-11-24 01:47-01:55: asked to add a
+provider, Argus said it had no tool for it, guessed a website URL that the Add source field can't read ("No manifest.json
+found (404)"), and kept talking about Internet Archive and Blender.
+- Rename: Argus Video is **Argus Movie**; in the app the view is **Movie** (Views, Spotlight, the top bar, the Stage card's
+  buttons, the "Open with" label, the agent's own feature list). Internal ids stay (`video` view id, `VideoActivity`).
+- Sources: **YouTube is a built-in Movie source** (`YouTubeMovies`: Home rows "Full movies on YouTube" and "Trailers",
+  search, muxed streams up to 1080p with captions) next to the phone's videos, Jellyfin and the open-source providers the
+  user adds. **Internet Archive and Blender are gone** from Movie and the Video Store (`ArchiveFeatureFilms`,
+  `BlenderOpenMovies`, `ArchiveSources.kt`, the archive download branch, the preinstalled "Blaze Official" repo and its
+  bundled copy in assets; phones that had it seeded drop it once, `ProviderStore.dropLegacyOfficial`). The Add source
+  example is the shape of a link ("owner/repo or https://github.com/owner/repo") and says Argus can add it from chat.
+- Tools, all in the discoverable catalog (docs/LEAN-TOOLS.md), none added to the per-turn core:
+  - new `movie_sources`: list, add (a repo with manifest.json), remove, enable, disable, test, update, open. A failed add
+    tells the model what a source is and to find the repo with web_search or ask the user, instead of a website guess.
+  - `movies` rewritten: YouTube / your videos / Jellyfin built in; added providers join when the model sets
+    `use_providers` or names one as `source`. The `userAllows` regex on the user's words is gone.
+  - `video_ops` described as the Movie player.
+  - new skill `argus-movie` (load_skill): where movies come from, what a source is, how to add and fix one.
+- No trigger words: the Movies phrase routes in `InAppRoute` ("play the movie …", "search movies …", "continue
+  watching") are removed; the model picks `movies`.
+- Docs: docs/LEAN-TOOLS.md, the owner rule that new tools go in the catalog, never every turn (AGENTS.md, STATUS.md,
+  docs/README.md, docs/LEAN-HARNESS.md point to it).
+- Gateway: catalog regenerated on Blaze-agent branch `argus-movie` (1832ac1b), upload only.
+- Tests: MovieSourceToolsTest (6, new), MovieRouteTest (rewritten: phrases reach the model), ProviderRepoTest (legacy repo
+  dropped, nothing preinstalled), VideoRevampTest / VideoCrashHardeningTest / StoreSourcesTest updated, ArchiveMoviesTest
+  and the archive fixtures removed. Not compiled here; CI is the first compile.
+
 ## 0.55.12 (versionCode 221, 2026-11-24): model list closes only with its X, slow scrolls work, full-screen intro
 Branch `fix/model-sheet-scroll-intro` (merge request into main). Finn's UI rules, now in docs/UI-RULES.md.
 - Model selector closes only with its X (Back too): never from a swipe, a drag, a list pulled past its top or a tap on

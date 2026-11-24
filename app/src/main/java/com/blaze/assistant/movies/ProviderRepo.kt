@@ -38,14 +38,10 @@ object ProviderRepo {
 
     val SAFE_ID = Regex("^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 
-    /**
-     * Argus's own example repo (Vega format: Internet Archive + Blender open movies), preinstalled as "Blaze Official". Its source
-     * lives in Argus's GitLab (blazeinchue-group/blaze-providers-example); the public copy is served from Argus's site.
-     */
-    const val OFFICIAL_BASE = "https://blazeinchue.pages.dev/providers/blaze-official"
-    const val OFFICIAL_LABEL = "${BrandName.NAME} Official"
-    /** What the Add source field shows as its example (Argus's own repo, never a third-party one). */
-    const val EXAMPLE = OFFICIAL_BASE
+    /** 0.55.13: the old preinstalled example repo (Internet Archive + Blender). Only used to remove it from phones that had it. */
+    const val LEGACY_OFFICIAL_BASE = "https://blazeinchue.pages.dev/providers/blaze-official"
+    /** What the Add source field shows as its example: the shape of a link, never a real third-party repo. */
+    const val EXAMPLE = "owner/repo or https://github.com/owner/repo"
 
     private val SHORTHAND = Regex("^([A-Za-z0-9][A-Za-z0-9-]{0,38})/([A-Za-z0-9._-]{1,100})$")
     private val GH = Regex("(?i)^https?://(?:www\\.)?github\\.com/([^/]+)/([^/]+?)(?:\\.git)?(?:/(?:tree|blob)/([^/]+)(/.*)?)?$")

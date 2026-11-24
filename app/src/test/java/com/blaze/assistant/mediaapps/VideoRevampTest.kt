@@ -13,7 +13,7 @@ import org.junit.Test
 class VideoRevampTest {
     private val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
     private fun src(path: String) = java.io.File(root, "com/blaze/assistant/$path").readText()
-    private fun post(i: Int, src: String = "archive", img: String = "https://archive.org/i/$i.jpg") = MoviePost("Film $i", "$src:$i", img, src)
+    private fun post(i: Int, src: String = "youtube", img: String = "https://example.com/i/$i.jpg") = MoviePost("Film $i", "$src:$i", img, src)
 
     @Test fun navAndOldIds() {
         assertEquals(listOf("home", "search", "library", "sources"), VideoNav.tabs.map { it.id })
@@ -24,23 +24,23 @@ class VideoRevampTest {
     }
 
     @Test fun homeRowOrderAndTitles() {
-        assertEquals(listOf("archive", "blender", "local", "jellyfin", "p:one"), VideoHome.order(listOf("p:one", "local", "jellyfin", "archive", "blender")))
+        // 0.55.13: YouTube and the phone's videos are the built-in rows (Internet Archive and Blender removed).
+        assertEquals(listOf("youtube", "local", "jellyfin", "p:one"), VideoHome.order(listOf("p:one", "local", "jellyfin", "youtube")))
         // Rows only for sources the user has: nothing invented when a provider isn't installed.
-        assertEquals(listOf("archive", "blender", "local"), VideoHome.order(listOf("archive", "blender", "local")))
-        assertEquals("Free films", VideoHome.rowTitle("archive", "Internet Archive", "Feature films"))
-        assertEquals("Blender open movies", VideoHome.rowTitle("blender", "Blender", ""))
+        assertEquals(listOf("youtube", "local"), VideoHome.order(listOf("youtube", "local")))
+        assertEquals("Full movies on YouTube", VideoHome.rowTitle("youtube", "YouTube", "Full movies on YouTube"))
         assertEquals("My videos", VideoHome.rowTitle("local", "Your videos", "Your videos"))
         assertEquals("Movies \u00b7 Home server", VideoHome.rowTitle("jellyfin", "Home server", "Movies"))
     }
 
     @Test fun heroPicksResumeThenOfficialPosters() {
-        val pr = Progress(MoviePlay("m1", "Nosferatu", "https://archive.org/x.mp4", "https://archive.org/n.jpg", "archive"), 600_000, 5_000_000, 1)
-        val rows = mapOf("local" to listOf(post(9, "local")), "blender" to listOf(post(1, "blender"), post(2, "blender", img = "")), "archive" to (3..8).map { post(it) })
+        val pr = Progress(MoviePlay("m1", "Nosferatu", "https://example.com/x.mp4", "https://example.com/n.jpg", "youtube"), 600_000, 5_000_000, 1)
+        val rows = mapOf("local" to listOf(post(9, "local")), "p:one" to listOf(post(1, "p:one"), post(2, "p:one", img = "")), "youtube" to (3..8).map { post(it) })
         val h = VideoHome.hero(listOf(pr), rows)
         assertEquals(5, h.size)
         assertEquals("Nosferatu", h[0].title); assertTrue(h[0].resume != null)
         assertTrue(h.drop(1).all { it.post != null && it.image.isNotBlank() && it.post!!.source != "local" })
-        assertEquals("archive:3", h[1].post!!.link)   // archive (Free films) before Blender
+        assertEquals("youtube:3", h[1].post!!.link)   // built-in YouTube before added providers
         assertTrue(VideoHome.hero(emptyList(), emptyMap()).isEmpty())
     }
 

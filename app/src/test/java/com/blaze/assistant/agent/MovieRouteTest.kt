@@ -1,23 +1,24 @@
 package com.blaze.assistant.agent
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 0.46.2 Movies routing on the Stage video card. */
+/**
+ * 0.55.13 (Finn: no trigger words, the model decides): movie requests are no longer matched by phrases. They go to the model,
+ * which picks `movies` / `movie_sources` from the catalog.
+ */
 class MovieRouteTest {
-    private fun m(t: String) = InAppRoute.match(t)
-
-    @Test fun moviePhrasesRoute() {
-        assertEquals(InAppRoute.Route.Movie("play", "nosferatu"), m("play the movie Nosferatu").let { if (it is InAppRoute.Route.Movie) it.copy(query = it.query.lowercase()) else it })
-        assertEquals("play", (m("watch Sintel") as InAppRoute.Route.Movie).action)
-        assertEquals(InAppRoute.Route.Movie("search", "trains"), m("search movies about trains").let { if (it is InAppRoute.Route.Movie) it.copy(query = it.query.lowercase()) else it })
-        assertEquals(InAppRoute.Route.Movie("continue"), m("continue watching"))
+    @Test fun moviePhrasesReachTheModel() {
+        for (t in listOf("play the movie Nosferatu", "watch Sintel", "search movies about trains", "continue watching"))
+            assertNull(t, InAppRoute.match(t))
     }
 
-    @Test fun otherThingsDontBecomeMovies() {
-        for (t in listOf("watch out for the rain", "watch youtube", "play music", "what's playing")) {
-            assertNotEquals(t, true, m(t) is InAppRoute.Route.Movie)
-        }
+    @Test fun noMovieRegexLeft() {
+        val root = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
+        val src = java.io.File(root, "com/blaze/assistant/agent/InAppRoute.kt").readText()
+        assertTrue(!src.contains("moviePlay") && !src.contains("movieSearch") && !src.contains("Route.Movie"))
+        val tools = java.io.File(root, "com/blaze/assistant/movies/MovieTools.kt").readText()
+        assertTrue("no regex on the user's words gates providers", !tools.contains("userAllows") && !tools.contains("Regex("))
     }
 }

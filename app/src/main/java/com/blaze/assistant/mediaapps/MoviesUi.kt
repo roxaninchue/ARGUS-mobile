@@ -105,7 +105,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 0.46.2 Argus Video › Movies: home rows per source, search across enabled sources (failed ones named), details with seasons /
+ * 0.46.2 Argus Movie › Movies: home rows per source, search across enabled sources (failed ones named), details with seasons /
  * episodes, server and quality choice, watchlist, continue watching, downloads, the user's Jellyfin server, and the Providers
  * screen for sources the user adds. Compact and icon-only like the 0.46.1 Stage. The stateless parts are screenshot-tested.
  */
@@ -517,7 +517,7 @@ internal fun ProvidersList(st: ProviderStore.State, busy: List<String>, msg: Str
             StageIconButton(Icons.Rounded.Refresh, "Check for updates", size = 40.dp, enabled = "refresh" !in busy && st.repos.isNotEmpty()) { onRefresh() }
             StageIconButton(Icons.Rounded.Add, "Add source", primary = true, size = 40.dp) { onAdd() }
         }
-        Text("Built in: Internet Archive, Blender open movies, your videos" + (if (Movies.jellyfinAccount() != null) ", Jellyfin" else "") + ".",
+        Text("Built in: YouTube, your videos" + (if (Movies.jellyfinAccount() != null) ", Jellyfin" else "") + ".",
             color = c.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
         if (msg.isNotBlank()) Text(msg, color = c.sub, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
         if (st.installed.isEmpty()) { EmptyState("No added sources", "Add a source by its URL with the + button. ${BrandName.NAME} doesn't suggest or check sources.", mark = false); return@Column }
@@ -552,11 +552,11 @@ private fun StatusIcon(s: ProviderStore.Status) {
 @Composable
 internal fun AddSourceDialog(onCancel: () -> Unit, onAdd: (String) -> Unit) {
     var url by remember { mutableStateOf("") }
-    // The field starts empty: the hint is Argus's own example repo (what a link looks like), never a third-party one.
+    // The field starts empty: the hint shows the shape of a link, never a third-party repo.
     BlazeDialog("Add source", "Type or paste a source: owner/repo, a GitHub or GitLab link, or a folder with manifest.json. ${BrandName.NAME} finds the manifest.",
         confirm = "Add", onConfirm = { if (url.isNotBlank()) onAdd(url.trim()) }, dismiss = "Cancel", onDismiss = onCancel) {
         BlazeTextField(url, { url = it }, ProviderRepo.EXAMPLE, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
-        Text("Example: " + ProviderRepo.EXAMPLE, color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+        Text("Example: " + ProviderRepo.EXAMPLE + ". You can also ask ${BrandName.NAME} in chat to add one.", color = LocalBlaze.current.sub, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
     }
 }
 

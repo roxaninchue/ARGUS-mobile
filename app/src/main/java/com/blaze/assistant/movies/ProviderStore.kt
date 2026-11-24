@@ -97,24 +97,12 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
     }
 
     /**
-     * 0.46.2 preinstall Argus's own example repo ("Blaze Official") from the copy bundled in the app, once. Its providers start
-     * switched off for browsing (the built-in Internet Archive / Blender sources show the same films); they can be tested,
-     * switched on, and updated from the repo like any other.
+     * 0.55.13: the old preinstalled "Blaze Official" repo (Internet Archive + Blender providers) is gone. Phones that had it
+     * seeded drop it once; a repo the user added themselves is never touched.
      */
-    fun seedOfficial(bundled: (String) -> String?) {
-        if (state.seeded) return
-        try {
-            val entries = ProviderRepo.parseManifest(bundled("manifest.json") ?: return)
-            val base = ProviderRepo.OFFICIAL_BASE
-            val installed = ArrayList(state.installed)
-            for (e in entries) {
-                val d = moduleDir(base, e.value); d.mkdirs()
-                for (f in ProviderRepo.REQUIRED + ProviderRepo.OPTIONAL) bundled("dist/${e.value}/$f.js")?.let { File(d, "$f.js").writeText(it) }
-                if (installed.none { it.value == e.value }) installed += Installed(e, base, Status.NOT_TESTED, "", enabled = false, latest = e.version)
-            }
-            val repos = if (state.repos.any { it.base == base }) state.repos else listOf(Repo(base, ProviderRepo.OFFICIAL_LABEL, 0L)) + state.repos
-            save(state.copy(repos = repos, installed = installed, seeded = true))
-        } catch (_: Exception) { save(state.copy(seeded = true)) }
+    fun dropLegacyOfficial() {
+        if (state.repos.any { it.base == ProviderRepo.LEGACY_OFFICIAL_BASE } || state.installed.any { it.repo == ProviderRepo.LEGACY_OFFICIAL_BASE })
+            removeRepo(ProviderRepo.LEGACY_OFFICIAL_BASE)
     }
 
     fun manifest(base: String): List<ProviderRepo.Entry> = ProviderRepo.parseManifest(fetch(ProviderRepo.manifestUrl(base)))
@@ -175,7 +163,7 @@ class ProviderStore(private val dir: File, private val kv: Kv, private val fetch
 
     fun source(value: String, sandbox: ProviderSandbox = ProviderSandbox()): JsProviderSource? = state.installed.firstOrNull { it.value == value }?.let { i ->
         JsProviderSource(i.entry, { f -> module(value, f) }, ProviderSandbox.ProviderEnv(i.settings, kvs.getOrPut(value) { LinkedHashMap() }), sandbox,
-            official = i.repo == ProviderRepo.OFFICIAL_BASE)
+            official = false)
     }
 
     /** Enabled providers as movie sources (the active one first). */

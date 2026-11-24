@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * v0.34.0 agent tool `video_ops`: Argus Video from the chat. Plays a library video, lists series, turns subtitles on
+ * v0.34.0 agent tool `video_ops`: the Argus Movie player from the chat (0.55.13: finding movies is `movies`, sources `movie_sources`). Plays a library video, lists series, turns subtitles on
  * in a language (or off), translates subtitles with AI, writes a recap of what's been said so far, and switches
  * autoplay / smart downloads / data saver.
  */
@@ -17,7 +17,7 @@ object VideoTools {
     const val TOOL = "video_ops"
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "${BrandName.NAME} Video (the in-app video player). action: play (query = a video title in the user's library), series (list the " +
+        .put("description", "${BrandName.NAME} Movie player (the video playing now, and the library). action: play (query = a video title in the user's library), series (list the " +
             "series / episodes in the library), subtitles (language = a language name or code, or \"off\"; for the video playing now), " +
             "translate_subtitles (language: AI-translates the video's subtitles and turns them on), recap (a short recap of the video " +
             "playing now, from its subtitles, up to where the user is), settings (autoplay / smart_downloads / data_saver true|false).")
@@ -49,17 +49,17 @@ object VideoTools {
         return when (args.optString("action")) {
             "play" -> {
                 val v = find(MediaLib.videos.value, args.optString("query")) ?: return "No video like \u201c${args.optString("query")}\u201d in the library. " +
-                    "Videos come from the Video Store (downloads) and ${BrandName.NAME}'s Gallery."
-                VideoActivity.openAndPlay(ctx, v.key); "Playing \u201c${v.title}\u201d in ${BrandName.NAME} Video."
+                    "Find it online with the movies tool (YouTube, added providers)."
+                VideoActivity.openAndPlay(ctx, v.key); "Playing \u201c${v.title}\u201d in ${BrandName.NAME} Movie."
             }
             "series" -> {
                 val s = VideoSmart.series(MediaLib.videos.value)
                 if (s.isEmpty()) "No series in the library (episodes are grouped from titles like \u201cShow S01E02\u201d or \u201cShow - Episode 3\u201d)."
                 else s.joinToString("\n") { (n, eps) -> "$n: ${eps.size} episodes (${eps.first().title} \u2026 ${eps.last().title})" }
             }
-            "subtitles" -> live?.subtitlesTo(args.optString("language").ifBlank { "off" }) ?: "${BrandName.NAME} Video isn't open. Play a video first."
-            "translate_subtitles" -> live?.translate(args.optString("language")) ?: "${BrandName.NAME} Video isn't open. Play a video first."
-            "recap" -> live?.recap() ?: "${BrandName.NAME} Video isn't open. Play a video first."
+            "subtitles" -> live?.subtitlesTo(args.optString("language").ifBlank { "off" }) ?: "${BrandName.NAME} Movie isn't open. Play a video first."
+            "translate_subtitles" -> live?.translate(args.optString("language")) ?: "${BrandName.NAME} Movie isn't open. Play a video first."
+            "recap" -> live?.recap() ?: "${BrandName.NAME} Movie isn't open. Play a video first."
             "settings" -> {
                 val out = ArrayList<String>()
                 if (args.has("autoplay")) { MediaPrefs.setBool(ctx, MediaPrefs.AUTOPLAY, args.optBoolean("autoplay")); out += "autoplay ${onOff(args.optBoolean("autoplay"))}" }

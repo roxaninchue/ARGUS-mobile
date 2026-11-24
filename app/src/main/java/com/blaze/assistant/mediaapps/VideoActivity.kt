@@ -142,7 +142,7 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Refresh
 
 /**
- * v0.30.1 Argus Video: its own full-screen app inside Argus with the Library | Store pill (v0.34.1: the player is a
+ * v0.30.1 Argus Movie: its own full-screen app inside Argus with the Library | Store pill (v0.34.1: the player is a
  * sheet over the Library, tab "player" = the sheet is open; swiping it down leaves a mini-player and keeps playing). ExoPlayer with
  * gestures (left half up/down = brightness, right half = volume, double-tap ±10 s; no swipe-seek since wave A),
  * fullscreen with rotation, picture-in-picture, speed, subtitle and audio-track choice, and resume where you left off.
@@ -500,7 +500,7 @@ class VideoActivity : ComponentActivity(), com.blaze.assistant.ui.BackRule.ToCha
     }
     fun pickMovieFile() { runCatching { pickMovie.launch(arrayOf("video/*")) } }
 
-    private fun sourceLabel(id: String) = when { id == "archive" -> "Internet Archive"; id == "blender" -> "Blender open movie"; id == "local" -> "Your video"; id == "jellyfin" -> "Jellyfin"; id.startsWith("p:") -> id.removePrefix("p:"); else -> id }
+    private fun sourceLabel(id: String) = when { id == "youtube" -> "YouTube"; id == "local" -> "Your video"; id == "jellyfin" -> "Jellyfin"; id.startsWith("p:") -> id.removePrefix("p:"); else -> id }
 
     /** Plays a library video from where it was left. */
     fun play(t: Track) {
@@ -848,7 +848,7 @@ private fun VideoApp(a: VideoActivity) {
     com.blaze.assistant.ui.space.SpaceBackdrop {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
             // 23 Nov 2026 (Finn's Movies mockup): the view's name, then search and notifications (downloads) on the right.
-            if (detail == null) MediaTopBar("Movies", onSearch = { go("search") }, kind = "video",
+            if (detail == null) MediaTopBar("Movie", onSearch = { go("search") }, kind = "video",
                 onAccount = { account = true }, onClose = { a.leaveToChat() })
             if (note.isNotBlank()) MText(note, 12.sp, c.sub, modifier = Modifier.padding(horizontal = 16.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {

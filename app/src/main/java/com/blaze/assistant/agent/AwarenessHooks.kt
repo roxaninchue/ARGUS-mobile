@@ -18,14 +18,14 @@ import androidx.media3.common.Player
  *  - the Argus screen in front (activity callbacks) and the view open over the chat (Views.showing, Design's title);
  *  - other apps' media (Spotify, YouTube, podcasts…) from their media sessions, read through the notification
  *    listener Argus already has (no new permission; nothing when notification access is off);
- *  - Argus Music and Argus Video report their own player ([music], [video], [videoClosed]).
+ *  - Argus Music and Argus Movie report their own player ([music], [video], [videoClosed]).
  * All readers are cheap and never throw.
  */
 object AwarenessHooks {
     @Volatile private var installed = false
     @Volatile private var started = 0
     private val friendly = mapOf(
-        "MainActivity" to "Chat", "VideoActivity" to "${BrandName.NAME} Video", "MusicActivity" to "${BrandName.NAME} Music",
+        "MainActivity" to "Chat", "VideoActivity" to "${BrandName.NAME} Movie", "MusicActivity" to "${BrandName.NAME} Music",
         "BrowserActivity" to "Browser", "SiteAppActivity" to "a site app",
         "BlazeTerminalActivity" to "Terminal",
     )
@@ -110,12 +110,12 @@ object AwarenessHooks {
 
     fun musicStopped() = Awareness.clear("music")
 
-    /** Argus Video's player: the video loaded, played, paused or moved. */
+    /** Argus Movie's player: the video loaded, played, paused or moved. */
     fun video(p: Player, t: com.blaze.assistant.mediaapps.Track?) {
         try {
             if (t == null) { Awareness.clear("video"); return }
             val dur = p.duration.takeIf { it > 0 } ?: t.durationMs.takeIf { it > 0 } ?: -1
-            Awareness.set(Awareness.Now("video", if (p.isPlaying) "Watching" else "Paused", t.title, "${BrandName.NAME} Video",
+            Awareness.set(Awareness.Now("video", if (p.isPlaying) "Watching" else "Paused", t.title, "${BrandName.NAME} Movie",
                 "", p.currentPosition, dur, p.isPlaying))
         } catch (_: Throwable) { }
     }
@@ -127,7 +127,7 @@ object AwarenessHooks {
             val dur = p.duration.takeIf { it > 0 } ?: t.durationMs
             val pos = p.currentPosition
             val done = dur > 0 && pos >= dur - 30_000
-            Awareness.did("watched", "watched \"${t.title}\" in ${BrandName.NAME} Video, " +
+            Awareness.did("watched", "watched \"${t.title}\" in ${BrandName.NAME} Movie, " +
                 if (done) "finished it" else "stopped at ${Awareness.clock(pos)}" + (if (dur > 0) " of ${Awareness.clock(dur)}" else ""))
             if (clear) Awareness.clear("video")
         } catch (_: Throwable) { }

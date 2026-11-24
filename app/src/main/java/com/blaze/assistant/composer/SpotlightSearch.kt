@@ -139,7 +139,7 @@ object SpotlightSearch {
         return listOf(
             Row("fb:browse", Icon.BROWSER, "Browse $shown", "Search the web in a preview", Act.Browse(q), -1),
             Row("fb:music", Icon.MUSIC, "Music: search $shown", "Find songs in ${BrandName.NAME} Music", Act.MusicSearch(q), -2),
-            Row("fb:video", Icon.VIDEO, "Video: search $shown", "Find videos in ${BrandName.NAME} Video", Act.VideoSearch(q), -3),
+            Row("fb:video", Icon.VIDEO, "Movie: search $shown", "Find videos in ${BrandName.NAME} Movie", Act.VideoSearch(q), -3),
             Row("fb:ask", Icon.CHAT, "Ask ${BrandName.NAME} about \u2018$q\u2019".let { if (q.isBlank()) "Ask ${BrandName.NAME}" else it }, "Sends it into the chat", Act.AskBlaze(q), -4),
         )
     }

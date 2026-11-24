@@ -13,6 +13,8 @@ sooner and every step costs fewer input tokens.
 | Catalog tools | `find_tools` (search every tool and skill; found tools join from the next step) and `load_skill` (read one skill's steps) | `LeanTurn.findDef` / `loadSkillDef` |
 | Also kept | tools this chat already called (follow-ups keep their tools) and what `find_tools` found this turn | `LeanTurn.filter` |
 
+Adding a tool? Read docs/LEAN-TOOLS.md first: it goes in the catalog, not the core.
+
 So "Hi!" and "alarm at 7" go out with ~12-16 tools instead of ~50, and the route line says `· lean`.
 
 ## The catalog (blaze.db)
