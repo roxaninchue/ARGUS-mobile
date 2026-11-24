@@ -31,5 +31,6 @@ Last good: ... Broken: ... Fixed: ...
 
 | Date | Failure | Versions | Status |
 |---|---|---|---|
-| 2026-11-24 | [Bots and teams lost after clearing storage](2026-11-24-bots-lost-after-clearing-storage.md) | all before 0.55.17 | gap closed in 0.55.17 (not built); data not recoverable |
+| 2026-11-24 | [Build #141 red: a square corner on the new genre page](2026-11-24-red-build-141-square-shape.md) | 0.55.17 | fixed, rebuild running |
+| 2026-11-24 | [Bots and teams lost after clearing storage](2026-11-24-bots-lost-after-clearing-storage.md) | all before 0.55.17 | gap closed in 0.55.17; data not recoverable |
 | 2026-11-24 | [Crash right after sign-in: VerifyError on the chat loop](2026-11-24-verifyerror-after-sign-in.md) | broke 0.55.14, fixed 0.55.16 | fixed in 0.55.16, phone check pending |

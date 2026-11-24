@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -67,8 +68,8 @@ internal fun MusicGenrePage(tile: MusicGenres.Tile, cover: String, actions: Song
         item(key = "head") {
             Box(Modifier.fillMaxWidth().height(240.dp)) {
                 Art(if (cover.isBlank()) null else songTrack(StoreItem("youtube", "cover:" + tile.name, tile.name, "", thumb = cover, square = true)),
-                    Modifier.fillMaxSize(), RoundedCornerShape(0.dp), 600)
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.25f), Color.Black.copy(alpha = 0.75f)))))
+                    Modifier.fillMaxSize(), RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp), 600)
+                Box(Modifier.fillMaxSize().clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)).background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.25f), Color.Black.copy(alpha = 0.75f)))))
                 RoundIcon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White, fill = Color.Black.copy(alpha = 0.3f),
                     modifier = Modifier.padding(12.dp).align(Alignment.TopStart)) { onBack() }
                 Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
