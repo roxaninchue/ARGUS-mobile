@@ -1,6 +1,10 @@
 package com.blaze.assistant.connect
 
 
+import com.blaze.assistant.routine.Routines
+import com.blaze.assistant.team.TeamGraph
+import com.blaze.assistant.team.TeamJson
+import com.blaze.assistant.team.TeamStore
 import com.blaze.assistant.BrandName
 import android.content.Context
 import android.content.SharedPreferences
@@ -95,6 +99,8 @@ object CloudSync {
                 if (k != null && !applying && SyncedSettings.synced(k)) localChange(SyncKinds.SETTINGS)
             }.also { Settings.listen(it) }
         }
+        // 0.55.17: a bot, team or SOUL saved on this phone syncs within seconds (routines tell us from Routines.save).
+        TeamStore.onChange = { localChange(SyncKinds.BOTS) }
         if (isOn()) schedule(ctx, true)
     }
 
@@ -130,6 +136,19 @@ object CloudSync {
                 override fun put(key: String, v: Any?) = Settings.rawPut(key, v)
             }) { reloadSettings() },
             DesignAdapter({ com.blaze.assistant.agent.Designs.root() }),
+            // 0.55.17: bots and teams (team.db) and routines.
+            BotAdapter(object : BotSource {
+                private fun g() = TeamGraph.get(ctx)
+                override fun all(): List<BotSource.Entry> { val st = g().store
+                    return st.all().mapNotNull { b -> runCatching { BotSource.Entry(b.id, b.kind.name, b.u, TeamJson.encode(b), st.soul(b.id)) }.getOrNull() } }
+                override fun put(e: BotSource.Entry) { g().store.putSynced(TeamJson.decodeBot(e.bot).copy(id = e.id, u = e.u), e.soul) }
+                override fun remove(id: String) = g().store.removeSynced(id)
+            }) { id -> runCatching { TeamGraph.get(ctx).threads.syncedFromCloud(id) } },
+            RoutineAdapter(object : RoutineSource {
+                override fun all() = Routines.syncAll()
+                override fun put(e: RoutineSource.Entry) = Routines.syncPut(e.uid, e.u, e.data)
+                override fun remove(uid: String) = Routines.syncRemove(uid)
+            }),
         )
         return all.filter { kindOn(group(it.kind)) }
     }

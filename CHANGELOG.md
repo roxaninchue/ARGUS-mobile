@@ -1,3 +1,18 @@
+## 0.55.17 (versionCode 226, 2026-11-24): cloud sync carries bots, teams and routines
+Finn (24 Nov 13:46): "Cloud sync should now cover all important things like bots too". His Health team was gone after
+clearing storage for the sign-in crash, while memory (which syncs) still mentioned it. Bots, teams and routines lived
+only on the phone (team.db and the `routines` pref), so nothing could bring them back.
+- Two new sync kinds, each with its own switch on the Cloud sync page: **Bots & teams** (`bot`: every bot and team row
+  as TeamJson plus its latest SOUL; never Argus itself or short-lived subagents) and **Routines** (`routine`: scheduled
+  prompts and reminders; never shell-command jobs, never this phone's calendar event id).
+- Newest change wins per bot (`u`) and per routine. Routines get a stable `uid` (the same on every phone; the number
+  stays per phone) and a `u` stamped on every real edit (Routines.stamped); older routines get their uid on first read.
+- A bot, team or SOUL saved on this phone syncs within seconds (`TeamStore.onChange`), as does a routine
+  (`Routines.save`). A bot that arrives reloads the Team screen without a second hello.
+- Same end-to-end encryption and gateway API as the other kinds; no gateway change. An older Argus ignores the new kinds.
+- Not synced yet: bot conversation threads, jobs, and anything deleted before this build.
+- Tests: BotRoutineSyncTest. Not compiled with Gradle here; CI is the first compile (no build until Finn says).
+
 ## 0.55.16 (versionCode 225, 2026-11-24): fix the crash right after sign-in
 Finn's crash report from the 0.55.15 crash screen (24 Nov 11:03, Samsung A12, Android 12): `VerifyError: Verifier
 rejected class Agent$Session ... runLoop ... copy-reference type=Undefined`. R8 had inlined runLoop's local functions

@@ -2,6 +2,7 @@ package com.blaze.assistant.routine
 
 
 import com.blaze.assistant.BrandName
+import com.blaze.assistant.connect.*
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -22,10 +23,15 @@ data class Routine(val id: Int, val name: String, val prompt: String, val hour: 
                    /** v0.16.0: a one-off on a set date and time (epoch ms; 0 = by time of day and [days]). Assignment reminders use it. */
                    val at: Long = 0L,
                    /** 18 Nov 2026: its event on the user's calendar (RoutineCalendar); 0 = none. */
-                   val eventId: Long = 0L) {
+                   val eventId: Long = 0L,
+                   /** 0.55.17 cloud sync: the same on every phone ([id] is this phone's number). Given on first save. */
+                   val uid: String = "",
+                   /** 0.55.17 cloud sync: when it last changed (epoch ms), so the newest copy wins. */
+                   val u: Long = 0L) {
     fun toJson() = JSONObject().put("id", id).put("name", name).put("prompt", prompt).put("hour", hour)
         .put("minute", minute).put("days", days).put("enabled", enabled)
         .put("command", command).put("linux", linux).put("notify", notify).put("every_minutes", everyMinutes).put("at", at).put("event_id", eventId)
+        .put("uid", uid).put("u", u)
     val isCommand get() = command.isNotBlank()
 
     fun daysLabel(): String = if (at > 0) java.text.SimpleDateFormat("EEE d MMM", java.util.Locale.getDefault()).format(java.util.Date(at)) else if (everyMinutes > 0) "Every ${if (everyMinutes % 60 == 0) "${everyMinutes / 60} h" else "$everyMinutes min"}" else when (days) {
@@ -63,17 +69,58 @@ object Routines {
         (0 until a.length()).map { val o = a.getJSONObject(it)
             Routine(o.getInt("id"), o.getString("name"), o.getString("prompt"), o.getInt("hour"), o.getInt("minute"),
                 o.optInt("days", 127), o.optBoolean("enabled", true), o.optString("command"), o.optBoolean("linux"),
-                o.optString("notify", "always"), o.optInt("every_minutes", 0), o.optLong("at", 0L), o.optLong("event_id", 0L)) }
+                o.optString("notify", "always"), o.optInt("every_minutes", 0), o.optLong("at", 0L), o.optLong("event_id", 0L),
+                o.optString("uid"), o.optLong("u", 0L)) }
+            .let { l -> if (l.any { it.uid.isBlank() }) withUids(l).also { prefs.edit().putString("routines", JSONArray(it.map { r -> r.toJson() }).toString()).apply() } else l }
     } catch (_: Exception) { emptyList() }
+
+    /** 0.55.17: every routine gets its sync id once (routines saved by older builds get theirs on first read). */
+    internal fun withUids(l: List<Routine>): List<Routine> =
+        l.map { if (it.uid.isBlank()) it.copy(uid = "r" + java.util.UUID.randomUUID().toString().replace("-", "")) else it }
+
+    /** 0.55.17: a routine that changed (anything but its calendar link) gets a fresh [Routine.u]. */
+    internal fun stamped(old: List<Routine>, new: List<Routine>, now: Long): List<Routine> {
+        val before = old.associateBy { it.uid }
+        return withUids(new).map { r ->
+            val o = before[r.uid]
+            if (o == null || o.copy(u = 0L, eventId = 0L, id = 0) != r.copy(u = 0L, eventId = 0L, id = 0)) r.copy(u = now) else r
+        }
+    }
 
     /** The routines, once read (waits at most 3 s right after start, so a change never overwrites routines not read yet). */
     private fun cur(): List<Routine> { try { loaded.await(3, java.util.concurrent.TimeUnit.SECONDS) } catch (_: InterruptedException) { }; return _all.value }
 
-    private fun save(list: List<Routine>) {
+    private fun save(list0: List<Routine>, fromSync: Boolean = false) {
+        val list = if (fromSync) withUids(list0) else stamped(_all.value, list0, System.currentTimeMillis())
         _all.value = list
         prefs.edit().putString("routines", JSONArray(list.map { it.toJson() }).toString()).apply()
         scheduleAll()
         try { com.blaze.assistant.agent.TurnContextSource.invalidate() } catch (_: Throwable) { }   // v0.45.9: the next turn's [context] block is rebuilt
+        if (!fromSync) try { CloudSync.localChange(SyncKinds.ROUTINES) } catch (_: Throwable) { }
+    }
+
+    // ---------------- cloud sync (0.55.17) ----------------
+
+    /** Every routine as cloud sync sees it (the adapter leaves out shell jobs). */
+    fun syncAll(): List<RoutineSource.Entry> =
+        cur().map { RoutineSource.Entry(it.uid, it.u, it.toJson()) }
+
+    /** A routine from another phone: replaces the one with its uid here (keeping this phone's number and calendar event) or adds it. */
+    fun syncPut(uid: String, u: Long, d: JSONObject) {
+        val list = cur()
+        val here = list.firstOrNull { it.uid == uid }
+        val r = Routine(here?.id ?: ((list.maxOfOrNull { it.id } ?: 0) + 1), d.optString("name").trim().ifEmpty { "Routine" }, d.optString("prompt"),
+            d.optInt("hour").coerceIn(0, 23), d.optInt("minute").coerceIn(0, 59), d.optInt("days", 127), d.optBoolean("enabled", true),
+            notify = d.optString("notify", "always"), everyMinutes = d.optInt("every_minutes", 0), at = d.optLong("at", 0L),
+            eventId = here?.eventId ?: 0L, uid = uid, u = u)
+        save(list.filterNot { it.uid == uid } + r, fromSync = true)
+        try { calendar(r.id) } catch (_: Throwable) { }
+    }
+
+    /** A routine deleted on another phone. */
+    fun syncRemove(uid: String) {
+        val r = cur().firstOrNull { it.uid == uid } ?: return
+        cancel(r.id); save(cur().filterNot { it.uid == uid }, fromSync = true); uncalendar(r.eventId)
     }
 
     fun get(id: Int) = cur().firstOrNull { it.id == id }

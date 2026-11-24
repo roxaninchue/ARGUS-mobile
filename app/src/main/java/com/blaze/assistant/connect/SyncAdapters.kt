@@ -19,10 +19,15 @@ object SyncKinds {
     const val MEMORY = "memory"
     const val SETTINGS = "settings"
     const val DESIGNS = "design"
-    val ALL = listOf(CHATS, MEMORY, SETTINGS, DESIGNS)
+    /** 0.55.17: your bots and teams (a team is a bot that holds members), each with its instructions (SOUL). */
+    const val BOTS = "bot"
+    /** 0.55.17: scheduled routines (prompts on a time). Shell jobs stay on the phone that runs them. */
+    const val ROUTINES = "routine"
+    val ALL = listOf(CHATS, MEMORY, SETTINGS, BOTS, ROUTINES, DESIGNS)
 
     fun label(kind: String) = when (kind) {
-        CHATS -> "Chats"; MEMORY -> "Memory"; SETTINGS -> "Settings"; DESIGNS -> "Designs"; else -> kind
+        CHATS -> "Chats"; MEMORY -> "Memory"; SETTINGS -> "Settings"; DESIGNS -> "Designs"
+        BOTS -> "Bots & teams"; ROUTINES -> "Routines"; else -> kind
     }
 
     fun detail(kind: String) = when (kind) {
@@ -30,6 +35,8 @@ object SyncKinds {
         MEMORY -> "What ${BrandName.NAME} remembers about you"
         SETTINGS -> "Look & feel, Simple or Advanced, voice and reply style. Never keys or sign-ins"
         DESIGNS -> "Pages, posters and 3D designs (very large ones stay on this phone)"
+        BOTS -> "Your bots and teams with their instructions. Never their sign-ins"
+        ROUTINES -> "Scheduled tasks and reminders (shell jobs stay on this phone)"
         else -> ""
     }
 
@@ -260,6 +267,90 @@ class SettingsAdapter(private val prefs: PrefStore, private val onApplied: () ->
         val v = if (item.deleted) null else com.blaze.assistant.agent.PrefCoerce.forSync(item.id, prefs.all()[item.id], SyncedSettings.decode(item.data!!))
         if (v === com.blaze.assistant.agent.PrefCoerce.SKIP) return
         prefs.put(item.id, v)
+        onApplied()
+    }
+}
+
+/**
+ * 0.55.17 (Finn: "cloud sync should cover all important things like bots too"): bots and teams, wherever the team is
+ * kept. One item per bot: its row as TeamJson plus its latest SOUL. The Manager (Argus itself) never syncs: every phone
+ * makes its own and its fields are locked. Newest change (the bot's `u`) wins.
+ */
+interface BotSource {
+    data class Entry(val id: String, val kind: String, val u: Long, val bot: String, val soul: String?)
+    fun all(): List<Entry>
+    fun put(e: Entry)
+    fun remove(id: String)
+}
+
+class BotAdapter(private val src: BotSource, private val onApplied: (String) -> Unit = {}) : SyncEngine.Adapter {
+    override val kind = SyncKinds.BOTS
+
+    companion object {
+        const val MANAGER_ID = "manager"
+        /** Bots that are this phone's own business: Argus itself, and short-lived subagents. */
+        fun syncs(id: String, kind: String) = id != MANAGER_ID && kind != "MANAGER" && kind != "SUBAGENT" && SyncKinds.ID_RE.matches(id)
+    }
+
+    private fun mine() = src.all().filter { syncs(it.id, it.kind) }.associateBy { it.id }
+    private fun stampOf(e: BotSource.Entry) = "${e.u}:${e.soul?.hashCode() ?: 0}"
+
+    override fun stamps(): Map<String, String> = mine().mapValues { (_, e) -> stampOf(e) }
+
+    override fun read(id: String): SyncMerge.Item? {
+        val e = mine()[id] ?: return null
+        return SyncMerge.Item(kind, id, e.u, JSONObject().put("kind", e.kind).put("bot", e.bot).apply { if (e.soul != null) put("soul", e.soul) })
+    }
+
+    override fun apply(item: SyncMerge.Item) {
+        if (item.id == MANAGER_ID) return
+        val here = src.all().firstOrNull { it.id == item.id }
+        if (item.deleted) { if (here != null && syncs(here.id, here.kind)) { src.remove(item.id); onApplied(item.id) }; return }
+        val d = item.data!!
+        val k = d.optString("kind")
+        if (!syncs(item.id, k)) return
+        if (here != null && here.u > item.t) return   // ours is newer; the engine pushes it on the next round
+        val soul = if (d.has("soul")) d.optString("soul") else null
+        src.put(BotSource.Entry(item.id, k, item.t, d.optString("bot"), soul))
+        onApplied(item.id)
+    }
+}
+
+/**
+ * 0.55.17: routines (scheduled prompts and reminders). Each routine has a stable [Entry.uid] that is the same on every
+ * phone (its number differs per phone) and `u`, when it last changed. Shell-command routines never sync (they run a
+ * command on this phone), and neither does the calendar event a routine made on this phone.
+ */
+interface RoutineSource {
+    data class Entry(val uid: String, val u: Long, val data: JSONObject)
+    fun all(): List<Entry>
+    fun put(e: Entry)
+    fun remove(uid: String)
+}
+
+class RoutineAdapter(private val src: RoutineSource, private val onApplied: () -> Unit = {}) : SyncEngine.Adapter {
+    override val kind = SyncKinds.ROUTINES
+
+    companion object {
+        /** The fields that travel; `id` (this phone's number) and `event_id` (this phone's calendar) do not. */
+        val FIELDS = listOf("name", "prompt", "hour", "minute", "days", "enabled", "notify", "every_minutes", "at")
+        fun syncs(e: RoutineSource.Entry) = SyncKinds.ID_RE.matches(e.uid) && e.data.optString("command").isBlank()
+        fun portable(o: JSONObject): JSONObject = JSONObject().also { out -> for (f in FIELDS) if (o.has(f)) out.put(f, o.get(f)) }
+    }
+
+    private fun mine() = src.all().filter { syncs(it) }.associateBy { it.uid }
+
+    override fun stamps(): Map<String, String> = mine().mapValues { (_, e) -> "${e.u}:${portable(e.data).toString().hashCode()}" }
+
+    override fun read(id: String): SyncMerge.Item? = mine()[id]?.let { SyncMerge.Item(kind, id, it.u, portable(it.data)) }
+
+    override fun apply(item: SyncMerge.Item) {
+        val here = src.all().firstOrNull { it.uid == item.id }
+        if (item.deleted) { if (here != null && syncs(here)) { src.remove(item.id); onApplied() }; return }
+        if (here != null && (!syncs(here) || here.u > item.t)) return
+        val d = portable(item.data!!)
+        if (d.optString("name").isBlank() && d.optString("prompt").isBlank()) return
+        src.put(RoutineSource.Entry(item.id, item.t, d))
         onApplied()
     }
 }

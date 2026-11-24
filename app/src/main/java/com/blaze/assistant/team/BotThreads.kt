@@ -81,6 +81,9 @@ class BotThreads(
         hello(botId)
     }
 
+    /** 0.55.17: a bot came in from cloud sync: the Team screen reloads its roster (no hello: it already said hi on the other phone). */
+    fun syncedFromCloud(botId: String) { _changes.tryEmit(Change.Roster(botId)) }
+
     /** A bot that just joined texts first ([Hello]): one message in its own thread, counted unread. Never throws. */
     private fun hello(botId: String) {
         runCatching {

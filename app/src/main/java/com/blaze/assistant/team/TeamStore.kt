@@ -20,6 +20,27 @@ import com.blaze.assistant.store.Sql
  */
 class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.currentTimeMillis() }) {
 
+    companion object {
+        /** 0.55.17: told after a bot, its apps or its SOUL changed or a bot was removed (cloud sync pushes it soon). Never throws into the store. */
+        @Volatile var onChange: (() -> Unit)? = null
+        private fun changed() { try { onChange?.invoke() } catch (_: Throwable) { } }
+    }
+
+    /**
+     * 0.55.17 cloud sync: stores a bot from another phone as it is (id, `u`, created time kept) with its SOUL, or removes
+     * one. Never the Manager. Bots it points to that aren't here yet are adopted by the Manager on the next open.
+     */
+    fun putSynced(b: Bot, soul: String?): Bot = sql.tx { putImported(b, soul, "sync") }
+
+    fun removeSynced(id: String) {
+        if (!BotRules.canDelete(id)) return
+        sql.tx {
+            sql.exec("UPDATE jobs SET bot_id=NULL, u=? WHERE bot_id=?", clock(), id)
+            sql.exec("DELETE FROM bots WHERE id=?", id)
+        }
+        changed()
+    }
+
     data class Ensured(val seeded: Boolean = false, val repaired: Boolean = false, val adopted: Int = 0,
                        val seededDomains: List<String> = emptyList(), val demoted: List<String> = emptyList(),
                        val renamed: List<String> = emptyList(), val unreadable: List<String> = emptyList()) {
@@ -161,6 +182,7 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
         }
         sql.exec("UPDATE jobs SET bot_id=NULL, u=? WHERE bot_id=?", now, id)
         sql.exec("DELETE FROM bots WHERE id=?", id)   // bot_apps, souls, routines and child workers cascade (05 §9.2)
+        changed()
         Result.Ok(b)
     }
 
@@ -235,6 +257,7 @@ class TeamStore(private val sql: Sql, private val clock: () -> Long = { System.c
             TeamJson.strings(b.members), b.hidden, b.pinned, b.enabled, b.createdAt, b.u, b.email, b.portfolio)
         sql.exec("DELETE FROM bot_apps WHERE bot_id=?", b.id)
         for (a in b.apps) sql.exec("INSERT OR REPLACE INTO bot_apps(bot_id, app_id, source, tools) VALUES(?,?,?,?)", b.id, a.appId, a.source, TeamJson.grants(a.tools))
+        changed()
     }
 
     private fun writeSoul(id: String, v: Int, body: String, by: String, at: Long) =
