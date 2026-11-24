@@ -1,6 +1,6 @@
 # Argus Phone: the vision
 
-Owner vision (Jake, 2026-11-24). **This is a plan, not code.** Nothing here is built yet. Read it before you touch
+Owner vision (Jake, 2026-11-24; section 3g, 5d, 5e and Argus's power over instances added the same day). **This is a plan, not code.** Nothing here is built yet. Read it before you touch
 `browser/phone/`, `terminal/`, `mediaapps/`, the Home board, or how the chat hands work to the user, and check new
 Argus Phone work against the hard rules in section 1.
 
@@ -107,6 +107,30 @@ watch or type into it.
 Music and Movie as apps over `mediaapps/`, Calendar over the calendar tools. Later candidates, one per merge request:
 notes, the code editor and documents (shared with Argus Desk phases 2 and 3).
 
+### 3g. Office: our own Docs, Sheets and Slides, fully controllable by Argus
+Argus Phone ships its own office apps, built to rule 1 from the start: anything the user can do in them, Argus can do
+through actions, without tapping pixels.
+- **Docs** (word processing): headings, styles, lists, tables, images, comments, track changes, find / replace,
+  page setup. Opens and saves `.docx`, `.odt`, `.md`, `.txt`; exports PDF.
+- **Sheets** (spreadsheets): cells, ranges, formulas with a real calculation engine, number formats, sorting and
+  filters, multiple sheets, charts, CSV. Opens and saves `.xlsx`, `.ods`, `.csv`.
+- **Slides** (presentations): layouts, text boxes, images, shapes, themes, speaker notes, present mode (on the phone,
+  cast, or Argus Desk). Opens and saves `.pptx`, `.odp`; exports PDF.
+- **PDF**: view, search, annotate, fill forms, sign, merge / split.
+
+How they stay controllable and light:
+- Each document is an **open, structured model** in memory (paragraphs and runs; cells and formulas; slides and
+  shapes), and that model is the app's `state()`. Argus reads a compact view of it (an outline, the visible range, the
+  current slide), never a picture, and asks for more only when it needs it.
+- Actions are document-level and batchable: `insert`, `replace`, `style`, `set_cells`, `fill_formula`, `add_chart`,
+  `add_slide`, `layout`, `export`. One call can write a whole section, a whole table of cells or a whole deck.
+- Every edit goes through one undo history shared by the user and Argus, so the user can undo Argus's step and
+  the other way round; edits are checkpointed with the instance (rule 3).
+- Native Kotlin models and Compose renderers, with OOXML / ODF import and export. No heavy office suite in memory:
+  a headless converter in a Linux root (for example LibreOffice) is allowed only on demand for rare conversions, and
+  is shut down after.
+- Same apps as Argus Desk phase 3 (PC-REPLACEMENT.md 1c): one engine, a phone host and a desk host.
+
 ## 4. Pillar 2: a smoother handoff between Argus and the user
 
 The aim: the user is asked for the least possible, in the easiest place, and Argus never stalls without saying why.
@@ -152,6 +176,55 @@ The aim: the user is asked for the least possible, in the easiest place, and Arg
 Apps inside Argus Phone see the same library, sources, calendar, files and vault as the main app. Nothing is synced
 twice; nothing is kept in a second copy.
 
+### 5d. Running in the background until killed
+- Once started, Argus Phone keeps running when the user leaves the app, until the user shuts it down. It runs as a
+  foreground service with its own notification (service type to be settled against Android's rules; the app already
+  declares `dataSync` and `mediaPlayback`).
+- **The notification**: "Argus Phone · 3 instances running" plus what Argus is doing, or "Waiting on you". Tapping
+  it opens Argus Phone on the instance last watched.
+- **Expanded, it offers**:
+  - **Shut down**: checkpoints every instance, closes them, stops the service and removes the notification.
+  - **Close all instances**: checkpoints and closes every instance but keeps Argus Phone on; the next time it is
+    opened it starts one fresh instance.
+  - (Optional) **Pause Argus**: Argus stops acting everywhere; the instances stay as they are.
+- Lightness in the background: the service holds no surfaces and draws nothing; instances follow the cold / warm / live
+  rules in section 6. If Android kills the process anyway, every instance comes back from its last checkpoint the
+  next time Argus Phone starts, and the notification says so.
+
+### 5e. No clashes between instances, and no lost work
+Instances are separate so they can't trample each other, and saved work lives outside them so closing or deleting one
+never deletes anything important.
+- **Separate by default**: each instance has its own scratch folder, its own terminal tabs, its own open apps and
+  undo history, and its own browser tabs. A crash or a bad step stays in that instance.
+- **Work lives in the shared workspace, not in the instance**: files the user or Argus saves (documents, downloads,
+  code, exports) go to shared folders that every instance and the main app see. An instance holds only scratch and
+  open state.
+- **Deleting an instance never deletes work**: before it goes, anything unsaved or still in its scratch folder is
+  moved to `Recovered/<instance name>/` in the shared workspace and its last checkpoint is kept for 7 days. Only an
+  explicit "delete recovered files" removes them.
+- **Writing the same thing from two instances**: one instance holds a short write lease on a file at a time; another
+  instance opens it read-only or works on a copy. When two edits still collide, the second is saved as a conflict
+  copy next to the file, never over it, and the user (or Argus) merges. Office documents can later merge edits
+  through their models.
+- **Browser sessions**: site logins are shared across instances by default, so the user signs in once; an instance
+  can be marked private to get its own empty profile. Two instances on the same site don't share tabs or forms.
+- **Linux roots**: one root per distro is shared, so installed tools exist everywhere; installs and upgrades
+  (apk / apt / pacman / dnf) take a per-distro lock so two instances never run them at once.
+- **Sync**: every change to the shared workspace is visible at once in every instance; instances never keep their
+  own copy of a shared file.
+
+### 5f. Argus's power over instances
+Argus can, on its own or on the user's word:
+- **Turn Argus Phone on and off**: start the service and a first instance when a task needs it; shut it down when
+  told to ("shut down the phone"), checkpointing first.
+- **Spin up new instances** for parallel work (one per task or per site), within the budgets in section 6; when the
+  budget is full, the oldest idle instance goes cold rather than a new one being refused.
+- **Use existing instances**: pick one by name or by the task it belongs to, instead of starting over on a page or
+  folder that is already open.
+- **Close, reset, restore or duplicate** an instance, and **close all**.
+- Anything that would discard unsaved work asks first, through an approval card; a plain close checkpoints and
+  recovers as in 5e, so it needs no question.
+
 ## 6. Speed and lightness budgets
 
 Targets to measure on a low-RAM phone (A12 class) with `PhonePerf` extended to every app. Numbers are starting targets,
@@ -179,8 +252,10 @@ How to stay light:
 ## 7. Tools Argus gets (catalog, not every turn)
 
 Kept small, all found with `find_tools`, all described in one line each on the shelf:
-- `phone_instances`: list, new, open, close, checkpoint, restore, reset, duplicate.
-- `phone_app`: open an app in an instance, read its state, run one of its actions (or a batch of them).
+- `phone_power`: on, off (checkpoints first), status (running or not, instances, what each is doing).
+- `phone_instances`: list, new, use (by name or task), open, close, close all, checkpoint, restore, reset, duplicate.
+- `phone_app`: open an app in an instance, read its state, run one of its actions (or a batch of them). Office apps
+  work through this too.
 - Today's browser tools (`phone_open`, `phone_read`, `phone_act`, `phone_wait`, `phone_screenshot`, `phone_handoff`,
   `phone_status`) stay, and become the browser app's actions over time.
 - `phone_handoff` grows a `kind`: credentials, choice, approval, control (section 4a). Control is the last resort.
@@ -192,11 +267,13 @@ build (AGENTS.md).
 
 | Step | What ships |
 |---|---|
-| 1 | Instance manager around today's browser: cold / warm / live, checkpoint, restore, reset, crash isolation; `phone_instances` |
+| 1 | Instance manager around today's browser: cold / warm / live, checkpoint, restore, reset, crash isolation; background service and notification; `phone_power`, `phone_instances` |
+| 1b | Shared workspace, Recovered folder, write leases, conflict copies, per-distro install locks (5e) |
 | 2 | Credentials card from the page's own field flags, then choice and approval cards; `phone_handoff` kinds |
 | 3 | The app contract, the Argus Phone home screen, the browser as the first app |
 | 4 | Files (root switch, install from inside, terminal link) and Terminal as apps |
 | 5 | Music, Movie, Calendar as apps |
+| 5b | Office: Docs, then Sheets, then Slides, then PDF (3g), each with its model, actions and OOXML import / export |
 | 6 | Instances as Argus Desk windows; Home board tile |
 
 ## 9. Do not
@@ -216,3 +293,5 @@ build (AGENTS.md).
    unless asked?
 3. Should Files open the user's whole shared storage on first use, or only after they allow it once in Argus Phone?
 4. Keep the name "Argus Phone"?
+5. After Android kills the process, should Argus Phone restart itself, or wait until it is opened or a task needs it?
+6. How long should Recovered files and deleted instances' checkpoints be kept (7 days proposed)?
