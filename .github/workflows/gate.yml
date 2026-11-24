@@ -124,7 +124,7 @@ jobs:
       - name: Unit tests (:app:testDebugUnitTest)
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --continue -PtestShard=${{ matrix.shard }} -PtestShards=4 $GRADLE_FLAGS \
+          ./gradlew :app:testDebugUnitTest --continue -PtestShard=${{ matrix.shard }} -PtestShards=4 -PtestStarts $GRADLE_FLAGS \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee test.log
 
       # ---- readable results without a sign-in: run summary + annotations (check-runs API is public)
@@ -143,6 +143,7 @@ jobs:
                   for fl in list(c.findall("failure")) + list(c.findall("error")):
                       msg = (fl.get("message") or fl.text or "").strip().splitlines()
                       bad.append((c.get("classname", "") + "." + c.get("name", ""), " | ".join(msg[:3])[:400]))
+                      print(f"---- FAIL {c.get('classname', '')}.{c.get('name', '')}"); print("\n".join((fl.text or "").splitlines()[:60]))
           errs = []
           for log in ("compile.log", "test.log"):
               if os.path.exists(log):

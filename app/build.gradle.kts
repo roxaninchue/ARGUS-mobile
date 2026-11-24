@@ -83,7 +83,8 @@ android {
             }
             // A failing test prints its real message and causes in the CI log (not just "SQLException at Foo.kt:143").
             it.testLogging {
-                events("failed")
+                // -PtestStarts (the Gate): log each test as it starts, so a hang shows which test it is.
+                if (project.hasProperty("testStarts")) events("started", "failed") else events("failed")
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
                 showCauses = true
                 showStackTraces = true
