@@ -1,4 +1,5 @@
 import java.security.MessageDigest
+import java.time.Duration
 
 plugins {
     id("com.android.application")
@@ -53,6 +54,35 @@ android {
         unitTests.all {
             it.systemProperty("blaze.shots", System.getenv("BLAZE_SHOTS") ?: "0")
             it.systemProperty("robolectric.graphicsMode", "NATIVE")
+            // Gate (24 Nov): the test JVM ran on Gradle's 512 MB default and the Robolectric Compose tests (KitShotsTest,
+            // LifeShotsTest) died with OutOfMemoryError in ShadowTrace, then hung in waitForIdle until the 75-min timeout
+            // (Gate #1 and #2). 2 GB of heap, a fresh JVM every 100 classes so Robolectric's per-class state can't pile up,
+            // and a hard cap so a hang fails the run instead of eating it.
+            it.maxHeapSize = "2g"
+            // Gate: -PtestForkEvery=1 gives every test class its own JVM, so a coroutine one class leaks can't fail the next.
+            it.setForkEvery((project.findProperty("testForkEvery") as String?)?.toLongOrNull() ?: 100L)
+            it.timeout.set(Duration.ofMinutes((project.findProperty("testTimeoutMin") as String?)?.toLongOrNull() ?: 60L))
+            // Gate quarantine (src/test/gate-quarantine.txt, one class per line): tests known to hang or break the run, set
+            // aside so they report without blocking. -PtestQuarantine=skip leaves them out, =only runs just them.
+            val quarantine = project.file("src/test/gate-quarantine.txt").takeIf { f -> f.exists() }?.readLines()
+                ?.map { l -> l.substringBefore('#').trim() }?.filter { l -> l.isNotEmpty() }.orEmpty()
+            when (project.findProperty("testQuarantine")) {
+                "skip" -> quarantine.forEach { q -> it.exclude("**/${q.replace('.', '/')}.class", "**/${q.replace('.', '/')}$*.class") }
+                "only" -> {
+                    it.filter.isFailOnNoMatchingTests = false
+                    if (quarantine.isEmpty()) it.include("gate/quarantine/none/**")
+                    else quarantine.forEach { q -> it.include("**/${q.replace('.', '/')}.class", "**/${q.replace('.', '/')}$*.class") }
+                }
+            }
+            // Gate shards (24 Nov): -PtestShard=i -PtestShards=n runs only the test classes whose outer class name hashes to
+            // shard i, so the Gate splits the suite (~4,200 tests, over an hour on one runner) across parallel jobs.
+            // Without the properties every test runs, as before.
+            val shards = (project.findProperty("testShards") as String?)?.toIntOrNull() ?: 1
+            val shard = (project.findProperty("testShard") as String?)?.toIntOrNull() ?: 0
+            if (shards > 1) it.exclude { f ->
+                !f.isDirectory && f.name.endsWith(".class") &&
+                    (f.relativePath.pathString.substringBefore('$').removeSuffix(".class").hashCode() and Int.MAX_VALUE) % shards != shard
+            }
             // v0.45.0 (#28): Robolectric ships no Conscrypt JNI for linux-aarch64 (it only turns Conscrypt off by itself on
             // arm Macs), so on ARM Linux boxes every Robolectric test died with UnsatisfiedLinkError. Off there; x86 CI unchanged.
             if (System.getProperty("os.arch").orEmpty().lowercase().let { a -> a.contains("aarch64") || a.contains("arm64") })
@@ -66,7 +96,8 @@ android {
             }
             // A failing test prints its real message and causes in the CI log (not just "SQLException at Foo.kt:143").
             it.testLogging {
-                events("failed")
+                // -PtestStarts (the Gate): log each test as it starts, so a hang shows which test it is.
+                if (project.hasProperty("testStarts")) events("started", "failed") else events("failed")
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
                 showCauses = true
                 showStackTraces = true
