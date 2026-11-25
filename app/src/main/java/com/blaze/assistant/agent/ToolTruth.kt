@@ -168,7 +168,6 @@ object ToolTruth {
         val u = userText.trim().replace('\u2019', '\'')
         return when {
             alarmOff.containsMatchIn(u) -> mapOf("processes" to "process")
-            settingsValue.containsMatchIn(u) && !draftAsk.containsMatchIn(u) -> mapOf("open_settings" to "tap", "open_settings_page" to "tap")
             else -> emptyMap()
         }
     }

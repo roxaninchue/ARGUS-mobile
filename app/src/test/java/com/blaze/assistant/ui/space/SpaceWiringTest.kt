@@ -133,11 +133,11 @@ class SpaceWiringTest {
     }
 
     @Test fun settingsIsTheProfileAndTheDeclutteredTree() {
-        val call = after(chat, "SettingsScreen(start, a11yOn,", 700)
+        val call = after(chat, "SettingsScreen(start,", 700)   // 0.55.18: no accessibility switch (phone control removed)
         assertTrue("the profile's pill switches tabs", "onTab = { t -> settingsPage = null; exitView(); go(navNow().switchTab(t)) }" in call)
         assertTrue("the profile's Search opens Spotlight", "onSearch = { settingsPage = null; composer.query = \"\"; composer.openSpotlight() }" in call)
         val s = src("ui/SettingsSheet.kt")
-        assertTrue("fun SettingsScreen(start: String?, a11yOn: Boolean, onOpenAccessibility: () -> Unit, onDismiss: () -> Unit,\n                   onTab: (String) -> Unit = {}, onSearch: () -> Unit = {})" in s)
+        assertTrue("fun SettingsScreen(start: String?, onDismiss: () -> Unit,\n                   onTab: (String) -> Unit = {}, onSearch: () -> Unit = {})" in s)
         // ARGUS-only (16 Nov 2026): the root is the You page and Back follows the ARGUS tree; the 0.52.3 profile is gone
         assertTrue("the root is the You page", "com.blaze.assistant.ui.argus.settings.YouPage(" in s && "${S}SpaceProfileScreen(" !in s)
         assertTrue("Back follows the tree", "else page = com.blaze.assistant.ui.argus.settings.ArgusSettings.parentOf(p)" in s)

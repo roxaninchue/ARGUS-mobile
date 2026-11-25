@@ -122,9 +122,8 @@ class ToolCapTest {
         val off = step(ask("remove the alarm"), "processes", "A2 · alarm · Demo app alarm · 18:15 · active")
         assertEquals("process", ToolTruth.choiceName(off, names))
         assertNull("only once", ToolTruth.choiceName(step(off, "process", "Deleted"), names))
-        val dark = step(ask("open display settings and turn dark mode on"), "open_settings_page", "Opened display settings.")
-        assertEquals("tap", ToolTruth.choiceName(dark, names))
-        assertNull(ToolTruth.choiceName(step(dark, "tap", "on"), names))
+        // 0.55.18: no tap after open_settings_page (phone control removed); the user flips the switch.
+        assertNull(ToolTruth.choiceName(step(ask("open display settings and turn dark mode on"), "open_settings_page", "Opened display settings."), names))
         // other flows stay auto after their first step
         assertNull(ToolTruth.choiceName(step(ask("set a timer for 2 minutes"), "set_timer", "Timer started"), names))
         assertNull(ToolTruth.choiceName(step(ask("open Settings"), "open_view", "ok"), names))

@@ -94,7 +94,7 @@ class Workspace(val shared: File, val instancesRoot: File) {
         const val RECOVERED = "Recovered"
         /** A folder name from an instance name: letters, digits, space, dot, dash and underscore; 60 chars at most. */
         fun safeName(name: String): String = name.map { if (it.isLetterOrDigit() || it in " ._-") it else '_' }.joinToString("")
-            .trim().trim('.').take(60).ifBlank { "instance" }
+            .trim(' ', '.', '_').take(60).ifBlank { "instance" }
     }
 
     fun scratch(id: String): File = File(File(instancesRoot, id), "scratch")

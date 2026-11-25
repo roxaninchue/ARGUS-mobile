@@ -1,3 +1,7 @@
+## Unreleased: Gate green again (branch fix/gate-green)
+- 14 unit tests updated for 0.55.18 (no phone control) and Argus Phone steps 1/1b; build #144 failed on them.
+- AGENTS.md "Before a merge or a build"; failures/2026-11-25-red-build-144-stale-tests.md.
+
 ## Unreleased: Argus Phone step 1b (branch feat/phone-1b): no lost work between instances
 - Each instance has a scratch folder; lasting work goes in the shared home (`~`). Close, close all and reset move
   leftover scratch to `~/Recovered/<instance name>/` first and say so; nothing is deleted.
