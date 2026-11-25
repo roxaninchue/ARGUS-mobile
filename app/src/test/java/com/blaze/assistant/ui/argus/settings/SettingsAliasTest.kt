@@ -39,7 +39,7 @@ class SettingsAliasTest {
         (page == "system" && "SpaceProfile.SYSTEM_PAGE -> " in sheet) || (page == "feedback" && "SpaceProfile.FEEDBACK_PAGE -> " in sheet)
 
     @Test fun everyPre053IdOpensAPage() {
-        assertEquals(41, settingsPages.size)   // 0.55.18 removed the phone-control page; P2-SF-04 added "policy" (Approvals & permissions), P2-SF-05 "activity"; 0.55.1 "developer" + "speed"
+        assertEquals(37, settingsPages.size)   // 2026-11-25 permission trim removed bank, orb, replies and appstore; 0.55.18 removed the phone-control page; P2-SF-04 added "policy" (Approvals & permissions), P2-SF-05 "activity"; 0.55.1 "developer" + "speed"
         assertTrue(settingsPages.none { it.id == "specialists" || it.id == "terminal" || it.id == "device" })
         for (id in PRE_053) {
             val p = settingsStart(id)
@@ -106,7 +106,7 @@ class SettingsAliasTest {
     @Test fun searchFindsRowsByWordsAndPageText() {
         val text = settingsPages.associate { it.id to (it.title + " " + it.sub) }
         assertEquals(listOf("look"), ArgusSettings.search("dark", text).map { it.id })
-        assertEquals(listOf("approvals"), ArgusSettings.search("Bank mode", text).map { it.id })
+        assertEquals(listOf("approvals"), ArgusSettings.search("risky", text).map { it.id })   // "Bank mode" went with the permission trim
         assertEquals(listOf("voice"), ArgusSettings.search("hey argus", text).map { it.id })
         assertTrue(ArgusSettings.search("google", text).any { it.id == "apps" })
         assertTrue(ArgusSettings.search("   ", text).isEmpty())

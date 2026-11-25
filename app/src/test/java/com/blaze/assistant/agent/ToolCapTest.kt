@@ -21,6 +21,11 @@ class ToolCapTest {
     private val all: JSONArray by lazy {
         val t = JSONArray(); val r = ToolTruthTest().registry().first; for (i in 0 until r.length()) t.put(r.get(i))
         val p = com.blaze.assistant.phone.PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i))
+        // 2026-11-25 permission trim: the real list fell to ~124, under the cap. Unused fillers push it back over so the cap
+        // still has something to cut (they score 0 and are not LOW, so the LOW tools still go first).
+        var n = 0
+        while (t.length() <= ToolTruth.MAX_TOOLS + 8) t.put(JSONObject().put("type", "function").put("function", JSONObject()
+            .put("name", "qq_filler_${n++}").put("description", "Unused filler.").put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()))))
         ToolTruth.clean(t)
     }
 
@@ -43,7 +48,6 @@ class ToolCapTest {
         "turn on Wi-Fi, Bluetooth and Do Not Disturb" to "device_setting",
         "set a timer for 2 minutes" to "set_timer",
         "open display settings and turn dark mode on" to "open_settings_page",
-        "add a contact QA Tester with number 0977123456" to "add_contact",
         "get directions to Levy Junction Mall in Google Maps" to "open_url",
     )
 
