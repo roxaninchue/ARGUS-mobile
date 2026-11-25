@@ -72,7 +72,9 @@ class WaveB4NoLinuxTest {
     @Test fun manifestDropsDesktopServicesAndPermission() {
         val m = file("src/main/AndroidManifest.xml").readText()
         assertFalse(m.contains("DesktopKeeper")); assertFalse(m.contains("DesktopAliveService"))
-        assertFalse(m.contains("FOREGROUND_SERVICE_SPECIAL_USE")); assertFalse(m.contains("specialUse"))
+        // specialUse came back only for Argus Phone's background service (docs/PHONE-INSTANCES.md); no desktop service uses it.
+        assertEquals(1, Regex("""foregroundServiceType="specialUse"""").findAll(m).count())
+        assertTrue(m.substringBefore("foregroundServiceType=\"specialUse\"").substringAfterLast("<service").contains(".browser.phone.instances.ArgusPhoneService"))
         // The terminal's own job service stays.
         assertTrue(m.contains(".terminal.JobKeeper"))
     }

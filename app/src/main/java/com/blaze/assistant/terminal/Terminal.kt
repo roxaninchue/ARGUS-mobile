@@ -299,6 +299,10 @@ object Terminal {
         if (linux && !Distros.installed(dist)) return@withContext if (dist == "alpine") "Linux isn't installed yet. Call linux_install (one-time ~3.5 MB download), or use run_code which sets it up for you."
             else "${TermLogic.distro(dist)?.name ?: dist} isn't installed yet. Install it from the Terminal's + menu."
         val full = wrap(cmd, linux)
+        // Argus Phone 1b: package installs / upgrades take the distro's lock (InstallLocks); everything else runs free.
+        val pmLock = if (linux) InstallLocks.lockFor(dist, cmd) else null
+        pmLock?.lock()
+        try {
         val p = try { if (linux) ProcessBuilder(Linux.command(full, distro = dist)).directory(home()).redirectErrorStream(true)
                 .also { it.environment().putAll(env()); it.environment().putAll(Linux.env()) }.start() else builder(full).start() } catch (e: Exception) { return@withContext "Error: ${e.message}" }
         try { p.outputStream.close() } catch (_: Exception) { }   // no stdin: commands that wait for input fail fast instead of hanging
@@ -324,6 +328,7 @@ object Terminal {
         val result = "exit $code · cwd $where\n$text".trimEnd() + hint
         logAgent("${if (linux) (if (dist == "alpine") "linux" else dist) else "sh"} $ ${cmd.take(300)}", result)
         result
+        } finally { pmLock?.unlock() }
     }
 
     fun jobLog(id: Int, lines: Int): String = synchronized(jobs) {

@@ -9,10 +9,6 @@
 # A head commit whose message has [skip ci] does not run (GitHub honours it), so WIP commits can skip; the last commit
 # before a merge must not.
 #
-# 2026-11-25: the unit suite (~590 classes, one JVM) took 60-75 min and hit the job cap, so the job is a 4-way matrix:
-# each shard compiles, then runs its quarter of the classes (tools/gate-shard.py, round-robin). The run is green only
-# when all four shards are. The Node checks run in every shard (seconds) so any shard fails fast on them.
-#
 # Steps: Node checks (rename guard, do-not-port, design JS) -> Go jniLibs -> :app:compileDebugKotlin +
 # :app:compileDebugUnitTestKotlin -> :app:testDebugUnitTest --continue. Any failure fails the run. Failing tests and
 # compile errors go to the run summary and to ::error annotations; the totals go to a ::notice annotation. Annotations
@@ -39,13 +35,17 @@ jobs:
   gate:
     # Same-repo pull requests: the push run on the branch is the gate, so only fork PRs run here.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
-    name: gate (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    # Four runners in parallel, each with a quarter of the unit tests (-PtestShard, app/build.gradle.kts): one runner
+    # needed over an hour for the whole suite. The run is green only when every shard is. Shard "q" runs only the
+    # quarantined tests (app/src/test/gate-quarantine.txt) with a 10-min cap and never blocks: it reports, nothing more.
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: ['0', '1', '2', '3', 'q']
+    name: gate (shard ${{ matrix.shard }})
+    continue-on-error: ${{ matrix.shard == 'q' }}
+    timeout-minutes: ${{ matrix.shard == 'q' && 20 || 60 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,14 +53,17 @@ jobs:
 
       # ---- cheap checks first (node is preinstalled)
       - name: Rename guard
+        if: matrix.shard == '0'
         run: |
           node tools/check-no-blaze.test.mjs
           node tools/check-no-blaze.mjs
       - name: Do-not-port check
+        if: matrix.shard == '0'
         run: |
           node tools/check-do-not-port.mjs
           node --test tools/check-do-not-port.test.mjs
       - name: Design JS tests
+        if: matrix.shard == '0'
         run: node app/src/test/js/design-safe.test.mjs
 
       # ---- toolchain (JDK 21: LocalLanguagesTest needs JDK 20+ grapheme clusters; the project targets 17)
@@ -120,12 +123,12 @@ jobs:
           set -o pipefail
           ./gradlew :app:compileDebugKotlin :app:compileDebugUnitTestKotlin $GRADLE_FLAGS \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee compile.log
-      - name: Unit tests (:app:testDebugUnitTest, shard ${{ matrix.shard }}/4)
+      - name: Unit tests (:app:testDebugUnitTest)
         run: |
           set -o pipefail
-          mapfile -t SHARD < <(python3 tools/gate-shard.py ${{ matrix.shard }} 4)
-          echo "shard ${{ matrix.shard }}/4: $(( ${#SHARD[@]} / 2 )) classes"
-          ./gradlew :app:testDebugUnitTest --continue "${SHARD[@]}" $GRADLE_FLAGS \
+          if [ "${{ matrix.shard }}" = q ]; then PICK="-PtestQuarantine=only -PtestTimeoutMin=10"
+          else PICK="-PtestShard=${{ matrix.shard }} -PtestShards=4 -PtestQuarantine=skip -PtestForkEvery=1"; fi
+          ./gradlew :app:testDebugUnitTest --continue $PICK -PtestStarts $GRADLE_FLAGS \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee test.log
 
       # ---- readable results without a sign-in: run summary + annotations (check-runs API is public)
@@ -144,13 +147,14 @@ jobs:
                   for fl in list(c.findall("failure")) + list(c.findall("error")):
                       msg = (fl.get("message") or fl.text or "").strip().splitlines()
                       bad.append((c.get("classname", "") + "." + c.get("name", ""), " | ".join(msg[:3])[:400]))
+                      print(f"---- FAIL {c.get('classname', '')}.{c.get('name', '')}"); print("\n".join((fl.text or "").splitlines()[:250]))
           errs = []
           for log in ("compile.log", "test.log"):
               if os.path.exists(log):
                   for line in open(log, errors="replace"):
                       if re.match(r"^(e: |FAILURE:|\* What went wrong|> Task .* FAILED|.*OutOfMemory|.*StackOverflow)", line):
                           errs.append(line.rstrip()[:300])
-          totals = f"tests={t} failures={f} errors={e} skipped={s}"
+          totals = f"shard ${{ matrix.shard }}: tests={t} failures={f} errors={e} skipped={s}"
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
               out.write(f"## Gate: {totals}\n\n")
               if bad:

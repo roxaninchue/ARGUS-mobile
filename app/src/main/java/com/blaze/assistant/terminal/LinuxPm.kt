@@ -58,3 +58,21 @@ object LinuxPm {
     /** Package names only ever reach the shell as words: letters, digits and . _ + - (no leading dash). */
     fun safe(s: String): Boolean = s.isNotEmpty() && s.length < 100 && s.all { it.isLetterOrDigit() || it in "._+-" } && !s.startsWith("-") && !s.startsWith(".")
 }
+
+/**
+ * Argus Phone step 1b (docs/ARGUS-PHONE.md 5e): one Linux root per distro is shared by every instance, agent and the
+ * chat, so installs and upgrades take a per-distro lock: two `apk add` / `apt install` runs never touch the same root at
+ * once (the second waits). Read-only commands (search, list, info) and everything else run without the lock.
+ */
+object InstallLocks {
+    private val CHANGE = Regex(
+        """(?:^|[\s;&|(])(?:sudo\s+)?(?:apk\s+(?:add|del|upgrade|update|fix)|apt(?:-get)?\s+(?:-\S+\s+)*(?:install|remove|purge|upgrade|update|dist-upgrade|full-upgrade|autoremove|reinstall)|dpkg\s+(?:-i|--install|--configure|-r|--remove|-P|--purge)|pacman\s+-(?:S|R|U)\S*|dnf\s+(?:-\S+\s+)*(?:install|remove|erase|upgrade|update|reinstall|autoremove))\b""")
+    private val locks = HashMap<String, kotlinx.coroutines.sync.Mutex>()
+
+    /** True when [cmd] changes the packages of its Linux root. */
+    fun changesPackages(cmd: String): Boolean = CHANGE.containsMatchIn(cmd)
+
+    /** The lock for [distro]'s root, or null when [cmd] doesn't need one. */
+    @Synchronized fun lockFor(distro: String, cmd: String): kotlinx.coroutines.sync.Mutex? =
+        if (!changesPackages(cmd)) null else locks.getOrPut(distro.trim().lowercase().ifBlank { "alpine" }) { kotlinx.coroutines.sync.Mutex() }
+}
