@@ -2,6 +2,7 @@ package com.blaze.assistant.browser.phone
 
 
 import com.blaze.assistant.BrandName
+import com.blaze.assistant.browser.SecureInput
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -52,7 +53,7 @@ object PhoneBrowserTools {
             "key (key: enter/tab/back/escape/backspace/up/down…), scroll (direction), select (target + option), navigate (text = URL), back, forward, reload, " +
             "fill_login (fills this site's saved login, not submitted; text = which username if several). target = an element id from phone_read (e.g. e12) or its visible words. " +
             "Typing {{secret:name}} uses a value the user saved, never shown to you. Buttons that pay, book, send, submit or delete ask the user first. " +
-            "Card numbers: never type them; use phone_handoff. 2FA codes: ask the user with ask_user, then type them.",
+            "Card numbers: never type them; use phone_handoff. Passwords and 2FA codes: phone_handoff kind=sign_in / kind=code.",
             JSONObject().put("action", e("What to do", *PhonePolicy.ACTIONS.toTypedArray()))
                 .put("target", p("string", "Element id from phone_read (e12) or its visible words"))
                 .put("text", p("string", "Text to type, URL for navigate, username for fill_login"))
@@ -65,9 +66,15 @@ object PhoneBrowserTools {
         fn("phone_wait", "Waits on ${BrandName.NAME} Phone until a CSS selector is visible, some text appears, or (gone=true) disappears; with neither, until the page loads. Timeout 0.5-30 s (default 10).",
             JSONObject().put("selector", p("string", "CSS selector")).put("text", p("string", "Text to wait for"))
                 .put("gone", p("boolean", "Wait for it to go away")).put("timeout", p("number", "Seconds"))),
-        fn("phone_handoff", "Asks the user to take control of ${BrandName.NAME} Phone (a captcha, their own password, a card form, an approval only they can give) and waits until they hand back " +
-            "(up to 10 minutes), then returns a fresh read. They see the request in the chat's live view (and a notification if they're away).",
-            JSONObject().put("reason", p("string", "One short line the user sees, e.g. 'Solve the captcha', 'Enter your card details'")), listOf("reason")),
+        fn("phone_handoff", "Asks the user for something only they can give, the easiest way first. kind=sign_in: a secure card in the chat for this page's " +
+            "email / username and password fields (a saved login fills silently); the values go straight into the page and you only ever see placeholders. " +
+            "kind=code: the same for a one-time code. kind=choice: the question in reason with the page's options as buttons; returns the pick. " +
+            "kind=control (default): the user takes control of ${BrandName.NAME} Phone (a captcha, a drawing, a slider, a card form, a page that won't take a filled field) " +
+            "and you wait until they hand back (up to 10 minutes), then get a fresh read. Never ask for a password or code in the chat.",
+            JSONObject().put("reason", p("string", "One short line the user sees, e.g. 'Sign in to Demo Tables', 'Solve the captcha', 'Which time slot?'"))
+                .put("kind", e("What to ask for (default control)", *Handoffs.KINDS.toTypedArray()))
+                .put("options", JSONObject().put("type", "array").put("items", JSONObject().put("type", "string")).put("description", "kind=choice: 2 to 5 options as the page words them")),
+            listOf("reason")),
         fn("phone_status", "What ${BrandName.NAME} Phone is doing: who is in control, the page, the site session, live view and memory."),
     )
 
@@ -86,7 +93,7 @@ object PhoneBrowserTools {
         }
         "phone_screenshot" -> "Looking at ${BrandName.NAME} Phone"
         "phone_wait" -> "Waiting for the page"
-        "phone_handoff" -> "Asking you to take control"
+        "phone_handoff" -> when (a.optString("kind")) { "sign_in" -> "Asking you to sign in"; "code" -> "Asking you for the code"; "choice" -> "Asking you to choose"; else -> "Asking you to take control" }
         else -> "Checking ${BrandName.NAME} Phone"
     }
 
@@ -108,14 +115,16 @@ object PhoneBrowserTools {
     /** The user's answer to a confirm card: true = go ahead. */
     // (a plain suspend function type: confirm(title, detail, action))
 
-    private const val NO_PAGE = "${BrandName.NAME} Phone has no page open. Use phone_open first."
+    internal const val NO_PAGE = "${BrandName.NAME} Phone has no page open. Use phone_open first."
 
-    suspend fun run(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, confirm: suspend (String, String, String) -> Boolean): String {
+    // cards sits before confirm: callers pass confirm as a trailing lambda (failures/2026-11-25-red-build-144-stale-tests.md).
+    suspend fun run(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, cards: HandoffCards? = null,
+                    confirm: suspend (String, String, String) -> Boolean): String {
         // 0.45.19-speed: timings for phone_status (the user's approval time on a confirm card isn't Argus's).
         val t0 = d.now()
         var waited = 0L
         val timedConfirm: suspend (String, String, String) -> Boolean = { t, de, ac -> val c0 = d.now(); try { confirm(t, de, ac) } finally { waited += d.now() - c0 } }
-        val out = runInner(d, name, a, shots, timedConfirm)
+        val out = runInner(d, name, a, shots, timedConfirm, cards)
         when (name) {
             "phone_read" -> PhonePerf.add(PhonePerf.READ, d.now() - t0)
             "phone_act" -> PhonePerf.add(PhonePerf.ACT, d.now() - t0 - waited)
@@ -123,7 +132,8 @@ object PhoneBrowserTools {
         return out
     }
 
-    private suspend fun runInner(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, confirm: suspend (String, String, String) -> Boolean): String = try {
+    private suspend fun runInner(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, confirm: suspend (String, String, String) -> Boolean,
+                                 cards: HandoffCards?): String = try {
         d.step(describe(name, a))
         when (name) {
             // 0.45.19-speed: status always says plainly what was and wasn't completed (device test: "Booking confirmed!" mid-task).
@@ -141,11 +151,12 @@ object PhoneBrowserTools {
             }
             "phone_wait" -> if (!d.hasPage()) NO_PAGE else d.waitFor(a.optString("selector").ifBlank { null }, a.optString("text").ifBlank { null },
                 a.optBoolean("gone", false), PhonePolicy.waitMs(if (a.has("timeout")) a.optDouble("timeout") else null))
-            "phone_handoff" -> d.handoff(a.optString("reason").ifBlank { "${BrandName.NAME} needs you for a step" })
+            "phone_handoff" -> Handoffs.run(d, a.optString("kind"), a.optString("reason").ifBlank { "${BrandName.NAME} needs you for a step" },
+                a.optJSONArray("options")?.let { o -> (0 until o.length()).map { o.optString(it) } } ?: emptyList(), cards)
             "phone_act" -> act(d, a, confirm)
             else -> "Unknown ${BrandName.NAME} Phone tool."
         }
-    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { "${BrandName.NAME} Phone error: ${com.blaze.assistant.browser.SecureInput.scrub(e.message.orEmpty().take(200))}" }
+    } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { "${BrandName.NAME} Phone error: ${SecureInput.scrub(e.message.orEmpty().take(200))}" }
 
     /** What Argus Phone has and hasn't completed, from the page as it is now. Never claims more than the page shows. */
     suspend fun progress(d: PhoneDriver): String {
@@ -189,7 +200,7 @@ object PhoneBrowserTools {
         return "$head Went to the $sub page (tapped \u201c${t.label.take(40)}\u201d). ${c.text}\n\nNow:\n$now"
     }
 
-    private const val USER_HAS_IT = "The user is in control of ${BrandName.NAME} Phone and hasn't handed back. Don't act; tell them you'll continue when they tap Hand back."
+    internal const val USER_HAS_IT = "The user is in control of ${BrandName.NAME} Phone and hasn't handed back. Don't act; tell them you'll continue when they tap Hand back."
 
     private fun refused(label: String) = "The user did NOT approve \u201c${label.take(50)}\u201d. Don't retry; tell them it's ready for them to finish (phone_handoff)."
 
@@ -261,3 +272,114 @@ object PhoneBrowserTools {
         }
     }
 }
+
+/** Short names for the Secure Form types (the tests and the cards use them). */
+typealias SecureField = SecureInput.Field
+typealias SecureAnswer = SecureInput.Answer
+
+/**
+ * Argus Phone step 2 (docs/ARGUS-PHONE.md 4a, the handoff ladder): the chat cards phone_handoff can raise instead of
+ * Take control. The agent supplies them; without them every kind falls back to Take control.
+ */
+interface HandoffCards {
+    /** The Secure Form card for [site]; null = cancelled or no answer. Values go to the page, never to the model. */
+    suspend fun secure(site: String, title: String, reason: String, fields: List<SecureInput.Field>): SecureInput.Answer?
+    /** A choice card; the user's pick or what they typed instead. */
+    suspend fun choose(question: String, options: List<String>): String
+    /** A value saved for [site] (the per-site vault), or null. */
+    fun saved(site: String, name: String): String? = null
+    fun save(site: String, name: String, value: String) {}
+}
+
+/**
+ * phone_handoff kinds (step 2). sign_in / code read the page's own fields (DomCache's password and sensitive flags),
+ * fill silently from the vault when it has them, otherwise raise the Secure Form card and type the answers as
+ * {{secret:name}} placeholders, so the model never sees a value. Card fields are never asked for (Take control).
+ * Nothing is submitted: the model taps the page's own button, which the confirm gate still guards. Pure of Android
+ * (PhoneHandoffTest drives it with the demo site).
+ */
+object Handoffs {
+    val KINDS = listOf("control", "sign_in", "code", "choice")
+    /** A Secure Form field and the page element it fills. */
+    data class Slot(val field: SecureInput.Field, val node: String)
+
+    private val codeWords = Regex("(?i)\\bcode\\b|otp|one.?time|verification|2fa|mfa|passcode|\\bpin\\b|token")
+    private val whoWords = Regex("(?i)e-?mail|user ?name|login|account|\\bid\\b|phone|mobile")
+    private fun input(n: PhonePolicy.Node) = n.role in setOf("textbox", "input", "searchbox") && !n.disabled && !n.card
+
+    /** The sign-in fields on the page: the account field (email, phone or username) and the password, when shown. */
+    fun signIn(s: PhonePolicy.Snapshot): List<Slot> {
+        val ins = s.nodes.filter(::input)
+        val pw = ins.firstOrNull { it.type == "password" } ?: ins.firstOrNull { it.sensitive && !codeWords.containsMatchIn(it.name) }
+        val who = ins.firstOrNull { it !== pw && !it.sensitive && (it.type == "email" || it.type == "tel" || whoWords.containsMatchIn(it.name)) }
+        val out = ArrayList<Slot>()
+        if (who != null) {
+            val k = SecureInput.kindOf(who.type, who.name).takeIf { it == SecureInput.Kind.EMAIL || it == SecureInput.Kind.PHONE } ?: SecureInput.Kind.USERNAME
+            out += Slot(SecureInput.Field(k.id, who.name.ifBlank { k.label }.take(40), k, who.id), who.id)
+        }
+        if (pw != null) out += Slot(SecureInput.Field("password", "Password", SecureInput.Kind.PASSWORD, pw.id), pw.id)
+        return out
+    }
+
+    /** The one-time code field: one named like a code, else the only field on the page. */
+    fun code(s: PhonePolicy.Snapshot): Slot? {
+        val ins = s.nodes.filter(::input)
+        val n = ins.firstOrNull { it.type != "password" && codeWords.containsMatchIn(it.name) } ?: ins.singleOrNull() ?: return null
+        return Slot(SecureInput.Field("code", "Code", SecureInput.Kind.OTP, n.id), n.id)
+    }
+
+    /** Sites whose card the user cancelled, and when: no new card there for [QUIET_MS] (the 0.30.5 rule). */
+    private val cancelled = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    const val QUIET_MS = 10 * 60_000L
+    fun forget() = cancelled.clear()
+
+    suspend fun run(d: PhoneDriver, kind0: String, reason: String, options: List<String>, cards: HandoffCards?): String {
+        val kind = kind0.trim().lowercase().replace('-', '_').ifBlank { "control" }
+        if (kind !in KINDS) return "Unknown kind \u201c${kind.take(20)}\u201d. Use one of: ${KINDS.joinToString()}."
+        if (kind == "control" || cards == null) return d.handoff(reason)
+        if (kind == "choice") {
+            val opts = options.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(5)
+            if (opts.size < 2) return "kind=choice needs 2 to 5 options, worded as the page has them."
+            d.step("Waiting for you: ${reason.take(60)}")
+            return "The user chose: \u201c${cards.choose(reason, opts).take(200)}\u201d. Act on it with phone_act."
+        }
+        if (!d.hasPage()) return PhoneBrowserTools.NO_PAGE
+        if (!d.awaitAgentTurn()) return PhoneBrowserTools.USER_HAS_IT
+        val s = d.snapshot() ?: return "Couldn't read the page right now. phone_wait, then phone_handoff again."
+        val site = d.site().ifBlank { SecureInput.hostOf(s.url) }.ifBlank { "this site" }
+        cancelled[site]?.let { if (d.now() - it < QUIET_MS) return "The user cancelled the card for $site a moment ago. Don't ask again: stop this sign-in and say in one line what you needed." }
+        val slots = if (kind == "sign_in") signIn(s) else listOfNotNull(code(s))
+        if (slots.isEmpty()) return (if (kind == "sign_in") "No sign-in field on this page." else "No code field on this page.") +
+            " phone_read; if it's on the next step go there first, or use phone_handoff with kind=control."
+        val fields = slots.map { it.field }
+        val vault = if (kind == "sign_in") fields.associate { it.name to cards.saved(site, it.name) } else emptyMap()
+        val fromVault = vault.isNotEmpty() && vault.values.all { !it.isNullOrEmpty() }
+        val answer = if (fromVault) { d.step("Using your saved sign-in for $site"); SecureInput.Answer(vault.mapValues { it.value.orEmpty() }, false) }
+        else {
+            d.step("Waiting for you: ${reason.take(60)}")
+            cards.secure(site, reason, if (kind == "code") "The code goes straight into $site." else "Your details go straight into $site and never through the chat.", fields)
+                ?: run {
+                    cancelled[site] = d.now()
+                    return "The user cancelled the card (or didn't answer). STOP this sign-in now and don't ask again for $site. Say in one line what you needed; " +
+                        "offer phone_handoff kind=control if they want to do it themselves."
+                }
+        }
+        answer.values.forEach { (n, v) -> SecureInput.put(n, v) }
+        if (answer.save) fields.filter { it.kind.saveable }.forEach { f -> answer.values[f.name]?.takeIf { it.isNotEmpty() }?.let { cards.save(site, f.name, it) } }
+        val missed = ArrayList<String>()
+        for (sl in slots) {
+            if (answer.values[sl.field.name].isNullOrEmpty()) { missed += sl.field.label; continue }
+            val t = d.locate(sl.node, true)
+            val r = t?.let { d.type(it, SecureInput.placeholder(sl.field.name), true, false) }
+            if (r == null || !r.ok) missed += sl.field.label
+        }
+        val filled = fields.filter { it.label !in missed }.joinToString(", ") { "${it.label} as ${SecureInput.placeholder(it.name)}" }
+        val head = (if (fromVault) "Filled the saved sign-in for $site: " else "The user answered; filled on $site: ") + filled.ifBlank { "nothing" } + " (values hidden)." +
+            (if (answer.save) " Saved for $site." else "") +
+            (if (missed.isNotEmpty()) " Couldn't fill ${missed.joinToString()}: phone_read, then phone_act type with its placeholder." else "") +
+            " Not submitted: tap the page's sign-in / continue button with phone_act."
+        val now = d.snapshot()?.let { PhonePolicy.render(it, maxText = 1200, maxNodes = 40) }
+        return SecureInput.scrub(if (now == null) head else "$head\n\nNow:\n$now")
+    }
+}
+

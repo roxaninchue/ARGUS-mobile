@@ -545,7 +545,7 @@ object PhoneBrowser {
         val host = SecureInput.hostOf(url)
         val list = try { BrowserLogins.forHost(host) } catch (_: Throwable) { emptyList() }
         val l = list.firstOrNull { user.isNullOrBlank() || it.user.equals(user, true) } ?: list.firstOrNull()
-            ?: return ActResult(false, "No saved login for $host. Call phone_handoff so the user signs in themselves (never ask for a password in chat). Codes (2FA) can be asked in chat with ask_user and typed with phone_act.")
+            ?: return ActResult(false, "No saved login for $host. Call phone_handoff kind=sign_in: a secure card asks the user and fills the page (never ask for a password in chat). Codes (2FA): phone_handoff kind=code.")
         val pass = l.password
         if (pass.isEmpty()) return ActResult(false, "The saved password for $host can't be read on this phone. Call phone_handoff so the user signs in.")
         SecureInput.hide(pass)

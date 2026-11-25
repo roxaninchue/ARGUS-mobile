@@ -162,6 +162,8 @@ object PhonePolicy {
         sb.append("Page: ").append(s.title.take(100)).append(" \u2014 ").append(s.url.take(200)).append('\n')
         sb.append(verify(s).line()).append('\n')
         if (s.dialog != null) sb.append("Dialog: ").append(s.dialog.take(200)).append('\n')
+        // Argus Phone step 2: a sign-in form says how to fill it, so the model never asks for a password in the chat.
+        if (s.passwordVisible) sb.append("Sign-in form: phone_act fill_login fills a saved login; otherwise phone_handoff kind=sign_in.\n")
         if (s.headings.isNotEmpty()) sb.append("Headings: ").append(s.headings.take(8).joinToString(" | ")).append('\n')
         sb.append("\nElements (use the id with phone_act):\n")
         s.nodes.take(maxNodes).forEach { sb.append(line(it)).append('\n') }

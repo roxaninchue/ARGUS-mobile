@@ -1,3 +1,11 @@
+## Unreleased: Argus Phone step 2 (branch feat/phone-handoff-cards): handoff cards
+- Argus Phone asks for a sign-in with a secure card in the chat instead of handing over control: it finds the page's
+  email / username and password fields, fills a saved login silently, otherwise asks once and types the answers
+  straight into the page. Same for one-time codes. A cancel stops the sign-in for 10 minutes.
+- Choice card for options the page offers (a size, a time slot); returns the pick.
+- Take control stays for captchas, puzzles, card forms and pages that won't take a filled field.
+- docs/PHONE-INSTANCES.md "Step 2".
+
 ## Unreleased: Gate green again (branch fix/gate-green)
 - 14 unit tests updated for 0.55.18 (no phone control) and Argus Phone steps 1/1b; build #144 failed on them.
 - AGENTS.md "Before a merge or a build"; failures/2026-11-25-red-build-144-stale-tests.md.

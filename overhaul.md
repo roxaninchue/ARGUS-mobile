@@ -130,6 +130,7 @@ Early look (not final, can change): Team, Agent chat, Life, Desk.
 
 ## Handoff log
 Append one line per session: date, who, what changed, what's next.
+- 2026-11-25 · Hark · Argus Phone step 2 on `feat/phone-handoff-cards`: phone_handoff kinds sign_in / code / choice / control (Handoffs + HandoffCards in PhoneBrowserTools.kt, phoneCards in Agent.kt), sign-in hint in page reads; 6 tests in PhoneToolSimTest. Uncompiled; Gate is the first compile. Next: step 3 (app contract, home screen, browser as first app).
 - 2026-11-25 · Hark · fix/gate-green: build #144 (0.55.18) and Gate 16 red on 14 stale tests (phone control, steps 1/1b); tests updated, merge/build checklist in AGENTS.md, failures entry. Next: green Gate, merge, rebuild 0.55.18.
 - 2026-11-25 · Hark · Argus Phone steps 1 + 1a landed via `land/phone-instances` (rebased onto 0.55.18; Gate sharding + quarantine from !80 kept, docs/ARGUS-PHONE.md from !79 included); step 1b on `feat/phone-1b`: scratch + ~/Recovered, FileLeases + conflict copies, InstallLocks in Terminal.run. 0.55.18 build cut from main on Finn's word (06:08 CAT). Next: Gate on both, merge, then step 2 (credentials cards).
 - 2026-11-25 · Hark · 0.55.18 phone-control removal merged to main (!81, f331e293) on compile-green by Finn's call; Gate unit tests had hit the 75-min cap. Gate sharding from !80 (shards 0-3 + quarantine q) kept, my tools/gate-shard.py matrix dropped; serial suite on a 4-core runner documented in docs/GATE.md. Next: first sharded Gate run on the next branch; 0.55.18 APK when Finn says build.

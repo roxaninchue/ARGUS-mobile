@@ -7,6 +7,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Test
 
 /**
@@ -223,5 +224,80 @@ class PhoneToolSimTest {
         // 0.45.19: element refs never reach the status line ("Tapping e61" on the phone).
         assertEquals("Tapping on the page", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "e10")))
         assertEquals("Tapping Reserve Now", PhoneBrowserTools.describe("phone_act", JSONObject().put("action", "click").put("target", "Reserve Now")))
+    }
+
+    // ---------- Argus Phone step 2: phone_handoff kinds (docs/ARGUS-PHONE.md 4a) ----------
+    /** Chat cards for the tests: a canned Secure Form answer (null = cancel), a canned pick, an optional saved login. */
+    class Cards(var answer: Map<String, String>? = mapOf("email" to "finn@demo.test", "password" to "pw-demo"), var save: Boolean = false,
+                val vault: MutableMap<String, String> = HashMap()) : HandoffCards {
+        val forms = mutableListOf<List<String>>(); val choices = mutableListOf<List<String>>()
+        override suspend fun secure(site: String, title: String, reason: String, fields: List<SecureField>) =
+            answer?.let { forms += fields.map { f -> f.name }; SecureAnswer(it, save) } ?: null.also { forms += fields.map { f -> f.name } }
+        override suspend fun choose(question: String, options: List<String>): String { choices += options; return options.last() }
+        override fun saved(site: String, name: String) = vault["$site/$name"]
+        override fun save(site: String, name: String, value: String) { vault["$site/$name"] = value }
+    }
+    private fun handoff(d: PhoneDriver, cards: HandoffCards?, kind: String, vararg options: String) = runBlocking {
+        PhoneBrowserTools.run(d, "phone_handoff", JSONObject().put("reason", "Sign in to Demo Tables").put("kind", kind)
+            .put("options", org.json.JSONArray(options.toList())), shots, cards) { _, _, _ -> true }
+    }
+
+    @After fun forgetHandoffs() = Handoffs.forget()
+
+    @Test fun signInCardFillsThePageAndTheModelSeesOnlyPlaceholders() {
+        val d = DemoSite(); run(d, "phone_open", JSONObject().put("url", "https://demo-tables.test/login"))
+        val c = Cards(save = true)
+        val r = handoff(d, c, "sign_in")
+        assertEquals(listOf(listOf("email", "password")), c.forms)
+        assertEquals("pw-demo", d.pass); assertEquals("{{secret:email}}", d.user)
+        assertFalse(r, r.contains("pw-demo")); assertFalse(r, r.contains("finn@demo.test"))
+        assertTrue(r, r.contains("{{secret:password}}") && r.contains("Not submitted"))
+        assertFalse(d.signedIn)   // the model taps Sign in itself
+        assertEquals("pw-demo", c.vault["demo-tables.test/password"])   // "Save for this site"
+        assertEquals(0, d.handoffs)
+    }
+
+    @Test fun aSavedLoginFillsSilently() {
+        val d = DemoSite(); run(d, "phone_open", JSONObject().put("url", "https://demo-tables.test/login"))
+        val c = Cards(vault = hashMapOf("demo-tables.test/email" to "finn@demo.test", "demo-tables.test/password" to "pw-demo"))
+        val r = handoff(d, c, "sign_in")
+        assertTrue(r, r.startsWith("Filled the saved sign-in for demo-tables.test"))
+        assertTrue(c.forms.isEmpty()); assertEquals("pw-demo", d.pass)
+    }
+
+    @Test fun aCancelStopsTheSignInAndIsNotAskedAgain() {
+        val d = DemoSite(); run(d, "phone_open", JSONObject().put("url", "https://demo-tables.test/login"))
+        val c = Cards(answer = null)
+        assertTrue(handoff(d, c, "sign_in").contains("STOP this sign-in"))
+        assertTrue(handoff(d, c, "sign_in").contains("a moment ago"))
+        assertEquals(1, c.forms.size); assertEquals("", d.pass)
+    }
+
+    @Test fun cardFieldsAreNeverASignInAndControlStaysForThem() {
+        val d = DemoSite(); signIn(d)
+        act(d, "click", "target" to "e4"); act(d, "select", "target" to "e7", "option" to "2"); act(d, "type", "target" to "e8", "text" to "20:00"); act(d, "click", "target" to "e9")
+        assertEquals("review", d.page)
+        val c = Cards()
+        assertTrue(handoff(d, c, "sign_in").startsWith("No sign-in field"))
+        assertTrue(c.forms.isEmpty())
+        assertTrue(handoff(d, c, "control").startsWith("The user handed back")); assertEquals(1, d.handoffs)
+        assertTrue(handoff(d, null, "sign_in").startsWith("The user handed back"))   // no cards: Take control
+    }
+
+    @Test fun choiceCardReturnsThePick() {
+        val d = DemoSite(); signIn(d)
+        val c = Cards()
+        assertTrue(handoff(d, c, "choice", "19:00", "20:00").contains("\u201c20:00\u201d"))
+        assertEquals(listOf(listOf("19:00", "20:00")), c.choices)
+        assertTrue(handoff(d, c, "choice", "only one").startsWith("kind=choice needs"))
+        assertTrue(handoff(d, c, "teleport").startsWith("Unknown kind"))
+    }
+
+    @Test fun signInPagesPointAtTheCard() {
+        val d = DemoSite()
+        assertTrue(run(d, "phone_open", JSONObject().put("url", "https://demo-tables.test/login")).contains("phone_handoff kind=sign_in"))
+        assertEquals("Asking you to sign in", PhoneBrowserTools.describe("phone_handoff", JSONObject().put("kind", "sign_in")))
+        val code = Handoffs.code(PhonePolicy.Snapshot("2FA", "https://x.test/2fa", "Enter the code", listOf(PhonePolicy.Node("e1", "textbox", "Verification code", "")), false))
+        assertEquals("e1", code?.node); assertEquals("code", code?.field?.name)
     }
 }
