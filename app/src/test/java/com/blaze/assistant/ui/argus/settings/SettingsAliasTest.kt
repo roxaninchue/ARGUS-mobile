@@ -22,7 +22,7 @@ class SettingsAliasTest {
     private val root = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
     private val sheet by lazy { File(root, "com/blaze/assistant/ui/SettingsSheet.kt").readText() }
 
-    private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "bank", "voice", "permissions", "account", "updates",
+    private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "voice", "permissions", "account", "updates",
         "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "secrets",   // "watches" went with phone control in 0.55.18
         "logins",
         "phonebrowser", "proactive", "orb", "logs", "replies", "usage", "backup", "ai", "memory",

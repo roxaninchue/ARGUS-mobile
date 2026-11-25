@@ -151,8 +151,6 @@ object Overlay {
         else ctx.resources.displayMetrics.let { it.widthPixels to it.heightPixels }
 
     fun showOrb(ctx: Context): Boolean {
-        // v0.43.0: nothing floats over other apps while Bank mode is on.
-        if (com.blaze.assistant.bank.BankMode.active) return false
         if (com.blaze.assistant.connect.AccountGate.locked()) return false   // account lock: the orb stays hidden (its pin is kept)
         if (orbView != null) return true
         val (hc, type) = host(ctx) ?: return false

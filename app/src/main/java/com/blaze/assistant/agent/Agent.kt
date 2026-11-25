@@ -1476,7 +1476,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(SelfKnowledge.tool())
         t.put(Awareness.tool())
         t.put(com.blaze.assistant.proactive.Jarvis.tool())
-        t.put(com.blaze.assistant.bank.BankMode.tool())   // v0.43.0 Bank mode
         t.put(com.blaze.assistant.proactive.FollowUps.tool())
         BlazeDocs.tools().forEach { t.put(it) }
         // v0.28.5: a project's full instructions / brief / notes as lookups; stripped from every chat that isn't in a project.
@@ -4676,10 +4675,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (agentId == null) FollowUpBind.toolGate(turnBind, name, args.toString())?.let { (t, d) ->
                 if (!confirm(t, d, "Do it", always = true)) return FollowUpBind.REFUSED
             }
-            // v0.43.0 Bank mode: Argus has stepped back, so it doesn't look at or act on the screen until the user turns it off.
-            if (com.blaze.assistant.bank.BankMode.active && (name in Orient.acting || name in Orient.looking || name == "open_app" || name == "search_in_app"))
-                return "Bank mode is on: ${BrandName.NAME} has stepped back so the user's banking app works, and doesn't read or use the screen. " +
-                    "Tell the user, and offer to turn Bank mode off (bank_mode action=off) when they're done banking."
             deviceLast(name, args)?.let { return it }
             val undoBefore = UndoCenter.snapshot(name)
             // 0.46.6 Secure form: {{secret:…}} handles become values here, on the phone, only for the hosts they were saved for;
@@ -4961,7 +4956,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 ProjectDocs.TOOL_SEARCH -> { add(Role.STEP, "Checking the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.search(id, args) } }
                 ProjectDocs.TOOL_READ -> { add(Role.STEP, "Reading the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.read(id, args) } }
                 com.blaze.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.blaze.assistant.proactive.FollowUps.run(args) }
-                com.blaze.assistant.bank.BankMode.TOOL -> { add(Role.STEP, if (args.optString("action") == "off") "Turning Bank mode off" else if (args.optString("action") == "on") "Turning Bank mode on" else "Checking Bank mode"); com.blaze.assistant.bank.BankMode.runTool(app, args) }
                 com.blaze.assistant.proactive.Jarvis.TOOL -> { add(Role.STEP, "Changing how often I reach out"); com.blaze.assistant.proactive.Jarvis.run(args) }
                 Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.blaze.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }) } }
                 SelfKnowledge.TOOL -> { add(Role.STEP, "Checking my own setup"); kotlinx.coroutines.withContext(Dispatchers.IO) { SelfKnowledge.report(app, args.optString("section")) } }

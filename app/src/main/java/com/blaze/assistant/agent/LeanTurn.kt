@@ -50,7 +50,7 @@ object LeanTurn {
         "blaze_self", "design",
         // 0.55.5: the old ToolRouter core and the schedule / study groups (always sent before lean). Each is one find_tools
         // away, by words or by its area's name (find_tools lists every area: [areas]). LeanTurnTest keeps this list complete.
-        "forget", "memory_update", "memory_delete", "memory_merge", "about_blaze", "jarvis_mode", "bank_mode", "follow_ups",
+        "forget", "memory_update", "memory_delete", "memory_merge", "about_blaze", "jarvis_mode", "follow_ups",
         "blaze_docs_search", "blaze_docs_read", "blazerouter", "processes", "process", "recall_memory", "list_apps", "blaze_camera",
         "self_test", "goal", "use_skill", "find_skill", "search_past_chats", "run_skill", "search_chat", "read_turn", "read_artifact",
         "update_brief", "project_docs_search", "project_docs_read", "cache_toc", "cache_read", "cache_search", "cache_summarize",

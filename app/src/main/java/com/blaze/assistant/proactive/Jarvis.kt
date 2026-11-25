@@ -107,8 +107,6 @@ object Jarvis {
         val l = level
         if (l == Level.OFF || Proactive.quietNow() || busy() || !inUse()) return@withLock
         if (Proactive.paused) return@withLock   // owner 2026-11-19: heads-ups paused: no questions, glances, routine ideas or call offers
-        // v0.43.0: Bank mode on: no screen glances, camera looks or anything else until it's off.
-        if (com.blaze.assistant.bank.BankMode.active) return@withLock
         val lim = JarvisLogic.limits(l)
         val now = System.currentTimeMillis()
         val blazeFront = Awareness.get("screen") != null

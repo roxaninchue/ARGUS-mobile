@@ -14,7 +14,7 @@ biometric, READ_MEDIA_*, battery-optimisation exemption, MODIFY_AUDIO_SETTINGS, 
 
 **Remove (status):**
 - [x] App Store: appstore/, AppStorePage, StoreInstallReceiver, assets/store, store/, STORE_CLEANROOM.md, store_* tools, tool group, settings page + view, tests
-- [ ] Bank mode + WRITE_SECURE_SETTINGS
+- [x] Bank mode + WRITE_SECURE_SETTINGS: bank/, BankModePage, BankModeService, bank_mode tool, Awareness line, Jarvis/Overlay gates, settings page + Security section, tests
 - [ ] SMS & calls + contacts (READ/SEND_SMS, CALL_PHONE, ANSWER_PHONE_CALLS, READ_CALL_LOG, READ_PHONE_STATE, READ/WRITE_CONTACTS, telephony feature)
 - [ ] Overlays SYSTEM_ALERT_WINDOW (orb, bin, live task card, overlay chat)
 - [ ] PACKAGE_USAGE_STATS, notification listener, WRITE_SETTINGS, ACCESS_NOTIFICATION_POLICY, USE_FULL_SCREEN_INTENT

@@ -29,7 +29,6 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartGuard.step("Agent.preload") { Agent.preload(this) }   // v0.45.0 (#2): the main chat is read and parsed on a background thread while the rest starts
         com.blaze.assistant.device.StartGuard.step("agent.SimpleMode.load") { com.blaze.assistant.agent.SimpleMode.load() }   // v0.39.0 Simple / Advanced
         com.blaze.assistant.device.StartGuard.step("agent.SwipeNav.load") { com.blaze.assistant.agent.SwipeNav.load() }     // v0.39.0 Navigation: Swipe or Classic tabs
-        try { com.blaze.assistant.bank.BankMode.init(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: BankMode.initth", e) }   // v0.43.0 Bank mode (back on after a restart mid-banking)
         // v0.37.0 Awareness: what's playing, on screen and just happened, for every prompt.
         try { com.blaze.assistant.agent.AwarenessHooks.install(this) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: AwarenessHooks", e) }
         // v0.24.4: back up prefs and data once per build before the setup gate (or anything after it) runs.

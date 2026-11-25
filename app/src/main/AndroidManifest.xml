@@ -63,8 +63,6 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <!-- v0.43.0 Bank mode: optional, granted only by the user with adb; lets Blaze switch phone control back on by itself. -->
-    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
 
     <queries>
         <package android:name="com.termux" />
@@ -417,8 +415,6 @@
         <service android:name=".terminal.JobKeeper" android:exported="false"
             android:foregroundServiceType="dataSync" />
         <service android:name=".agent.AgentKeeper" android:exported="false"
-            android:foregroundServiceType="dataSync" />
-        <service android:name=".bank.BankModeService" android:exported="false"
             android:foregroundServiceType="dataSync" />
 
         <receiver android:name=".widget.BlazeWidget" android:exported="false" android:label="Argus">

@@ -160,7 +160,6 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                     "look" -> LookPage()
                     "language" -> LanguagePage()
                     "doing" -> DoingPage()
-                    "bank" -> BankModePage()
                     "connections" -> ConnectionsPage()
                     "desktop" -> DesktopPage()
                     "persona" -> PersonaSection()
@@ -172,7 +171,7 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                     "memory" -> { MemoryPage(); LearningSection() }
                     "holding" -> HoldingPage()
                     "usage" -> { UsageSection(); CostCap() }
-                    // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
+                    // 0.52.3 Security: app lock and approvals.
                     "privacy" -> {
                         SecuritySection(); Spacer(Modifier.height(18.dp))
                         // P2-SF-04: Approvals & permissions (standing allows, autonomy, send scope, SpendGuard)
@@ -183,7 +182,6 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                                 // P2-SF-05: Activity (audit log)
                                 com.blaze.assistant.ui.argus.kit.SettingsItem("list-checks", "Activity", onClick = { page = "activity" })))
                         }
-                        Spacer(Modifier.height(18.dp)); BankModePage()
                     }
                     "policy" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
                         com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {

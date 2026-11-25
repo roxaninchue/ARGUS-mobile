@@ -141,7 +141,6 @@ object ToolRegistry {
             "phone_mode", "update_blaze", "browser_vpn", "toggle_setting")
         one("blaze_self", d(SETTINGS, "setup_check" to READ, "status" to READ))
         one("blazerouter", d(SETTINGS, "status" to READ, "dashboard" to READ))
-        one("bank_mode", d(SETTINGS, "status" to READ))
         one("call_copilot", d(SETTINGS, "status" to READ))
         one("halo_persona", d(SETTINGS, "list" to READ, "delete" to DELETE, "reset" to DELETE))
         one("skill_market", d(SETTINGS, "browse" to READ, "review" to READ, "share" to SEND))

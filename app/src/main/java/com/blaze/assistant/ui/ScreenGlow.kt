@@ -58,7 +58,7 @@ object ScreenGlow {
         watch = CoroutineScope(Dispatchers.Main + com.blaze.assistant.device.CrashLog.guard).launch {
             while (true) {
                 ScreenWork.active.first { it }
-                if (enabled && !com.blaze.assistant.bank.BankMode.active) show(app)
+                if (enabled) show(app)
                 while (true) { delay(400); ScreenWork.refresh(); if (!ScreenWork.active.value) break }
                 hide()
             }

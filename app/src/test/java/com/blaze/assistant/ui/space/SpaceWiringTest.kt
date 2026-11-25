@@ -144,9 +144,9 @@ class SpaceWiringTest {
         assertTrue("${S}SpaceProfile.SYSTEM_PAGE -> ${S}SpaceSystemPage { page = it }" in s)
         assertTrue("${S}SpaceProfile.FEEDBACK_PAGE -> ${S}SpaceFeedbackPage(version)" in s)
         assertTrue("the brain page is only its status", "\"ai\" -> BrainCard { page = \"account\" }" in s)
-        // P2-SF-04 / P2-SF-05: Approvals & permissions and Activity sit between the security section and Bank mode.
+        // P2-SF-04 / P2-SF-05: Approvals & permissions and Activity sit under the security section (Bank mode left in the permission trim).
         val privacy = s.substringAfter("\"privacy\" -> {").substringBefore("\n                    }\n")
-        assertTrue("Security carries Bank mode", privacy.trimStart().startsWith("SecuritySection();") && "BankModePage()" in privacy &&
+        assertTrue("Security carries approvals and activity", privacy.trimStart().startsWith("SecuritySection();") && "BankModePage()" !in privacy &&
             "\"Approvals & permissions\"" in privacy && "\"Activity\"" in privacy)
         // every page the profile can reach has a branch
         for (p in SpaceSettings.TREE - setOf(SpaceProfile.SYSTEM_PAGE, SpaceProfile.FEEDBACK_PAGE)) assertTrue("no branch for $p", "\"$p\" ->" in s)
