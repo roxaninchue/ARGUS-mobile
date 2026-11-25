@@ -9,6 +9,10 @@
 # A head commit whose message has [skip ci] does not run (GitHub honours it), so WIP commits can skip; the last commit
 # before a merge must not.
 #
+# 2026-11-25: the unit suite (~590 classes, one JVM) took 60-75 min and hit the job cap, so the job is a 4-way matrix:
+# each shard compiles, then runs its quarter of the classes (tools/gate-shard.py, round-robin). The run is green only
+# when all four shards are. The Node checks run in every shard (seconds) so any shard fails fast on them.
+#
 # Steps: Node checks (rename guard, do-not-port, design JS) -> Go jniLibs -> :app:compileDebugKotlin +
 # :app:compileDebugUnitTestKotlin -> :app:testDebugUnitTest --continue. Any failure fails the run. Failing tests and
 # compile errors go to the run summary and to ::error annotations; the totals go to a ::notice annotation. Annotations
@@ -35,8 +39,13 @@ jobs:
   gate:
     # Same-repo pull requests: the push run on the branch is the gate, so only fork PRs run here.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    name: gate (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -111,10 +120,12 @@ jobs:
           set -o pipefail
           ./gradlew :app:compileDebugKotlin :app:compileDebugUnitTestKotlin $GRADLE_FLAGS \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee compile.log
-      - name: Unit tests (:app:testDebugUnitTest)
+      - name: Unit tests (:app:testDebugUnitTest, shard ${{ matrix.shard }}/4)
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest --continue $GRADLE_FLAGS \
+          mapfile -t SHARD < <(python3 tools/gate-shard.py ${{ matrix.shard }} 4)
+          echo "shard ${{ matrix.shard }}/4: $(( ${#SHARD[@]} / 2 )) classes"
+          ./gradlew :app:testDebugUnitTest --continue "${SHARD[@]}" $GRADLE_FLAGS \
             "-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Xss8m -Dfile.encoding=UTF-8" "-Pkotlin.daemon.jvmargs=-Xmx4g -Xss32m" 2>&1 | tee test.log
 
       # ---- readable results without a sign-in: run summary + annotations (check-runs API is public)

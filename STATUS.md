@@ -60,6 +60,7 @@
   ArgusXHark (axh) port is **stopped**.
 
 ## Standing rules (Finn)
+- Gate (2026-11-25): 4-way sharded matrix (tools/gate-shard.py). The runner has 4 cores; tests used to run in one JVM serially and hit the 75-min cap. `maxParallelForks` stays off until shared test state is checked. docs/GATE.md.
 - Failures (Finn, 2026-11-24): document every crash, red build or bad deploy in `failures/` (failures/README.md has the template and index).
 
 - **No APK builds until Finn says so** (2026-11-22 21:26 CAT). Every commit message ends with `[skip ci]` until then.

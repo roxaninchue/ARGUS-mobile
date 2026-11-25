@@ -1,3 +1,6 @@
+## Unreleased: Gate runs the unit suite in 4 shards (2026-11-25)
+Finn: Gate took 60 to 75 min and got cancelled at its cap. Cause: ~590 test classes in one test JVM, serially, on a 4-core runner (no `maxParallelForks`). Gate is now a 4-way matrix (`tools/gate-shard.py`, round-robin by class). Parallel forks on one runner are documented but off. docs/GATE.md.
+
 ## 0.55.18 (versionCode 227, 2026-11-24): phone control removed from the app
 Finn (24 Nov 23:14 / 23:15): "remove phone control from Argus completely", "remove it permanently from the app".
 Picks up the half-done branch `remove/phone-control` (7420c119) on top of main 0.55.17 and finishes it.

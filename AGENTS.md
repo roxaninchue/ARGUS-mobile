@@ -16,6 +16,7 @@ it yourself right before merging:
 WIP commits may carry `[skip ci]` (no Gate run); the last commit before the merge must not. Merge with
 `PUT /projects/87806466/merge_requests/<iid>/merge` and a `merge_commit_message` ending in `[skip ci]`, so the merge
 into `main` starts no APK build until Finn says build.
+Gate is sharded 4 ways and the suite used to run serially on a 4-core runner until the 75-min cap; how to read a run (8 s fail = Node checks, 5 min = compile, 75 min = time cap) is in **docs/GATE.md**.
 
 Read **docs/MODEL-FIRST.md** before changing anything the model sees or anything that routes a user's message.
 Build the system around the model. No keyword routers that guess intent, no shouting or contradictory prompt rules,
