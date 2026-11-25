@@ -394,9 +394,7 @@
         <receiver android:name=".update.InstallReceiver" android:exported="false" />
         <receiver android:name=".proactive.ProactiveReceiver" android:exported="false" />
         <receiver android:name=".proactive.FollowUpReceiver" android:exported="false" />
-        <receiver android:name=".phone.SafeWalkReceiver" android:exported="false" />
         <receiver android:name=".stage.StageTimerReceiver" android:exported="false" />
-        <service android:name=".phone.CallCopilotService" android:exported="false" android:foregroundServiceType="microphone" />
 
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files" android:exported="false" android:grantUriPermissions="true">

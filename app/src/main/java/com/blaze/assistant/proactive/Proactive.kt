@@ -195,29 +195,9 @@ Reply ONLY with JSON: {"say": "" or "one or two short friendly sentences", "urge
 
     private val digest = mutableListOf<String>()
 
-    private val moneyWords = Regex("(airtime|bundle|data balance|low balance|insufficient|mobile money|momo|airtel money|mtn money|zamtel|kwacha|\\bZMW\\b|\\bK\\s?\\d|due|bill|invoice|overdue|payment|deliver|parcel|package|shipped|out for delivery)", RegexOption.IGNORE_CASE)
-
-    /** Cheap on-device sweep: SMS, missed calls, storage, goals due. Only lines worth a look. */
+    /** Cheap on-device sweep: storage, goals due. Only lines worth a look. (SMS and missed calls left in the 2026-11-25 permission trim.) */
     private fun sweepSignals(since: Long): String {
         val out = StringBuilder()
-        try {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(app, android.Manifest.permission.READ_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED)
-                app.contentResolver.query(android.provider.Telephony.Sms.Inbox.CONTENT_URI, arrayOf("address", "body", "date"), "date > ?", arrayOf(since.toString()), "date DESC")?.use { c ->
-                    var n = 0
-                    while (c.moveToNext() && n < 8) {
-                        val body = c.getString(1).orEmpty()
-                        if (moneyWords.containsMatchIn(body)) { out.append("- SMS from ${c.getString(0)}: ${body.replace(Regex("\\b\\d{4,8}\\b(?=.*(code|otp|pin))", RegexOption.IGNORE_CASE), "••••").take(160)}\n"); n++ }
-                    }
-                }
-        } catch (_: Exception) { }
-        try {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(app, android.Manifest.permission.READ_CALL_LOG) == android.content.pm.PackageManager.PERMISSION_GRANTED)
-                app.contentResolver.query(android.provider.CallLog.Calls.CONTENT_URI, arrayOf(android.provider.CallLog.Calls.CACHED_NAME, android.provider.CallLog.Calls.NUMBER),
-                    "${android.provider.CallLog.Calls.TYPE} = ${android.provider.CallLog.Calls.MISSED_TYPE} AND ${android.provider.CallLog.Calls.DATE} > ?", arrayOf(since.toString()), null)?.use { c ->
-                    val who = mutableListOf<String>(); while (c.moveToNext() && who.size < 5) who += (c.getString(0) ?: c.getString(1) ?: "unknown")
-                    if (who.isNotEmpty()) out.append("- Missed calls: ${who.joinToString()}\n")
-                }
-        } catch (_: Exception) { }
         try {
             // v0.30.4: the Settings figure (StorageStatsManager), not StatFs(/data), which under-reports free space.
             val freeGb = com.blaze.assistant.device.DeviceStatus.internalStorage(app)?.free?.div(1e9) ?: 99.0

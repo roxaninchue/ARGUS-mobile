@@ -41,7 +41,7 @@ val topPages = listOf(
 val advancedPages = listOf(
     SettingsPage("connections", "Accounts", "Google, GitHub, Spotify, Notion, Slack"),
     SettingsPage("desktop", "${BrandName.NAME} Desktop", "Pair with ${BrandName.NAME} on your computer"),
-    SettingsPage("control", "Phone skills", "Messages, calls, contacts and notification access"),
+    SettingsPage("control", "Phone skills", "Calendar access"),
     SettingsPage("persona", "Personality", "How ${BrandName.NAME} talks"),
     SettingsPage("feel", "Taps, sounds & panel", "Tap highlights, sounds, compact panel"),
     SettingsPage("privacy", "Security", "App lock, approvals"),

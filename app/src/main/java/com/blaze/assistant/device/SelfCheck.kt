@@ -62,9 +62,7 @@ object SelfCheck {
         val free = ctx.filesDir.usableSpace / 1e9
         out += Item("Storage", free > 0.5, "%.1f GB free for ${BrandName.NAME}".format(free))
         // Runtime permissions
-        val P = Manifest.permission.READ_CONTACTS
-        listOf("Contacts" to arrayOf(P), "Calendar" to arrayOf(Manifest.permission.READ_CALENDAR), "SMS" to arrayOf(Manifest.permission.READ_SMS),
-            "Call log" to arrayOf(Manifest.permission.READ_CALL_LOG), "Location" to arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)).forEach { (label, perms) ->
+        listOf("Calendar" to arrayOf(Manifest.permission.READ_CALENDAR)).forEach { (label, perms) ->
             val ok = Perms.has(ctx, *perms)
             out += Item("$label permission", true, if (ok) "Allowed" else "Not yet allowed: ${BrandName.NAME} will ask the first time it needs it.")
         }

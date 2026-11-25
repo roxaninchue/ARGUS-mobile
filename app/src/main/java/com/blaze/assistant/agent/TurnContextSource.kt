@@ -165,11 +165,10 @@ object TurnContextSource {
             calendar = calendarAllowed() || conn("google"),
             weather = signed || weather() != null,
             music = music,
-            sms = granted(Manifest.permission.SEND_SMS),
-            calls = granted(Manifest.permission.CALL_PHONE),
-            contacts = granted(Manifest.permission.READ_CONTACTS),
+            // 2026-11-25 permission trim: SMS, calls, contacts and location left the app, so chips never offer them.
+            sms = false, calls = false, contacts = false,
             email = conn("google"),
-            location = granted(Manifest.permission.ACCESS_COARSE_LOCATION),
+            location = false,
             phoneControl = false)   // 0.55.18: phone control left the app
     }
 

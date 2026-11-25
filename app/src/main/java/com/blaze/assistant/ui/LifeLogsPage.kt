@@ -176,9 +176,6 @@ internal fun RepliesPage(previewAccess: Boolean? = null) {
     var money by remember { mutableStateOf(com.blaze.assistant.notify.MoneyRadar.on) }
     ToggleRow("Money Radar", "Keeps a receipt vault from mobile-money and bank SMS, spots bills you pay monthly and warns before data bundles run out or expire. Only amounts, payees and balances are kept, on the phone", money) {
         money = !money; com.blaze.assistant.notify.MoneyRadar.on = money; if (money) com.blaze.assistant.notify.MoneyRadar.schedule(ctx) }
-    var copilot by remember { mutableStateOf(com.blaze.assistant.phone.CallCopilot.on) }
-    ToggleRow("Call Copilot", "Live captions during phone calls (best on speaker), suggested answers, and a summary with to-dos when you hang up. Captions only, no audio is kept", copilot) {
-        copilot = !copilot; com.blaze.assistant.phone.CallCopilot.on = copilot; if (copilot) com.blaze.assistant.phone.CallCopilot.init(ctx) }
     ToggleRow("Keep chat logs", "A rolling log per conversation in ${BrandName.NAME}'s memory, so replies have more context than the last few messages", logOn) {
         logOn = !logOn; Conversations.setLog(logOn) }
     V18Note("Codes, PINs and bank or mobile-money messages are never stored or read out.", top = 8)

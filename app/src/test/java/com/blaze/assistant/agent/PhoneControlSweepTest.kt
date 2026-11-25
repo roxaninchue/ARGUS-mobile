@@ -26,12 +26,11 @@ class PhoneControlSweepTest {
     private fun a(vararg kv: Pair<String, Any>) = JSONObject().apply { kv.forEach { put(it.first, it.second) } }
     private val noWait: suspend (Long, suspend () -> Boolean) -> Boolean = { _, ok -> ok() }
 
-    private class Fake(val fg: String? = null, val timer: Boolean? = null, val cal: Boolean? = null, val contact: Boolean? = null,
+    private class Fake(val fg: String? = null, val timer: Boolean? = null, val cal: Boolean? = null,
                        val playing: String? = null, val words: String? = null, val clock: Boolean? = null, val alarm: Pair<Int, Int>? = null) : ToolVerify.Probes {
         override suspend fun foreground() = fg
         override suspend fun timerRunning() = timer
         override suspend fun calendarHas(title: String, startMs: Long) = cal
-        override suspend fun contactHas(name: String, phone: String) = contact
         override suspend fun nowPlaying(pkg: String) = playing
         override suspend fun screenWords() = words
         override suspend fun clockAlarmOn(pid: String, hhmm: String) = clock
@@ -190,7 +189,6 @@ class PhoneControlSweepTest {
         assertEquals(Status.VERIFIED, check("add_calendar_event", ev, "Added \"QA review\" on Thu 22 Oct 15:00. [ID E1]", Fake(cal = true)).status)
         assertEquals(Status.FAILED, check("add_calendar_event", ev, "Added \"QA review\" on Thu 22 Oct 15:00. [ID E1]", Fake(cal = false)).status)
         assertEquals(Status.UNVERIFIED, check("add_calendar_event", ev, "Opened the calendar with the event filled in; the user taps Save.", Fake(cal = false)).status)
-        assertEquals(Status.VERIFIED, check("add_contact", a("name" to "QA Tester", "phone" to "0977123456"), "Saved contact QA Tester.", Fake(contact = true)).status)
         val sms = a("number" to "0977000000", "message" to "QA draft test")
         val d = check("compose_sms", sms, "Message drafted; the user needs to press send.", Fake(fg = "com.samsung.android.messaging", words = "to 0977000000 qa draft test send"))
         assertEquals(Status.VERIFIED, d.status); assertTrue(d.why.contains("NOT been sent"))
@@ -217,7 +215,7 @@ class PhoneControlSweepTest {
         assertTrue(PhoneCases.judge(draft, listOf("compose_sms" to Status.VERIFIED), "Drafted it in Messages. It hasn't been sent; tap send when you're ready.").pass)
         val off = PhoneCases.byId("alarm-off")!!
         assertFalse(PhoneCases.judge(off, listOf("process" to Status.UNVERIFIED), "Alarm removed.").pass)
-        assertEquals(11, PhoneCases.ALL.size)
+        assertEquals(10, PhoneCases.ALL.size)
         val run = PhoneQaReport.Run("timer", 1, "set a timer for 2 minutes", listOf("req-1"), "agent", "m", "p",
             listOf(PhoneQaReport.Tool("set_timer", "{}", "VERIFIED", "running")), 800, 2400, "before", "after", true, "notification", true, "proof", "Timer set for 2 min.", "c1")
         val bad = run.copy(run = 2, verified = false)

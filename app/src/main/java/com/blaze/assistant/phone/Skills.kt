@@ -14,10 +14,6 @@ import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.provider.CalendarContract
-import android.provider.CallLog
-import android.provider.ContactsContract
-import android.provider.Telephony
-import android.telephony.SmsManager
 import androidx.core.content.ContextCompat
 import com.blaze.assistant.agent.Agent
 import org.json.JSONArray
@@ -28,13 +24,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-/** Messages, calls, contacts, calendar and quick settings. Work without phone control. */
+/** Calendar and quick settings. Work without phone control. (Messages, calls and contacts left in the 2026-11-25 permission trim.) */
 object Skills {
     /** Which runtime permissions each skill group needs (Settings → Skills grants them). */
     val groups = linkedMapOf(
-        "Contacts" to arrayOf(Manifest.permission.READ_CONTACTS),
-        "Messages" to arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS),
-        "Calls" to arrayOf(Manifest.permission.READ_CALL_LOG, Manifest.permission.CALL_PHONE),
         "Calendar" to arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
     )
 
@@ -50,20 +43,9 @@ object Skills {
             .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(required))))
     private fun p(type: String, desc: String) = JSONObject().put("type", type).put("description", desc)
 
-    val names = setOf("find_contact", "read_messages", "send_sms", "recent_calls", "call_number",
-        "calendar_events", "add_calendar_event", "device_setting")
+    val names = setOf("calendar_events", "add_calendar_event", "device_setting")
 
     fun definitions(): List<JSONObject> = listOf(
-        fn("find_contact", "Look up a contact's phone number(s) by name.",
-            JSONObject().put("name", p("string", "Name or part of it")), listOf("name")),
-        fn("read_messages", "Read recent SMS messages, optionally only from one contact name or number.",
-            JSONObject().put("from", p("string", "Contact name or number (optional)")).put("limit", p("integer", "How many, default 10"))),
-        fn("send_sms", "Send an SMS directly. The user is asked to approve before it sends.",
-            JSONObject().put("to", p("string", "Phone number or contact name")).put("message", p("string", "Text to send")), listOf("to", "message")),
-        fn("recent_calls", "List recent calls (missed, incoming, outgoing).",
-            JSONObject().put("limit", p("integer", "How many, default 10"))),
-        fn("call_number", "Place a phone call. The user is asked to approve first.",
-            JSONObject().put("to", p("string", "Phone number or contact name")), listOf("to")),
         fn("calendar_events", "List the phone calendar's events from about an hour ago through the next N days (title, time, place, event id). Find an event here before move_event reschedules it or delete_event removes it (for example one that is over or cancelled).",
             JSONObject().put("days", p("integer", "Days ahead, default 1 (today)"))),
         // 18 Nov 2026 (owner): a reminder belongs on the calendar, where it reaches the user offline and on every device.
@@ -81,11 +63,6 @@ object Skills {
     )
 
     fun describe(name: String, a: JSONObject): String = when (name) {
-        "find_contact" -> "Looking up ${a.optString("name")}"
-        "read_messages" -> "Reading messages"
-        "send_sms" -> "Texting ${a.optString("to")}"
-        "recent_calls" -> "Checking recent calls"
-        "call_number" -> "Calling ${a.optString("to")}"
         "calendar_events" -> "Checking your calendar"
         "add_calendar_event" -> "Adding \"${a.optString("title")}\" to your calendar"
         "device_setting" -> "Adjusting ${a.optString("setting").replace('_', ' ')}"
@@ -94,10 +71,6 @@ object Skills {
 
     /** The runtime permissions each tool needs: asked for in-app the first time instead of failing. */
     private val needs = mapOf(
-        "find_contact" to arrayOf(Manifest.permission.READ_CONTACTS),
-        "read_messages" to arrayOf(Manifest.permission.READ_SMS),
-        "send_sms" to arrayOf(Manifest.permission.SEND_SMS),
-        "recent_calls" to arrayOf(Manifest.permission.READ_CALL_LOG),
         "calendar_events" to arrayOf(Manifest.permission.READ_CALENDAR),
         "add_calendar_event" to arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
     )
@@ -111,123 +84,12 @@ object Skills {
         val denied = if (want != null && !com.blaze.assistant.device.Perms.ensure(ctx, *want) && name != "add_calendar_event")
             (if (name == "calendar_events") CALENDAR_OFF else com.blaze.assistant.device.Perms.denied(name.replace('_', ' '))) else null
         denied ?: when (name) {
-            "find_contact" -> findContact(ctx, a.getString("name"))
-            "read_messages" -> readSms(ctx, a.optString("from").ifBlank { null }, a.optInt("limit", 10))
-            "send_sms" -> sendSms(ctx, a.getString("to"), a.getString("message"))
-            "recent_calls" -> recentCalls(ctx, a.optInt("limit", 10))
-            "call_number" -> call(ctx, a.getString("to"))
             "calendar_events" -> events(ctx, a.optInt("days", 1))
             "add_calendar_event" -> addEvent(ctx, a)
             "device_setting" -> setting(ctx, a.getString("setting"), a.optString("value"))
             else -> "Unknown skill $name"
         }
     } catch (e: SecurityException) { "Permission denied: ${e.message}" } catch (e: Exception) { "Error: ${e.message}" }
-
-    // ---------- Contacts ----------
-
-    internal fun contacts(ctx: Context, name: String): List<Pair<String, String>> {
-        if (!has(ctx, Manifest.permission.READ_CONTACTS)) return emptyList()
-        val out = mutableListOf<Pair<String, String>>()
-        ctx.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER),
-            "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?", arrayOf("%$name%"), null)?.use {
-            while (it.moveToNext() && out.size < 8) out += it.getString(0) to it.getString(1)
-        }
-        if (out.isNotEmpty()) return out.distinctBy { it.second.filter(Char::isDigit) }
-        // v0.28.7: nothing by LIKE (a typo, emoji, words in another order): score every contact instead.
-        val all = mutableListOf<Pair<String, String>>()
-        ctx.contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER), null, null, null)?.use {
-            while (it.moveToNext() && all.size < 5000) { val n = it.getString(0) ?: continue; all += n to (it.getString(1) ?: continue) }
-        }
-        return all.map { it to SendCheck.score(name, it.first) }.filter { it.second > 0 }.sortedByDescending { it.second }
-            .map { it.first }.distinctBy { it.second.filter(Char::isDigit) }.take(8)
-    }
-
-    private fun findContact(ctx: Context, name: String): String {
-        if (!has(ctx, Manifest.permission.READ_CONTACTS)) return missing("Contacts")
-        val c = contacts(ctx, name)
-        return if (c.isEmpty()) "No contact matches \"$name\"." else c.joinToString("\n") { "${it.first}: ${it.second}" }
-    }
-
-    /** A number, or the single contact matching a name. */
-    internal fun resolve(ctx: Context, to: String): Pair<String, String>? {
-        val digits = to.filter { it.isDigit() || it == '+' }
-        if (digits.length >= 5 && digits.length >= to.count { !it.isWhitespace() } - 2) return to to digits
-        val c = contacts(ctx, to)
-        return if (c.size == 1 || (c.isNotEmpty() && c.all { it.first == c[0].first })) c[0] else null
-    }
-
-    private fun nameFor(ctx: Context, number: String): String? {
-        if (!has(ctx, Manifest.permission.READ_CONTACTS)) return null
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
-        return ctx.contentResolver.query(uri, arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME), null, null, null)?.use {
-            if (it.moveToFirst()) it.getString(0) else null
-        }
-    }
-
-    // ---------- Messages ----------
-
-    private val stamp get() = SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault())
-
-    private fun readSms(ctx: Context, from: String?, limit: Int): String {
-        if (!has(ctx, Manifest.permission.READ_SMS)) return missing("Messages")
-        val numbers = from?.let { f -> resolve(ctx, f)?.second?.let { listOf(it) } ?: contacts(ctx, f).map { it.second } }
-        val out = mutableListOf<String>()
-        ctx.contentResolver.query(Telephony.Sms.CONTENT_URI,
-            arrayOf(Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.TYPE),
-            null, null, "${Telephony.Sms.DATE} DESC")?.use {
-            while (it.moveToNext() && out.size < limit.coerceIn(1, 30)) {
-                val addr = it.getString(0) ?: continue
-                if (numbers != null && numbers.none { n -> n.filter(Char::isDigit).takeLast(9) == addr.filter(Char::isDigit).takeLast(9) }) continue
-                val who = nameFor(ctx, addr) ?: addr
-                val dir = if (it.getInt(3) == Telephony.Sms.MESSAGE_TYPE_SENT) "You → $who" else "$who"
-                out += "[${stamp.format(Date(it.getLong(2)))}] $dir: ${it.getString(1).take(300)}"
-            }
-        }
-        return if (out.isEmpty()) "No messages found." else out.joinToString("\n")
-    }
-
-    private suspend fun sendSms(ctx: Context, to: String, msg: String): String {
-        if (!has(ctx, Manifest.permission.SEND_SMS)) return missing("Messages")
-        val (who, number) = resolve(ctx, to) ?: return "Couldn't tell which number \"$to\" is. Use find_contact and ask the user."
-        if (!Agent.confirm("Send a text to $who?", "\u201c$msg\u201d", "Send", always = true)) return "The user declined. The message was NOT sent."
-        val sms = if (Build.VERSION.SDK_INT >= 31) ctx.getSystemService(SmsManager::class.java) else @Suppress("DEPRECATION") SmsManager.getDefault()
-        val parts = sms.divideMessage(msg)
-        sms.sendMultipartTextMessage(number, null, parts, null, null)
-        return "Sent to $who ($number)."
-    }
-
-    // ---------- Calls ----------
-
-    private fun recentCalls(ctx: Context, limit: Int): String {
-        if (!has(ctx, Manifest.permission.READ_CALL_LOG)) return missing("Calls")
-        val out = mutableListOf<String>()
-        ctx.contentResolver.query(CallLog.Calls.CONTENT_URI,
-            arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.TYPE, CallLog.Calls.DATE, CallLog.Calls.DURATION),
-            null, null, "${CallLog.Calls.DATE} DESC")?.use {
-            while (it.moveToNext() && out.size < limit.coerceIn(1, 30)) {
-                val kind = when (it.getInt(2)) {
-                    CallLog.Calls.MISSED_TYPE -> "Missed"; CallLog.Calls.OUTGOING_TYPE -> "Outgoing"
-                    CallLog.Calls.INCOMING_TYPE -> "Incoming"; CallLog.Calls.REJECTED_TYPE -> "Rejected"; else -> "Call"
-                }
-                val who = it.getString(1)?.takeIf { n -> n.isNotBlank() } ?: it.getString(0)
-                out += "[${stamp.format(Date(it.getLong(3)))}] $kind: $who (${it.getLong(4)}s)"
-            }
-        }
-        return if (out.isEmpty()) "No calls found." else out.joinToString("\n")
-    }
-
-    private suspend fun call(ctx: Context, to: String): String {
-        val (who, number) = resolve(ctx, to) ?: return "Couldn't tell which number \"$to\" is. Use find_contact and ask the user."
-        if (!has(ctx, Manifest.permission.CALL_PHONE)) {
-            ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            return "Opened the dialer for $who; the user presses call."
-        }
-        if (!Agent.confirm("Call $who?", number, "Call", always = true)) return "The user declined. No call was placed."
-        ctx.startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        return "Calling $who."
-    }
 
     // ---------- Calendar ----------
 

@@ -54,22 +54,6 @@ class VerifyProbes(private val ctx: Context) : ToolVerify.Probes {
         }
     } catch (_: Throwable) { null }
 
-    override suspend fun contactHas(name: String, phone: String): Boolean? = try {
-        if (ctx.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) null
-        else {
-            val digits = phone.filter(Char::isDigit).takeLast(9)
-            if (digits.isNotEmpty()) ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                arrayOf(android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER),
-                "${android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} = ?", arrayOf(name.trim()), null)?.use { c ->
-                var hit = false
-                while (c.moveToNext()) if (c.getString(1).orEmpty().filter(Char::isDigit).endsWith(digits)) { hit = true; break }
-                hit
-            }
-            else ctx.contentResolver.query(android.provider.ContactsContract.Contacts.CONTENT_URI, arrayOf(android.provider.ContactsContract.Contacts._ID),
-                "${android.provider.ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} = ?", arrayOf(name.trim()), null)?.use { it.count > 0 }
-        }
-    } catch (_: Throwable) { null }
-
     override suspend fun timerRunning(): Boolean? = try {
         val nb = com.blaze.assistant.notify.NotificationBrain.instance
         if (nb == null) null

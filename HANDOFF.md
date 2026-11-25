@@ -15,7 +15,7 @@ biometric, READ_MEDIA_*, battery-optimisation exemption, MODIFY_AUDIO_SETTINGS, 
 **Remove (status):**
 - [x] App Store: appstore/, AppStorePage, StoreInstallReceiver, assets/store, store/, STORE_CLEANROOM.md, store_* tools, tool group, settings page + view, tests
 - [x] Bank mode + WRITE_SECURE_SETTINGS: bank/, BankModePage, BankModeService, bank_mode tool, Awareness line, Jarvis/Overlay gates, settings page + Security section, tests
-- [ ] SMS & calls + contacts (READ/SEND_SMS, CALL_PHONE, ANSWER_PHONE_CALLS, READ_CALL_LOG, READ_PHONE_STATE, READ/WRITE_CONTACTS, telephony feature)
+- [x] SMS & calls + contacts (code): Messaging (message_contact), CallCopilot (+service), SafeWalk (+receiver), SendCheck, Ussd (run_ussd), Skills find_contact/read_messages/send_sms/recent_calls/call_number, PimEdit add_contact/edit_contact, FastLane call_contact/send_text, CallControl cut to Argus call-screen only (no telecom), proactive SMS / missed-call sweep, PC message sends (answer "not sent"), contact QA case; manifest perms pending in the manifest chunk
 - [ ] Overlays SYSTEM_ALERT_WINDOW (orb, bin, live task card, overlay chat)
 - [ ] PACKAGE_USAGE_STATS, notification listener, WRITE_SETTINGS, ACCESS_NOTIFICATION_POLICY, USE_FULL_SCREEN_INTENT
 - [ ] Location, BLUETOOTH_CONNECT, SET_WALLPAPER, REQUEST_DELETE_PACKAGES, termux RUN_COMMAND

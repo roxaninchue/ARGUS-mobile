@@ -1,12 +1,10 @@
 package com.blaze.assistant.phone
 
 import android.Manifest
-import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
-import android.provider.ContactsContract
 import com.blaze.assistant.device.Perms
 import org.json.JSONArray
 import org.json.JSONObject
@@ -15,81 +13,24 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-/** Add/edit contacts and move/delete calendar events on the phone itself. Approval is asked by the agent. */
+/** Move/delete calendar events on the phone itself. Approval is asked by the agent. (Contacts left in the 2026-11-25 permission trim.) */
 object PimEdit {
-    val names = setOf("add_contact", "edit_contact", "move_event", "delete_event")
+    val names = setOf("move_event", "delete_event")
 
     private val fmt get() = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
 
     fun describe(name: String, a: JSONObject): Pair<String, String> = when (name) {
-        "add_contact" -> "Add contact?" to listOf(a.optString("name"), a.optString("phone"), a.optString("email")).filter { it.isNotBlank() }.joinToString(" · ")
-        "edit_contact" -> "Change contact?" to "${a.optString("name")} → " + listOf(a.optString("new_name"), a.optString("phone"), a.optString("email")).filter { it.isNotBlank() }.joinToString(" · ")
         "move_event" -> "Move event?" to "${a.optString("title").ifBlank { "event " + a.optString("event_id") }} → ${a.optString("new_start")}"
         else -> "Delete event?" to listOf(a.optString("title"), a.optString("day")).filter { it.isNotBlank() }.joinToString(" \u00b7 ").ifBlank { "event ${a.optString("event_id")}" }
     }
 
     suspend fun run(ctx: Context, name: String, a: JSONObject): String = try {
         when (name) {
-            "add_contact" -> addContact(ctx, a)
-            "edit_contact" -> editContact(ctx, a)
             "move_event" -> moveEvent(ctx, a)
             "delete_event" -> deleteEvent(ctx, a)
             else -> "Unknown tool."
         }
     } catch (e: SecurityException) { Perms.denied("that") } catch (e: Exception) { "Error: ${e.message}" }
-
-    // ---------- contacts ----------
-
-    private suspend fun addContact(ctx: Context, a: JSONObject): String {
-        if (!Perms.ensure(ctx, Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)) return Perms.denied("contacts")
-        val nm = a.optString("name").trim().ifBlank { return "A contact needs a name." }
-        val ops = arrayListOf(
-            ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null).withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null).build(),
-            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, nm).build())
-        a.optString("phone").takeIf { it.isNotBlank() }?.let {
-            ops += ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, it)
-                .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE).build() }
-        a.optString("email").takeIf { it.isNotBlank() }?.let {
-            ops += ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-                .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, it)
-                .withValue(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME).build() }
-        ctx.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
-        return "Saved contact $nm."
-    }
-
-    private fun rawIdFor(ctx: Context, name: String): Pair<Long, String>? =
-        ctx.contentResolver.query(ContactsContract.RawContacts.CONTENT_URI,
-            arrayOf(ContactsContract.RawContacts._ID, ContactsContract.RawContacts.DISPLAY_NAME_PRIMARY),
-            "${ContactsContract.RawContacts.DISPLAY_NAME_PRIMARY} LIKE ? AND ${ContactsContract.RawContacts.DELETED}=0", arrayOf("%$name%"), null)?.use {
-            if (it.moveToFirst()) it.getLong(0) to (it.getString(1) ?: name) else null
-        }
-
-    private fun upsert(ctx: Context, raw: Long, mime: String, column: String, value: String) {
-        val where = "${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?"
-        val args = arrayOf(raw.toString(), mime)
-        val n = ctx.contentResolver.update(ContactsContract.Data.CONTENT_URI, ContentValues().apply { put(column, value) }, where, args)
-        if (n == 0) ctx.contentResolver.insert(ContactsContract.Data.CONTENT_URI, ContentValues().apply {
-            put(ContactsContract.Data.RAW_CONTACT_ID, raw); put(ContactsContract.Data.MIMETYPE, mime); put(column, value)
-            if (mime == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) put(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
-            if (mime == ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE) put(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME)
-        })
-    }
-
-    private suspend fun editContact(ctx: Context, a: JSONObject): String {
-        if (!Perms.ensure(ctx, Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)) return Perms.denied("contacts")
-        val (raw, found) = rawIdFor(ctx, a.optString("name").trim()) ?: return "No contact matching \u201c${a.optString("name")}\u201d."
-        val changed = mutableListOf<String>()
-        a.optString("new_name").takeIf { it.isNotBlank() }?.let { upsert(ctx, raw, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE, ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, it); changed += "name → $it" }
-        a.optString("phone").takeIf { it.isNotBlank() }?.let { upsert(ctx, raw, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE, ContactsContract.CommonDataKinds.Phone.NUMBER, it); changed += "phone → $it" }
-        a.optString("email").takeIf { it.isNotBlank() }?.let { upsert(ctx, raw, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE, ContactsContract.CommonDataKinds.Email.ADDRESS, it); changed += "email → $it" }
-        return if (changed.isEmpty()) "Nothing to change for $found." else "Updated $found: ${changed.joinToString(", ")}."
-    }
 
     // ---------- calendar ----------
 
@@ -169,9 +110,6 @@ object PimEdit {
             .put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
         fun s(d: String) = JSONObject().put("type", "string").put("description", d)
         return listOf(
-            fn("add_contact", "Save a new contact on the phone. Asks the user first.", JSONObject().put("name", s("Full name")).put("phone", s("Phone number")).put("email", s("Email")), listOf("name")),
-            fn("edit_contact", "Change an existing phone contact's name, number or email. Asks the user first.", JSONObject().put("name", s("Current name (or part)")).put("new_name", s("New name"))
-                .put("phone", s("New phone number")).put("email", s("New email")), listOf("name")),
             fn("move_event", "Move a phone calendar event to a new time. Asks the user first.", JSONObject().put("event_id", s("The event's id from calendar_events ([id N]); best")).put("title", s("Event title (or part)")).put("day", s("yyyy-MM-dd it's on now, if known"))
                 .put("new_start", s("yyyy-MM-dd HH:mm")).put("duration_minutes", JSONObject().put("type", "integer").put("description", "New length; default keeps it")), listOf("new_start")),
             fn("delete_event", "Delete one phone calendar event, for example one that is cancelled or no longer wanted. Find it with calendar_events and pass its event_id. Asks the user first.",

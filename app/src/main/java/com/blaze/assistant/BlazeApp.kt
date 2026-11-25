@@ -49,8 +49,6 @@ class BlazeApp : Application() {
             try { com.blaze.assistant.agent.MindReview.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: MindReview.sch", e) }
         }, "blaze-start-bg").start()
         // v0.33.0 Safe Walk survives a reboot / process restart; sealed time capsules keep their wake-up. (After the first frame.)
-        com.blaze.assistant.device.StartLater.add("phone.SafeWalk.handle") { com.blaze.assistant.phone.SafeWalk.handle(this, android.content.Intent.ACTION_BOOT_COMPLETED) }
-        com.blaze.assistant.device.StartLater.add("phone.CallCopilot.init") { com.blaze.assistant.phone.CallCopilot.init(this) }
         // v1.9.10 fix: a leftover "Auto" steps model silently sent phone steps through the free chain
         // even after the user picked a specific model. Clear it once; they can set it again.
         if (Settings.str("mig_steps_auto", "").isEmpty()) {

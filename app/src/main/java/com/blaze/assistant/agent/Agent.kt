@@ -1451,8 +1451,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         com.blaze.assistant.phone.AndroidControl.tools().forEach { t.put(it) }
         t.put(Autonomy.findToolDef()); t.put(Autonomy.goalTool()); t.put(Autonomy.permissionTool())
         com.blaze.assistant.proactive.Triggers.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.phone.Ussd.tool())
-        t.put(com.blaze.assistant.phone.Messaging.tool())
         com.blaze.assistant.browser.BrowserTools.definitions().forEach { t.put(it) }
         t.put(SecretDesk.toolDef())   // 0.46.6 Secure form
         PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Argus Phone browser
@@ -1503,7 +1501,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.media.GalleryOps.tool())   // v0.34.0
         t.put(com.blaze.assistant.device.CameraMathTool.tool())   // v0.34.0
         t.put(com.blaze.assistant.notify.MoneyRadar.tool())
-        t.put(com.blaze.assistant.phone.SafeWalk.tool())
         t.put(com.blaze.assistant.device.PhoneHealth.tool())
         t.put(TimeCapsule.tool())
         t.put(com.blaze.assistant.agent.query.QueryRuntime.tool())   // 0.51.0 BlazeQuery research (Halo Persona Studio tool removed)
@@ -1511,7 +1508,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.mediaapps.BeatLab.tool())
         t.put(com.blaze.assistant.mediaapps.ClipStudio.tool())
         t.put(DuoWorkspace.tool())
-        t.put(com.blaze.assistant.phone.CallCopilot.tool())
         t.put(com.blaze.assistant.mediaapps.CoverArt.tool())
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
         t.put(com.blaze.assistant.notify.GroupBrain.tool())
@@ -5027,13 +5023,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             com.blaze.assistant.terminal.StorageAccess.granted(app))) + cpNote
                     }
                 }
-                "run_ussd" -> {
-                    val code = args.optString("code")
-                    add(Role.STEP, "Dialling $code")
-                    if (com.blaze.assistant.phone.Ussd.risky(code) && !confirm("Dial $code?", "This looks like a mobile money or multi-step code.", "Dial", always = true))
-                        "The user did NOT approve dialling $code."
-                    else com.blaze.assistant.phone.Ussd.run(app, code)
-                }
                 in com.blaze.assistant.terminal.DevTools.names -> {
                     add(Role.STEP, when (name) {
                         "run_code" -> "Running ${args.optString("language", "code")}"
@@ -5141,7 +5130,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 in BgAgents.toolNames -> BgAgents.run(name, args, id)
                 "call_control" -> {
                     add(Role.STEP, when (args.optString("action")) { "speaker" -> if (args.optBoolean("on", true)) "Loudspeaker on" else "Loudspeaker off"; "mute" -> if (args.optBoolean("on", true)) "Muting" else "Unmuting"
-                        "end" -> "Hanging up"; "answer" -> "Answering"; "decline" -> "Declining"; "start_blaze_call" -> "Starting a call"; "keypad" -> "Pressing ${args.optString("digits")}"; else -> "Call controls" })
+                        "end" -> "Hanging up"; "start_blaze_call" -> "Starting a call"; else -> "Call controls" })
                     com.blaze.assistant.phone.CallControl.run(app, args)
                 }
                 "clipboard" -> {
@@ -5214,7 +5203,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     try { Learning.run(app, name, args).let { if (name == "run_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
                 "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.blaze.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }
-                com.blaze.assistant.phone.Messaging.NAME -> { add(Role.STEP, "Messaging ${args.optString("to")}"); com.blaze.assistant.phone.Messaging.run(app, args) }
                 com.blaze.assistant.browser.BrowserTools.SECURE -> secureInput(args)
                 SecretDesk.TOOL -> {
                     mood = Mood.IDLE
@@ -5259,8 +5247,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         com.blaze.assistant.notify.Conversations.reply(app, args.optString("conversation"), args.optString("text")) }
                     name in com.blaze.assistant.notify.Conversations.toolNames -> { add(Role.STEP, if (name == "notif_read") "Reading the chat with ${args.optString("conversation").take(40)}" else "Checking your chats")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.Conversations.run(app, name, args) } }
-                    name == com.blaze.assistant.phone.SafeWalk.TOOL -> { add(Role.STEP, "Safe Walk")
-                        com.blaze.assistant.phone.SafeWalk.run(app, args) }
                     name == com.blaze.assistant.device.PhoneHealth.TOOL -> { add(Role.STEP, "Checking your phone's health")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.device.PhoneHealth.run(app, args) } }
                     name == com.blaze.assistant.mediaapps.CoverArt.TOOL -> { add(Role.STEP, "Forging cover art")
@@ -5275,7 +5261,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         Marketplace.run(app, args) }
                     name == DuoWorkspace.TOOL -> { add(Role.STEP, "Workspace: ${args.optString("action")}")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { DuoWorkspace.run(app, args) } }
-                    name == com.blaze.assistant.phone.CallCopilot.TOOL -> { add(Role.STEP, "Call Copilot"); com.blaze.assistant.phone.CallCopilot.run(app, args) }
                     name == HaloStudio.TOOL -> "Halo is now part of ${BrandName.NAME} (0.51.0): there's no separate Halo persona to tune. Change ${BrandName.NAME}'s personality in Settings › Personality."
                     name == com.blaze.assistant.agent.query.QueryRuntime.TOOL -> {
                         add(Role.STEP, "Researching \u201c${args.optString("question").take(50)}\u201d")
