@@ -59,7 +59,7 @@ class LazyStartTest {
         assertTrue(b.indexOf("StartWarm.begin(this)") < b.indexOf("StartGuard.step(\"Settings.init\")"))
         assertTrue(b.contains("StartLater.armFallback()"))
         // work the first frame doesn't need waits for it
-        for (k in listOf("proactive.Triggers.init", "proactive.Proactive.start", "ui.Overlay.watchTasks", "update.Updater.checkInBackground"))
+        for (k in listOf("proactive.Triggers.init", "proactive.Proactive.start", "update.Updater.checkInBackground"))
             assertTrue("$k should start after the first frame", b.contains("StartLater.add(\"$k\")"))
         assertTrue(b.contains("LazyStart.ON_CREATE_BUDGET_MS"))
         // Owner 16 Nov 2026: the on-device backup brain is gone; only its one-time cleanup runs

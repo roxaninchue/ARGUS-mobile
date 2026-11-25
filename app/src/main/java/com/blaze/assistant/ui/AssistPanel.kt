@@ -81,27 +81,27 @@ import kotlinx.coroutines.launch
 
 /** Header buttons of the assistant panel, in order (pure, tested). Compact shows Show more and Close (0.55.11: Magic Hand's button went with phone control). */
 object PanelButtons {
-    enum class B(val desc: String) { NEW("New chat"), PIN("Pin the floating orb"), OPEN("Open ${BrandName.NAME}"), MORE("Show more"), LESS("Show less"), CLOSE("Close") }
-    fun of(compact: Boolean): List<B> = if (compact) listOf(B.MORE, B.CLOSE) else listOf(B.NEW, B.PIN, B.OPEN, B.LESS, B.CLOSE)
+    enum class B(val desc: String) { NEW("New chat"), OPEN("Open ${BrandName.NAME}"), MORE("Show more"), LESS("Show less"), CLOSE("Close") }
+    fun of(compact: Boolean): List<B> = if (compact) listOf(B.MORE, B.CLOSE) else listOf(B.NEW, B.OPEN, B.LESS, B.CLOSE)
 }
 
 /**
  * Compact chat over any app (v0.24.6 look): a fully rounded dark Argus card, the mascot with a listening pulse,
- * round icon buttons (described for TalkBack) instead of NEW / PIN / OPEN / LESS / ×, a rounded input pill that
+ * round icon buttons (described for TalkBack) instead of NEW / OPEN / LESS / ×, a rounded input pill that
  * also takes pictures from the keyboard, round mic / stop and send buttons, and Argus's particles running along the
  * screen edges while it's summoned (they stop when it's dismissed).
  * [preview*] parameters are for screenshots only.
  */
 @Composable
-fun AssistPanel(autoListen: Boolean, onClose: () -> Unit, onPin: () -> Unit, onExpand: () -> Unit,
+fun AssistPanel(autoListen: Boolean, onClose: () -> Unit, onExpand: () -> Unit,
                 previewMessages: List<ChatMessage>? = null, previewListening: Boolean = false, previewCompact: Boolean? = null) {
     CompositionLocalProvider(LocalBlaze provides DarkColors) {
-        AssistPanelBody(autoListen, onClose, onPin, onExpand, previewMessages, previewListening, previewCompact)
+        AssistPanelBody(autoListen, onClose, onExpand, previewMessages, previewListening, previewCompact)
     }
 }
 
 @Composable
-private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () -> Unit, onExpand: () -> Unit,
+private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onExpand: () -> Unit,
                             previewMessages: List<ChatMessage>?, previewListening: Boolean, previewCompact: Boolean?) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val live by Agent.messages.collectAsState()
@@ -203,13 +203,12 @@ private fun AssistPanelBody(autoListen: Boolean, onClose: () -> Unit, onPin: () 
                 PanelButtons.of(compact).forEach { b ->
                     Spacer(Modifier.width(4.dp))
                     GlassIconButton(when (b) {
-                        PanelButtons.B.NEW -> Icons.Rounded.AddComment; PanelButtons.B.PIN -> Icons.Rounded.PushPin
+                        PanelButtons.B.NEW -> Icons.Rounded.AddComment
                         PanelButtons.B.OPEN -> Icons.Rounded.OpenInFull; PanelButtons.B.MORE -> Icons.Rounded.UnfoldMore
                         PanelButtons.B.LESS -> Icons.Rounded.UnfoldLess; PanelButtons.B.CLOSE -> Icons.Rounded.Close
                     }, b.desc, size = 36.dp, bg = Glass.raised) {
                         when (b) {
                             PanelButtons.B.NEW -> { Voice.cancelListening(); Agent.clear(); text = "" }
-                            PanelButtons.B.PIN -> onPin()
                             PanelButtons.B.OPEN -> onExpand()
                             PanelButtons.B.MORE, PanelButtons.B.LESS -> { compact = !compact; touched = true; Settings.setBool("compact_panel", compact) }
                             PanelButtons.B.CLOSE -> { Voice.cancelListening(); onClose() }

@@ -384,15 +384,6 @@ object Settings {
         get() = b("app_lock", false)
         set(v) = prefs.edit().putBoolean("app_lock", v).apply()
 
-    var orbPinned: Boolean
-        get() = b("orb_pinned", false)
-        set(v) = prefs.edit().putBoolean("orb_pinned", v).apply()
-    var orbX: Int
-        get() = prefs.getInt("orb_x", -1)
-        set(v) = prefs.edit().putInt("orb_x", v).apply()
-    var orbY: Int
-        get() = prefs.getInt("orb_y", -1)
-        set(v) = prefs.edit().putInt("orb_y", v).apply()
 
     var userName: String
         get() = s("user_name", "") ?: ""

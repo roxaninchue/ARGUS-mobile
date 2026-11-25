@@ -49,7 +49,7 @@ object ArgusSettings {
         Group("You & phone", listOf(
             Row("voice", "Voice", "mic", "voice", listOf("hey argus", "wake word", "voices", "my voice", "spoken replies")),
             Row("notifications", "Notifications & proactivity", "bell", "proactive", listOf("proactive", "triggers", "check-ins", "speak up")),
-            Row("phone", "Phone & permissions", "smartphone", "permissions", listOf("overlay", "microphone", "battery", "notifications access")),
+            Row("phone", "Phone & permissions", "smartphone", "permissions", listOf("microphone", "battery", "notifications")),
             Row("wallet", "Wallet & logins", "key", "secrets", listOf("keys", "tokens", "cards", "logins", "passwords")),
             Row("look", "Appearance", "palette", "look", listOf("theme", "dark", "light", "ground", "size", "handedness", "left-handed", "reduced motion", "animations")),
             Row("language", "Language", "globe", "language"),

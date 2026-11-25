@@ -74,7 +74,6 @@ object SelfCheck {
             !FastLane.ready(ctx) -> "Model not downloaded yet."
             !Settings.fastLane -> "Downloaded but turned off."
             else -> "Ready · ${com.blaze.assistant.agent.IntentCache.size()} cached commands" })
-        out += Item("Overlay", android.provider.Settings.canDrawOverlays(ctx), if (android.provider.Settings.canDrawOverlays(ctx)) "Orb and live task card allowed" else "Not allowed: no floating orb or task card.", "overlay")
         val mic = ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         out += Item("Microphone", mic, if (mic) "Allowed" else "Not allowed: voice and wake word won't work.", "app_permissions")
         val notif = android.os.Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED

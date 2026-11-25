@@ -100,17 +100,4 @@ class Blaze050ShotsTest {
         assertTrue(rule.onAllNodes(hasContentDescription("Restore the chat")).fetchSemanticsNodes().isNotEmpty())
     }
 
-    @Test fun edgeParticles() {
-        MotionTokens.setEnabledForTests(false)
-        rule.setContent {
-            Box(Modifier.fillMaxSize().background(Color(0xFF101114))) {
-                androidx.compose.material3.Text("Some app", color = Color.White)
-                ScreenWorkGlow(visible = true)
-            }
-        }
-        rule.waitUntil(5_000) { rule.onAllNodes(hasText("Some app")).fetchSemanticsNodes().isNotEmpty() }
-        rule.mainClock.advanceTimeBy(600)
-        assertTrue("edge particles frame is blank", distinct(capture("edge-particles")) > 12)
-        MotionTokens.setEnabledForTests(true)
-    }
 }

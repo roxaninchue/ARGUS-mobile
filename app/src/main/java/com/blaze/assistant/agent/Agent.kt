@@ -253,8 +253,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     private val askLock = kotlinx.coroutines.sync.Mutex()
 
     /**
-     * Pause the task and ask the user. In Argus it's a card in the chat; over another app the
-     * orb panel pops up with the question so the task continues right where it is.
+     * Pause the task and ask the user. In Argus it's a card in the chat; while the user is in another app a
+     * notification asks (the panel over other apps left with SYSTEM_ALERT_WINDOW, 2026-11-25).
      */
     suspend fun askUser(question0: String, options: List<String>, chat: String): String = askLock.withLock {
         val tag = kotlin.coroutines.coroutineContext[BgAgents.Tag]
@@ -262,12 +262,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val d = kotlinx.coroutines.CompletableDeferred<String>()
         tag?.let { BgAgents.setWaiting(it.id, true) }
         _question.value = PendingQuestion(question, options.filter { it.isNotBlank() }.take(5), chat, d)
-        var popped = false
-        if (!inForeground && !overlayOpen) {
-            if (com.blaze.assistant.ui.Overlay.canDrawOverApps(app)) {
-                kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Overlay.openPanel(app, false) }; popped = true
-            } else Notifier.question(question)
-        }
+        if (!inForeground && !overlayOpen) Notifier.question(question)
         if (Voice.lastTurnByVoice && Voice.shouldSpeak()) Voice.speak(question)
         // Autopilot: the card stays up for two minutes in case they're there, then Argus decides itself.
         val ap = Modes.autopilot
@@ -276,7 +271,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         tag?.let { BgAgents.setWaiting(it.id, false) }
         _question.value = null
         Notifier.clearQuestion()
-        if (popped && a != null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Overlay.closePanel() }
         a ?: if (ap) Modes.AUTO_PREFIX + Modes.AUTO_REPLY else "(The user didn't answer within 15 minutes. Stop and say what you need.)"
     }
 
@@ -4621,7 +4615,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
 
 
-        /** 0.50.0: screen actions light the edge particles while they run (ScreenWork → ui.ScreenGlow). */
         /** 0.52.1 (MemoryLoop): memory lookups this turn, and the song a song-download turn has resolved ("" = none yet). */
         @Volatile var memoryLookups = 0
         @Volatile var songResolved = ""
@@ -4633,17 +4626,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
             val toolT0 = System.currentTimeMillis()
-            val out = try { com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) } }   // P1-TM-05 job tools; P2-SF-01 policy
+            val out = try { com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolInner(name, args, shots) } }   // P1-TM-05 job tools; P2-SF-01 policy
                 finally { CallState.current().timing.tool(name, System.currentTimeMillis() - toolT0) }   // 0.54.6 TurnTiming: tool round trip (confirm waits included)
             if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out)); ToolTrail.result(id, Friendly.exact(name, args)) { SecretVault.scrub(out) }   // M4 tool rows
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out
-        }
-
-        private suspend fun runToolScreen(name: String, args: JSONObject, shots: MutableList<String>): String {
-            if (!com.blaze.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
-            val tok = com.blaze.assistant.phone.ScreenWork.begin()
-            try { return runToolInner(name, args, shots) } finally { com.blaze.assistant.phone.ScreenWork.end(tok) }
         }
 
         private suspend fun runToolInner(name: String, args: JSONObject, shots: MutableList<String>): String {

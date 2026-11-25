@@ -164,20 +164,18 @@ object AccountGate {
         val c = app ?: return
         noticeShown = false
         android.os.Handler(android.os.Looper.getMainLooper()).post {
-            runCatching { com.blaze.assistant.ui.Overlay.closePanel(); com.blaze.assistant.ui.Overlay.hideOrb(c, unpin = false) }
             runCatching { com.blaze.assistant.voice.WakeWordService.stop(c) }
             runCatching { com.blaze.assistant.mediaapps.MusicService.lockPause() }
             runCatching { com.blaze.assistant.notify.Notifier.clearReplies(); com.blaze.assistant.notify.Notifier.clearAction() }
         }
     }
 
-    /** Open again: the sign-in notice goes, and a pinned orb comes back. */
+    /** Open again: the sign-in notice goes. */
     private fun onUnlocked() {
         val c = app ?: return
         noticeShown = false
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             runCatching { c.getSystemService(NotificationManager::class.java)?.cancel(NOTICE_ID) }
-            runCatching { if (Settings.orbPinned && com.blaze.assistant.ui.Overlay.canDrawOverApps(c)) com.blaze.assistant.ui.Overlay.showOrb(c) }
         }
     }
 }

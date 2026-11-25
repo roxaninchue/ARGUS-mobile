@@ -29,8 +29,6 @@ object SelfControl {
         Intent(Regex("""^(please )?(stop|cancel|abort|never ?mind|forget it|hold on|wait|pause)( (it|that|this|now|please|everything))*[.!]*$"""), "stop"),
         Intent(Regex("""^(please )?(be quiet|shut up|stop talking|stop speaking|quiet|silence|hush)( (now|please|(?:argus|blaze)))*[.!]*$"""), "quiet"),
         Intent(Regex("""^(please )?(help me )?(set ?up|finish (the )?setup|check (your|my) setup|what'?s (missing|not set up)|are you (fully )?set ?up)( (?:argus|blaze))?[?.!]*$"""), "setup"),
-        Intent(Regex("""^(please )?(hide|remove) (the |your )?(orb|bubble|floating button)[.!]*$"""), "hide_orb"),
-        Intent(Regex("""^(please )?(show|bring back|pin) (the |your )?(orb|bubble|floating button)[.!]*$"""), "show_orb"),
         Intent(Regex("""^(please )?(turn off|disable|stop) (the )?(wake word|hey (?:argus|blaze)|listening for hey (?:argus|blaze))[.!]*$|^stop listening[.!]*$"""), "wake_off"),
         Intent(Regex("""^(please )?(turn on|enable|start) (the )?(wake word|hey (?:argus|blaze))[.!]*$"""), "wake_on"),
         Intent(Regex("""^(please )?(mute (yourself|your voice|your replies)|stop reading (your )?(replies|answers)( out loud| aloud)?|don'?t (talk|speak) out loud)[.!]*$"""), "voice_off"),
@@ -86,10 +84,9 @@ object SelfControl {
         "close" -> {
             Agent.stopAll(); Voice.stopSpeaking(); Voice.cancelListening()
             main.postDelayed({
-                try { Overlay.closePanel() } catch (_: Throwable) { }
                 try { activity?.get()?.moveTaskToBack(true) } catch (_: Throwable) { }
             }, 700)
-            if (Settings.wakeWord) "Going quiet. Say \u201cHey ${BrandName.NAME}\u201d when you need me." else "Going quiet. Tap the orb when you need me."
+            if (Settings.wakeWord) "Going quiet. Say \u201cHey ${BrandName.NAME}\u201d when you need me." else "Going quiet. Open ${BrandName.NAME} when you need me."
         }
         "setup" -> {
             val missing = SelfSetup.audit(ctx).filter { !it.ok && it.id !in setOf("connections", "fast_lane") }
@@ -98,9 +95,6 @@ object SelfControl {
         }
         "stop" -> { Agent.stopAll(); Voice.stopSpeaking(); "Stopped." }
         "quiet" -> { Voice.stopSpeaking(); "" }
-        "hide_orb" -> { main.post { Overlay.hideOrb(ctx) }; "Orb hidden. Ask me to bring it back any time." }
-        "show_orb" -> if (Overlay.canDrawOverApps(ctx)) { main.post { Settings.orbPinned = true; Overlay.showOrb(ctx) }; "Orb's back." }
-            else "I need permission to draw over other apps first. It's in Settings → Floating orb."
         "wake_off" -> { Settings.wakeWord = false; WakeWordService.stop(ctx); "Stopped listening for \u201cHey ${BrandName.NAME}\u201d." }
         "wake_on" -> { Settings.wakeWord = true; WakeWordService.start(ctx)
             if (com.blaze.assistant.voice.WakeModel.ready(ctx)) "Listening for \u201cHey ${BrandName.NAME}\u201d." else "Turned on. The voice model still needs downloading in Settings → Voice." }
@@ -149,15 +143,15 @@ object SelfControl {
         return buildString {
             append("${BrandName.NAME} $v. Brain: ${BrandName.NAME} Cloud (picks the best free model per message). Personality: ${Personas.byId(Settings.personaId).name}.\n")
             append("Wake word ${if (Settings.wakeWord) "on" else "off"}, read aloud ${if (Settings.speakReplies) "on" else "off"}, ")
-            append("fast lane ${if (Settings.fastLane) "on" else "off"}, orb ${if (Overlay.orbShowing) "showing" else "hidden"}.\n")
+            append("fast lane ${if (Settings.fastLane) "on" else "off"}.\n")
             append("Changeable with set_setting: ${boolKeys.keys.joinToString()}.")
         }
     }
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", "blaze_self")
-        .put("description", "Control ${BrandName.NAME} itself: close/go quiet, stop the task, hide or show the floating orb, wake word on/off, read-aloud on/off, switch AI model or personality, change one of ${BrandName.NAME}'s settings, check its own setup (setup_check: what's installed, granted or missing — use it to guide the user through full setup), open the exact system/Blaze screen that fixes something, install Linux / the voice model / the fast lane, read its crash log to diagnose a problem, or token_ledger: where its tokens go per feature (biggest costs + fixes), the tool cache and the learned router.")
+        .put("description", "Control ${BrandName.NAME} itself: close/go quiet, stop the task, wake word on/off, read-aloud on/off, switch AI model or personality, change one of ${BrandName.NAME}'s settings, check its own setup (setup_check: what's installed, granted or missing — use it to guide the user through full setup), open the exact system/Blaze screen that fixes something, install Linux / the voice model / the fast lane, read its crash log to diagnose a problem, or token_ledger: where its tokens go per feature (biggest costs + fixes), the tool cache and the learned router.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
-            .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("close", "stop", "hide_orb", "show_orb", "wake_on", "wake_off",
+            .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("close", "stop", "wake_on", "wake_off",
                 "voice_on", "voice_off", "status", "setup_check", "open", "install", "crash_log", "speed_stats", "tool_stats", "token_ledger", "set_model", "set_persona", "set_setting"))))
             .put("provider", JSONObject().put("type", "string")).put("model", JSONObject().put("type", "string"))
             .put("persona", JSONObject().put("type", "string"))

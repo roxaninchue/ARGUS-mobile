@@ -26,7 +26,7 @@ val topPages = listOf(
     SettingsPage("language", "Language", "Which language ${BrandName.NAME} replies in. Auto matches yours"),
     SettingsPage("doing", "Things ${BrandName.NAME} is doing", "Routines and reminders, on or off, and today's diary"),
     SettingsPage("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, default assistant"),
-    SettingsPage("permissions", "Permissions", "Phone control, notifications, mic, overlay"),
+    SettingsPage("permissions", "Permissions", "Notifications, mic, camera, files"),
     SettingsPage("account", "Profile", "${BrandName.NAME} account and connected apps"),
     SettingsPage("updates", "Updates", "Check for a newer ${BrandName.NAME}; updates run in the background"),
     // 0.55.1: Developer > Speed stats (the readout that "speed stats" used to answer by phrase; no trigger words now).
@@ -49,7 +49,6 @@ val advancedPages = listOf(
     SettingsPage("logins", "Saved logins", "Sign-ins from ${BrandName.NAME}'s secure form, encrypted on this phone"),
     SettingsPage("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: sign out of sites, clear its data"),
     SettingsPage("proactive", "Proactive & triggers", "Speak up on its own, when-X-do-Y"),
-    SettingsPage("orb", "Floating orb", "Keep ${BrandName.NAME} over other apps"),
     SettingsPage("logs", "Life logs", "Transcribe what the mic hears into memory, brainstorms"),
     SettingsPage("usage", "Usage", "Tokens and estimated cost"),
     SettingsPage("backup", "Backup", "Export or import everything"),
