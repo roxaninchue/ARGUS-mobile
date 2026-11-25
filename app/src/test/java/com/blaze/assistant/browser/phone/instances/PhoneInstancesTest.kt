@@ -438,4 +438,55 @@ class PhoneInstancesTest {
         val agentKt = File(root, "com/blaze/assistant/agent/Agent.kt").readText()
         assertTrue(agentKt.contains("PhoneInstanceTools.definitions()"))
     }
+
+    // ------------------------------------------------------------------ step 1b: shared workspace, Recovered, write leases
+    @Test fun closingMovesScratchToRecoveredAndNeverDeletesWork() = runBlocking {
+        val root = File(tmp, "instances1b"); val home = File(tmp, "home1b")
+        val c = ArgusPhoneCore(InstanceStore(root), FakeBrowser(), FakeService(), clock, true, workspace = Workspace(home, root))
+        c.create("Shop/1", "compare prices", argus)
+        val made = c.registry.all().first { it.task == "compare prices" }
+        val id = made.id
+        val scratch = c.workspace!!.scratch(id).apply { mkdirs() }
+        File(scratch, "draft.txt").writeText("half done")
+        val snap = c.snapshot()
+        assertTrue((0 until snap.length()).map { snap.getJSONObject(it) }.first { it.getString("id") == id }.getString("scratch").endsWith("scratch"))
+        val r = c.close(id, argus)
+        assertTrue(r, r.contains("Recovered"))
+        assertEquals("half done", File(home, "Recovered/${Workspace.safeName(made.name)}/draft.txt").readText())
+        assertFalse(scratch.exists())
+        // An empty scratch leaves nothing behind and says nothing.
+        c.create("Empty", "nothing saved", argus)
+        val r2 = c.close(c.registry.all().first { it.task == "nothing saved" }.id, argus)
+        assertFalse(r2, r2.contains("Recovered"))
+    }
+
+    @Test fun recoveredNamesNeverOverwrite() {
+        val w = Workspace(File(tmp, "home-n"), File(tmp, "inst-n"))
+        listOf("ia0101", "ia0102").forEach { id -> w.scratch(id).apply { mkdirs() }.resolve("a.txt").writeText(id) }
+        assertEquals("Shop", w.recover("ia0101", "Shop")!!.name)
+        assertEquals("Shop 2", w.recover("ia0102", "Shop")!!.name)
+        assertNull(w.recover("ia0103", "Shop"))
+        assertEquals("instance", Workspace.safeName("///"))
+    }
+
+    @Test fun oneWriterPerFileAndCollisionsBecomeConflictCopies() {
+        val dir = File(tmp, "shared").apply { mkdirs() }
+        val f = File(dir, "notes.md").apply { writeText("v1") }
+        val read = f.lastModified()
+        val fl = FileLeases(ttlMs = 60_000)
+        assertNull(fl.acquire(f, "ia0001", now))
+        assertEquals("ia0001", fl.acquire(f, "ia0002", now))
+        // ia0002 still saves, but next to the file, never over it.
+        val s2 = fl.save(f, "from two", "ia0002", "Research", read, now)
+        assertTrue(s2.conflict); assertEquals("v1", f.readText())
+        assertTrue(s2.file.name, s2.file.name.startsWith("notes (conflict from Research ") && s2.file.name.endsWith(".md"))
+        // The holder saves over its own file.
+        val s1 = fl.save(f, "from one", "ia0001", "Shop", read, now)
+        assertFalse(s1.conflict); assertEquals("from one", f.readText())
+        // The lease runs out; a stale read (file changed since) still makes a copy.
+        now += 61_000
+        assertTrue(fl.save(f, "stale", "ia0002", "Research", read, now).conflict)
+        fl.releaseAll("ia0001"); fl.releaseAll("ia0002")
+        assertNull(fl.holder(f, now))
+    }
 }

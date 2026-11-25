@@ -27,7 +27,8 @@ object PhoneInstanceTools {
         fn("phone_power", "${BrandName.NAME} Phone power: turn ${BrandName.NAME}'s own phone on (it keeps running in the background), off (checkpoints every instance first), or get its status.",
             JSONObject().put("action", e("on, off or status", listOf("on", "off", "status"))), listOf("action")),
         fn("phone_instances", "${BrandName.NAME} Phone instances: list them with their deep state (page, lock, waiting cards, errors) to reuse one or start a new one. " +
-            "Also use, lock, unlock, renew, open (show it to the user), close, close_all, checkpoint, restore, reset, duplicate. phone_* tools act in the active instance.",
+            "Also use, lock, unlock, renew, open (show it to the user), close, close_all, checkpoint, restore, reset, duplicate. phone_* tools act in the active instance. " +
+            "Each instance has a scratch folder (in list); keep lasting work in the shared home (~). Close and reset move leftover scratch to ~/Recovered/.",
             JSONObject().put("action", e("What to do", ACTIONS))
                 .put("name", p("string", "The instance's name or id (default: the active one); for new / duplicate, the new name"))
                 .put("task", p("string", "What it is for (new, lock)"))

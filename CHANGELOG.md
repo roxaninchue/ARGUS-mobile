@@ -1,3 +1,11 @@
+## Unreleased: Argus Phone step 1b (branch feat/phone-1b): no lost work between instances
+- Each instance has a scratch folder; lasting work goes in the shared home (`~`). Close, close all and reset move
+  leftover scratch to `~/Recovered/<instance name>/` first and say so; nothing is deleted.
+- One writer per shared file (5-minute write lease); a second writer, or a save over a file changed since it was read,
+  lands as a conflict copy next to it.
+- Package installs and upgrades in a Linux take that distro's lock, so two never run on one root at once.
+- docs/PHONE-INSTANCES.md "Step 1b".
+
 ## Unreleased: Argus Phone instances (steps 1 + 1a, branch feat/phone-instances, MR !80)
 Jake (24 Nov): Argus Phone becomes a light phone of Argus's own, with instances that break and restore like terminal
 tabs, a background service until shut down, and Argus in control of all of it (docs/ARGUS-PHONE.md).

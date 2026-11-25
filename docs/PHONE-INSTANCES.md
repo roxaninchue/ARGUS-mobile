@@ -109,7 +109,6 @@ the owner" below). `WaveB4NoLinuxTest` now allows exactly one `specialUse` servi
 
 ## Not in this step
 
-- Shared workspace, Recovered folder, write leases, conflict copies, per-distro install locks (step 1b).
 - Private instances with their own empty browser profile (5e): every instance shares the per-site sign-ins, as today.
 - Credentials / choice / approval cards from the page (step 2): `cards` holds only the hand-off for now.
 - The home screen, the app contract, Terminal / Files as apps (steps 3 and 4).
@@ -146,3 +145,26 @@ https://nightly.link/roxaninchue/ARGUS-mobile/actions/runs/45478728211/argus-deb
   fallback is `dataSync` like AgentKeeper and JobKeeper: one line in the manifest and one in `ArgusPhoneService`, and
   the 6-hour daily cap applies once the app targets Android 15.
 - Open question 5 (restart after Android ends the process) is answered "wait until opened or needed" for now.
+
+## Step 1b: shared workspace, Recovered, write leases, install locks (2026-11-25)
+Built on top of steps 1 + 1a (branch `feat/phone-1b`). ARGUS-PHONE.md 5e.
+- **Shared workspace**: the agent's home (`filesDir/home`, `~` to the terminal and file tools). Every instance and the
+  main app see it; lasting work goes there.
+- **Scratch per instance**: `filesDir/phone/instances/<id>/scratch/`; `phone_instances list` shows each instance's
+  `scratch` path.
+- **Recovered**: close, close_all and reset move whatever is still in an instance's scratch to
+  `~/Recovered/<instance name>/` (`<name> 2`… if taken) before anything else happens, and the reply says so. The
+  checkpoint is kept 7 days as before; Recovered files stay until someone deletes them (`Workspace` in `Leases.kt`).
+- **Write leases and conflict copies**: `FileLeases` (in `Leases.kt`, one per `ArgusPhoneCore`): one instance holds a
+  5-minute write lease per file; another instance's save, or a save of a file changed since it was read, goes to
+  `name (conflict from <instance> YYYY-MM-DD HHMM).ext` next to it, never over it. Close / reset frees the instance's
+  leases. Nothing writes files from inside an instance yet (apps arrive in steps 3 and 4); they use this when they do.
+- **Per-distro install locks**: `InstallLocks` (in `terminal/LinuxPm.kt`): `Terminal.run` takes the distro's lock for
+  package changes (apk add/del/upgrade/update/fix, apt/apt-get install/remove/purge/upgrade/update…, dpkg -i/-r,
+  pacman -S/-R/-U, dnf install/remove/upgrade…), so two installs never touch one Linux root at once; reads run free.
+- **Tests**: `PhoneInstancesTest` (close moves scratch to Recovered, names never overwrite, one writer per file and
+  conflict copies) and `LinuxReadyTest.installsAndUpgradesTakeTheDistroLock`. New code lives in existing files so the
+  rename guard gains nothing.
+- **Not in 1b**: private instances with their own empty browser profile; Recovered clean-up UI ("delete recovered
+  files"); LinuxReady's own install step does not take the lock yet (it runs once, at set-up).
+

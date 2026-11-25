@@ -70,4 +70,15 @@ class LinuxReadyTest {
         assertTrue(LinuxReady.cliCurrent("${"ab".repeat(32)}\n", "ab".repeat(32))); assertFalse(LinuxReady.cliCurrent(null, "x"))
         assertEquals("usr/local/bin/blaze", LinuxReady.CLI_PATH)
     }
+
+    // Argus Phone 1b: package changes on a shared Linux root take the distro's lock; reads don't.
+    @Test fun installsAndUpgradesTakeTheDistroLock() {
+        listOf("apk add python3", "sudo apt install -y git", "apt-get -q update && apt-get upgrade", "cd /tmp; pacman -Syu",
+            "dnf -y install gcc", "dpkg -i x.deb", "apk upgrade").forEach { assertTrue(it, InstallLocks.changesPackages(it)) }
+        listOf("apk search python", "apt list --installed", "pacman -Q", "echo apk", "ls /var/lib/apt", "grep install notes.txt")
+            .forEach { assertFalse(it, InstallLocks.changesPackages(it)) }
+        assertNull(InstallLocks.lockFor("alpine", "ls"))
+        assertTrue(InstallLocks.lockFor("Alpine", "apk add git") === InstallLocks.lockFor("alpine", "apk del git"))
+        assertFalse(InstallLocks.lockFor("ubuntu", "apt install git") === InstallLocks.lockFor("alpine", "apk add git"))
+    }
 }

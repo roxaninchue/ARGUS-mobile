@@ -24,7 +24,19 @@ class ArgusPhoneCore(
     val clock: () -> Long,
     lowRam: Boolean,
     idleMs: Long = PhonePolicy.IDLE_MS,
+    /** Step 1b: scratch folders and the Recovered folder (null in tests that don't need files). */
+    val workspace: Workspace? = null,
 ) {
+    /** Step 1b: one writer per shared file (docs/ARGUS-PHONE.md 5e). */
+    val fileLeases = FileLeases()
+
+    /** Moves [i]'s scratch to Recovered and frees its file leases; the sentence to add to the reply, or "". */
+    private fun recoverLocked(i: Instance): String {
+        fileLeases.releaseAll(i.id)
+        val d = workspace?.recover(i.id, i.name) ?: return ""
+        return " Its scratch files were moved to ~/${Workspace.RECOVERED}/${d.name}/."
+    }
+
     /** The one WebView, as the manager sees it (PhoneBrowser on the phone, a fake in tests). */
     interface BrowserPort {
         fun hasPage(): Boolean
@@ -156,9 +168,11 @@ class ArgusPhoneCore(
         load()
         detachLocked()
         val n = registry.size()
-        for (i in registry.all()) { checkpointLocked(i.id); store.close(i.id, now()); registry.remove(i.id) }
+        var moved = 0
+        for (i in registry.all()) { checkpointLocked(i.id); if (recoverLocked(i).isNotEmpty()) moved++; store.close(i.id, now()); registry.remove(i.id) }
         saveIndex(); service.changed()
-        "Closed $n instance${if (n == 1) "" else "s"} (each checkpointed first). ${BrandName.NAME} Phone stays on; the next use starts one fresh instance."
+        "Closed $n instance${if (n == 1) "" else "s"} (each checkpointed first" +
+            (if (moved > 0) "; scratch files of $moved moved to ~/${Workspace.RECOVERED}/" else "") + ")." + " ${BrandName.NAME} Phone stays on; the next use starts one fresh instance."
     }
 
     // ------------------------------------------------------------------ instances
@@ -251,11 +265,12 @@ class ArgusPhoneCore(
         val i = registry.get(id) ?: return@withLock "No such instance."
         Leases.canAct(i, by, now())?.let { return@withLock it }
         checkpointLocked(id)
+        val rec = recoverLocked(i)
         if (registry.active == id) { registry.active = null; try { browser.release() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Throwable) { } }
         registry.put(i.copy(browser = null, steps = emptyList(), lastError = null, restorable = false, unsaved = false, cards = emptyList(),
             mode = PhonePolicy.Mode.OFF, tier = Tier.WARM, body = true, lastActiveAt = now()).withStep("reset", now()))
         saveIndex(); service.changed()
-        "Reset \u201c${i.name}\u201d: empty now. Its previous state is in its checkpoint (phone_instances restore undoes this)."
+        "Reset \u201c${i.name}\u201d: empty now. Its previous state is in its checkpoint (phone_instances restore undoes this).$rec"
     }
 
     suspend fun duplicate(id: String, name: String?): String = lock.withLock {
@@ -275,9 +290,10 @@ class ArgusPhoneCore(
         Leases.canAct(i, by, now())?.let { return@withLock it }
         if (registry.active == id) detachLocked()
         checkpointLocked(id)
+        val rec = recoverLocked(i)
         store.close(id, now()); registry.remove(id)
         saveIndex(); service.changed()
-        "Closed \u201c${i.name}\u201d (checkpoint kept 7 days). ${registry.size()} left."
+        "Closed \u201c${i.name}\u201d (checkpoint kept 7 days).$rec ${registry.size()} left."
     }
 
     suspend fun setLease(id: String, f: (Instance) -> Leases.Result): String = lock.withLock {
@@ -398,7 +414,8 @@ class ArgusPhoneCore(
             for (h in registry.all()) {
                 val i = if (h.body) h else (store.load(h.id)?.let { d -> d.copy(name = h.name, task = h.task, lease = h.lease, tier = Tier.COLD,
                     lastError = h.lastError ?: d.lastError, restorable = h.restorable || d.restorable, lastCheckpointAt = maxOf(h.lastCheckpointAt, d.lastCheckpointAt)) } ?: h)
-                put(DeepState.of(i, t, i.id == registry.active, registry.pinned(i, t)))
+                put(DeepState.of(i, t, i.id == registry.active, registry.pinned(i, t)).also { o ->
+                    workspace?.let { w -> o.put("scratch", w.scratch(i.id).absolutePath) } })
             }
         }
     }

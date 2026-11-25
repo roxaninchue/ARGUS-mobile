@@ -1,6 +1,7 @@
 package com.blaze.assistant.browser.phone.instances
 
 import com.blaze.assistant.BrandName
+import java.io.File
 
 /**
  * Instance locks as leases (docs/ARGUS-PHONE.md 5g). Argus, a background agent, a team member or a routine can lock an
@@ -78,5 +79,86 @@ object Leases {
     private fun mins(ms: Long): String {
         val s = (ms / 1000).coerceAtLeast(0)
         return if (s < 90) "${s}s" else "${(s + 30) / 60} min"
+    }
+}
+
+/**
+ * Step 1b (docs/ARGUS-PHONE.md 5e): work lives in the shared workspace, never inside an instance. Each instance gets a
+ * scratch folder (`<instances root>/<id>/scratch/`); the shared workspace is the agent's home (`filesDir/home`, what the
+ * terminal and file tools call `~`), seen by every instance and the main app. Closing or resetting an instance moves
+ * whatever is still in its scratch to `~/Recovered/<instance name>/` first, so closing one never deletes work; only an
+ * explicit delete of the recovered folder removes it. Pure java.io; never throws to the caller.
+ */
+class Workspace(val shared: File, val instancesRoot: File) {
+    companion object {
+        const val RECOVERED = "Recovered"
+        /** A folder name from an instance name: letters, digits, space, dot, dash and underscore; 60 chars at most. */
+        fun safeName(name: String): String = name.map { if (it.isLetterOrDigit() || it in " ._-") it else '_' }.joinToString("")
+            .trim().trim('.').take(60).ifBlank { "instance" }
+    }
+
+    fun scratch(id: String): File = File(File(instancesRoot, id), "scratch")
+    fun recoveredRoot(): File = File(shared, RECOVERED)
+
+    /** Moves [id]'s scratch (if it holds anything) to `Recovered/<name>/`, or `<name> 2`… when that exists. Returns the
+     *  folder it went to, or null when there was nothing to keep or the move failed (the scratch then stays put). */
+    fun recover(id: String, name: String): File? = try {
+        val s = scratch(id)
+        if (!s.isDirectory || (s.listFiles() ?: emptyArray()).isEmpty()) null else {
+            val root = recoveredRoot().apply { mkdirs() }
+            val base = safeName(name)
+            var dst = File(root, base); var n = 2
+            while (dst.exists()) dst = File(root, "$base ${n++}")
+            if (s.renameTo(dst) || run { s.copyRecursively(dst, overwrite = false); s.deleteRecursively() }) dst else null
+        }
+    } catch (_: Exception) { null }
+}
+
+/**
+ * Step 1b: one writer per shared file at a time. An instance takes a short write lease on a path before writing; another
+ * instance gets read-only (its edit goes to a conflict copy). [save] never writes over a file someone else changed since
+ * the writer read it: the second edit lands next to it as a conflict copy and the caller tells the user (or Argus) to
+ * merge. Pure apart from the file write; `now` comes from the caller's clock.
+ */
+class FileLeases(val ttlMs: Long = 5 * 60_000L) {
+    data class Hold(val instance: String, val until: Long)
+    private val map = HashMap<String, Hold>()
+    private fun key(f: File): String = try { f.canonicalPath } catch (_: Exception) { f.absolutePath }
+
+    /** Null when [instance] may write [f] now (the lease is taken or renewed); else the instance holding it. */
+    @Synchronized fun acquire(f: File, instance: String, now: Long): String? {
+        val k = key(f); val h = map[k]
+        if (h != null && h.instance != instance && now < h.until) return h.instance
+        map[k] = Hold(instance, now + ttlMs); return null
+    }
+    @Synchronized fun release(f: File, instance: String) { val k = key(f); if (map[k]?.instance == instance) map.remove(k) }
+    @Synchronized fun releaseAll(instance: String) { map.entries.removeAll { it.value.instance == instance } }
+    @Synchronized fun holder(f: File, now: Long): String? = map[key(f)]?.takeIf { now < it.until }?.instance
+
+    data class Saved(val file: File, val conflict: Boolean)
+
+    /** Writes [text] to [f] for [instance] ([who] names it in a conflict copy). [readMtime] is the file's lastModified
+     *  when the writer read it (0 for a new file). Another holder, or a change since the read, makes a conflict copy. */
+    fun save(f: File, text: String, instance: String, who: String, readMtime: Long, now: Long): Saved {
+        val busy = acquire(f, instance, now) != null
+        val changed = f.exists() && f.lastModified() != readMtime
+        val dst = if (busy || changed) conflictCopy(f, who, now) else f
+        dst.parentFile?.mkdirs()
+        val tmp = File(dst.parentFile, ".${dst.name}.tmp")
+        tmp.writeText(text)
+        if (!tmp.renameTo(dst)) { dst.writeText(text); tmp.delete() }
+        return Saved(dst, dst != f)
+    }
+
+    /** "notes (conflict from Shop 2026-11-25 0612).md" next to [f]; a number is added if that exists too. */
+    fun conflictCopy(f: File, who: String, now: Long): File {
+        val c = java.util.Calendar.getInstance().apply { timeInMillis = now }
+        val stamp = "%04d-%02d-%02d %02d%02d".format(c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH) + 1,
+            c.get(java.util.Calendar.DAY_OF_MONTH), c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE))
+        val ext = f.name.substringAfterLast('.', "").let { if (it.isEmpty() || it == f.name) "" else ".$it" }
+        val stem = f.name.removeSuffix(ext)
+        var out = File(f.parentFile, "$stem (conflict from ${Workspace.safeName(who)} $stamp)$ext"); var n = 2
+        while (out.exists()) out = File(f.parentFile, "$stem (conflict from ${Workspace.safeName(who)} $stamp $n)$ext").also { n++ }
+        return out
     }
 }

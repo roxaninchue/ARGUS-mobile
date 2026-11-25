@@ -57,7 +57,8 @@ object ArgusPhone {
             app = ctx.applicationContext
             PhoneBrowser.init(app)
             val c = ArgusPhoneCore(InstanceStore(File(app.filesDir, "phone/instances")), Browser, Service, { System.currentTimeMillis() },
-                lowRam = try { PhoneBrowser.config().lowRam } catch (_: Throwable) { true })
+                lowRam = try { PhoneBrowser.config().lowRam } catch (_: Throwable) { true },
+                workspace = Workspace(File(app.filesDir, "home"), File(app.filesDir, "phone/instances")))
             core0 = c
             scope.launch {
                 try { c.load() } catch (e: Throwable) { CrashLog.quiet("ArgusPhone.load", e) }
