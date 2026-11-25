@@ -35,16 +35,17 @@ class PhoneRound2Test {
     private val names = listOf("open_settings_page", "tap", "read_screen", "processes", "process", "run_shell", "open_view", "device_setting")
 
     @Test fun duplicateCallsStillGetTheFollowUp() {
-        val ask = "open display settings and turn dark mode on"
-        val dup = turn(ask, listOf("open_settings_page" to "{\"page\":\"display\"}", "open_settings_page" to "{\"page\":\"display\"}"))
-        assertEquals("tap", ToolTruth.choiceName(dup, names))
+        // 0.55.18: the settings-page flow (open, then tap) went with phone control; the alarm flow carries this check.
+        val ask = "remove the alarm"
+        val dup = turn(ask, listOf("processes" to "{\"kind\":\"alarm\"}", "processes" to "{\"kind\":\"alarm\"}"))
+        assertEquals("process", ToolTruth.choiceName(dup, names))
         // same arguments in another key order / spacing are identical too
-        val reordered = turn(ask, listOf("open_settings_page" to "{\"page\":\"display\",\"app\":\"x\"}", "open_settings_page" to "{ \"app\": \"x\", \"page\": \"display\" }"))
-        assertEquals("tap", ToolTruth.choiceName(reordered, names))
+        val reordered = turn(ask, listOf("processes" to "{\"kind\":\"alarm\",\"app\":\"x\"}", "processes" to "{ \"app\": \"x\", \"kind\": \"alarm\" }"))
+        assertEquals("process", ToolTruth.choiceName(reordered, names))
         // two DIFFERENT calls in the step: not "exactly the key tool"
-        val two = turn(ask, listOf("open_settings_page" to "{\"page\":\"display\"}", "open_settings_page" to "{\"page\":\"sound\"}"))
+        val two = turn(ask, listOf("processes" to "{\"kind\":\"alarm\"}", "processes" to "{\"kind\":\"timer\"}"))
         assertNull(ToolTruth.choiceName(two, names))
-        val mixed = turn(ask, listOf("open_settings_page" to "{\"page\":\"display\"}", "read_screen" to "{}"))
+        val mixed = turn(ask, listOf("processes" to "{\"kind\":\"alarm\"}", "open_app" to "{}"))
         assertNull(ToolTruth.choiceName(mixed, names))
         // named once: after a tap already ran, auto again
         val after = turn(ask, listOf("open_settings_page" to "{\"page\":\"display\"}"), listOf("tap" to "{\"text\":\"Dark mode\",\"want\":\"on\"}"))
