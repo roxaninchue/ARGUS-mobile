@@ -307,7 +307,7 @@ build (AGENTS.md).
 | 1 | Instance manager around today's browser: cold / warm / live, checkpoint, restore, reset, crash isolation; background service and notification; `phone_power`, `phone_instances`. Built: [PHONE-INSTANCES.md](PHONE-INSTANCES.md) (MR !80) |
 | 1a | Instance locks (leases) and the deep state snapshot (5g). Built with step 1: [PHONE-INSTANCES.md](PHONE-INSTANCES.md) |
 | 1b | Shared workspace, Recovered folder, write leases, conflict copies, per-distro install locks (5e). Built: [PHONE-INSTANCES.md](PHONE-INSTANCES.md) step 1b |
-| 2 | Credentials card from the page's own field flags, then choice and approval cards; `phone_handoff` kinds |
+| 2 | Credentials card from the page's own field flags, then choice and approval cards; `phone_handoff` kinds. Built: [PHONE-INSTANCES.md](PHONE-INSTANCES.md) step 2 |
 | 3 | The app contract, the Argus Phone home screen, the browser as the first app |
 | 4 | Files (root switch, install from inside, terminal link) and Terminal as apps |
 | 5 | Music, Movie, Calendar as apps |

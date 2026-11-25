@@ -1,6 +1,8 @@
 package com.blaze.assistant.agent
 
 
+import com.blaze.assistant.browser.SecureInput
+import com.blaze.assistant.browser.Vault
 import com.blaze.assistant.browser.phone.PhoneBrowser
 import com.blaze.assistant.browser.phone.PhoneBrowserTools
 import com.blaze.assistant.browser.phone.instances.ArgusPhone
@@ -281,8 +283,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     fun answerQuestion(text: String) { _question.value?.answer?.complete(text) }
 
     // ---------- v0.20.0: secure forms for the background browser ----------
-    private val _form = MutableStateFlow<com.blaze.assistant.browser.SecureInput.Request?>(null)
-    val pendingForm: StateFlow<com.blaze.assistant.browser.SecureInput.Request?> = _form
+    private val _form = MutableStateFlow<SecureInput.Request?>(null)
+    val pendingForm: StateFlow<SecureInput.Request?> = _form
     private val formLock = kotlinx.coroutines.sync.Mutex()
     @Volatile private var formSession: Session? = null
 
@@ -290,7 +292,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
      * Shows the secure form card and waits (15 minutes at most). When Argus isn't on screen an
      * "Action required" notification opens the chat at the card. Null = cancelled or no answer.
      */
-    suspend fun askSecure(req: com.blaze.assistant.browser.SecureInput.Request, from: Session?): com.blaze.assistant.browser.SecureInput.Answer? = formLock.withLock {
+    suspend fun askSecure(req: SecureInput.Request, from: Session?): SecureInput.Answer? = formLock.withLock {
         val tag = kotlin.coroutines.coroutineContext[BgAgents.Tag]
         tag?.let { BgAgents.setWaiting(it.id, true) }
         formSession = from
@@ -307,12 +309,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
     }
 
-    private fun clearForm(req: com.blaze.assistant.browser.SecureInput.Request) {
+    private fun clearForm(req: SecureInput.Request) {
         if (_form.value?.id == req.id) { _form.value = null; formSession = null; Notifier.clearAction() }
     }
 
     /** Fill in / Cancel. The card goes at once, even if nothing is waiting on it any more. */
-    fun answerForm(a: com.blaze.assistant.browser.SecureInput.Answer?) {
+    fun answerForm(a: SecureInput.Answer?) {
         val r = _form.value ?: return
         r.answer.complete(a)
         clearForm(r)
@@ -423,7 +425,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
         // v0.26.2: the built-in specialists' field playbooks ship in assets/specialists/<id>.md.
         Playbooks.loader = { id -> runCatching { app.assets.open("specialists/$id.md").bufferedReader().use { it.readText() } }.getOrNull() }
-        com.blaze.assistant.browser.Vault.dir = app.filesDir
+        Vault.dir = app.filesDir
         SecretVault.file = java.io.File(app.filesDir, "secret_vault.json")   // 0.46.6 Secure form vault (Keystore-sealed, never backed up)
         ChatStore.init(app)
         // v0.45.0 (#37): this phone's message-id prefix (made once, kept in prefs).
@@ -4573,8 +4575,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         /** browser_secure_input: secure card in the chat → values straight into the page; the model gets placeholders. */
         private suspend fun secureInput(args: JSONObject): String {
             val B = com.blaze.assistant.browser.BrowserEngine
-            val S = com.blaze.assistant.browser.SecureInput
-            val V = com.blaze.assistant.browser.Vault
+            val S = SecureInput
+            val V = Vault
             val host = kotlinx.coroutines.withContext(Dispatchers.Main) { B.host() }
             if (host.isBlank()) return "No page is open in ${BrandName.NAME}'s browser. Open the sign-in page with browser_open first, then call this again."
             // v0.28.2: no secure form or saved login on a plain-http page (except this phone / the LAN).
@@ -4584,7 +4586,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val fields = S.parseFields(args.optJSONArray("fields") ?: CallScan.secureArgs(args)?.optJSONArray("fields"))
             if (fields.isEmpty()) return "Error: give fields, e.g. [{\"name\":\"email\",\"kind\":\"email\"},{\"name\":\"password\",\"kind\":\"password\"}]."
             if (fields.any { S.isCardField(it) }) return "Card details are never collected in the chat. Show the live browser with browser_show so the user types them on the page, or stop before paying."
-            if (fields.any { it.kind == com.blaze.assistant.browser.SecureInput.Kind.PASSWORD }) B.passwordRefused()?.let { return it }
+            if (fields.any { it.kind == SecureInput.Kind.PASSWORD }) B.passwordRefused()?.let { return it }
             val asks = (formAsks[host] ?: 0) + 1; formAsks[host] = asks
             if (asks > 50) return "The user cancelled the form for $host in this task. Don't ask again: stop this sign-in and say what you needed."
             if (asks > 3) return "I've already asked for this on $host 3 times. Don't ask again: use ask_user to offer Continue with Google, a passkey, or the user doing it themselves in the live browser (browser_show)."
@@ -4593,11 +4595,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val title = args.optString("title").ifBlank { "Details for $host" }
             val answer = if (fromVault) {
                 add(Role.STEP, "Using your saved details for $host")
-                com.blaze.assistant.browser.SecureInput.Answer(names.associateWith { V.get(host, it).orEmpty() }, false)
+                SecureInput.Answer(names.associateWith { V.get(host, it).orEmpty() }, false)
             } else {
                 add(Role.STEP, "Waiting for you: ${title.take(60)}")
                 mood = Mood.IDLE
-                val a = askSecure(com.blaze.assistant.browser.SecureInput.Request(ids.getAndIncrement(), host, title, args.optString("reason"), fields,
+                val a = askSecure(SecureInput.Request(ids.getAndIncrement(), host, title, args.optString("reason"), fields,
                     args.optBoolean("submit", true), kotlinx.coroutines.CompletableDeferred()), this)
                 mood = Mood.ACTING
                 a ?: run {
@@ -4854,8 +4856,27 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "${BrandName.NAME} needs you on ${BrandName.NAME} Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
             return ArgusPhone.browserTool(app, name, args,
                 ArgusPhone.owner(id, agentId)) {
-                PhoneBrowserTools.run(drv, name, args, shots) { t, d, a -> confirm(t, d, a, always = true) }
+                PhoneBrowserTools.run(drv, name, args, shots, phoneCards) { t, d, a -> confirm(t, d, a, always = true) }
             }
+        }
+
+        /** Argus Phone step 2: phone_handoff's chat cards (Secure Form, choice) for this session; the vault is per site. */
+        private val phoneCards = object : com.blaze.assistant.browser.phone.HandoffCards {
+            override suspend fun secure(site: String, title: String, reason: String, fields: List<SecureInput.Field>): SecureInput.Answer? {
+                add(Role.STEP, "Waiting for you: ${title.take(60)}")
+                mood = Mood.IDLE
+                try { return askSecure(SecureInput.Request(ids.getAndIncrement(), site, title, reason, fields, false, kotlinx.coroutines.CompletableDeferred()), this@Session) }
+                finally { mood = Mood.ACTING }
+            }
+            override suspend fun choose(question: String, options: List<String>): String {
+                add(Role.STEP, "Asked: ${question.take(80)}")
+                mood = Mood.IDLE
+                val a = try { askUser(question, options, title) } finally { mood = Mood.ACTING }
+                add(Role.STEP, "You answered: ${a.take(80)}")
+                return a
+            }
+            override fun saved(site: String, name: String) = Vault.get(site, name)
+            override fun save(site: String, name: String, value: String) = Vault.save(site, name, value)
         }
 
         suspend fun runToolRaw(name: String, args: JSONObject, shots: MutableList<String>): String {

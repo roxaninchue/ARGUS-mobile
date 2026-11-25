@@ -168,3 +168,23 @@ Built on top of steps 1 + 1a (branch `feat/phone-1b`). ARGUS-PHONE.md 5e.
 - **Not in 1b**: private instances with their own empty browser profile; Recovered clean-up UI ("delete recovered
   files"); LinuxReady's own install step does not take the lock yet (it runs once, at set-up).
 
+## Step 2: handoff cards (2026-11-25)
+ARGUS-PHONE.md 4a, the handoff ladder. Branch `feat/phone-handoff-cards`.
+- `phone_handoff` takes `kind`: `sign_in`, `code`, `choice`, `control` (default, the old Take control).
+- **sign_in**: `Handoffs.signIn` reads the page's own fields (the account field: email, phone or username; the password,
+  from the bridge's password / sensitive flags). A saved login for the site fills silently; otherwise the Secure Form
+  card (the same card as `browser_secure_input`, "Save for this site" included) asks, and the answers are typed as
+  `{{secret:name}}` placeholders, so the model never sees a value. Nothing is submitted: the model taps the page's
+  button, which the confirm gate still guards. Card fields are never asked for (they stay Take control).
+- **code**: the same for a one-time code (never saved).
+- **choice**: the question with 2 to 5 of the page's options as a choice card (ask_user's card); returns the pick.
+- **Approval**: unchanged, the confirm card on pay / book / send / submit / delete taps (PhonePolicy.gate).
+- A cancel stops the sign-in, and no new card for that site for 10 minutes (the 0.30.5 rule).
+- A page with a password field says how to fill it in the read (`fill_login`, else `phone_handoff kind=sign_in`), and
+  the "no saved login" reply points at the card instead of Take control.
+- Code: `HandoffCards` + `Handoffs` in `PhoneBrowserTools.kt`; the agent's cards in `Agent.kt` (`phoneCards`, next to
+  `phoneInInstance`). Tests: `PhoneToolSimTest` (sign-in card, saved login, cancel, card fields, choice, read hint).
+- **Not in step 2**: the instance chip's "Waiting on you" (the card and the notification show it today); a fresh read
+  plus "what changed while you had it" after Hand back; CredAsk swapping a typed-in-chat password ask for the card
+  while Argus Phone (not the background browser) has the page.
+
