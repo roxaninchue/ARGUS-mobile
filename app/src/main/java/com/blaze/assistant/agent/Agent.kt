@@ -1455,7 +1455,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.phone.Messaging.tool())
         com.blaze.assistant.browser.BrowserTools.definitions().forEach { t.put(it) }
         t.put(SecretDesk.toolDef())   // 0.46.6 Secure form
-        com.blaze.assistant.appstore.StoreTools.definitions().forEach { t.put(it) }   // 0.45.19 App Store
         PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Argus Phone browser
         PhoneInstanceTools.definitions().forEach { t.put(it) }   // Argus Phone power + instances (catalog, docs/PHONE-INSTANCES.md)
         // 16 Nov 2026 (Finn): the terminal and the specialists are always on (their switches left Settings with Jobs and Team & bots).
@@ -5228,11 +5227,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     val r = SecretDesk.run(args, { add(Role.STEP, it) }, away = { label -> if (!inForeground) Notifier.actionRequired(label, "Secure form") }, context = lastUserText())
                     mood = Mood.ACTING
                     r
-                }
-                in com.blaze.assistant.appstore.StoreTools.names -> {
-                    com.blaze.assistant.appstore.AppStore.init(app); com.blaze.assistant.appstore.AppStore.refresh()
-                    add(Role.STEP, com.blaze.assistant.appstore.StoreTools.describe(name, args))
-                    com.blaze.assistant.appstore.StoreTools.run(name, args) { t, d -> confirm(t, d, "install", always = true) }
                 }
                 in PhoneBrowserTools.names -> {
                     // 0.45.19 Argus Phone: one screen, so parallel specialists take turns (the first to use it holds it).

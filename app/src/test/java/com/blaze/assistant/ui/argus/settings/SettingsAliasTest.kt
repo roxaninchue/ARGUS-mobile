@@ -26,7 +26,7 @@ class SettingsAliasTest {
         "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "secrets",   // "watches" went with phone control in 0.55.18
         "logins",
         "phonebrowser", "proactive", "orb", "logs", "replies", "usage", "backup", "ai", "memory",
-        "routines", "skills", "learn", "appstore", "seller", "dashboard", "plan", "sync",
+        "routines", "skills", "learn", "seller", "dashboard", "plan", "sync",
         // old aliases (0.52.3 declutter)
         "router", "backup_brain",
         // the 0.52.3 profile's row ids

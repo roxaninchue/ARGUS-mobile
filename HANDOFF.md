@@ -2,6 +2,31 @@
 
 This is the one current handoff. Older handoffs are listed in [docs/README.md](docs/README.md) (archive section).
 
+## 0. IN FLIGHT: permission trim (branch `chore/trim-permissions-2`, Draft MR into main)
+Finn (2026-11-25): strip the permissions Argus no longer needs. Started from main `006817fa`. Every commit ends `[skip ci]`.
+
+**Keep:** YouTube plug-in + Music/Video downloads (mediaapps/, storeapi/), Movies sources (movies/), the built-in VPN
+proxy (browser VPN + userspace `wgproxy/`, no VpnService), All files access (`MANAGE_EXTERNAL_STORAGE`), the self-updater
+(update/, `REQUEST_INSTALL_PACKAGES`, InstallReceiver), the Argus Phone in-app browser (browser/phone/, steps 1/1a/1b/2).
+Also INTERNET, network/wifi state, foreground services (mediaPlayback, dataSync, specialUse, microphone), POST_NOTIFICATIONS,
+WAKE_LOCK, RECEIVE_BOOT_COMPLETED (routines). Flagged but kept: mic/voice, camera, calendar, alarms/exact alarms,
+biometric, READ_MEDIA_*, battery-optimisation exemption, MODIFY_AUDIO_SETTINGS, quick settings tile, voice interaction.
+
+**Remove (status):**
+- [x] App Store: appstore/, AppStorePage, StoreInstallReceiver, assets/store, store/, STORE_CLEANROOM.md, store_* tools, tool group, settings page + view, tests
+- [ ] Bank mode + WRITE_SECURE_SETTINGS
+- [ ] SMS & calls + contacts (READ/SEND_SMS, CALL_PHONE, ANSWER_PHONE_CALLS, READ_CALL_LOG, READ_PHONE_STATE, READ/WRITE_CONTACTS, telephony feature)
+- [ ] Overlays SYSTEM_ALERT_WINDOW (orb, bin, live task card, overlay chat)
+- [ ] PACKAGE_USAGE_STATS, notification listener, WRITE_SETTINGS, ACCESS_NOTIFICATION_POLICY, USE_FULL_SCREEN_INTENT
+- [ ] Location, BLUETOOTH_CONNECT, SET_WALLPAPER, REQUEST_DELETE_PACKAGES, termux RUN_COMMAND
+- [ ] Tests, guard baselines, docs; compile + unit tests green
+
+**How to continue:** branch from the MR head, keep removing, then
+`./gradlew :app:compileDebugKotlin :app:compileDebugUnitTestKotlin :app:testDebugUnitTest --continue` (JDK 17 build,
+JDK 21 for tests; see BUILDING.md), `node tools/check-no-blaze.mjs --update-baseline` (counts only go down),
+`node tools/check-do-not-port.mjs`. Grep `app/src/test` for every removed tool name / class / settings id
+(AGENTS.md rule 3). `policy/ActionClass.kt` must declare exactly the tools still defined (ToolRegistryTest).
+
 ## 1. Read first, in this order
 1. [STATUS.md](STATUS.md), the "Current state" and "Standing rules" sections: what is built, what is released, what
    waits on Finn.

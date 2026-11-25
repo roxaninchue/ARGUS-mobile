@@ -206,7 +206,6 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                     }
                     "learn" -> LearnPage(onBack = { back() }, onAsk = { text -> Agent.sharedDraft.value = Agent.SharedDraft(text); onDismiss() })
                     "seller" -> SellerPage()
-                    "appstore" -> AppStorePage()
                     "logs" -> LifeLogsPage()
                     "replies" -> RepliesPage()
                     "logins" -> SavedLoginsPage()

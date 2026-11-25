@@ -71,7 +71,6 @@ val viewPages = listOf(
     SettingsPage("routines", "Scheduled Tasks", "Things ${BrandName.NAME} does on a schedule"),
     SettingsPage("skills", "Skills", "Research, email, plans, docs, code: on, off, restore"),
     SettingsPage("learn", "Learn", "Flashcards, Google Classroom, low-data mode"),
-    SettingsPage("appstore", "App Store", "Free open-source apps from their developers' own releases"),
     SettingsPage("seller", "Seller", "Brand kit, weekly store digest, replies from your PC"),
     SettingsPage("dashboard", "Dashboard", "Local web dashboard and analytics"),
     SettingsPage("plan", "Usage and plan", "${BrandName.NAME} Cloud plans, monthly or yearly"),
