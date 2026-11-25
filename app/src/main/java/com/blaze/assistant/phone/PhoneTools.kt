@@ -11,7 +11,10 @@ import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** The actions Argus can take on the phone, exposed to the AI as tools. */
+/**
+ * The actions Argus can take on the phone, exposed to the AI as tools: all by intent (0.55.11: the screen tools
+ * read_screen, look_at_screen, tap, type_text, scroll, press_button and wait went with phone control).
+ */
 object PhoneTools {
 
     private fun fn(name: String, desc: String, props: JSONObject = JSONObject(), required: List<String> = emptyList()) =
@@ -28,32 +31,10 @@ object PhoneTools {
     fun definitions(): JSONArray = JSONArray().apply {
         put(fn("open_app", "Open an installed app by its name, e.g. 'WhatsApp', 'Camera', 'Settings'.",
             JSONObject().put("app_name", p("string", "App name as shown on the home screen")), listOf("app_name")))
-        put(fn("read_screen", "Read what is currently on the screen: the foreground app and a numbered list of elements. Call this before tapping or typing, and again after acting to check the result."))
-        if (android.os.Build.VERSION.SDK_INT >= 30)
-            put(fn("look_at_screen", "Look at the screen. Returns the screen as text when that says enough (fast); set pixels=true for a real screenshot when you must see images, maps, games, video, or how something looks.",
-                JSONObject().put("pixels", p("boolean", "true = always take a screenshot")), emptyList()))
-        put(fn("tap", "Tap an element from the latest screen by its number, or by its visible text with 'text' (safer when numbers may be stale).",
-            JSONObject().put("element", p("integer", "Element number"))
-                .put("text", p("string", "Visible text or description of the element, instead of a number"))
-                .put("long_press", p("boolean", "Long-press instead of tap"))
-                .put("want", JSONObject().put("type", "string").put("enum", JSONArray(listOf("on", "off")))
-                    .put("description", "For a switch: the state it should end in. ${BrandName.NAME} reads it first and doesn't tap if it already is."))))
-        put(fn("type_text", "Type into a text field (replaces its content). A search icon/bar works too: it's tapped first. Set submit=true to press Enter/Search after typing.",
-            JSONObject().put("element", p("integer", "Element number of the field"))
-                .put("text", p("string", "Text to type"))
-                .put("submit", p("boolean", "Press the keyboard's Enter/Search key after typing")), listOf("element", "text")))
         put(fn("search_in_app", "Open an app straight to search results for a query, with no tapping: YouTube, YouTube Music, Spotify, Play Store, Google Maps, Google, Chrome, TikTok, X, Netflix, Amazon. Use play=true to start playing the top music/video match where the app supports it. Best first step for 'play X on Y' or 'search Y for X'.",
             JSONObject().put("app", p("string", "App name, e.g. YouTube"))
                 .put("query", p("string", "What to search for"))
                 .put("play", p("boolean", "Try to start playing the first result (music/video apps)")), listOf("app", "query")))
-        put(fn("scroll", "Scroll the screen or a scrollable element.",
-            JSONObject().put("direction", JSONObject().put("type", "string")
-                .put("enum", JSONArray(listOf("up", "down", "left", "right"))))
-                .put("element", p("integer", "Optional scrollable element number")), listOf("direction")))
-        put(fn("press_button", "Press a system button.",
-            JSONObject().put("button", JSONObject().put("type", "string")
-                .put("enum", JSONArray(listOf("back", "home", "recents", "notifications", "quick_settings", "lock")))),
-            listOf("button")))
         put(fn("open_url", "Open a web address in the browser, or a Google search for a query.",
             JSONObject().put("url", p("string", "Full URL, or plain words to search Google")), listOf("url")))
         put(fn("dial", "Open the phone dialer with a number filled in (the user presses call).",
@@ -67,49 +48,25 @@ object PhoneTools {
         put(fn("set_timer", "Start a countdown timer.",
             JSONObject().put("seconds", p("integer", "Length in seconds"))
                 .put("label", p("string", "Optional label")), listOf("seconds")))
-        put(fn("wait", "Wait for the screen to load.",
-            JSONObject().put("seconds", p("number", "1 to 5")), listOf("seconds")))
     }
 
     /** Human-friendly line shown in the chat while a tool runs. */
     fun describe(name: String, args: JSONObject): String = when (name) {
         "open_app" -> "Opening ${args.optString("app_name")}"
-        "read_screen" -> "Looking at the screen"
-        "tap" -> if (args.optBoolean("long_press")) "Long-pressing" else "Tapping"
-        "type_text" -> "Typing \"${args.optString("text").take(40)}\""
-        "scroll" -> "Scrolling ${args.optString("direction")}"
-        "press_button" -> "Pressing ${args.optString("button")}"
         "open_url" -> "Opening ${args.optString("url").take(40)}"
         "dial" -> "Opening the dialer"
         "compose_sms" -> "Drafting a text"
         "set_alarm" -> "Setting an alarm for %02d:%02d".format(args.optInt("hour"), args.optInt("minute"))
         "set_timer" -> "Starting a timer"
         "search_in_app" -> "Searching ${args.optString("app")} for \u201c${args.optString("query").take(40)}\u201d"
-        "wait" -> "Waiting a moment"
         else -> name
     }
 
     suspend fun run(ctx: Context, name: String, args: JSONObject): String {
-        val svc = BlazeAccessibilityService.instance
-        fun needSvc() = "Phone control is off right now. ${BrandName.NAME}'s browser tools (browser_*) and background tools don't need it, so keep going with those if they fit. " +
-            "For the screen itself, the chat shows a one-tap 'Turn on' banner; tell the user to tap it (it opens ${BrandName.NAME}'s switch in Accessibility settings)."
-        // v0.45.1: any phone tool but a read may change the screen, so the next read walks the tree again (ScreenReadCache).
-        if (name != "read_screen") BlazeAccessibilityService.touched()
         return try {
             when (name) {
                 "open_app" -> openApp(ctx, args.getString("app_name"))
-                "read_screen" -> svc?.readScreen() ?: needSvc()
-                "tap" -> when {
-                    svc == null -> needSvc()
-                    args.optString("text").isNotBlank() && !args.has("element") -> svc.tapText(args.optString("text"), args.optBoolean("long_press"))
-                    args.has("element") -> svc.tap(args.getInt("element"), args.optBoolean("long_press"))
-                    else -> "Give an element number or its text."
-                }
-                "type_text" -> svc?.type(args.getInt("element"), args.getString("text"), args.optBoolean("submit")) ?: needSvc()
                 "search_in_app" -> AppSearch.run(ctx, args.optString("app"), args.optString("query"), args.optBoolean("play"))
-                "scroll" -> svc?.scroll(args.getString("direction"),
-                    if (args.has("element")) args.getInt("element") else null) ?: needSvc()
-                "press_button" -> svc?.press(args.getString("button")) ?: needSvc()
                 "open_url" -> {
                     val raw = com.blaze.assistant.agent.ToolLeak.fixBlazeUrl(args.getString("url").trim())
                     val url = if (raw.startsWith("http://") || raw.startsWith("https://")) raw
@@ -163,9 +120,6 @@ object PhoneTools {
                         org.json.JSONObject().put("seconds", secs))
                     "Timer started for ${if (secs >= 60) "${secs / 60} min" + (if (secs % 60 > 0) " ${secs % 60} s" else "") else "$secs s"}. [ID $pid]"
                 }
-                "wait" -> {
-                    delay((args.optDouble("seconds", 1.0).coerceIn(0.5, 5.0) * 1000).toLong()); "Waited."
-                }
                 else -> "Unknown tool $name"
             }
         } catch (e: ActivityNotFoundException) {
@@ -173,13 +127,6 @@ object PhoneTools {
         } catch (e: Exception) {
             "Error: ${e.message}"
         }
-    }
-
-    /** A screenshot as a JPEG data URL, or an explanation when it can't be taken. */
-    suspend fun screenshot(): String {
-        if (android.os.Build.VERSION.SDK_INT < 30) return "Screenshots need Android 11 or newer."
-        val svc = BlazeAccessibilityService.instance ?: return "Phone control is off, so I can't take a screenshot."
-        return svc.screenshot() ?: "Couldn't take a screenshot (some apps block it)."
     }
 
     /** True only when Play answers 404 for this id (network trouble or anything else = not proven missing). */
@@ -199,7 +146,7 @@ object PhoneTools {
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val apps = pm.queryIntentActivities(launcher, 0)
         AppFinder.pkgIn(name)?.let { p -> pm.getLaunchIntentForPackage(p)?.let { i ->
-            start(ctx, i); BlazeAccessibilityService.instance?.settle(maxMs = 2000, quietMs = 300) ?: delay(900)
+            start(ctx, i)
             return "Opened $p. It is installed, so never offer to install it." } }
         val q = AppMatch.clean(name)
         if (q.isEmpty()) return "Couldn't tell which app '$name' means. Ask the user, or use the earlier context."
@@ -217,11 +164,6 @@ object PhoneTools {
         val intent = pm.getLaunchIntentForPackage(best.first)
             ?: return "Couldn't open ${best.second}."
         start(ctx, intent)
-        BlazeAccessibilityService.instance?.settle(maxMs = 2000, quietMs = 300) ?: delay(900)
-        // v0.45.6: check what actually came to the front.
-        val front = try { BlazeAccessibilityService.instance?.currentPkg().orEmpty() } catch (_: Exception) { "" }
-        if (front.isNotEmpty() && front != best.first && !front.startsWith("com.android.systemui"))
-            return "Tried to open ${best.second} (${best.first}), but $front is in front instead. Tell the user it didn't open; don't act on the wrong app."
-        return "Opened ${best.second} (${best.first})" + (if (front == best.first) ", checked: it's in front" else "") + ". It is installed, so never offer to install it."
+        return "Opened ${best.second} (${best.first}). It is installed, so never offer to install it."
     }
 }

@@ -54,12 +54,6 @@ fun BankModePage() {
     if (note.isNotBlank()) {
         Spacer(Modifier.height(8.dp))
         Text(note, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-        if (!st.on && note.contains("phone control back on")) {
-            Spacer(Modifier.height(8.dp))
-            BlazeButton("Turn phone control on", Modifier.fillMaxWidth(), kind = BtnKind.SECONDARY) {
-                try { ctx.startActivity(com.blaze.assistant.phone.PhoneControl.fixIntent(ctx)) } catch (_: Exception) { }
-            }
-        }
     }
     Spacer(Modifier.height(18.dp))
     GroupHead("Banking apps", if (list.isEmpty()) "No banking apps found yet. Add yours below." else "Bank mode turns on for the ones that are switched on.")
@@ -75,26 +69,5 @@ fun BankModePage() {
     GroupHead("If a bank still says no", "")
     Text(BankModeLogic.STILL_BLOCKED + " If the bank showed a warning before Bank mode turned on, close the bank app and open it again.",
         style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-    // v0.45.0 (#24): say plainly what happens to phone control, and when Argus stopped asking.
-    var stopped by remember { mutableStateOf(BankMode.restoreIgnored() >= BankModeLogic.RESTORE_GIVE_UP) }
-    if (simple && !BankMode.canRestoreA11y(ctx)) {
-        Spacer(Modifier.height(18.dp))
-        GroupHead("Phone control after banking", "")
-        Text(tr("Bank apps won't open while {0} can control the phone, so Bank mode switches that off. When you leave the bank app, {1} shows a notification: tap it, then {2}'s switch, to turn it back on.", BrandName.NAME, BrandName.NAME, BrandName.NAME),
-            style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-    }
-    if (stopped) {
-        Spacer(Modifier.height(10.dp))
-        Text(BankModeLogic.RESTORE_STOPPED, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.ink))
-        Spacer(Modifier.height(6.dp))
-        BlazeButton("Remind me again", Modifier.fillMaxWidth(), kind = BtnKind.GHOST) { BankMode.resetRestoreReminders(); stopped = false }
-    }
-    if (!simple) {
-        Spacer(Modifier.height(18.dp))
-        GroupHead("Phone control after Bank mode", if (BankMode.canRestoreA11y(ctx)) "${BrandName.NAME} can switch it back on by itself." else "You switch it back on with one tap.")
-        Text(BankModeLogic.ADB_LINE, style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, lineHeight = 19.sp, color = c.sub))
-        Spacer(Modifier.height(6.dp))
-        Text(BankModeLogic.ADB_GRANT, style = TextStyle(fontFamily = Type.Mono, fontSize = 12.sp, lineHeight = 17.sp, color = c.ink))
-    }
     Spacer(Modifier.height(18.dp))
 }

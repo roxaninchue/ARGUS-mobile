@@ -1315,7 +1315,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                              groups: Set<String> = emptySet(), turnKey: Long = 0L): String {
         val now = SimpleDateFormat("EEEE d MMMM yyyy, HH:mm", Locale.getDefault()).format(Date())
         val name = Settings.greetName()
-        val control = Settings.phoneControl
         val persona = if (Settings.personaId == Personas.CUSTOM && Settings.customPersona.isNotBlank())
             "You are ${BrandName.NAME}, an AI assistant on the user's Android phone. " + Settings.customPersona
         else Personas.byId(Settings.personaId).prompt
@@ -1353,7 +1352,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // broke the cached prefix, the shelves included, whenever the user switched between voice and typing).
             if (Voice.lastTurnByVoice) turn("voice", VoiceFiller.RULE)
             s("rapid", RapidMessages.PROMPT_RULE)   // v0.30.6: [m7] ids on user messages, [re:m7] markers on replies
-            s("control", HarnessPrompt.phone(control, prof.simple) + (if (control) "\n" + Orient.RULE + FastActions.RULE else ""))
+            s("control", HarnessPrompt.phone(prof.simple))
             s("secrets", "\n" + SecretRules.PROMPT)
             if (Settings.followups) s("followups", "\n" + QuickReplies.RULE + " Skip it for routines.")
             s("docs", BlazeDocs.PROMPT_LINE)   // v0.28.4: one line + the repo URL; the docs are looked up
@@ -1396,8 +1395,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "For anything that produces or processes content (pictures, beats and music, charts, documents, conversions, edits, calculations, data, downloads), do it in the terminal with run_code instead of opening apps and tapping. " +
                     "Beats: run_code python `import sys; sys.path.insert(0,'/root/phone/blaze_lib'); from beats import make; print(make(style='trap', bpm=140, bars=8, key='A', out='/root/phone/beat.wav'))` (styles trap, boombap, afro, house, lofi; vary seed). " +
                     "Save outputs under /root/phone/ (that is ~ for the file tools): new pictures, audio and video files there are added to the user's Gallery and shown in the chat automatically. " +
-                    "Only drive the screen when the task truly lives inside another app (sending in WhatsApp, a setting with no tool). Never tell the user you can't make images or music. " +
-                    "DO IT, DON'T DIRECT: when something needs a permission or a setting, YOU fix it: ask with the tool that triggers Android's own pop-up, open the exact screen with blaze_self open, and when phone control is on, tap through it yourself (find the switch, flip it, come back). " +
+                    "Never tell the user you can't make images or music. " +
+                    "DO IT, DON'T DIRECT: when something needs a permission or a setting, YOU fix it: ask with the tool that triggers Android's own pop-up, open the exact screen with blaze_self open or open_settings, and tell the user the one switch to flip there. " +
                     "Never hand the user a numbered list of where to tap in Settings; only if you tried and truly can't, say the ONE thing they must tap. Never ask them to type terminal commands: run them yourself. " +
                     "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell) first; Termux only if the user asks for it. " +
                     "generate_image is ONLY for art and photos; charts, graphs and tables are made with run_code; a PDF, Word document or PowerPoint deck is ONE make_document call (never a reportlab / python-pptx script). If the terminal fails, say so plainly; never substitute an AI picture.")
@@ -1442,7 +1441,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         Web.tools().forEach { t.put(it) }
         com.blaze.assistant.media.Media.tools().forEach { t.put(it) }
         Processes.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.phone.Watchers.tool())
         SkillPacks.tools().forEach { t.put(it) }
         com.blaze.assistant.phone.AndroidControl.tools().forEach { t.put(it) }
         t.put(Autonomy.findToolDef()); t.put(Autonomy.goalTool()); t.put(Autonomy.permissionTool())
@@ -1489,7 +1487,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
         t.put(Seller.tool())
-        if (Settings.screenMemory) t.put(ScreenMemory.tool())
         if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.NotificationBrain.tools().forEach { t.put(it) }
         if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.Conversations.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.life.LifeLogs.tool())
@@ -1523,38 +1520,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         if (com.blaze.assistant.link.DesktopLink.paired) t.put(com.blaze.assistant.link.DesktopLink.tool())
         com.blaze.assistant.connect.Connectors.tools().forEach { t.put(it) }
         try { com.blaze.assistant.connect.Mcp.tools().forEach { t.put(it) } } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: Mcp.tools.fo", e) }
-        if (Settings.phoneControl) t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "run_plan")
-            .put("description", "FASTEST way to do anything in an app or settings page. Give the whole script at once; ${BrandName.NAME} runs it on-device in a few seconds, finding things by their visible text (no element numbers, no need to read the screen first), checking each step on the phone, and only comes back when done or stuck. Steps can open a settings page by intent (do=open_settings page=… app=…).")
-            .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("steps", JSONObject().put("type", "array")
-                .put("items", JSONObject().put("type", "object").put("properties", JSONObject()
-                    .put("do", JSONObject().put("type", "string").put("enum", JSONArray(listOf("open_app", "open_settings", "tap", "long_press", "type", "enter", "scroll", "back", "home", "wait", "search_in_app"))))
-                    .put("app", JSONObject().put("type", "string").put("description", "open_app / search_in_app: app name; open_settings: the app whose page it is (optional)"))
-                    .put("page", JSONObject().put("type", "string").put("description", "open_settings: the page, same names as the open_settings tool (open_by_default, app_notifications, wifi, …)"))
-                    .put("want", JSONObject().put("type", "string").put("enum", JSONArray(listOf("on", "off"))).put("description", "tap on a switch: the state it should end in; skipped when it already is"))
-                    .put("target", JSONObject().put("type", "string").put("description", "tap/type: the visible text, label or hint of the element, e.g. Search, Send, Message"))
-                    .put("text", JSONObject().put("type", "string").put("description", "type: what to type"))
-                    .put("submit", JSONObject().put("type", "boolean").put("description", "type: press Enter/Search after"))
-                    .put("query", JSONObject().put("type", "string")).put("play", JSONObject().put("type", "boolean"))
-                    .put("direction", JSONObject().put("type", "string")).put("seconds", JSONObject().put("type", "number"))
-                    .put("expect", JSONObject().put("type", "string").put("description", "optional text that should be visible after this step"))
-                    .put("optional", JSONObject().put("type", "boolean").put("description", "skip instead of stopping if it fails (e.g. dismissing a popup)")))
-                    .put("required", JSONArray(listOf("do")))))).put("required", JSONArray(listOf("steps"))))))
-        if (Settings.phoneControl) t.put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "do_actions")
-            .put("description", "Run several phone actions in a row in one go (e.g. tap the search box, type, tap a result), using element numbers from the latest screen. Stops at the first one that fails. The new screen is returned at the end.")
-            .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject().put("steps", JSONObject().put("type", "array")
-                .put("items", JSONObject().put("type", "object").put("properties", JSONObject()
-                    .put("action", JSONObject().put("type", "string").put("enum", JSONArray(listOf("tap", "type_text", "scroll", "press_button", "wait"))))
-                    .put("element", JSONObject().put("type", "integer")).put("text", JSONObject().put("type", "string"))
-                    .put("direction", JSONObject().put("type", "string")).put("button", JSONObject().put("type", "string"))
-                    .put("seconds", JSONObject().put("type", "number")))
-                    .put("required", JSONArray(listOf("action")))))).put("required", JSONArray(listOf("steps"))))))
         com.blaze.assistant.routine.Routines.tools().forEach { t.put(it) }
         com.blaze.assistant.phone.Skills.definitions().forEach { t.put(it) }
-        if (Settings.phoneControl) { val p = PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i)) }
-        // 0.46.3: the flash engine (compact indexed tree, one model call per step, verify, loop guard, coordinate fallback).
-        if (Settings.phoneControl) t.put(com.blaze.assistant.phone.flash.FlashRunner.tool())
+        run { val p = PhoneTools.definitions(); for (i in 0 until p.length()) t.put(p.get(i)) }
         // v0.30.4: straight to a settings page by intent (in no tool group, so it's always on hand).
-        if (Settings.phoneControl) t.put(com.blaze.assistant.phone.SettingsJump.tool())
+        t.put(com.blaze.assistant.phone.SettingsJump.tool())
         // v0.45.9: one schema per name, valid names and object parameters (gateway 0.8.2 checks calls against this list).
         return ToolTruth.clean(ToolGuide.apply(t)).also { try { BlazeDocs.noteTools(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: BlazeDocs.noteToolsit", e) }
             // 0.55.0 lean harness: find_tools searches this list; the catalog keeps the phone's own rows (off the turn's path).
@@ -3333,7 +3303,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             // v0.42.0: a run still waiting for the phone is stopped; one still answering stays saved and is picked up later.
             cloudTurn?.let { try { CloudRuns.endTurn(it) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: CloudRuns.endTurnit", e) } }
             lastTurnDesign = ViewShelf.byId("design")?.let { d -> synchronized(turnOk) { turnOk.any { ClaimGuard.backs(d, it) } } } == true
-            if (agentId == null) com.blaze.assistant.phone.Pointer.done()
             try { finishAck() } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: finishAck", e) }
             thinking = ""
             mood = Mood.IDLE
@@ -3410,13 +3379,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val dTools = par.async(Dispatchers.Default) { tools().apply { put(ToolPick.loadTool()) }.let { if (isPrivate) PrivateChat.filterTools(it) else it }
                     .let { if (Projects.of(id) == null) ProjectDocs.strip(it) else it } }
                 val dDesign = par.async { if (bulk) null else try { Designs.current() } catch (e: CancellationException) { throw e } catch (_: Exception) { null } }
-                val dPlan = par.async {
-                    // 0.45.15 (device /phoneqa 22:40): an ask a direct phone tool does (set_alarm, set_timer, compose_sms,
-                    // add_contact, device_setting, open_settings then tap) never gets the saved tap plan: the plan hint made
-                    // codestral write run_plan JSON as text instead of calling the tool the request names.
-                    if (routine || bulk || agentId != null || isPrivate || !Settings.phoneControl || ToolTruth.directPhone(userNow)) ""
-                    else try { TapLoop.Plans.find(userNow)?.let { TapLoop.hint(it) } ?: "" } catch (e: CancellationException) { throw e } catch (_: Exception) { "" }
-                }
                 // 2026-11-16 model-first (docs/MODEL-FIRST.md): no word-guessed tool groups. The core, the always-on groups, what this
                 // chat already used and the Stage while it shows; the model loads anything else itself (load_tools / find_tool).
                 val groupsOn = HashSet<String>().apply {
@@ -3430,8 +3392,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 // the tool list, skills and specialists are still being looked up. The screen is read on the main thread as
                 // before (the accessibility service's element numbers live there); it just no longer waits its turn.
                 par.launch(Dispatchers.Default) { try { Memory.promptBlock(userNow) } catch (e: CancellationException) { throw e } catch (e: Exception) { com.blaze.assistant.device.CrashLog.quiet("Agent: memory warm", e) } }
-                val dOrient = if (!routine && "screen" in groupsOn) par.async(Dispatchers.Main) {
-                    try { orientRead() } catch (e: CancellationException) { throw e } catch (_: Throwable) { "" to "" } } else null
                 val allTools0 = TeamTools.keep(id, dTools.await())   // P0-AG-01: a bound bot's tool subset
                 // Agents don't start or steer other agents; Plan keeps only read-only tools.
                 val allTools = Modes.filterTools(if (agentId == null) allTools0 else JSONArray().apply {
@@ -3526,15 +3486,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     return sent
                 }
                 var tools = pickTools()
-                orient.reset(); lastPlan = null
+                orient.reset()
                 planRec.reset(); screenActed = false
-                // v0.30.7 plan memory: this request worked before → its steps go with the first call as one run_plan to send.
-                val planHint = PreBudget.within(dPlan, PreBudget.PLAN_MS, "", "plan") { lateSteps += it }
-                if (planHint.isNotEmpty()) { groupsOn += "screen"; groupsOn += "device"; add(Role.STEP, "Using the steps that worked last time") }
                 timer.mark("prep")
-                val orientNote = (if (!routine && "screen" in groupsOn) (dOrient?.let { d -> PreBudget.within(d, PreBudget.ORIENT_MS, "" to "", "orient") { lateSteps += it } }?.let { (pkg, note) -> if (pkg.isNotEmpty()) orient.saw(pkg); note } ?: orientContext())
-                    else { dOrient?.cancel(); "" }).let { o ->
-                    if (planHint.isEmpty()) o else if (o.isBlank()) planHint else "$o\n\n$planHint" }
+                val orientNote = ""   // 0.55.18: no orient read (phone control removed)
                 timer.mark("orient")
                 // 0.51.0 BlazeQuery: take the pack if it is ready within its budget (counted from the send), never wait longer.
                 if (dQuery != null) {
@@ -3745,8 +3700,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             if (got != null) { gate.flush(); return got }
                             live.set(false); gate.flush()
                             if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
-                            add(Role.STEP, "Reading the screen as text (the picture was slow)")
-                            val text = com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected, so the screen can't be read as text."
+                            add(Role.STEP, "The picture was slow, going on without it")
+                            val text = "The picture took too long to read, and there is no text version of it."
                             r = VisionFast.withoutShots(r, SHOT_NOTE, text)
                             VisionFast.pruneShots(history, SHOT_NOTE)
                         }
@@ -4398,14 +4353,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         turnToolCalls++
                         if (name == SaveFile.TOOL || name == MakeDoc.TOOL) SaveFile.pathIn(result)?.let { savedPath = it }
                         if (name == "set_alarm" || name == "set_timer" || name == "create_routine") turnSetResults += result
-                        if (name == "run_plan" || name == "read_screen" || name == com.blaze.assistant.phone.SettingsJump.TOOL) groupsOn += "screen"
                         if (name in screenActions && !result.startsWith("Error") && !result.startsWith("Couldn't")) com.blaze.assistant.device.Haptics.tick(app)
-                        // v0.30.4 batching: several screen actions in one reply run back to back with a short settle; the
-                        // screen is read once, after the last of them.
-                        if (name == "do_actions" || (name in screenActions && !FastActions.isScreen(result))) {
-                            if (i in readAt || name == "do_actions") result += screenAfter(result)
-                            else com.blaze.assistant.phone.BlazeAccessibilityService.instance?.settle(700, 150)
-                        }
                         // 0.49.0 cache tier: a very long result is cached (head + TOC sent); a long one keeps the artifact aside.
                         val keepWhole = !Settings.longChat || LongChat.keeps(name) || FastActions.isScreen(result) || name in com.blaze.assistant.memory.CacheTier.names
                         val sentResult = if (keepWhole) result else (com.blaze.assistant.memory.CacheTier.asideTool(id, name, result)
@@ -4580,7 +4528,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 val outs = com.blaze.assistant.orchestra.ToolScheduler.run(batch, { c ->
                     var result = if (c.name in unknown) "Error: there is no tool called \"${c.name}\". Use one of the tools you were given (exact name)." else runTool(c.name, c.args, shots)
-                    if (c.name == "do_actions" || (c.name in screenActions && !FastActions.isScreen(result))) result += screenAfter(result)
                     result
                 }, timeoutMs = Settings.str("tool_timeout_s", "180").toLongOrNull()?.coerceIn(30, 900)?.times(1000) ?: 180_000L)
                 batch.zip(outs).forEach { (c, r) -> msgs.put(JSONObject().put("role", "tool").put("tool_call_id", c.id).put("name", c.name).put("content", r.output.take(12000))) }
@@ -4611,24 +4558,10 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return m.message
         }
 
-        /** Fresh compact screen after an action, so the model doesn't spend a turn on read_screen (the orient loop's "look after"). */
-        suspend fun screenAfter(result: String): String {
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return ""
-            if (!Settings.phoneControl || result.startsWith("Error") || result.startsWith("No app") || result.startsWith("Phone control is off") || result.startsWith("Not done yet")) return ""
-            // 0.45.19: a result the phone already read back (verified by state) needs only a short settle before the look
-            if (result.contains(ActCheck.OK)) svc.settle(500, 120) else svc.settle(1200, 200)
-            val s = svc.readScreen(diff = true)
-            orient.saw(svc.currentPkg())
-            return "\n\nScreen now:\n" + s + com.blaze.assistant.phone.Watchers.drain()
-        }
 
-        /** v0.30.7: screen tools whose steps go into plan memory (run_plan records its own steps). */
-        private val planTools = setOf("open_app", "tap", "type_text", "scroll", "press_button", "search_in_app", "open_settings", "read_screen", "look_at_screen")
 
         /** Orient loop state for this turn (v0.20.0). */
         val orient = Orient.State()
-        /** v0.30.4: the last run_plan this turn (for resuming a failed script instead of restarting it). */
-        @Volatile var lastPlan: FastActions.PlanRun? = null
         /** Secure-form asks per site this session, so a refusing site can't loop on the form. */
         private val formAsks = HashMap<String, Int>()
 
@@ -4680,21 +4613,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
 
         /** Every tool call goes through here: a crash or an empty result becomes a plain error with a fix. */
         /** 0.45.18: the prompt-injection card for a screen action, or null to go ahead. */
-        /** 0.45.20: the in-chat card for phone control; null = it's on now (go on), else the honest "not done" result. */
-        private suspend fun phoneControlGate(name: String): String? {
-            add(Role.STEP, "Needs phone control")
-            if (!confirm(PermissionGate.TITLE, PermissionGate.REASON, PermissionGate.ACTION, always = true))
-                return PermissionGate.notDone(name, PermissionGate.Outcome.DECLINED)
-            val on = { com.blaze.assistant.phone.BlazeAccessibilityService.instance != null }
-            com.blaze.assistant.ui.ComeBack.watch(app) { on() }
-            // 0.53.7: the card's button opens Settings itself (an Activity start from the tap); this is the fallback.
-            if (!PermissionGate.takeOpened() && !com.blaze.assistant.phone.PhoneControl.openSettings(app)) {
-                add(Role.STEP, "Couldn't open Settings")
-                return PermissionGate.NO_SETTINGS
-            }
-            val o = PermissionGate.await(on, kotlinx.coroutines.CompletableDeferred<Boolean>().apply { complete(true) })
-            return if (o == PermissionGate.Outcome.GRANTED) { add(Role.STEP, "Phone control on"); null } else PermissionGate.notDone(name, o)
-        }
 
         /** 0.53.7 DeviceLast: own tools before the device's screen (one nudge per request; null = go on). */
         private fun deviceLast(name: String, args: JSONObject): String? {
@@ -4706,25 +4624,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return n
         }
 
-        private suspend fun screenGate(name: String, args: JSONObject): String? {
-            val taint = kotlin.coroutines.coroutineContext[ConfirmGate.Taint] ?: return null
-            val label = args.optString("text").ifBlank { if (args.has("element")) com.blaze.assistant.phone.BlazeAccessibilityService.instance?.labelOf(args.optInt("element")).orEmpty() else "" }
-                .ifBlank { args.optString("button") }.trim()
-            val app0 = com.blaze.assistant.phone.BlazeAccessibilityService.instance?.currentApp() ?: "the app"
-            val what = when (name) { "type_text" -> "type \u201c${label.take(40)}\u201d"; "press_button" -> "press ${label.ifBlank { "a button" }.take(30)}"
-                "run_plan" -> "run a saved set of taps"; else -> "tap \u201c${label.take(40)}\u201d" }
-            return when (ConfirmGate.screenAct(name, label, taint.source != null, taint.outside, taint.screenOk)) {
-                ConfirmGate.ScreenDecision.PASS -> null
-                ConfirmGate.ScreenDecision.ASK_ONCE ->
-                    if (confirm("Use the screen in $app0?", "${BrandName.NAME} wants to $what, and keep working on the screen this turn.", "Allow", always = true)) { taint.screenOk = true; null }
-                    else "The user did NOT approve acting on the screen after reading ${taint.outside}. Don't retry; tell them what you would have done so they can do it."
-                ConfirmGate.ScreenDecision.ASK -> {
-                    taint.askedLabel = label
-                    if (confirm("${what.replaceFirstChar { it.uppercase() }}?", "${BrandName.NAME} wants to $what in $app0.", "Tap", always = true)) null
-                    else "The user did NOT approve tapping \"$label\". Don't retry; tell them it's ready for them to finish."
-                }
-            }
-        }
 
         /** 0.50.0: screen actions light the edge particles while they run (ScreenWork → ui.ScreenGlow). */
         /** 0.52.1 (MemoryLoop): memory lookups this turn, and the song a song-download turn has resolved ("" = none yet). */
@@ -4776,22 +4675,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 return "Bank mode is on: ${BrandName.NAME} has stepped back so the user's banking app works, and doesn't read or use the screen. " +
                     "Tell the user, and offer to turn Bank mode off (bank_mode action=off) when they're done banking."
             deviceLast(name, args)?.let { return it }
-            // 0.45.20 (item 15): phone control is asked for the first time a task needs it, with the reason, not in setup.
-            if (PermissionGate.shouldAsk(name, com.blaze.assistant.phone.BlazeAccessibilityService.instance != null, Settings.phoneControl))
-                phoneControlGate(name)?.let { return it }
-            // 0.45.18: screen actions after outside content (web, messages, email…) need the user's OK (ConfirmGate.screenAct).
-            if (name in ConfirmGate.screenActs) screenGate(name, args)?.let { return it }
-            // Visible pointer (v0.21.0): while the user has the pointer, screen actions wait for them.
-            if (name in Orient.acting && com.blaze.assistant.phone.Pointer.enabled) pointerGate()?.let { return it }
-            // Orient loop (v0.20.0): know where we are before acting on the screen.
-            val (held, glance) = try { orientFirst(name, args) } catch (e: CancellationException) { throw e } catch (_: Throwable) { null to "" }
-            if (held != null) return held
-            // v0.30.7 plan memory: the element's words before it's acted on (numbers change, words replay).
-            val recName = if (name == com.blaze.assistant.phone.SettingsJump.TOOL) "open_settings" else name
-            val recSvc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
-            val recLabel = if ((name == "tap" || name == "type_text") && args.has("element") && args.optString("text").isBlank())
-                try { recSvc?.labelOf(args.optInt("element")).orEmpty() } catch (_: Throwable) { "" } else ""
-            recSvc?.lastToggle = null
             val undoBefore = UndoCenter.snapshot(name)
             // 0.46.6 Secure form: {{secret:…}} handles become values here, on the phone, only for the hosts they were saved for;
             // the result is scrubbed back to handles before it reaches the chat or the model.
@@ -4808,53 +4691,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             val fix = if (agentId == null) FixCards.kindOf(r0, name) else null
             if (fix != null) FixCards.afterTool(name, r0)
             val r = if (fix != null) r0 + FixCards.NOTE else r0
-            if (recName in planTools) {
-                screenActed = true
-                if (TapLoop.failed(r)) planRec.fail()
-                else if (recName !in TapLoop.lookOnly) planRec.ok(TapLoop.stepOf(recName, args, recLabel, if (name == "tap") recSvc?.lastToggle else null))
-            }
             // v0.28.2: outside content is now in the context: later sends / deletes this turn always ask (ConfirmGate).
             ConfirmGate.sourceOf(name)?.let { taint.mark(it) }
-            // v0.30.4: any result that carries the screen (open_settings, a stopped run_plan) counts as a look, so the next
-            // numbered tap isn't bounced with "Looking at the screen first" (a whole extra model round trip).
-            if ((name in Orient.looking || FastActions.isScreen(r)) && !r.startsWith("Phone control")) com.blaze.assistant.phone.BlazeAccessibilityService.instance?.let { orient.saw(it.currentPkg()) }
-            return if (r.isBlank()) ToolGuide.empty(name) else glance + r
+            return if (r.isBlank()) ToolGuide.empty(name) else r
         }
 
-        /**
-         * Before a screen action: GO, a compact glance put in front of the result, or (for numbered taps
-         * on a screen Argus hasn't seen this turn) hold the action and return the fresh screen instead.
-         */
-        private suspend fun orientFirst(name: String, args: JSONObject): Pair<String?, String> {
-            if (name !in Orient.acting || !Settings.phoneControl) return null to ""
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return null to ""
-            val now = svc.currentPkg()
-            return when (Orient.decide(name, args, orient, now)) {
-                Orient.Decision.GO -> null to ""
-                Orient.Decision.LOOK_FIRST -> {
-                    orient.bounced++
-                    add(Role.STEP, "Looking at the screen first")
-                    val screen = svc.readScreen()
-                    orient.saw(now)
-                    Orient.lookFirst(name, screen) to ""
-                }
-                Orient.Decision.GLANCE -> {
-                    val screen = svc.readScreen()
-                    orient.saw(now)
-                    null to Orient.glanceNote(Orient.compact(screen))
-                }
-            }
-        }
 
-        /** v0.45.14: the pointer never pauses a run; the only stop from the screen is its Stop chip, which ends the task. */
-        private fun pointerGate(): String? {
-            if (!com.blaze.assistant.phone.Pointer.takeStop()) return null
-            add(Role.STEP, "You stopped me"); job?.cancel()
-            return "Stopped by the user."
-        }
 
-        /** The "context → orientation" step at the start of a phone-control turn: a compact look, or "" when it wouldn't help. */
-        private fun orientContext(): String = orientRead().let { (pkg, note) -> if (pkg.isNotEmpty()) orient.saw(pkg); note }
 
         /** v0.45.6: what the Design view proved about this turn's design (set by the design tool step). */
         @Volatile var turnDesignRender: com.blaze.assistant.ui.DesignStatus.Status? = null
@@ -4933,14 +4776,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             return emptySet()
         }
 
-        /** v0.45.1: the orient read without touching the turn's orient state ((package, note); note "" = nothing to say). */
-        private fun orientRead(): Pair<String, String> {
-            if (!Settings.phoneControl || agentId != null) return "" to ""
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance ?: return "" to ""
-            val pkg = svc.currentPkg()
-            if (pkg.isBlank() || pkg == app.packageName) return "" to ""   // Argus's own chat is on screen: nothing to orient on yet
-            return try { Orient.contextNote(Orient.compact(svc.readScreen())).let { pkg to it } } catch (_: Throwable) { "" to "" }
-        }
 
         /** Runs terminal work, then puts any new pictures / audio / video it wrote into the Gallery and this reply. */
         private suspend fun withMediaScan(block: suspend () -> String): String {
@@ -5015,14 +4850,9 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 val gh = try { com.blaze.assistant.connect.Connectors.githubUrl(app, u) } catch (e: CancellationException) { throw e } catch (_: Throwable) { null }
                 if (gh != null) { add(Role.STEP, "Checking GitHub"); return gh }
             }
-            // v0.45.1: a tool that may change the screen (anything but a read) makes the next screen read walk the tree again.
-            if (name != "read_screen" && name != "look_at_screen") com.blaze.assistant.phone.BlazeAccessibilityService.touched()
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
-            // Record phone actions (with the element's label, since numbers change) for task replay.
-            if (name in setOf("open_app", "tap", "type_text", "scroll", "press_button", "run_plan", "do_actions", "search_in_app", "read_screen")) com.blaze.assistant.phone.Watchers.taskTick()
             if (name in setOf("open_app", "tap", "type_text", "scroll", "press_button", "open_url", "search_in_app", com.blaze.assistant.phone.SettingsJump.TOOL) && trace.length() < 40) {
                 val label = args.optString("text").takeIf { name == "tap" && it.isNotBlank() }
-                    ?: if (name == "tap" || name == "type_text") svc?.labelOf(args.optInt("element")).orEmpty() else ""
+                    ?: ""
                 trace.put(JSONObject().put("tool", name).put("args", JSONObject(args.toString()).apply { remove("element") }).put("label", label))
             }
             // v0.45.9 MemoryGate: no memory writes on small talk or read-only questions (schedule, weather, time).
@@ -5252,21 +5082,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 }
                 GatewayWeather.TOOL -> { add(Role.STEP, "Checking the weather")
                     kotlinx.coroutines.withContext(Dispatchers.IO) { GatewayWeather.run(args, Settings.gatewayToken()) { lastFix() } } }
-                "look_at_screen" -> if (Settings.lowData) {
-                    add(Role.STEP, "Reading the screen (low-data mode)")
-                    "Low-data mode is on, so no screenshot was taken. Screen as text:\n" + (com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen() ?: "Phone control isn't connected.")
-                } else {
-                    // v0.33.3: the accessibility tree first (instant); a picture only when it isn't enough or pixels=true.
-                    val text = if (args.optBoolean("pixels")) null else com.blaze.assistant.phone.BlazeAccessibilityService.instance?.readScreen()
-                    if (text != null && VisionFast.textEnough(text)) {
-                        add(Role.STEP, "Reading the screen")
-                        text + "\n[Read as text, which is faster than a picture. If you must see images, a game, video or a map, call look_at_screen with pixels=true.]"
-                    } else {
-                        add(Role.STEP, "Looking at a screenshot")
-                        val shot = PhoneTools.screenshot()
-                        if (shot.startsWith("data:")) { shots += shot; "Screenshot taken. It is attached in the next message." } else shot
-                    }
-                }
                 com.blaze.assistant.orchestra.OrchestraRuns.TOOL -> {
                     // 0.52.0: a blueprint run (planner → parallel agents → verify / stitch) as one background agent with its work pill
                     val goal = args.optString("goal").trim()
@@ -5346,7 +5161,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (name) { "use_skill" -> "Reading skill \u201c${args.optString("name")}\u201d"; "install_skill" -> "Installing skills"; "write_skill" -> "Saving a skill"; "save_workflow" -> "Saving a workflow"; else -> "Reading a skill file" })
                     try { SkillPacks.run(name, args).let { if (name == "use_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
-                "watch" -> { add(Role.STEP, "Setting a watcher"); com.blaze.assistant.phone.Watchers.run(args) }
                 "goal" -> { add(Role.STEP, if (args.optString("action") == "add") "Planning \u201c${args.optString("title").take(40)}\u201d" else "Updating the plan"); Autonomy.goal(args) }
                 "standing_permission" -> { add(Role.STEP, "Updating permissions"); Autonomy.setPermission(args) }
                 in Processes.names -> {
@@ -5369,7 +5183,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (name) { "run_skill" -> "Replaying skill \"${args.optString("name")}\""; "skill_manage" -> "Saving a skill"; else -> "Searching past chats" })
                     try { Learning.run(app, name, args).let { if (name == "run_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
-                "search_screen_memory" -> { add(Role.STEP, "Searching screen memory"); ScreenMemory.search(app, args.optString("query"), args.optString("app").ifBlank { null }) }
                 "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.blaze.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }
                 com.blaze.assistant.phone.Messaging.NAME -> { add(Role.STEP, "Messaging ${args.optString("to")}"); com.blaze.assistant.phone.Messaging.run(app, args) }
                 com.blaze.assistant.browser.BrowserTools.SECURE -> secureInput(args)
@@ -5403,46 +5216,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     com.blaze.assistant.browser.BrowserTools.run(app, name, args)
                 }
                 "reply_to_notification" -> { add(Role.STEP, "Replying"); com.blaze.assistant.notify.NotificationBrain.reply(app, args.optInt("number"), args.optString("text")) }
-                "run_plan" -> runPlan(args)
                 com.blaze.assistant.phone.SettingsJump.TOOL -> com.blaze.assistant.phone.SettingsJump.run(app, args)
-                "do_actions" -> {
-                    val steps = args.optJSONArray("steps") ?: JSONArray()
-                    val log = StringBuilder()
-                    for (i in 0 until minOf(steps.length(), 8)) {
-                        val st = steps.getJSONObject(i)
-                        val act = st.optString("action").let { if (it == "type") "type_text" else it }
-                        val sub = JSONObject(st.toString()).apply { remove("action") }
-                        val r = runTool(act, sub, shots)
-                        log.append("${i + 1}. $act: ${r.take(200)}\n")
-                        if (r.startsWith("Error") || r.startsWith("No element") || r.contains("did NOT approve") || r.startsWith("Unknown")) { log.append("Stopped at step ${i + 1}."); break }
-                        if (i < steps.length() - 1 && act != "wait") svc?.settle(900, 200)
-                    }
-                    log.toString()
-                }
-                "tap" -> {
-                    add(Role.STEP, PhoneTools.describe(name, args))
-                    val label = args.optString("text").ifBlank { svc?.labelOf(args.optInt("element")).orEmpty() }
-                    // v0.30.7: want="on"/"off" on a switch: read it first and only tap when it isn't already that way.
-                    val want = TapLoop.wantOf(args.optString("want"))
-                    val wantId = if (want != null && svc != null) (if (args.optString("text").isNotBlank()) svc.reveal(args.optString("text")) else if (args.has("element")) args.optInt("element") else null) else null
-                    val wantNow = wantId?.let { svc?.switchState(it) }
-                    if (want != null && wantNow != null && !TapLoop.needsTap(want, wantNow))
-                        "Already ${TapLoop.wantWord(want)}: \u201c${(wantId?.let { svc?.labelOf(it) } ?: label).ifBlank { label }.take(40)}\u201d. Not tapped, it's already how you wanted it."
-                    else if (Settings.confirmRisky && risky.containsMatchIn(label) && kotlin.coroutines.coroutineContext[ConfirmGate.Taint]?.askedLabel != label.trim() &&
-                        !confirm("Tap \u201c${label.take(40)}\u201d?", "${BrandName.NAME} wants to tap this in ${svc?.currentApp() ?: "the app"}.", "Tap", always = true))
-                        "The user did NOT approve tapping \"$label\". Don't retry; tell them it's ready for them to finish."
-                    else PhoneTools.run(app, name, args).let { r ->
-                        // v0.45.13 verify-after-act: a switch tapped toward a wanted state is read back before anything says it changed.
-                        if (want == null || wantId == null || svc == null || r.startsWith("Error") || r.startsWith("Couldn't")) r
-                        else {
-                            // 0.45.19: verify by STATE first (dark mode, Wi-Fi, Bluetooth… read from the system), then the switch
-                            // re-found and re-read; polled with a timeout. A theme switch recreates the screen, so the old node
-                            // read back "unknown" while Dark theme was on, and the reply said both (StateCheck).
-                            val vr = com.blaze.assistant.phone.ToggleVerify.after(app, svc, label, wantId, want)
-                            r.trimEnd() + " " + com.blaze.assistant.phone.ToggleVerify.marker(vr)
-                        }
-                    }
-                }
                 else -> when {
                     name in LongChat.names -> longChatTool(name, args)
                     name == MakeDoc.TOOL -> { add(Role.STEP, MakeDoc.step(args))
@@ -5474,8 +5248,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         Marketplace.run(app, args) }
                     name == DuoWorkspace.TOOL -> { add(Role.STEP, "Workspace: ${args.optString("action")}")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { DuoWorkspace.run(app, args) } }
-                    name == com.blaze.assistant.phone.flash.FlashRunner.TOOL -> { add(Role.STEP, "Working on the screen: ${args.optString("goal").take(50)}")
-                        com.blaze.assistant.phone.flash.FlashRunner.run(app, args) }
                     name == com.blaze.assistant.phone.CallCopilot.TOOL -> { add(Role.STEP, "Call Copilot"); com.blaze.assistant.phone.CallCopilot.run(app, args) }
                     name == HaloStudio.TOOL -> "Halo is now part of ${BrandName.NAME} (0.51.0): there's no separate Halo persona to tune. Change ${BrandName.NAME}'s personality in Settings › Personality."
                     name == com.blaze.assistant.agent.query.QueryRuntime.TOOL -> {
@@ -5519,142 +5291,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
 
 
-        /**
-         * v1.9 fast path: run a whole script of steps the model planned, addressed by visible text
-         * instead of element numbers. Each step is checked locally (target found, screen changed,
-         * expected text appeared) — no model call until the script finishes or gets stuck.
-         */
-        suspend fun runPlan(args: JSONObject): String {
-            val svc = com.blaze.assistant.phone.BlazeAccessibilityService.instance
-                ?: return "Phone control isn't connected. Ask the user to turn on ${BrandName.NAME} in Accessibility settings."
-            val steps = args.optJSONArray("steps") ?: return "Error: no steps."
-            val n = minOf(steps.length(), 15)
-            fun desc(st: JSONObject): String = when (st.optString("do")) {
-                "open_app" -> "Open ${st.optString("app").ifBlank { st.optString("target") }}"
-                "tap" -> "Tap \u201c${st.optString("target").take(30)}\u201d"
-                "long_press" -> "Hold \u201c${st.optString("target").take(30)}\u201d"
-                "type" -> "Type \u201c${st.optString("text").take(30)}\u201d" + if (st.optBoolean("submit")) " and search" else ""
-                "scroll" -> "Scroll ${st.optString("direction", "down")}"
-                "back" -> "Go back"; "home" -> "Go home"; "enter" -> "Press Enter"
-                "wait" -> "Wait"
-                "search_in_app" -> "Search ${st.optString("app")} for \u201c${st.optString("query").take(30)}\u201d"
-                "open_settings" -> "Open ${st.optString("app").let { if (it.isBlank()) "" else "$it\u2019s " }}${st.optString("page").replace('_', ' ')} settings"
-                else -> st.optString("do")
-            }
-            val keys = (0 until n).map { FastActions.key(steps.getJSONObject(it)) }
-            // v0.30.4: the same script sent again after it failed at step k skips the steps already done (the phone is
-            // still on step k's screen), instead of reopening the app and starting over.
-            val skip = FastActions.skipDone(keys, lastPlan, svc.currentPkg())
-            val labels = (0 until n).map { desc(steps.getJSONObject(it)) + if (it < skip) " (already done)" else "" }.toMutableList()
-            screenActed = true
-            // v0.30.7: after a short settle the next step's own wait polls the new screen for its target (on-device check).
-            var shortSettle = false
-            val state = MutableList(n) { if (it < skip) 2 else 0 }   // 0 todo, 1 running, 2 done, 3 failed, 4 skipped
-            fun board() = labels.mapIndexed { i, l -> (when (state[i]) { 2 -> "\u2713 "; 1 -> "\u2192 "; 3 -> "\u2715 "; 4 -> "\u2013 "; else -> "\u00b7 " }) + l }.joinToString("\n")
-            val boardId = add(Role.STEP, board())
-            val started = System.currentTimeMillis()
-            val planChecks = mutableListOf<String>()
-            for (i in skip until n) {
-                val st = steps.getJSONObject(i)
-                state[i] = 1; replace(boardId, Role.STEP, board())
-                val t0 = System.currentTimeMillis()
-                svc.lastToggle = null
-                val pkgBefore = svc.currentPkg()
-                val target = st.optString("target")
-                var fail: String? = null
-                try {
-                    when (st.optString("do")) {
-                        "open_app" -> {
-                            val r = PhoneTools.run(app, "open_app", JSONObject().put("app_name", st.optString("app").ifBlank { target }))
-                            if (r.startsWith("No app") || r.startsWith("Error") || r.startsWith("Couldn't")) fail = r
-                            else {
-                                val end = System.currentTimeMillis() + 3000
-                                while (svc.currentPkg() == pkgBefore && System.currentTimeMillis() < end) kotlinx.coroutines.delay(100)
-                                val (omx, oq) = TapLoop.settleAfter("open_app", if (i + 1 < n) steps.optJSONObject(i + 1) else null)
-                                svc.settle(omx, oq)
-                            }
-                        }
-                        // v0.30.7: settings pages by intent inside a plan (open_settings + tap in ONE call).
-                        "open_settings" -> {
-                            val r = com.blaze.assistant.phone.SettingsJump.run(app, JSONObject().put("page", st.optString("page"))
-                                .apply { st.optString("app").takeIf { it.isNotBlank() }?.let { put("app", it) } })
-                            if (TapLoop.failed(r)) fail = r.substringBefore("\n").take(200)
-                        }
-                        "tap", "long_press" -> {
-                            // v0.30.4: a short wait for a lazy screen, then synonyms / fuzzy / off-screen rows scrolled into view
-                            // (LabelMatch + reveal) instead of 3 s of polling and a single blind scroll.
-                            val id = svc.waitFor(target, TapLoop.waitMs(shortSettle)) ?: svc.reveal(target)
-                            val want = TapLoop.wantOf(st.optString("want"))
-                            val nowOn = if (id != null && want != null) svc.switchState(id) else null
-                            if (id == null) fail = "couldn't find \u201c$target\u201d on screen, even after scrolling through it"
-                            else if (!TapLoop.needsTap(want, nowOn)) {
-                                // v0.30.7: the switch is already the way the step wants it: done, nothing tapped.
-                                labels[i] = labels[i] + " (already ${TapLoop.wantWord(want == true)})"
-                            }
-                            else {
-                                val label = svc.labelOf(id)
-                                if (Settings.confirmRisky && risky.containsMatchIn(label) &&
-                                    !confirm("Tap \u201c${label.take(40)}\u201d?", "${BrandName.NAME} wants to tap this in ${svc.currentApp() ?: "the app"}.", "Tap", always = true))
-                                    return "The user did NOT approve tapping \"$label\" (step ${i + 1}). Don't retry; tell them it's ready for them to finish."
-                                svc.flash(id)
-                                val r = svc.tap(id, st.optString("do") == "long_press")
-                                if (r.startsWith("Couldn't") || r.startsWith("No element")) fail = r
-                                else if (want != null) {
-                                    // 0.45.19: a switch step toward a wanted state is verified by state / re-read, like the tap tool.
-                                    val vr = com.blaze.assistant.phone.ToggleVerify.after(app, svc, label.ifBlank { target }, id, want)
-                                    planChecks += com.blaze.assistant.phone.ToggleVerify.marker(vr)
-                                    if (vr.status == com.blaze.assistant.phone.StateCheck.Status.CONTRADICTED) fail = com.blaze.assistant.phone.StateCheck.contradicted(vr)
-                                }
-                                trace.put(JSONObject().put("tool", "tap").put("args", JSONObject().put("text", label)).put("label", label))
-                            }
-                        }
-                        "type" -> {
-                            val id = if (target.isNotBlank()) svc.waitFor(target, TapLoop.waitMs(shortSettle, field = true), wantField = true) ?: svc.reveal(target, wantField = true, maxScrolls = 3) ?: svc.anyField() else svc.anyField()
-                            if (id == null) fail = "no text field to type into"
-                            else {
-                                svc.flash(id)
-                                val r = svc.type(id, st.optString("text"), st.optBoolean("submit"))
-                                if (r.startsWith("Couldn't") || r.startsWith("No element")) fail = r
-                                trace.put(JSONObject().put("tool", "type_text").put("args", JSONObject().put("text", st.optString("text")).put("submit", st.optBoolean("submit"))).put("label", svc.labelOf(id)))
-                            }
-                        }
-                        "enter" -> if (!svc.pressEnter()) fail = "couldn't press Enter"
-                        "scroll" -> { val r = svc.scroll(st.optString("direction", "down"), null); if (r.startsWith("Couldn't")) fail = r }
-                        "back" -> svc.press("back")
-                        "home" -> svc.press("home")
-                        "wait" -> kotlinx.coroutines.delay((st.optDouble("seconds", 1.0).coerceIn(0.2, 10.0) * 1000).toLong())
-                        "search_in_app" -> {
-                            val r = com.blaze.assistant.phone.AppSearch.run(app, st.optString("app"), st.optString("query"), st.optBoolean("play"))
-                            if (r.startsWith("Error") || r.startsWith("No app")) fail = r
-                        }
-                        else -> fail = "unknown step \u201c${st.optString("do")}\u201d"
-                    }
-                    val next = if (i + 1 < n) steps.optJSONObject(i + 1) else null
-                    val (mx, q) = TapLoop.settleAfter(st.optString("do"), next)
-                    shortSettle = mx < 1000L
-                    if (fail == null && st.optString("do") !in setOf("wait", "open_app", "open_settings")) svc.settle(mx, q)
-                    val expect = st.optString("expect")
-                    if (fail == null && expect.isNotBlank() && svc.waitFor(expect, 2500) == null) fail = "expected \u201c$expect\u201d to appear but it didn't"
-                } catch (e: CancellationException) { throw e } catch (e: Exception) { fail = "error: ${e.message}" }
-                if (!isPrivate) Traces.log(svc.currentPkg(), st, fail == null, System.currentTimeMillis() - t0, fail ?: "")
-                if (fail != null && st.optBoolean("optional")) { state[i] = 4; replace(boardId, Role.STEP, board()); continue }
-                if (fail != null) {
-                    planRec.fail()
-                    state[i] = 3; replace(boardId, Role.STEP, board())
-                    lastPlan = FastActions.PlanRun(keys, i, true, svc.currentPkg())
-                    return "Stopped at step ${i + 1} (${labels[i]}): $fail. " + FastActions.resumeHint(i + 1, n) + "\n\n" + svc.readScreen()
-                }
-                state[i] = 2; replace(boardId, Role.STEP, board())
-                // v0.30.7 plan memory: the step as it worked (a switch tap remembers which way it ended up).
-                planRec.ok(JSONObject(st.toString()).apply {
-                    if (st.optString("do") == "tap" && !st.has("want")) svc.lastToggle?.let { put("want", TapLoop.wantWord(it)) } })
-                com.blaze.assistant.device.Haptics.tick(app)
-            }
-            lastPlan = FastActions.PlanRun(keys, n, false, svc.currentPkg())
-            val words = svc.visibleWords().filter { it.length in 2..60 }.take(25)
-            return "All $n steps done in ${"%.1f".format((System.currentTimeMillis() - started) / 1000.0)} s. Now in ${svc.currentApp() ?: "?"}. On screen: ${words.joinToString(" · ")}\n(Call read_screen only if you need to act further on this screen.)" +
-                (if (planChecks.isNotEmpty()) " " + planChecks.last() else "")
-        }
 
         /**
          * After a turn: the chat's title and summary (Titles), then memories and skills (Learning), both in

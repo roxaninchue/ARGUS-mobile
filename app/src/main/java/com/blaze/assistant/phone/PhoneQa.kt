@@ -53,9 +53,8 @@ object PhoneQa {
     private suspend fun say(text: String, asReply: Boolean = false) =
         kotlinx.coroutines.withContext(Dispatchers.Main) { Agent.note(text, asReply) }
 
-    private fun screen(): String = try {
-        BlazeAccessibilityService.instance?.readScreen()?.take(3000) ?: "(phone control off: no screen read)"
-    } catch (e: Throwable) { "(screen read failed: ${e.message})" }
+    // 0.55.11: phone control is gone, so the runner reads no screen and no Clock list.
+    private fun screen(): String = "(no phone control: no screen read)"
 
     private fun backToBlaze(ctx: Context) {
         try { ctx.startActivity(Intent(ctx, com.blaze.assistant.MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } catch (_: Throwable) { }
@@ -77,7 +76,7 @@ object PhoneQa {
             PhoneCases.Verifier.ALARM_SET -> {
                 val a = alarmFor(e["label"].orEmpty())
                 val next = p.nextAlarm()
-                val clock = a?.let { ClockUi.read(ctx, it.first, it.second) }
+                val clock: Pair<Boolean?, String>? = null
                 backToBlaze(ctx)
                 when {
                     clock?.first == true -> true to "Clock list: ${clock.second}"
@@ -89,7 +88,7 @@ object PhoneQa {
             }
             PhoneCases.Verifier.ALARM_OFF -> {
                 val a = alarmFor(e["label"].orEmpty())
-                val clock = ClockUi.read(ctx, a?.first ?: "A0", a?.second?.ifBlank { null } ?: e["time"])
+                val clock: Pair<Boolean?, String>? = null
                 backToBlaze(ctx)
                 when {
                     clock == null -> null to "phone control off: the Clock list can't be read"
@@ -151,7 +150,7 @@ object PhoneQa {
             }
             PhoneCases.Verifier.OVERLAY_TAP -> {
                 val dnd = p.settingOn(e["setting"] ?: "do_not_disturb")
-                val shown = Pointer.shownAt >= runStart
+                val shown = false   // 0.55.11: the pointer overlay went with phone control
                 when {
                     paused -> false to "the turn says it paused (it must never pause)"
                     dnd == null -> null to "DND not readable (Do Not Disturb access off)"
@@ -227,7 +226,6 @@ object PhoneQa {
         val meta = linkedMapOf("app" to com.blaze.assistant.BuildConfig.VERSION_NAME + " (" + com.blaze.assistant.BuildConfig.VERSION_CODE + ")",
             "device" to android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + ", Android " + android.os.Build.VERSION.RELEASE,
             "started" to SimpleDateFormat("yyyy-MM-dd HH:mm ZZZZ", Locale.US).format(Date(started)), "runs_per_case" to runs.toString(),
-            "phone_control" to (BlazeAccessibilityService.instance != null).toString(),
             "notification_access" to (com.blaze.assistant.notify.NotificationBrain.instance != null).toString())
         val j = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.json", "application/json", PhoneQaReport.json(out, meta)))
         val m = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.md", "text/markdown", PhoneQaReport.markdown(out, meta)))

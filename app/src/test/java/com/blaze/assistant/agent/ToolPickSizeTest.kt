@@ -24,7 +24,6 @@ class ToolPickSizeTest {
         add("Web") { Web.tools() }
         add("Media") { com.blaze.assistant.media.Media.tools() }
         add("Processes") { Processes.tools() }
-        add("Watchers") { com.blaze.assistant.phone.Watchers.tool() }
         add("SkillPacks") { SkillPacks.tools() }
         add("AndroidControl") { com.blaze.assistant.phone.AndroidControl.tools() }
         add("Autonomy") { listOf(Autonomy.findToolDef(), Autonomy.goalTool(), Autonomy.permissionTool()) }

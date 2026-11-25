@@ -13,8 +13,8 @@ android {
         applicationId = "com.blaze.assistant"
         minSdk = 26
         targetSdk = 34
-        versionCode = 226   // 0.55.17, built on Finn's go 2026-11-24 14:04 CAT (a docs-only commit does not start Build APK: paths-ignore **/*.md)
-        versionName = "0.55.17"
+        versionCode = 227   // 0.55.18, phone control removed (Finn 2026-11-24 23:15 CAT) (a docs-only commit does not start Build APK: paths-ignore **/*.md)
+        versionName = "0.55.18"
         // Build round (owner said "yes please" to the build, 2026-11-21 23:50 CAT): 0.54.5 (207), Direct lane client (e7b7c0a7 + a6b3d8ec).
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         // 0.46.6: the low-RAM emulator release gate (src/androidTest/.../smoke, .github/workflows/lowram-smoke.yml)

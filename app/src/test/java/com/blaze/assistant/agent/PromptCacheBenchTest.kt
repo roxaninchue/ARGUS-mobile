@@ -69,7 +69,7 @@ class PromptCacheBenchTest {
             // 2026-11-14 harness gap: the consolidated core (HarnessPrompt) replaced the stacked rule lines.
             s("harness", HarnessPrompt.CORE + " " + SaveFile.EDIT_RULE); s("format", AnswerStyle.FORMAT)
             s("rapid", RapidMessages.PROMPT_RULE)
-            s("control", HarnessPrompt.phone(true, false) + "\n" + Orient.RULE + FastActions.RULE); s("secrets", "\n" + SecretRules.PROMPT)
+            s("control", HarnessPrompt.phone(false)); s("secrets", "\n" + SecretRules.PROMPT)
             s("followups", lit("s", "followups")); s("docs", BlazeDocs.PROMPT_LINE)
             turn("core_skills", core(HarnessPrompt.pinned(prof.core)))
             s("views", ViewShelf.promptBlock(stageOn = true))   // 2026-11-21 view shelf: every turn, same bytes

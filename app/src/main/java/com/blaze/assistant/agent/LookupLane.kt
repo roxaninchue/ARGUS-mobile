@@ -178,11 +178,31 @@ object LookupLane {
 
     /** Reads the model's JSON reply into an [Answer] (lenient; plain text = the answer backed by every page). */
     fun parse(raw: String, pages: List<Page>): Answer {
-        val o = com.blaze.assistant.phone.flash.FlashParse.json(raw)
+        val o = firstJson(raw)
         if (o == null) return Answer(raw.trim(), pages.map { it.url })
         val idx = o.optJSONArray("sources")
         val sup = if (idx == null) pages.map { it.url } else (0 until idx.length()).mapNotNull { pages.getOrNull(idx.optInt(it) - 1)?.url }
         return Answer(o.optString("answer").trim(), sup.distinct(), o.optBoolean("needs_browser"))
+    }
+
+    /** The first whole JSON object in [raw] (after any </think>), or null. Was FlashParse.json, which went with phone control (0.55.11). */
+    fun firstJson(raw: String): org.json.JSONObject? {
+        val s = raw.substringAfterLast("</think>")
+        var start = s.indexOf('{')
+        while (start >= 0) {
+            var depth = 0; var inStr = false; var q = ' '; var esc = false
+            for (i in start until s.length) {
+                val c = s[i]
+                if (inStr) { if (esc) esc = false else if (c == '\\') esc = true else if (c == q) inStr = false; continue }
+                when (c) {
+                    '"', '\'' -> { inStr = true; q = c }
+                    '{' -> depth++
+                    '}' -> { depth--; if (depth == 0) { try { return org.json.JSONObject(s.substring(start, i + 1)) } catch (_: Exception) { }; break } }
+                }
+            }
+            start = s.indexOf('{', start + 1)
+        }
+        return null
     }
 
     /** Search results text (Web.search: "1. title\n   url\n   snippet") into hits. */

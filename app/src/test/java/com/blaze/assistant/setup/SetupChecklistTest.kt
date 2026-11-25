@@ -44,8 +44,8 @@ class SetupChecklistTest {
         val none = SetupChecklist.detected(SetupChecklist.Probe())
         assertTrue(none.values.none { it })
         assertEquals(SetupChecklist.STEPS.map { it.key }.toSet(), none.keys)
-        val d = SetupChecklist.detected(SetupChecklist.Probe(calendarPermission = true, notifications = true, phoneControl = true))
-        assertTrue(d["calendar"]!!); assertTrue(d["notifications"]!!); assertTrue(d["accessibility"]!!)
+        val d = SetupChecklist.detected(SetupChecklist.Probe(calendarPermission = true, notifications = true))
+        assertTrue(d["calendar"]!!); assertTrue(d["notifications"]!!); assertNull("phone control step is gone", d["accessibility"])
         assertFalse(d["google"]!!); assertFalse(d["assistant"]!!)
         assertTrue("Google counts for the calendar too", SetupChecklist.detected(SetupChecklist.Probe(googleConnected = true))["calendar"]!!)
     }

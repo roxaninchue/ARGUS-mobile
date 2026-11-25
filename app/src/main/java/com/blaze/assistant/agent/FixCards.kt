@@ -14,9 +14,6 @@ object FixCards {
         NOTIFICATIONS("Turn on notification access?",
             "This lets me see new messages so I can tell you what they say. I never send anything without asking you.",
             "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"),
-        PHONE_CONTROL("Turn on phone control?",
-            "This lets me open apps, tap and type for you. You can pause me any time by touching the screen.",
-            "android.settings.ACCESSIBILITY_SETTINGS"),
         USAGE("Turn on usage access?",
             "This lets me see which apps you used today, so I can help at the right moment.",
             "android.settings.USAGE_ACCESS_SETTINGS"),
@@ -43,7 +40,6 @@ object FixCards {
 
     private val rules = listOf(
         Regex("(?i)notification access (is )?(off|not (on|granted|enabled))|turn on notification access|needs notification access") to Kind.NOTIFICATIONS,
-        Regex("(?i)phone control is off|accessibility (service )?(is )?(off|not (on|enabled))|turn on .?(?:argus|blaze) phone control") to Kind.PHONE_CONTROL,
         Regex("(?i)needs usage access|usage access (is )?(off|not granted)") to Kind.USAGE,
         Regex("(?i)(overlay|draw over other apps|display over other apps) (permission )?(is )?(off|not granted|needed)") to Kind.OVERLAY,
         Regex("(?i)all files access is off|needs all files access") to Kind.ALL_FILES,
@@ -91,7 +87,6 @@ object FixCards {
     /** What couldn't happen, in plain words, from the tool that hit the wall. */
     fun headline(tool: String, kind: Kind): String = when (kind) {
         Kind.NOTIFICATIONS -> if (tool.contains("whatsapp", true)) "I couldn't read WhatsApp" else "I couldn't read your messages"
-        Kind.PHONE_CONTROL -> "I couldn't use your phone for that"
         Kind.USAGE -> "I couldn't see which apps you used"
         Kind.OVERLAY -> "I couldn't show over other apps"
         Kind.ALL_FILES -> "I couldn't see all your files"

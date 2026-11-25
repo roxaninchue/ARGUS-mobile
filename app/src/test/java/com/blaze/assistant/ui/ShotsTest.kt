@@ -337,18 +337,6 @@ open class ShotsTest {
             listOf(com.blaze.assistant.browser.SecureInput.Field("groq_key", "Groq API key", com.blaze.assistant.browser.SecureInput.Kind.API_KEY)),
             onSubmit = { _, _ -> }, onCancel = {}, onWatch = {}, notifPrompt = true) }
     }
-    @Test fun noPasswordChoice() = shot("32-no-password-choice") {
-        Column(Modifier.fillMaxSize()) {
-            ShellTopBar("chat", {}, {}, {}, true, {}, "Sam", {})
-            Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                UserBubble("Sign me in to GitHub")
-                WorkCard(listOf(step(41, "Browsing github.com/login"), step(42, "GitHub says this account can't use a password")), live = false, startAt = t0, endAt = t0 + 9_000)
-            }
-            PhoneControlBanner(com.blaze.assistant.phone.PhoneControl.State.OFF) {}
-            QuestionView("GitHub won't take a password for this account. How do you want to sign in?",
-                listOf("Continue with Google", "Use a passkey", "I'll do it in the browser"))
-        }
-    }
     @Test fun savedLogins() {
         com.blaze.assistant.browser.Vault.fileOverride = File(System.getProperty("java.io.tmpdir"), "blaze-shots-vault-" + System.nanoTime() + ".json")
         com.blaze.assistant.browser.Vault.seal = { it }; com.blaze.assistant.browser.Vault.open = { it }
@@ -569,69 +557,6 @@ open class ShotsTest {
         com.blaze.assistant.agent.Designs.rootOverride = null
     }
 
-    // v0.21.0: the visible pointer over another app with a swipe path and a ripple; v0.45.14: the Stop chip, no paused bar.
-    @Test fun pointer() = shot("34-pointer") {
-        val c = LocalBlaze.current
-        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
-            Column(Modifier.fillMaxSize().padding(top = 90.dp, start = 18.dp, end = 18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                listOf("Wi-Fi", "Bluetooth", "Mobile data", "Airplane mode", "Hotspot").forEach {
-                    Box(Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.White).padding(18.dp)) {
-                        androidx.compose.material3.Text(it, style = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, color = androidx.compose.ui.graphics.Color(0xFF1D1A16)))
-                    }
-                }
-            }
-            androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
-                drawLine(androidx.compose.ui.graphics.Color(0xFF1F4BD8).copy(alpha = 0.66f), androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.78f),
-                    androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.55f), strokeWidth = 5 * density, cap = androidx.compose.ui.graphics.StrokeCap.Round)
-                drawCircle(androidx.compose.ui.graphics.Color(0xFF1F4BD8).copy(alpha = 0.8f), 6 * density, androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.78f))
-            }
-            PointerGlyph(ripple = 0.35f, modifier = Modifier.padding(start = 230.dp, top = 166.dp))
-            Box(Modifier.fillMaxSize().padding(start = 8.dp, bottom = 88.dp), contentAlignment = androidx.compose.ui.Alignment.BottomStart) { PointerStopChip() }
-        }
-    }
-
-    // v0.24.5: the mascot pointer on light, dark and busy backgrounds, gliding and clicking.
-    @Test fun pointerMascot() = shot("44-pointer-mascot") {
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
-                Text("Light app \u00b7 ${BrandName.NAME} gliding", Modifier.padding(top = 96.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFF1D1A16)))
-                PointerGlyph(pulse = 1.06f, modifier = Modifier.padding(start = 150.dp, top = 140.dp))
-            }
-            Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFF111110))) {
-                Text("Dark app \u00b7 clicking (squish)", Modifier.padding(top = 20.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color(0xFFEDEDED)))
-                PointerGlyph(ripple = 0.5f, modifier = Modifier.padding(start = 210.dp, top = 70.dp))
-            }
-            Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(
-                androidx.compose.ui.graphics.Color(0xFF1F4BD8), androidx.compose.ui.graphics.Color(0xFFE8743B), androidx.compose.ui.graphics.Color(0xFF2E7D32))))) {
-                Text("Busy photo \u00b7 still", Modifier.padding(top = 20.dp, start = 18.dp), style = TextStyle(fontSize = 15.sp, color = androidx.compose.ui.graphics.Color.White))
-                PointerGlyph(modifier = Modifier.padding(start = 120.dp, top = 70.dp))
-            }
-        }
-    }
-
-    // v0.24.5: the real launcher icon (adaptive background + foreground), the themed-icon silhouette and the
-    // notification icon, rendered from res/drawable, next to the mascot pointer drawn big.
-    @Test fun mascotIcons() = shot("45-mascot-icons") {
-        Column(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF212226)).padding(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Text("Launcher icon", style = TextStyle(fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFBBBBBB)))
-            Box(Modifier.size(216.dp)) {
-                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_launcher_background), null, Modifier.size(216.dp))
-                androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_launcher_foreground), null, Modifier.size(216.dp))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                Box(Modifier.size(108.dp).background(androidx.compose.ui.graphics.Color(0xFFDDE3F0))) {
-                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_launcher_monochrome), null, Modifier.size(108.dp),
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.ui.graphics.Color(0xFF2A3550)))
-                }
-                Box(Modifier.size(108.dp).background(androidx.compose.ui.graphics.Color(0xFF333333)), contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(com.blaze.assistant.R.drawable.ic_stat_blaze), null, Modifier.size(72.dp))
-                }
-                PointerGlyph(scale = 1.7f)
-            }
-            Text("Themed icon \u00b7 notification icon \u00b7 pointer", style = TextStyle(fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFFBBBBBB)))
-        }
-    }
-
     // v0.24.5: the "Leave private chat?" dialog in the Argus dialog look (dark card, pill buttons), over a dimmed chat.
     @Test fun privateLeaveDialog() = shot("46-private-leave-dialog", dark = true) {
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF26262A))) {
@@ -659,92 +584,8 @@ open class ShotsTest {
     }
 
     // v0.23.4: Settings › Brains / Auto, models per provider with cooling counts, one provider opened.
-    // v0.24.7 Magic Hand: the dock over an app, the menu (shared pointer tiles), grab, teach review and the watches page.
-    private fun handState() = com.blaze.assistant.phone.MagicHandState.point(com.blaze.assistant.phone.MagicHandState.start(false),
-        "K1,299", com.blaze.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia")
 
-    @Composable private fun FakeApp(content: @Composable () -> Unit) {
-        Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFFF4F4F4))) {
-            Column(Modifier.padding(start = 20.dp, top = 48.dp, end = 20.dp)) {
-                Text("Galaxy A15 128GB", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = androidx.compose.ui.graphics.Color(0xFF222222)))
-                Spacer(Modifier.height(8.dp))
-                Text("K1,299", Modifier.background(androidx.compose.ui.graphics.Color(0x22FF9A3C)).padding(4.dp),
-                    style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFE05A00)))
-                Spacer(Modifier.height(6.dp))
-                Text("In stock · free delivery in Lusaka", style = TextStyle(fontSize = 14.sp, color = androidx.compose.ui.graphics.Color(0xFF555555)))
-            }
-            Box(Modifier.padding(start = 96.dp, top = 112.dp)) { com.blaze.assistant.phone.MagicHandGlyph(64, lit = true, carrying = false) }
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                CompositionLocalProvider(LocalBlaze provides DarkColors) { content() }
-            }
-        }
-    }
 
-    @Test fun magicHandDock() = shot("48-magic-hand-dock") {
-        FakeApp {
-            Column {
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.answered(
-                    com.blaze.assistant.phone.MagicHandState.asking(handState(), "K1,299"),
-                    "That's the **price** of the Galaxy A15: K1,299, about average for Lusaka right now."), com.blaze.assistant.phone.DockCalls())
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.confirm(
-                    com.blaze.assistant.phone.MagicHandState.carry(handState(), "Meet at 6 by the gate"),
-                    com.blaze.assistant.phone.MagicHandLogic.Intent.DROP, "Message"), com.blaze.assistant.phone.DockCalls())
-            }
-        }
-    }
-
-    @Test fun magicHandMenu() = shot("49-magic-hand-menu") {
-        FakeApp {
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.menu(handState(), "K1,299",
-                com.blaze.assistant.phone.MagicHandLogic.Kind.VALUE, "Jumia"), com.blaze.assistant.phone.DockCalls())
-        }
-    }
-
-    @Test fun magicHandGrab() = shot("50-magic-hand-grab") {
-        FakeApp {
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.grabbed(handState(),
-                "Galaxy A15 128GB\nK1,299\nIn stock · free delivery in Lusaka", "Jumia"), com.blaze.assistant.phone.DockCalls())
-        }
-    }
-
-    @Test fun magicHandTeachReview() = shot("51-magic-hand-teach-review") {
-        FakeApp {
-            val steps = listOf(
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.OPEN_APP, "com.whatsapp", app = "WhatsApp"),
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.TAP, "com.whatsapp", app = "WhatsApp", label = "Mum", viewId = "com.whatsapp:id/conversations_row_contact_name"),
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.TYPE, "com.whatsapp", app = "WhatsApp", label = "Message", text = "On my way"),
-                com.blaze.assistant.phone.MagicHandTeach.Step(com.blaze.assistant.phone.MagicHandTeach.Kind.TAP, "com.whatsapp", app = "WhatsApp", label = "Send"),
-            ).map(com.blaze.assistant.phone.MagicHandTeach::line)
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.review(
-                com.blaze.assistant.phone.MagicHandState.teach(handState()), steps, "Tell Mum I'm on my way"), com.blaze.assistant.phone.DockCalls())
-        }
-    }
-
-    // v0.25.0: the teach explainer with Start, and the teach dock with Undo / Cancel / Done.
-    @Test fun magicHandTeachIntro() = shot("55-magic-hand-teach-intro") {
-        FakeApp {
-            Column {
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.intro(handState(), firstTime = true), com.blaze.assistant.phone.DockCalls())
-                com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.teachSteps(
-                    com.blaze.assistant.phone.MagicHandState.teach(handState()), listOf("Open WhatsApp (package com.whatsapp)", "Tap \u201cMum\u201d")),
-                    com.blaze.assistant.phone.DockCalls())
-            }
-        }
-    }
-
-    @Test fun magicHandWatches() = shot("52-magic-hand-watches", dark = true) {
-        val now = 1_760_000_000_000L
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
-            com.blaze.assistant.phone.MagicHandWatchesPage(listOf(
-                com.blaze.assistant.phone.MagicHandWatch.Watch("1", "com.jumia.android", "Jumia", "Price", listOf(0, 3, 1), "", "", "K1,099", now - 86_400_000, now - 20 * 60_000, now - 20 * 60_000, "K1,299"),
-                com.blaze.assistant.phone.MagicHandWatch.Watch("2", "com.fotmob", "FotMob", "Score", listOf(0, 1), "", "", "2 - 1", now - 3_600_000, now - 3 * 3_600_000),
-                com.blaze.assistant.phone.MagicHandWatch.Watch("3", "com.dhl", "DHL", "Status", listOf(2), "", "", "Out for delivery", now - 60_000),
-            ), now = now)
-            Spacer(Modifier.height(24.dp))
-            com.blaze.assistant.phone.MagicHandWatchesPage(emptyList(), now = now)
-        }
-    }
-    // v0.24.9 rich replies: step flow, a section picture beside its text, a 3-picture row, the tilted deck and a diagram.
     private fun fakePicture(seed: Int): androidx.compose.ui.graphics.ImageBitmap {
         val b = Bitmap.createBitmap(480, 360, Bitmap.Config.ARGB_8888)
         val cv = android.graphics.Canvas(b)
@@ -813,15 +654,6 @@ open class ShotsTest {
         }
     }
 
-    // ---------- v0.28.1 batch 1 ----------
-    // The grab card the instant the finger lifts: shimmer lines, actions already usable (Copy queued).
-    @Test fun magicHandGrabReading() = shot("65-magic-hand-grab-reading") {
-        FakeApp {
-            val r = com.blaze.assistant.phone.MagicHandState.reading(handState(), "Jumia")
-            com.blaze.assistant.phone.MagicHandDock(com.blaze.assistant.phone.MagicHandState.tapGrab(r,
-                com.blaze.assistant.phone.MagicHandState.GrabAction.COPY).first, com.blaze.assistant.phone.DockCalls())
-        }
-    }
 
     // Sam's own message with Markdown: rendered, never raw "## App" / "**".
     @Test fun userBubbleMarkdown() = shot("66-user-bubble-markdown") {

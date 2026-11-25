@@ -170,7 +170,7 @@ object TurnContextSource {
             contacts = granted(Manifest.permission.READ_CONTACTS),
             email = conn("google"),
             location = granted(Manifest.permission.ACCESS_COARSE_LOCATION),
-            phoneControl = try { Settings.phoneControl } catch (_: Throwable) { false })
+            phoneControl = false)   // 0.55.18: phone control left the app
     }
 
     /** 1–3 unfinished things: live follow-ups first. */

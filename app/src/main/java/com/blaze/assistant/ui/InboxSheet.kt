@@ -63,8 +63,6 @@ fun InboxSheet(onDismiss: () -> Unit) {
                     Text(p.text, style = ArgusType.field, color = c.ink)
                     Text(InboxText.ago(p.at, System.currentTimeMillis()), style = ArgusType.meta, color = c.mute)
                 }
-                if (p.key == com.blaze.assistant.phone.PhoneControl.INBOX_KEY)
-                    ArgusButton(tr("Fix"), { com.blaze.assistant.phone.PhoneControl.openSettings(ctx) }, kind = ButtonKind.GLASS, size = ButtonSize.S)
             }
         }
         for ((chat, lines) in threads) {

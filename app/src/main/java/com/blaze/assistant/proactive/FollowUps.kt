@@ -9,7 +9,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.blaze.assistant.agent.Awareness
@@ -190,17 +189,6 @@ object FollowUps {
             Proactive.say(FollowUpLogic.nudgeText(i), "followup-nudge:" + i.id + ":" + (now / 3_600_000L), suggest = "Draft a reply to ${i.person.substringBefore(' ')}",
                 why = if (asked) ProactiveDial.Why.followUpAsked(i.created) else ProactiveDial.Why.followUp(i.person, i.app),
                 source = if (asked) ProactiveDial.Source.FOLLOW_UP_ASKED else ProactiveDial.Source.FOLLOW_UP)
-        }
-    }
-
-    /** Send tapped in a chat app: when the open chat shows a waiting follow-up's person, it counts as replied. */
-    fun onClick(pkg: String, label: String?, root: AccessibilityNodeInfo?) {
-        if (!FollowUpLogic.isSend(label) || root == null) return
-        val now = System.currentTimeMillis()
-        val waiting = all().filter { it.pkg == pkg && !it.replied && FollowUpLogic.live(it, now) }
-        for (i in waiting) {
-            val seen = try { root.findAccessibilityNodeInfosByText(i.conv).isNotEmpty() || root.findAccessibilityNodeInfosByText(i.person).isNotEmpty() } catch (_: Throwable) { false }
-            if (seen) markReplied(pkg, i.conv)
         }
     }
 

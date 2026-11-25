@@ -102,11 +102,4 @@ object SpeedLog {
 
     fun clear() = Settings.setStr(KEY, "[]")
 
-    /** v0.45.1: screen reads since start: full tree walks (average time) and reads served from the last walk. */
-    fun screenLine(): String = try {
-        com.blaze.assistant.phone.BlazeAccessibilityService.instance?.let { s -> screenLine(s.walksDone, s.walksReused, s.walkMsTotal) }.orEmpty()
-    } catch (_: Throwable) { "" }
-
-    fun screenLine(walks: Int, reused: Int, ms: Long): String =
-        if (walks + reused == 0) "" else "\nScreen reads: $walks tree walks (avg ${if (walks > 0) ms / walks else 0} ms), $reused reused unchanged"
 }

@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import com.blaze.assistant.agent.Providers
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.agent.Traces
-import com.blaze.assistant.phone.BlazeAccessibilityService
 import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -69,9 +68,7 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
     val c = LocalBlaze.current.mono
     val ctx = LocalContext.current
     var page by remember { mutableStateOf(page0) }
-    var a11y by remember { mutableStateOf(BlazeAccessibilityService.isEnabled(ctx)) }
     var brain by remember { mutableStateOf(if (Settings.ready) "ready" else "") }
-    LaunchedEffect(page) { while (page == 1) { a11y = BlazeAccessibilityService.isEnabled(ctx); delay(1200) } }
     BackHandler(enabled = page > 0) { page-- }
     fun finish(prompt: String?) { Settings.setBool("onboarded", true); onDone(prompt) }
 
@@ -80,11 +77,11 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(28.dp), verticalArrangement = Arrangement.SpaceBetween) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 // v0.19.0: three progress segments, like Desktop's onboarding steps.
-                (0 until 3).forEach { i ->
+                (0 until 2).forEach { i ->
                     Box(Modifier.padding(end = 4.dp).width(22.dp).height(3.dp).clip(BlazeShapes.pill).background(if (i <= page) c.accent else c.hair2))
                 }
                 Spacer(Modifier.width(8.dp))
-                Label("0${page + 1} / 03", color = c.weak, size = 10.sp)
+                Label("0${page + 1} / 02", color = c.weak, size = 10.sp)
                 Spacer(Modifier.weight(1f))
                 Box(Modifier.clip(BlazeShapes.pill).clickable { finish(null) }.padding(8.dp)) { ActionText("Skip", color = c.sub, size = 10.sp) }
             }
@@ -93,7 +90,6 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
                 Spacer(Modifier.height(28.dp))
                 val (title, body) = when (page) {
                     0 -> "Hi, I'm ${BrandName.NAME}." to "I live in your phone and get things done for you: open apps, play music, send texts, find answers. Sign in to your ${BrandName.NAME} account and I'm ready."
-                    1 -> "Let me use your phone." to "Turn on ${BrandName.NAME} in Accessibility so I can tap and type for you. I'll always ask before sending, paying or deleting anything."
                     else -> "Just say it." to "Type or tap the mic and tell me what you want, like \u201cplay lofi on YouTube\u201d. Turn on \u201cHey ${BrandName.NAME}\u201d in Settings to call me hands-free."
                 }
                 Text(title, style = TextStyle(fontFamily = Type.Display, fontWeight = FontWeight.Medium, fontSize = 34.sp, lineHeight = 40.sp, color = c.ink))
@@ -104,18 +100,15 @@ fun Onboarding(page0: Int = 0, onDone: (firstPrompt: String?) -> Unit) {
                     0 -> {
                         Choice("Free \u2014 start now", "${BrandName.NAME} Cloud picks the best free model for every message.", true) { brain = "free" }
                     }
-                    1 -> Choice(if (a11y) "Phone control is on \u2713" else "Open Accessibility settings", if (a11y) "Nice. I can see and tap the screen now." else "Find ${BrandName.NAME} in the list and switch it on.", a11y) {
-                        if (!a11y) ctx.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }
             }
             Box(Modifier.fillMaxWidth().height(54.dp).clip(BlazeShapes.pill).glassButton(c).clickable {
                 when (page) {
                     0 -> { brain = "free"; page = 1 }
-                    1 -> page = 2
                     else -> finish(if (false) "" else "Introduce yourself in one sentence, then tell me three things you can do on my phone.")
                 }
             }, contentAlignment = Alignment.Center) {
-                ButtonText(when (page) { 0 -> "Continue"; 1 -> if (a11y) "Continue" else "Later"; else -> "Let's go" }, color = Color.White)
+                ButtonText(when (page) { 0 -> "Continue"; else -> "Let's go" }, color = Color.White)
             }
         }
     }

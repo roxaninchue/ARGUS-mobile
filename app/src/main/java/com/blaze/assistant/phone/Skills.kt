@@ -345,24 +345,11 @@ object Skills {
 
     private suspend fun setting(ctx: Context, s: String, value: String): String {
         val v = value.trim().lowercase()
-        // Radios Android won't let apps flip directly: flip the Quick Settings tile like a person, then fall back to the panel.
-        val tileNames = mapOf(
-            "wifi" to listOf("Wi-Fi", "Wifi", "WLAN"),
-            "bluetooth" to listOf("Bluetooth"),
-            "airplane" to listOf("Airplane mode", "Aeroplane mode", "Flight mode", "Airplane", "Aeroplane"),
-            "mobile_data" to listOf("Mobile data", "Cellular data"),
-            "do_not_disturb" to listOf("Do not disturb", "Do Not Disturb", "DND"),
-        )
         val want = when (v) { "on", "enable", "true", "1" -> true; "off", "disable", "false", "0" -> false; else -> null }
         // v0.28.2: changing a phone setting always shows the confirm card, except a command the user typed or said
         // themselves (the fast lane, ConfirmGate.Direct). Reading (battery) and opening a settings panel don't ask.
         suspend fun approved(): Boolean = kotlin.coroutines.coroutineContext[com.blaze.assistant.agent.ConfirmGate.DirectKey] != null ||
             Agent.confirm("Change a phone setting?", settingLine(s, v), "Change", always = true)
-        tileNames[s]?.let { names ->
-            val svc = BlazeAccessibilityService.instance
-            if (svc != null && !approved()) return "The user declined. The setting was NOT changed."
-            if (svc != null) try { svc.toggleQuickTile(names, want)?.let { return it } } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) {}
-        }
         return when (s) {
             "flashlight" -> {
                 if (!approved()) return "The user declined. The setting was NOT changed."
@@ -389,7 +376,7 @@ object Skills {
                 val bm = ctx.getSystemService(BatteryManager::class.java)
                 "Battery ${bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)}%${if (bm.isCharging) ", charging" else ""}."
             }
-            "wifi" -> if (Build.VERSION.SDK_INT >= 29) panel(ctx, android.provider.Settings.Panel.ACTION_WIFI, "Opened the Wi-Fi panel. Turn on Phone control so I can flip it for you.")
+            "wifi" -> if (Build.VERSION.SDK_INT >= 29) panel(ctx, android.provider.Settings.Panel.ACTION_WIFI, "Opened the Wi-Fi panel. Flip Wi-Fi there.")
                 else panel(ctx, android.provider.Settings.ACTION_WIFI_SETTINGS, "Opened Wi-Fi settings.")
             "bluetooth" -> panel(ctx, android.provider.Settings.ACTION_BLUETOOTH_SETTINGS, "Opened Bluetooth settings.")
             "mobile_data" -> if (Build.VERSION.SDK_INT >= 29) panel(ctx, android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY, "Opened the internet panel.")

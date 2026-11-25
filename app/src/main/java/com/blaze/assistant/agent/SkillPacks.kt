@@ -262,12 +262,11 @@ object SkillPacks {
 3. Never delete anything outside ~ without the user's OK; show what will be removed first.
 4. Report the final path and size when done.
 """),
-        Triple("phone-task-speed", "Doing multi-step tasks inside phone apps as fast as possible (actions in apps, not questions about the phone's state)", """
+        Triple("phone-task-speed", "Getting things done in phone apps fast with direct tools and deep links (actions in apps, not questions about the phone's state)", """
 # Fast phone tasks
-1. Use run_plan with the whole script at once, targets by their visible words.
-2. Set watchers for pop-ups you expect (preset=popups) so they never cost a step.
-3. Prefer deep links and open_url (e.g. maps, WhatsApp, YouTube search URLs) over tapping through menus.
-4. After a failure, read the changed elements and send a short new run_plan from where it stopped.
+1. You can't see or tap the screen: use the direct tools (set_alarm, dial, compose_sms, search_in_app, open_settings).
+2. Prefer deep links and open_url (e.g. maps, WhatsApp, YouTube search URLs) so the app opens where the user needs it.
+3. When the last step lives inside the app, open it there and tell the user the one thing to tap.
 """),
     )
 

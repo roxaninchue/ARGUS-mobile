@@ -33,7 +33,6 @@ object SetupChecklist {
         Step("wake_word", "Turn on \u201cHey ${BrandName.NAME}\u201d", "settings voice"),
         Step("assistant", "Make ${BrandName.UPPER} your default assistant", "assistant"),
         Step("desktop", "Pair with ${BrandName.NAME} Desktop", "settings desktop"),
-        Step("accessibility", "Allow phone control", "accessibility"),
     )
 
     fun step(key: String): Step? = STEPS.firstOrNull { it.key == key }
@@ -46,7 +45,6 @@ object SetupChecklist {
         val wakeWord: Boolean = false,
         val defaultAssistant: Boolean = false,
         val desktopPaired: Boolean = false,
-        val phoneControl: Boolean = false,
     )
 
     /** Each step's key → done on this phone. The calendar counts as connected through the phone's calendar or Google. */
@@ -57,7 +55,6 @@ object SetupChecklist {
         "wake_word" to p.wakeWord,
         "assistant" to p.defaultAssistant,
         "desktop" to p.desktopPaired,
-        "accessibility" to p.phoneControl,
     )
 
     /** The list as first added: every step, the ones already done ticked. */

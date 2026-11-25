@@ -208,10 +208,6 @@ object Settings {
     var learnApproval: Boolean
         get() = b("learn_approval", false)
         set(v) = prefs.edit().putBoolean("learn_approval", v).apply()
-    /** Opt-in: keep recent on-screen text on the phone so Argus can recall it. */
-    var screenMemory: Boolean
-        get() = b("screen_memory", false)
-        set(v) = prefs.edit().putBoolean("screen_memory", v).apply()
 
     var apiKey: String
         get() = if (providerId == Providers.GATEWAY) gatewayToken() else keyFor(providerId)
@@ -246,10 +242,6 @@ object Settings {
     var lowData: Boolean
         get() = b("low_data", false)
         set(v) = prefs.edit().putBoolean("low_data", v).apply()
-
-    var phoneControl: Boolean
-        get() = b("phone_control", true)
-        set(v) = prefs.edit().putBoolean("phone_control", v).apply()
 
     /** Read replies aloud when you asked by voice. */
     var speakReplies: Boolean

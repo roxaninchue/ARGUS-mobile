@@ -134,11 +134,6 @@ fun setupFix(ctx: Context, id: String, ask: (String) -> Unit, openPage: (String)
             else go(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName))
         "mic" -> ask(Manifest.permission.RECORD_AUDIO)
         "linux" -> scope.launch { try { com.blaze.assistant.terminal.Linux.install() } catch (_: Throwable) { } }
-        "accessibility" -> {
-            com.blaze.assistant.agent.Settings.phoneControl = true
-            ComeBack.watch(ctx) { com.blaze.assistant.phone.BlazeAccessibilityService.isEnabled(ctx) }
-            go(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
         "overlay" -> { ComeBack.watch(ctx) { android.provider.Settings.canDrawOverlays(ctx) }; go(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg)) }
         "battery" -> try {
             @Suppress("BatteryLife")

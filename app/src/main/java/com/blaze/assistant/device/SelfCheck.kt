@@ -76,8 +76,6 @@ object SelfCheck {
             !FastLane.ready(ctx) -> "Model not downloaded yet."
             !Settings.fastLane -> "Downloaded but turned off."
             else -> "Ready · ${com.blaze.assistant.agent.IntentCache.size()} cached commands" })
-        out += Item("Phone control", com.blaze.assistant.phone.BlazeAccessibilityService.instance != null,
-            if (com.blaze.assistant.phone.BlazeAccessibilityService.instance != null) "Accessibility service connected" else "Turn on ${BrandName.NAME} in Accessibility settings.", "accessibility")
         out += Item("Notifications access", com.blaze.assistant.notify.NotificationBrain.enabled(ctx),
             if (com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) "Can read and reply to notifications" else "Off: ${BrandName.NAME} can't see or react to notifications.", "notification_access")
         out += Item("Overlay", android.provider.Settings.canDrawOverlays(ctx), if (android.provider.Settings.canDrawOverlays(ctx)) "Orb and live task card allowed" else "Not allowed: no floating orb or task card.", "overlay")

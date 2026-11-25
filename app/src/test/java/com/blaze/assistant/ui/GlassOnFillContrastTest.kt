@@ -49,9 +49,7 @@ class GlassOnFillContrastTest {
         val ask = src("browser/PageAskSheet.kt")
         assertTrue(ask.contains("val ink = Glass.inkFor(fill)"))
         assertTrue(src("ui/BlazeGlass.kt").contains("else Glass.inkFor(bg)"))
-        for (p in listOf("browser/PagePointerLayer.kt", "phone/MagicHandUi.kt", "browser/BrowserVaultUi.kt"))
+        for (p in listOf("browser/PagePointerLayer.kt", "browser/BrowserVaultUi.kt"))
             assertTrue(p, src(p).contains("Glass.inkFor("))
-        val magic = src("phone/MagicHandUi.kt")
-        assertTrue(!magic.contains("color = if (enabled) Color.White else Glass.weak"))
     }
 }

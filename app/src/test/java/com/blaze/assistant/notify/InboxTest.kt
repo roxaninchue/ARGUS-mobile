@@ -2,7 +2,6 @@ package com.blaze.assistant.notify
 
 import com.blaze.assistant.notify.Inbox.Item
 import com.blaze.assistant.notify.Inbox.Kind
-import com.blaze.assistant.phone.PhoneControl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -52,14 +51,6 @@ class InboxTest {
         assertEquals(Inbox.TEXT_MAX, Inbox.add(emptyList(), msg(1, text = "x".repeat(Inbox.TEXT_MAX + 50))).single().text.length)
     }
 
-    @Test fun reconnectingShowsForFiveSecondsOffAlwaysShows() {
-        val t0 = 1_000_000L
-        assertTrue(PhoneControl.showBanner(PhoneControl.State.RECONNECTING, t0, t0 + 1_000))
-        assertFalse(PhoneControl.showBanner(PhoneControl.State.RECONNECTING, t0, t0 + PhoneControl.RECONNECTING_SHOW_MS))
-        assertTrue(PhoneControl.showBanner(PhoneControl.State.OFF, t0, t0 + 60_000))
-        assertFalse(PhoneControl.showBanner(PhoneControl.State.CONNECTED, t0, t0))
-        assertEquals(5_000L, PhoneControl.RECONNECTING_SHOW_MS)
-    }
 
     @Test fun inboxWords() {
         val now = 10_000_000L

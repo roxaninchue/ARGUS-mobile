@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.provider.AlarmClock
 import android.provider.CalendarContract
-import com.blaze.assistant.phone.ClockUi.State as ClockState
 import com.blaze.assistant.proactive.Triggers
 import com.blaze.assistant.routine.Routines
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -130,14 +129,13 @@ object Processes {
             }
         } catch (_: Exception) { }
         try {
-            val ws = com.blaze.assistant.phone.Watchers.states()
-            list.removeAll { it.kind == "watcher" && it.ref !in ws }
+            // 0.55.11: screen watchers went with phone control; any old rows go.
+            list.removeAll { it.kind == "watcher" }
             val ks = SkillPacks.all().map { it.dir.name }.toSet()
             list.removeAll { it.kind == "skill" && it.ref !in ks }
             val gs = Autonomy.states()
             list.removeAll { it.kind == "goal" && it.ref !in gs }
             list = list.map { if (it.kind == "goal") it.copy(status = when (gs[it.ref]) { "done" -> "finished"; "paused" -> "paused"; else -> "active" }) else it }.toMutableList()
-            list = list.map { if (it.kind == "watcher") it.copy(status = if (ws[it.ref] == true) "active" else "paused") else it }.toMutableList()
         } catch (_: Exception) { }
         // 0.55.2 (Finn 18:08: Home and the greeting showed a 19:30 alarm; the Clock app said "No alarms"): an alarm Argus
         // recorded that the Clock app doesn't have (refused, or deleted there) is dropped. If it existed, the system's
@@ -244,7 +242,6 @@ object Processes {
             "routine" -> { Routines.delete(p.ref.toInt()); "Deleted routine ${p.id} \u201c${p.title}\u201d." }
             "trigger" -> { Triggers.remove(p.ref.toLong()); "Deleted trigger ${p.id} \u201c${p.title}\u201d." }
             "job" -> com.blaze.assistant.terminal.Terminal.stopJob(p.ref.toInt())
-            "watcher" -> { com.blaze.assistant.phone.Watchers.remove(p.ref); "Deleted watcher ${p.id}." }
             "goal" -> { Autonomy.remove(p.ref); "Deleted goal ${p.id}." }
             "skill" -> { SkillPacks.delete(p.ref); "Deleted skill ${p.id} \u201c${p.title}\u201d." }
             "event" -> try {
@@ -267,42 +264,33 @@ object Processes {
     }
 
     /**
-     * v0.45.13 (phone 17:13, "Alarm removed." while Samsung Clock still showed it ON): delete (or switch off) the alarm
-     * in the Clock app through phone control and read the list back ([com.blaze.assistant.phone.ClockUi]). Only a
-     * confirmed reading is reported as done ([ActCheck] markers); the registry row is dropped only when it's gone.
+     * Delete (or switch off) an alarm Argus set. 0.55.11: phone control is gone, so nothing can switch it in the Clock app
+     * or read the list back; the Clock app is asked to dismiss it by its label (works on some clocks for an alarm that is
+     * about to ring) and the result says plainly that it isn't confirmed ([ActCheck] markers). The registry row stays.
      */
-    private suspend fun alarmOff(ctx: Context, p: P, delete: Boolean): String {
+    private fun alarmOff(ctx: Context, p: P, delete: Boolean): String {
         val label = p.props.optString("label")
         val hhmm = p.props.optString("time").ifBlank { null } ?: if (p.due > 0) SimpleDateFormat("HH:mm", Locale.US).format(Date(p.due)) else null
         val what = "alarm ${p.id}" + (hhmm?.let { " ($it" + (if (label.isNotBlank()) ", \u201c$label\u201d" else "") + ")" } ?: "")
-        val o = com.blaze.assistant.phone.ClockUi.alarmOff(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" }, delete)
-        lastTrace = o.trace
-        return when (o.state) {
-            ClockState.DELETED, ClockState.GONE -> { drop(p.id); "Deleted $what from the Clock app. " + ActCheck.checked(o.evidence) }
-            ClockState.OFF -> {
-                update(p.id) { it.copy(status = "paused") }
-                "Turned off $what" + (if (delete) " (this Clock app didn't offer Delete to phone control, so it's switched off but still listed; the user can delete it in the Clock app)" else "") +
-                    ". " + ActCheck.checked(o.evidence)
-            }
-            ClockState.STILL_ON -> "I tried to turn off $what in the Clock app. " + ActCheck.notConfirmed(o.evidence, "open the Clock app and switch it off, or let me try again")
-            ClockState.NO_CONTROL -> "Asked the Clock app to dismiss $what. " + ActCheck.notConfirmed("phone control is off, so I couldn't switch it off or read the Clock app back",
-                "turn on phone control (the Turn on banner) and ask again, or switch it off in the Clock app")
-            ClockState.NOT_CLOCK -> "I couldn't get to the Clock app's alarm list. " + ActCheck.notConfirmed(o.evidence, "open the Clock app and switch $what off")
-            else -> "I opened the Clock app's alarm list. " + ActCheck.notConfirmed(o.evidence, "check the Clock app; it may already be gone")
-        }
+        val trace = ArrayList<String>()
+        try {
+            ctx.startActivity(Intent(AlarmClock.ACTION_DISMISS_ALARM)
+                .putExtra(AlarmClock.EXTRA_ALARM_SEARCH_MODE, AlarmClock.ALARM_SEARCH_MODE_LABEL)
+                .putExtra(AlarmClock.EXTRA_MESSAGE, label.ifBlank { "${BrandName.NAME} ${p.id}" }).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            trace += "sent ACTION_DISMISS_ALARM (label)"
+        } catch (_: Exception) { trace += "no app handles ACTION_DISMISS_ALARM" }
+        lastTrace = trace
+        return "Asked the Clock app to dismiss $what. " + ActCheck.notConfirmed("nothing can read the Clock app back",
+            if (delete) "delete it in the Clock app" else "switch it off in the Clock app")
     }
 
-    /** The Clock screen trace of the last alarm action (before/after reads), for the self-test report. */
+    /** The Clock trace of the last alarm action, for the self-test report. */
     @Volatile var lastTrace: List<String> = emptyList()
 
-    private suspend fun alarmPause(ctx: Context, p: P, off: Boolean): String {
+    private fun alarmPause(ctx: Context, p: P, off: Boolean): String {
         if (off) return alarmOff(ctx, p, delete = false)
-        val label = p.props.optString("label")
-        val hhmm = p.props.optString("time").ifBlank { null }
-        val o = com.blaze.assistant.phone.ClockUi.alarmOn(ctx, p.id, hhmm, label.ifBlank { "${BrandName.NAME} ${p.id}" })
-        lastTrace = o.trace
-        return if (o.state == com.blaze.assistant.phone.ClockUi.State.ON) { update(p.id) { it.copy(status = "active") }; "Turned alarm ${p.id} back on. " + ActCheck.checked(o.evidence) }
-            else "I tried to turn alarm ${p.id} back on. " + ActCheck.notConfirmed(o.evidence, "switch it on in the Clock app")
+        lastTrace = emptyList()
+        return "I can't switch alarm ${p.id} back on from here. " + ActCheck.notConfirmed("nothing can switch the Clock app's alarms", "switch it on in the Clock app")
     }
 
     private fun pause(p: P, off: Boolean): String = when (p.kind) {
@@ -313,7 +301,6 @@ object Processes {
             sync(); "Trigger ${p.id} ${if (off) "paused" else "resumed"}."
         }
         "goal" -> { Autonomy.setStatus(p.ref, if (off) "paused" else "open"); sync(); "Goal ${p.id} ${if (off) "paused" else "resumed"}." }
-        "watcher" -> { com.blaze.assistant.phone.Watchers.setEnabled(p.ref, !off); sync(); "Watcher ${p.id} ${if (off) "paused" else "resumed"}." }
         else -> "A ${p.kind} can't be paused, only deleted or rescheduled."
     }
 

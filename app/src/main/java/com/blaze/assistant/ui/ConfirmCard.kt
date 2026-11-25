@@ -105,9 +105,6 @@ fun ConfirmCard() {
             Box(Modifier.weight(1f).height(46.dp).glass(RoundedCornerShape(23.dp), GlassIntensity.Low, shadow = false).clickable { Agent.answerConfirm(false) },
                 contentAlignment = Alignment.Center) { Label(if (draft) "Not now" else "Don't", color = c.ink, size = 11.sp) }
             Box(Modifier.weight(1f).height(46.dp).glassPrimary(BlazeShapes.pill).clickable {
-                // 0.53.7: phone control's "Open settings" starts Settings right here, from the Activity, then lets the task wait.
-                if (com.blaze.assistant.agent.PermissionGate.isCard(pc.title, pc.action) && com.blaze.assistant.phone.PhoneControl.openSettings(ctx))
-                    com.blaze.assistant.agent.PermissionGate.markOpened()
                 Agent.answerConfirm(true) },
                 contentAlignment = Alignment.Center) { ButtonText(if (draft) "Send" else pc.action, color = GlassTokens.onPrimary(c.dark)) }
         }

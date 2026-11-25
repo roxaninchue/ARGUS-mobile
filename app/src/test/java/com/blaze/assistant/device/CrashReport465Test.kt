@@ -36,13 +36,6 @@ class CrashReport465Test {
         assertTrue(BrowseState.SOURCE_TIMEOUT_MS >= 90_000L)
     }
 
-    @Test fun noMainThreadAccessibilityTreeOrLabelLookups() {
-        val a11y = src("phone/BlazeAccessibilityService.kt")
-        assertTrue(a11y.contains("if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) return frontPkg"))
-        assertTrue(a11y.contains("com.blaze.assistant.bank.BankMode.warm(this)"))
-        assertTrue(a11y.contains("BankMode.labelOf(this, pkg)"))
-        assertFalse(a11y.contains("fun currentPkg(): String = rootInActiveWindow"))
-    }
 
     @Test fun slowStartStepsMovedOffTheMainThread() {
         val r = src("routine/Routines.kt")

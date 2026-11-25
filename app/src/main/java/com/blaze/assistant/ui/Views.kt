@@ -44,7 +44,7 @@ object Views {
         BlazeView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone"), app = true, icon = "smartphone"),
         BlazeView("usage", "Usage", "Tokens and estimated cost", page = "usage", aliases = listOf("cost")),
         BlazeView("voice", "Voice", "Hey ${BrandName.NAME}, spoken replies, call", page = "voice"),
-        BlazeView("control", "Phone control", "Accessibility, permissions", page = "control"),
+        BlazeView("control", "Phone skills", "Messages, calls, contacts, notification access", page = "control"),
         BlazeView("logins", "Saved logins", "Sign-ins from the secure form: view, edit, delete", page = "logins", aliases = listOf("vault", "passwords", "logins")),
         BlazeView("secrets", "Saved secrets", "Keys, tokens, logins and cards from the Secure Form", page = "secrets", aliases = listOf("saved secrets", "api keys", "tokens", "secrets")),
         BlazeView("proactive", "Proactive", "Speak up on its own, triggers", page = "proactive", aliases = listOf("triggers")),

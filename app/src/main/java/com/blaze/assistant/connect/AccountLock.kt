@@ -85,8 +85,8 @@ object AccountLock {
         Reason.OFFLINE_TOO_LONG -> "${BrandName.UPPER} hasn't been able to check your account for 7 days. Connect to the internet to keep going."
     }
 
-    /** Notification buttons that still work while locked: they only stop things (Stop, Stop Magic Hand, Don't). */
-    val ACTIONS_WHILE_LOCKED = setOf("com.blaze.assistant.STOP", "com.blaze.assistant.STOP_HAND", "com.blaze.assistant.DENY")
+    /** Notification buttons that still work while locked: they only stop things (Stop, Don't). */
+    val ACTIONS_WHILE_LOCKED = setOf("com.blaze.assistant.STOP", "com.blaze.assistant.DENY")
     fun actionAllowed(locked: Boolean, action: String?): Boolean = !locked || action in ACTIONS_WHILE_LOCKED
 
     /** Music: while locked only ARGUS itself may hold a controller (Android Auto and other apps are turned away). */

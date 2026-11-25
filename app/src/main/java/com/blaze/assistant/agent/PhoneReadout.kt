@@ -18,7 +18,7 @@ object PhoneReadout {
     /** The readout text (the same lines FastLane's speed_stats gave): tests replace it. */
     @Volatile var source: () -> String = {
         SpeedLog.summary() + SpeedLog.firstWordLine() + SpeedLog.lastPhases().let { if (it.isBlank()) "" else "\nLast turn: $it" } +
-            SpeedLog.timingLines() + SpeedLog.screenLine()
+            SpeedLog.timingLines()
     }
 
     fun speedStats(): String = try { source().ifBlank { "No timed replies yet." } } catch (e: Throwable) { "Error: couldn't read the speed log (${e.message})" }

@@ -3,13 +3,12 @@ package com.blaze.assistant.proactive
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
-import android.view.accessibility.AccessibilityEvent
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * v0.27.0: the Android side of [HabitFilter]. Looks up (and caches) which packages are keyboards, home apps and
  * launchable apps, follows the app in front through [HabitFilter.Visits], and hands only real, deliberate visits to
- * [Habits]. Called from BlazeAccessibilityService on every window change; all lookups are cheap after the first.
+ * [Habits]. All lookups are cheap after the first.
  */
 object HabitApps {
     private val facts = ConcurrentHashMap<String, HabitFilter.AppFacts>()
@@ -54,13 +53,4 @@ object HabitApps {
         val why = HabitFilter.verdict(ended.pkg, ctx.packageName, keyboards, homes, f.launchable, overlay = false, dwellMs = ended.dwellMs)
         if (why == HabitFilter.Why.OK) Habits.onApp(ended.pkg, f.label, ended.start)
     }
-
-    /** The window an event came from: its type and size, or (−1, 0, 0) when Android doesn't say. */
-    fun windowOf(svc: android.accessibilityservice.AccessibilityService, e: AccessibilityEvent): Triple<Int, Int, Int> = try {
-        val w = svc.windows.firstOrNull { it.id == e.windowId }
-        if (w == null) Triple(-1, 0, 0) else {
-            val r = android.graphics.Rect(); w.getBoundsInScreen(r)
-            Triple(w.type, r.width(), r.height())
-        }
-    } catch (_: Throwable) { Triple(-1, 0, 0) }
 }

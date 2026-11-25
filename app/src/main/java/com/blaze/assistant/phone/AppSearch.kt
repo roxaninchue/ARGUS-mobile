@@ -53,21 +53,10 @@ object AppSearch {
             } catch (_: Exception) {
                 try { ctx.startActivity(intent.setPackage(null)) } catch (e: Exception) { return "Error: couldn't open ${app}: ${e.message}" }
             }
-            BlazeAccessibilityService.instance?.settle(2500, 400) ?: delay(1200)
-            if (play && key == "youtube") return playFirstYouTube(query)
+            if (play && key == "youtube") return "Opened YouTube results for \u201c$query\u201d; the user taps the video to play it."
             return "Opened ${app.trim()} search results for \u201c$query\u201d." + if (!installed) " (App not installed, so it opened on the web.)" else ""
         }
-        // Unknown app: open it, then the model can use type_text(submit=true) on its search field.
-        return "No direct search link for $app. Open it with open_app, then type_text with submit=true into its search field."
-    }
-
-    /** On YouTube results, tap the first video so it starts playing. */
-    private suspend fun playFirstYouTube(query: String): String {
-        val svc = BlazeAccessibilityService.instance ?: return "Opened YouTube results for \u201c$query\u201d. Turn on phone control so I can start the first video."
-        val screen = svc.readScreen()
-        val line = screen.lines().firstOrNull { l -> l.startsWith("[") && (l.contains(" minutes") || l.contains(" views") || l.contains("Go to channel").not() && l.contains("play video", true)) }
-        val id = line?.substringAfter('[')?.substringBefore(']')?.toIntOrNull()
-        if (id != null) { svc.tap(id); svc.settle(2000, 300); return "Playing the top YouTube result for \u201c$query\u201d." }
-        return "Opened YouTube results for \u201c$query\u201d. The screen is returned so you can tap a video."
+        // Unknown app: no search link, so it opens and the user searches there.
+        return "No direct search link for $app. Open it with open_app; the user searches inside it."
     }
 }

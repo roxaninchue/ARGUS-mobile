@@ -38,9 +38,6 @@ object ToolGuide {
         "compose_sms" to "Opens a filled-in SMS for the user to send themselves. To send directly use send_sms.",
         "find_contact" to "Phone contacts (the same ones WhatsApp uses; emoji names and small typos match). Search with the shortest part of the name. For Google contacts use gcontacts_search; to add or change one use add_contact/edit_contact.",
         // Screen
-        "read_screen" to "Text of the current screen. Use look_at_screen only when text isn't enough (images, charts, games).",
-        "look_at_screen" to "Costs a screenshot; prefer read_screen.",
-        "tap" to "For several steps in a row use do_actions or run_plan.",
         "open_app" to "To open an app AND search inside it use search_in_app.",
         // Memory
         "remember" to "For lasting facts about the user, not one-off task details.",

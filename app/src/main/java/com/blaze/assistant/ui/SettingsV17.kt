@@ -37,7 +37,6 @@ import com.blaze.assistant.agent.FastLane
 import com.blaze.assistant.agent.FreeRouter
 import com.blaze.assistant.agent.Learning
 import com.blaze.assistant.agent.Providers
-import com.blaze.assistant.agent.ScreenMemory
 import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.connect.Connectors
 import com.blaze.assistant.connect.Mcp
@@ -246,7 +245,6 @@ fun LearningSection() {
     val pending by Learning.pending.collectAsState()
     var auto by remember { mutableStateOf(Settings.autoLearn) }
     var ask by remember { mutableStateOf(Settings.learnApproval) }
-    var screen by remember { mutableStateOf(Settings.screenMemory) }
     var shown by remember { mutableStateOf("") }
     Section("Learning")
     var titles by remember { mutableStateOf(Settings.autoTitles) }
@@ -296,10 +294,6 @@ fun LearningSection() {
             }
         }
     }
-    Section("Screen memory")
-    ToggleRow("Remember what I see", "Keeps short text snapshots of screens when you switch apps, only on this phone (needs phone control). Password screens are skipped.", screen) { screen = !screen; Settings.screenMemory = screen }
-    var count by remember(screen) { mutableStateOf(ScreenMemory.count(ctx)) }
-    if (count > 0) ActionText("Clear $count snapshots", color = c.accent, size = 10.sp, modifier = Modifier.padding(top = 4.dp).clickable { ScreenMemory.clear(ctx); count = 0 })
 }
 
 // ---------------- Notification access ----------------

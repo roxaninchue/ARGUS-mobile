@@ -31,7 +31,7 @@ object Autonomy {
     fun looksLikeRefusal(text: String): Boolean = text.length < 900 && refusal.containsMatchIn(text)
 
     const val REFUSAL_NUDGE = "[${BrandName.NAME} check] Before telling the user you can't: think of three other ways with your tools " +
-        "(find_tool or load_tools for more tools, the background browser, run_shell in the Linux terminal, phone screen control with run_plan, " +
+        "(find_tool or load_tools for more tools, the background browser, run_shell in the Linux terminal, " +
         "skills, web_search). Try the most promising one now. Only if they all truly fail, say briefly what you tried and the one thing the user can do."
 
     private val failed = Regex("""^(Error|Couldn't|No element|No app|Stopped at step|Failed|The user did NOT)""")
@@ -50,7 +50,7 @@ object Autonomy {
             SkillIndex.Doc(f.optString("name"), listOf(f.optString("name"), f.optString("description"), ToolRouter.groupOf(f.optString("name")).orEmpty())) } }
         val ranked = SkillIndex.tools(docs).search(query, 8).map { (d, _) -> Triple(d.key, d.fields[1], 1) }
         val scored = ranked.ifEmpty { scoreTools(all, q) }
-        if (scored.isEmpty()) return "No tool matches \u201c$query\u201d. Consider run_shell (Linux), the browser tools, or run_plan on the screen." to emptySet()
+        if (scored.isEmpty()) return "No tool matches \u201c$query\u201d. Consider run_shell (Linux) or the browser tools." to emptySet()
         val groups = scored.mapNotNull { ToolRouter.groupOf(it.first) }.toSet()
         return ("Matching tools (now loaded): " + scored.joinToString("\n") { "${it.first}: ${it.second.take(110)}" }) to groups
     }
