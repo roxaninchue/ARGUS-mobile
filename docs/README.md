@@ -10,6 +10,7 @@ Note: every `.md` file under this folder is bundled into the app's built-in help
 | File | What it is |
 |---|---|
 | [../failures/README.md](../failures/README.md) | Failures log (2026-11-24): one write-up per crash, red build or bad deploy, with cause, fix and guard |
+| [ARGUS-PHONE.md](ARGUS-PHONE.md) | Owner vision (Jake, 2026-11-24, plan only): Argus Phone becomes a light OS for the agent: home screen, recoverable instances, apps (Browser, Terminal, Files, Music, Movie, Calendar), credential cards in the chat. Hard rules: Argus controls everything fast, every instance stays light |
 | [PHONE-INSTANCES.md](PHONE-INSTANCES.md) | Argus Phone instances (2026-11-24, steps 1 + 1a of ARGUS-PHONE.md): instances, budgets, checkpoints, locks, deep state, the background service, `phone_power` / `phone_instances` |
 | [PC-REPLACEMENT.md](PC-REPLACEMENT.md) | Owner goal (2026-11-23): Argus as a PC replacement. Argus Desk, keyboard and mouse, desk apps, phases, Phase 0 removals |
 | [UI-RULES.md](UI-RULES.md) | Owner UI rules (2026-11-24): the model sheet closes only with its X, lists scroll on slow drags, the intro fills the screen; each with its test |
