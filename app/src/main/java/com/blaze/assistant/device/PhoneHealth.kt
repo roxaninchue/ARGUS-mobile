@@ -2,12 +2,9 @@ package com.blaze.assistant.device
 
 
 import com.blaze.assistant.BrandName
-import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 
 /**
  * v0.33.0 Phone Health Check ("why is my phone slow / hot / dying fast?"): one report from the battery, temperature,
@@ -41,49 +38,19 @@ object PhoneHealth {
         return Report(s, g, fix.sortedByDescending { it.first }.map { it.second })
     }
 
-    data class AppUse(val label: String, val pkg: String, val lastUsed: Long, val fgMs: Long, val sizeMb: Long)
-
-    private fun apps(ctx: Context): List<AppUse> {
-        val pm = ctx.packageManager
-        val usm = ctx.getSystemService(UsageStatsManager::class.java)
-        val now = System.currentTimeMillis()
-        val stats = try { usm?.queryAndAggregateUsageStats(now - 90L * 86_400_000L, now) } catch (_: Exception) { null } ?: emptyMap()
-        val week = try { usm?.queryAndAggregateUsageStats(now - 7L * 86_400_000L, now) } catch (_: Exception) { null } ?: emptyMap()
-        return pm.getInstalledApplications(0).filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 && it.packageName != ctx.packageName }.map { ai ->
-            val size = try { File(ai.sourceDir).length() / 1_048_576 } catch (_: Exception) { 0L }
-            AppUse(pm.getApplicationLabel(ai).toString(), ai.packageName, stats[ai.packageName]?.lastTimeUsed ?: 0L, week[ai.packageName]?.totalTimeInForeground ?: 0L, size)
-        }
-    }
-
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", TOOL)
-        .put("description", "Phone Health Check: score + fixes from battery, heat, storage, memory, uptime and app usage; unused apps with sizes; " +
-            "most-used apps this week. Use for 'why is my phone slow/hot/dying', 'clean up my phone'. Read-only.")
+        .put("description", "Phone Health Check: score + fixes from battery, heat, storage, memory and uptime. " +
+            "Use for 'why is my phone slow/hot/dying', 'clean up my phone'. Read-only.")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
-            .put("detail", JSONObject().put("type", "string").put("enum", JSONArray(listOf("report", "unused_apps", "top_apps"))))).put("required", JSONArray())))
+            .put("detail", JSONObject().put("type", "string").put("enum", JSONArray(listOf("report"))))).put("required", JSONArray())))
 
+    /** 2026-11-25 permission trim: unused_apps / top_apps needed Usage access (PACKAGE_USAGE_STATS), which left the app. */
+    @Suppress("UNUSED_PARAMETER")
     fun run(ctx: Context, a: JSONObject): String {
-        val now = System.currentTimeMillis()
-        val usage = com.blaze.assistant.home.HomeSources.usageAllowed(ctx)
-        val list = if (usage) apps(ctx) else emptyList()
-        val unused = list.filter { it.lastUsed in 1 until now - 30L * 86_400_000L || it.lastUsed == 0L }.sortedByDescending { it.sizeMb }
-        return when (a.optString("detail", "report")) {
-            "unused_apps" -> if (!usage) "Needs Usage access (Settings › Apps › Special access › Usage access › ${BrandName.NAME})." else if (unused.isEmpty()) "Every app was used in the last 30 days."
-                // 0.46.0: every unused app (the old cap of 30 hid 12 of 42); an app whose size is unknown says so instead of being left out.
-                else "Unused for 30+ days, ${unused.size} apps (app size only; data and cache come on top" +
-                    unused.count { it.sizeMb <= 0 }.let { n -> if (n > 0) "; $n without a known size" else "" } + "):\n" +
-                    unused.take(60).joinToString("\n") { "${it.label} · ${if (it.sizeMb > 0) "${it.sizeMb} MB" else "size unknown"} · " +
-                    if (it.lastUsed == 0L) "not opened in 90 days" else "last opened ${(now - it.lastUsed) / 86_400_000L} days ago" }
-            "top_apps" -> if (!usage) "Needs Usage access." else list.filter { it.fgMs > 60_000 }.sortedByDescending { it.fgMs }.take(10)
-                .joinToString("\n") { "${it.label}: ${it.fgMs / 3_600_000}h ${(it.fgMs / 60_000) % 60}m this week" }.ifBlank { "No app use recorded this week." }
-            else -> {
-                val s = DeviceStatus.snap(ctx)
-                val r = grade(Input(s.battery, s.charging, s.tempC, s.freeStorageGb, s.totalStorageGb, s.freeRamMb, s.totalRamMb, s.uptimeH, s.powerSave,
-                    unused.size, unused.sumOf { it.sizeMb }))
-                "Phone health ${r.score}/100 (${r.grade}). Battery ${s.battery}%${if (s.charging) " charging" else ""}, ${s.tempC}°C, ${s.health}; storage " +
-                    "%.1f of %.0f GB free; memory ${s.freeRamMb} of ${s.totalRamMb} MB free; up ${(s.uptimeH).toInt()} h.".format(s.freeStorageGb, s.totalStorageGb) +
-                    (if (r.fixes.isEmpty()) "\nNothing to fix." else "\nFixes, biggest payoff first:\n" + r.fixes.mapIndexed { i, f -> "${i + 1}. $f" }.joinToString("\n")) +
-                    if (!usage) "\n(Turn on Usage access for unused-app checks.)" else ""
-            }
-        }
+        val s = DeviceStatus.snap(ctx)
+        val r = grade(Input(s.battery, s.charging, s.tempC, s.freeStorageGb, s.totalStorageGb, s.freeRamMb, s.totalRamMb, s.uptimeH, s.powerSave, 0, 0))
+        return "Phone health ${r.score}/100 (${r.grade}). Battery ${s.battery}%${if (s.charging) " charging" else ""}, ${s.tempC}°C, ${s.health}; storage " +
+            "%.1f of %.0f GB free; memory ${s.freeRamMb} of ${s.totalRamMb} MB free; up ${(s.uptimeH).toInt()} h.".format(s.freeStorageGb, s.totalStorageGb) +
+            (if (r.fixes.isEmpty()) "\nNothing to fix." else "\nFixes, biggest payoff first:\n" + r.fixes.mapIndexed { i, f -> "${i + 1}. $f" }.joinToString("\n"))
     }
 }

@@ -205,7 +205,6 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                     "learn" -> LearnPage(onBack = { back() }, onAsk = { text -> Agent.sharedDraft.value = Agent.SharedDraft(text); onDismiss() })
                     "seller" -> SellerPage()
                     "logs" -> LifeLogsPage()
-                    "replies" -> RepliesPage()
                     "logins" -> SavedLoginsPage()
                     "secrets" -> SavedSecretsPage()
                     "phonebrowser" -> PhoneBrowserSettingsPage()
@@ -234,7 +233,6 @@ private fun SpeedStatsPage() {
 private fun ControlPage() {
     Spacer(Modifier.height(8.dp))
     SkillsSection()
-    NotificationAccessRow()
 }
 
 @Composable

@@ -43,7 +43,8 @@ object HomeSources {
             WidgetTypes.CALENDAR -> Result(calendar(ctx, now))
             WidgetTypes.ROUTINES -> Result(routines(now))
             WidgetTypes.DEADLINES -> Result(deadlines(now))
-            WidgetTypes.APPS -> Result(apps(ctx, now))
+            // 2026-11-25 permission trim: Most-used apps needed Usage access (PACKAGE_USAGE_STATS), which left the app.
+            WidgetTypes.APPS -> Result(WidgetData.failed("Most-used apps is no longer available (it needed Usage access). Remove this card."))
             WidgetTypes.CUSTOM -> Result(custom(w))
             WidgetTypes.TODO -> Result(HomeTodo.data(w))
             WidgetTypes.INTO -> Result(WidgetData(headline = "Tell me what you're into", change = "Pick a few topics and I'll fill your board with them.", action = "interests"))
@@ -267,29 +268,6 @@ object HomeSources {
         val lines = (oneOffs + mems).take(8)
         if (lines.isEmpty()) return WidgetData(headline = "Deadlines", change = "No deadlines yet. Tell ${BrandName.NAME} about one, e.g. \u201cmy essay is due Friday\u201d.", action = "ask:Help me track my deadlines")
         return WidgetData(headline = "Deadlines", value = lines.first().title, change = lines.first().sub, lines = lines.drop(1))
-    }
-
-    /** Usage access granted (opt-in; never asked for without the explanation on the card). */
-    fun usageAllowed(ctx: Context): Boolean = try {
-        val ops = ctx.getSystemService(android.app.AppOpsManager::class.java)
-        @Suppress("DEPRECATION")
-        val mode = if (android.os.Build.VERSION.SDK_INT >= 29) ops.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), ctx.packageName)
-            else ops.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), ctx.packageName)
-        mode == android.app.AppOpsManager.MODE_ALLOWED
-    } catch (_: Throwable) { false }
-
-    private fun apps(ctx: Context, now: Long): WidgetData {
-        if (!usageAllowed(ctx)) return WidgetData.failed("${BrandName.NAME} can show the apps you use most. It needs Usage access, which stays on this phone.", "usage")
-        val usm = ctx.getSystemService(android.app.usage.UsageStatsManager::class.java) ?: return WidgetData.failed("Usage stats aren't available on this phone.")
-        val stats = try { usm.queryAndAggregateUsageStats(now - 7 * 86_400_000L, now) } catch (_: Exception) { emptyMap() }
-        val pm = ctx.packageManager
-        val lines = stats.values.filter { it.totalTimeInForeground > 60_000 && it.packageName != ctx.packageName && pm.getLaunchIntentForPackage(it.packageName) != null }
-            .sortedByDescending { it.totalTimeInForeground }.take(8).map {
-                val label = try { pm.getApplicationLabel(pm.getApplicationInfo(it.packageName, 0)).toString() } catch (_: Exception) { it.packageName }
-                val m = it.totalTimeInForeground / 60_000 / 7
-                WidgetLine(label, "", "app:" + it.packageName, if (m >= 60) "${m / 60} h ${m % 60} min a day" else "$m min a day")
-            }
-        return if (lines.isEmpty()) WidgetData(headline = "Most-used apps", change = "Not enough use yet this week.") else WidgetData(headline = "Most-used apps", lines = lines)
     }
 
     /** Blaze-composed widget: {"text": "…", "items": [{"title": "…", "sub": "…", "url": "…"}], "value": "…"}. */

@@ -77,8 +77,6 @@ class ProactiveDialTest {
         assertTrue(pro.contains("Settings.bool(ProactiveDial.PAUSED_KEY, false)"))
         assertTrue("Jarvis: questions, glances, routine ideas, call offers", src("proactive/Jarvis.kt").contains("if (Proactive.paused) return@withLock"))
         assertTrue(src("proactive/Jarvis.kt").contains("ProactiveDial.Source.CHECK_IN, false, Proactive.paused)"))
-        val fu = src("proactive/FollowUps.kt")
-        assertTrue(fu.contains("if (Proactive.paused) return   // owner 2026-11-19") && fu.contains("ProactiveDial.Source.FOLLOW_UP, false, Proactive.paused)"))
         assertTrue(src("proactive/Habits.kt").contains("if (!Proactive.paused && recent.size >="))
         assertTrue(src("home/HomeNews.kt").contains("if (Proactive.paused) return"))
         assertTrue("one switch in Settings", src("ui/SettingsV18.kt").contains("ToggleRow(\"Pause heads-ups\""))

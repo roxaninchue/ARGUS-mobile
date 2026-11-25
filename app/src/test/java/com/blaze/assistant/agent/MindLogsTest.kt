@@ -2,7 +2,6 @@ package com.blaze.assistant.agent
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.blaze.assistant.notify.Conversations
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -25,7 +24,6 @@ class MindLogsTest {
         db = Mind.Db(ApplicationProvider.getApplicationContext(), null)
         db.writableDatabase
         Mind.use(db)
-        Conversations.reset()
     }
 
     @After fun close() { Mind.use(null); if (::db.isInitialized) db.close() }
@@ -44,34 +42,6 @@ class MindLogsTest {
         assertEquals(2, MindLogs.deleteKind(db, MindLogs.LIFE))
         assertEquals(1, db.count())
         assertTrue(Mind.searchChat("milk", 5).startsWith("Nothing"))
-    }
-
-    @Test fun conversationLogGoesToTheJournalWithoutCodes() {
-        val t = 1_760_000_000_000L
-        Conversations.add("com.whatsapp", "WhatsApp", "Gloria", false, listOf(
-            Conversations.Msg(t, "Gloria", "Can you send the CIT102 notes?"),
-            Conversations.Msg(t + 1000, "Gloria", "Your WhatsApp code: 123-456"),
-            Conversations.Msg(t + 2000, "You", "Sending tonight", self = true)), null)
-        val rows = MindLogs.recent(db, "notif:wa:gloria", 10)
-        assertEquals(listOf("Gloria (WhatsApp)", "You"), rows.map { it.role })
-        assertTrue(rows.none { it.content.contains("123") })
-        // The same history posted again adds nothing.
-        Conversations.reset()
-        Conversations.add("com.whatsapp", "WhatsApp", "Gloria", false, listOf(Conversations.Msg(t, "Gloria", "Can you send the CIT102 notes?")), null)
-        assertEquals(2, MindLogs.count(db, MindLogs.NOTIF))
-        val read = Conversations.read("gloria", 20)
-        assertTrue(read, read.contains("Can you send the CIT102 notes?"))
-        assertTrue(read, read.contains("Context is thin"))
-    }
-
-    @Test fun readLinksPeopleMemories() {
-        db.save("person", "Gloria", "Gloria Gozza is a classmate at Northrise")
-        val t = 1_760_000_000_000L
-        Conversations.add("com.whatsapp", "WhatsApp", "Gloria", false, (1..5).map { Conversations.Msg(t + it * 1000L, "Gloria", "line $it") }, null)
-        val read = Conversations.read("wa:gloria", 20)
-        assertTrue(read, read.contains("Memory about them"))
-        assertTrue(read, read.contains("classmate at Northrise"))
-        assertTrue(read, !read.contains("Context is thin"))
     }
 
     @Test fun reviewKeepsClassesApartAndMarksLifeLogsInferred() = runBlocking {

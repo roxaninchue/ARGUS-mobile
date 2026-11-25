@@ -393,7 +393,6 @@
         <receiver android:name=".notify.ActionReceiver" android:exported="false" />
         <receiver android:name=".update.InstallReceiver" android:exported="false" />
         <receiver android:name=".proactive.ProactiveReceiver" android:exported="false" />
-        <receiver android:name=".proactive.FollowUpReceiver" android:exported="false" />
         <receiver android:name=".stage.StageTimerReceiver" android:exported="false" />
 
         <provider android:name="androidx.core.content.FileProvider"
@@ -424,14 +423,5 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/blaze_widget" />
         </receiver>
 
-        <service
-            android:name=".notify.NotificationBrain"
-            android:exported="true"
-            android:label="Argus notification brain"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
     </application>
 </manifest>

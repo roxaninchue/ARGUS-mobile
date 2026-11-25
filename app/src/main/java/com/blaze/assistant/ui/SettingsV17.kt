@@ -41,7 +41,6 @@ import com.blaze.assistant.agent.Settings
 import com.blaze.assistant.connect.Connectors
 import com.blaze.assistant.connect.Mcp
 import com.blaze.assistant.connect.McpConfig
-import com.blaze.assistant.notify.NotificationBrain
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 
@@ -296,21 +295,3 @@ fun LearningSection() {
     }
 }
 
-// ---------------- Notification access ----------------
-
-@Composable
-fun NotificationAccessRow() {
-    val c = LocalBlaze.current.mono
-    val ctx = LocalContext.current
-    var on by remember { mutableStateOf(NotificationBrain.enabled(ctx)) }
-    LaunchedEffect(Unit) { on = NotificationBrain.enabled(ctx) }
-    Section("Notification brain")
-    Row(Modifier.fillMaxWidth().hairline(if (on) c.hair else c.accent).clickable { ctx.startActivity(NotificationBrain.settingsIntent()) }.padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(6.dp).background(if (on) c.accent else c.weak, BlazeShapes.pill)); Spacer(Modifier.width(10.dp))
-        Text(if (on) "Notification access is on" else "Let ${BrandName.NAME} read notifications", modifier = Modifier.weight(1f),
-            style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, color = c.body))
-        Label(tr("Open →"), color = c.accent)
-    }
-    Note("Ask \u201cwhat did I miss?\u201d or \u201creply to Mary on WhatsApp\u201d. Kept in memory only, never saved; codes are hidden.", top = 8)
-}

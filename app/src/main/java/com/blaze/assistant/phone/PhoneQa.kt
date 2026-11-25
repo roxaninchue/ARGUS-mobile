@@ -210,8 +210,7 @@ object PhoneQa {
         val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date(started))
         val meta = linkedMapOf("app" to com.blaze.assistant.BuildConfig.VERSION_NAME + " (" + com.blaze.assistant.BuildConfig.VERSION_CODE + ")",
             "device" to android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + ", Android " + android.os.Build.VERSION.RELEASE,
-            "started" to SimpleDateFormat("yyyy-MM-dd HH:mm ZZZZ", Locale.US).format(Date(started)), "runs_per_case" to runs.toString(),
-            "notification_access" to (com.blaze.assistant.notify.NotificationBrain.instance != null).toString())
+            "started" to SimpleDateFormat("yyyy-MM-dd HH:mm ZZZZ", Locale.US).format(Date(started)), "runs_per_case" to runs.toString())
         val j = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.json", "application/json", PhoneQaReport.json(out, meta)))
         val m = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.md", "text/markdown", PhoneQaReport.markdown(out, meta)))
         val sum = PhoneQaReport.summary(out).joinToString("\n") { "${it.case}: ${it.passed}/${it.runs}" + if (it.strict) " PASS" else " FAIL" }

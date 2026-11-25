@@ -30,8 +30,6 @@ import com.blaze.assistant.life.Diarize
 import com.blaze.assistant.life.LifeAudio
 import com.blaze.assistant.life.LifeLogWorker
 import com.blaze.assistant.life.LifeLogs
-import com.blaze.assistant.notify.Conversations
-import com.blaze.assistant.notify.NotificationBrain
 import com.blaze.assistant.voice.WakeModel
 import kotlinx.coroutines.launch
 
@@ -147,53 +145,4 @@ internal fun LifeLogsPage(preview: LifeLogs.State? = null, previewToday: Long = 
         V18Button("Keep", primary = false, modifier = Modifier.weight(1f)) { confirmDelete = false }
     }
     V18Note("Deleting removes the transcripts. Memories ${BrandName.NAME} already learned from them stay in Memory, where you can delete them too.", top = 8)
-}
-
-/**
- * Settings › Notification replies (v0.19.0): notification access, the per-conversation chat log, auto-reply per
- * conversation (otherwise every send shows a card first), and deleting the chat logs.
- */
-@Composable
-internal fun RepliesPage(previewAccess: Boolean? = null) {
-    val c = LocalBlaze.current.mono
-    val ctx = LocalContext.current
-    val access = previewAccess ?: remember { NotificationBrain.enabled(ctx) }
-    var logOn by remember { mutableStateOf(Conversations.logOn) }
-    var auto by remember { mutableStateOf(Conversations.auto()) }
-    var note by remember { mutableStateOf("") }
-    val convs = remember { Conversations.list().take(12) }
-
-    Spacer(Modifier.height(18.dp))
-    Text(tr("{0} reads your chat notifications (WhatsApp, SMS, Telegram, Messenger and more), keeps a log of each conversation, and can draft and send replies from the notification without opening the app.", BrandName.NAME),
-        style = TextStyle(fontFamily = Type.Sans, fontSize = 14.sp, lineHeight = 21.sp, color = c.body))
-    V18Section("Notification access")
-    if (access) V18Note("On. Ask \u201cwhat did Gloria say?\u201d or \u201creply to the family group\u201d.")
-    else { V18Note("Off. Turn on notification access for ${BrandName.NAME} to use replies."); V18Button("Open notification access") {
-        try { ctx.startActivity(NotificationBrain.settingsIntent()) } catch (_: Exception) { } } }
-    var shield by remember { mutableStateOf(com.blaze.assistant.notify.ScamShield.on) }
-    ToggleRow("Scam Shield", "Warns you when an SMS or chat message looks like a mobile-money scam, a fake prize or a phishing link (checked on the phone)", shield) {
-        shield = !shield; com.blaze.assistant.notify.ScamShield.on = shield }
-    var money by remember { mutableStateOf(com.blaze.assistant.notify.MoneyRadar.on) }
-    ToggleRow("Money Radar", "Keeps a receipt vault from mobile-money and bank SMS, spots bills you pay monthly and warns before data bundles run out or expire. Only amounts, payees and balances are kept, on the phone", money) {
-        money = !money; com.blaze.assistant.notify.MoneyRadar.on = money; if (money) com.blaze.assistant.notify.MoneyRadar.schedule(ctx) }
-    ToggleRow("Keep chat logs", "A rolling log per conversation in ${BrandName.NAME}'s memory, so replies have more context than the last few messages", logOn) {
-        logOn = !logOn; Conversations.setLog(logOn) }
-    V18Note("Codes, PINs and bank or mobile-money messages are never stored or read out.", top = 8)
-
-    V18Section("Auto-reply")
-    V18Note("Every reply shows a card with the text first. Switch on auto-reply only for a conversation where you want ${BrandName.NAME} to send without asking.")
-    if (convs.isEmpty()) V18Note("Conversations show up here after their next message arrives.")
-    convs.forEach { cv ->
-        ToggleRow(cv.title, "${cv.app}${if (cv.group) " · group" else ""} · ${if (cv.key in auto) "sends without asking" else "asks first"}", cv.key in auto, icon = MenuIcon.CHAT.vector()) {
-            val on = cv.key !in auto; Conversations.setAuto(cv.key, on); auto = Conversations.auto() }
-    }
-
-    V18Section("Chat logs")
-    V18Button("Delete chat logs", primary = false) {
-        val n = try { Mind.db()?.let { MindLogs.deleteKind(it, MindLogs.NOTIF) } ?: 0 } catch (_: Exception) { 0 }
-        note = "Deleted $n logged messages."
-    }
-    if (note.isNotBlank()) V18Note(note, top = 8)
-    Text(tr("Tools: notif_conversations, notif_read, notif_reply."), modifier = Modifier.padding(top = 10.dp).clickable { },
-        style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.weak))
 }

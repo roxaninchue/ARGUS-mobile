@@ -1474,7 +1474,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(SelfKnowledge.tool())
         t.put(Awareness.tool())
         t.put(com.blaze.assistant.proactive.Jarvis.tool())
-        t.put(com.blaze.assistant.proactive.FollowUps.tool())
         BlazeDocs.tools().forEach { t.put(it) }
         // v0.28.5: a project's full instructions / brief / notes as lookups; stripped from every chat that isn't in a project.
         ProjectDocs.tools().forEach { t.put(it) }
@@ -1490,8 +1489,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
         t.put(Seller.tool())
-        if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.NotificationBrain.tools().forEach { t.put(it) }
-        if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.Conversations.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.life.LifeLogs.tool())
         t.put(com.blaze.assistant.mediaapps.MediaFetch.tool())
         t.put(com.blaze.assistant.mediaapps.VideoTools.tool())   // v0.34.0
@@ -1500,7 +1497,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.mediaapps.MusicTools.tool())   // v0.34.0
         t.put(com.blaze.assistant.media.GalleryOps.tool())   // v0.34.0
         t.put(com.blaze.assistant.device.CameraMathTool.tool())   // v0.34.0
-        t.put(com.blaze.assistant.notify.MoneyRadar.tool())
         t.put(com.blaze.assistant.device.PhoneHealth.tool())
         t.put(TimeCapsule.tool())
         t.put(com.blaze.assistant.agent.query.QueryRuntime.tool())   // 0.51.0 BlazeQuery research (Halo Persona Studio tool removed)
@@ -1510,7 +1506,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(DuoWorkspace.tool())
         t.put(com.blaze.assistant.mediaapps.CoverArt.tool())
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
-        t.put(com.blaze.assistant.notify.GroupBrain.tool())
         // 0.55.0 lean harness (LeanTurn): the two catalog tools, and the phone's own tool rows in the blaze.db catalog.
         LeanTurn.areas = try { LeanAreas.all() } catch (_: Throwable) { emptyList() }   // 0.55.5: find_tools lists every area
         t.put(LeanTurn.findDef()); t.put(LeanTurn.loadSkillDef())
@@ -4951,7 +4946,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 BlazeDocs.TOOL_READ -> { add(Role.STEP, "Reading ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.read(args) } }
                 ProjectDocs.TOOL_SEARCH -> { add(Role.STEP, "Checking the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.search(id, args) } }
                 ProjectDocs.TOOL_READ -> { add(Role.STEP, "Reading the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.read(id, args) } }
-                com.blaze.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.blaze.assistant.proactive.FollowUps.run(args) }
                 com.blaze.assistant.proactive.Jarvis.TOOL -> { add(Role.STEP, "Changing how often I reach out"); com.blaze.assistant.proactive.Jarvis.run(args) }
                 Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.blaze.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }) } }
                 SelfKnowledge.TOOL -> { add(Role.STEP, "Checking my own setup"); kotlinx.coroutines.withContext(Dispatchers.IO) { SelfKnowledge.report(app, args.optString("section")) } }
@@ -5202,7 +5196,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (name) { "run_skill" -> "Replaying skill \"${args.optString("name")}\""; "skill_manage" -> "Saving a skill"; else -> "Searching past chats" })
                     try { Learning.run(app, name, args).let { if (name == "run_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
-                "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.blaze.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }
                 com.blaze.assistant.browser.BrowserTools.SECURE -> secureInput(args)
                 SecretDesk.TOOL -> {
                     mood = Mood.IDLE
@@ -5230,7 +5223,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, com.blaze.assistant.browser.BrowserTools.describe(name, args))
                     com.blaze.assistant.browser.BrowserTools.run(app, name, args)
                 }
-                "reply_to_notification" -> { add(Role.STEP, "Replying"); com.blaze.assistant.notify.NotificationBrain.reply(app, args.optInt("number"), args.optString("text")) }
                 com.blaze.assistant.phone.SettingsJump.TOOL -> com.blaze.assistant.phone.SettingsJump.run(app, args)
                 else -> when {
                     name in LongChat.names -> longChatTool(name, args)
@@ -5243,10 +5235,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             "cache_summarize" -> "Reading the whole document"; "cache_toc" -> "Looking at the document's contents"; else -> "Reading the document" })
                         com.blaze.assistant.memory.CacheTier.run(name, args, id)
                     }
-                    name == "notif_reply" -> { add(Role.STEP, "Replying to ${args.optString("conversation").take(40)}")
-                        com.blaze.assistant.notify.Conversations.reply(app, args.optString("conversation"), args.optString("text")) }
-                    name in com.blaze.assistant.notify.Conversations.toolNames -> { add(Role.STEP, if (name == "notif_read") "Reading the chat with ${args.optString("conversation").take(40)}" else "Checking your chats")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.Conversations.run(app, name, args) } }
                     name == com.blaze.assistant.device.PhoneHealth.TOOL -> { add(Role.STEP, "Checking your phone's health")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.device.PhoneHealth.run(app, args) } }
                     name == com.blaze.assistant.mediaapps.CoverArt.TOOL -> { add(Role.STEP, "Forging cover art")
@@ -5267,12 +5255,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         val recent = try { msgs.takeLast(8).filter { it.role == Role.USER || it.role == Role.BLAZE }.map { it.text.take(300) } } catch (_: Throwable) { emptyList() }
                         com.blaze.assistant.agent.query.QueryRuntime.runTool(args, id, recent, isPrivate) { line -> scope.launch { if (mood != Mood.IDLE) status = line } }
                     }
-                    name == com.blaze.assistant.notify.GroupBrain.TOOL -> { add(Role.STEP, "Reading ${args.optString("group").take(40)}")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.GroupBrain.run(args) } }
                     name == TimeCapsule.TOOL -> { add(Role.STEP, if (args.optString("action") == "seal") "Sealing a time capsule" else "Time capsules")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { TimeCapsule.run(app, args) } }
-                    name == com.blaze.assistant.notify.MoneyRadar.TOOL -> { add(Role.STEP, "Checking Money Radar")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.MoneyRadar.run(app, args) } }
                     name == com.blaze.assistant.device.CameraMathTool.TOOL -> { add(Role.STEP, "Working it out")
                         com.blaze.assistant.device.CameraMathTool.run(args) }
                     name == com.blaze.assistant.media.GalleryOps.TOOL -> { add(Role.STEP, com.blaze.assistant.media.GalleryOps.describe(args))

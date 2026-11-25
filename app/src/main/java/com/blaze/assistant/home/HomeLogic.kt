@@ -151,11 +151,10 @@ object WidgetIntent {
             GitHubFeed.repo(m.groupValues[1])?.let { r -> return WidgetSpec(WidgetTypes.GITHUB, r, "Tech", JSONObject().put("repo", r)) }
         }
         if (Regex("\\bgithub notifications\\b").containsMatchIn(l)) return WidgetSpec(WidgetTypes.GITHUB, "GitHub", "Tech", JSONObject().put("notifications", true))
-        // Calendar / routines / deadlines / apps
+        // Calendar / routines / deadlines
         if (Regex("\\b(my )?(calendar|agenda|next events?|meetings)\\b").containsMatchIn(l)) return WidgetSpec(WidgetTypes.CALENDAR, "Calendar", "Today", JSONObject())
         if (Regex("\\b(next )?routines?|reminders?\\b").containsMatchIn(l)) return WidgetSpec(WidgetTypes.ROUTINES, "Next routine", "Today", JSONObject())
         if (Regex("\\b(deadlines?|exams?|assignments?|homework|due dates?)\\b").containsMatchIn(l)) return WidgetSpec(WidgetTypes.DEADLINES, "Deadlines", "Today", JSONObject())
-        if (Regex("\\b(most[- ]used apps|app usage|screen time|apps i use)\\b").containsMatchIn(l)) return WidgetSpec(WidgetTypes.APPS, "Most-used apps", "Phone", JSONObject())
         // News: "news about X", "X news", "headlines"
         Regex("\\b(?:news|headlines|stories|articles) (?:about|on|from|for) (.+)$").find(l)?.let { m ->
             val q = t.substring(m.groups[1]!!.range.first).trim()

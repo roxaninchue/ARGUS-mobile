@@ -51,7 +51,6 @@ val advancedPages = listOf(
     SettingsPage("proactive", "Proactive & triggers", "Speak up on its own, when-X-do-Y"),
     SettingsPage("orb", "Floating orb", "Keep ${BrandName.NAME} over other apps"),
     SettingsPage("logs", "Life logs", "Transcribe what the mic hears into memory, brainstorms"),
-    SettingsPage("replies", "Notification replies", "Chat logs and replies from notifications, auto-reply"),
     SettingsPage("usage", "Usage", "Tokens and estimated cost"),
     SettingsPage("backup", "Backup", "Export or import everything"),
     // P2-SF-04: opens from Security (Privacy); standing allows, autonomy, send scope and spending limits per bot.
@@ -106,7 +105,7 @@ fun settingsPageByName(raw: String): String {
         "look" to "feel", "theme" to "feel", "sounds" to "feel", "accounts" to "connections", "connected" to "connections",
         "personality" to "persona", "phone" to "control", "skills" to "control",
         "library" to "skills", "signin" to "account", "login" to "account", "signup" to "account", "lock" to "privacy", "safety" to "privacy", "export" to "backup",
-        "brainstorm" to "logs", "lifelogs" to "logs", "transcripts" to "logs", "autoreply" to "replies") + com.blaze.assistant.ui.argus.settings.ArgusSettings.NAME_ALIASES
+        "brainstorm" to "logs", "lifelogs" to "logs", "transcripts" to "logs") + com.blaze.assistant.ui.argus.settings.ArgusSettings.NAME_ALIASES
     val words = raw.lowercase().replace("settings", " ").split(Regex("[^a-z_]+")).filter { it.isNotBlank() && it !in com.blaze.assistant.ui.argus.settings.ArgusSettings.STOP_WORDS }
     if (words.isEmpty()) return ""
     // Several pages listed (the model copied the example): only trust it when they all point to one page.

@@ -479,16 +479,6 @@ open class ShotsTest {
                 previewToday = 12 * 60_000L, previewChunks = 3, previewModel = false)
         }
     }
-    @Test fun replies() {
-        val n = com.blaze.assistant.notify.Conversations
-        n.reset()
-        n.add("com.whatsapp", "WhatsApp", "Gloria", false, listOf(com.blaze.assistant.notify.Conversations.Msg(t0, "Gloria", "Can you send the CIT102 notes?")), null)
-        n.add("com.whatsapp", "WhatsApp", "CS Year 2", true, listOf(com.blaze.assistant.notify.Conversations.Msg(t0 - 60_000, "Mutale", "Lab moved to 14:00")), null)
-        n.add("com.google.android.apps.messaging", "Messages", "Mum", false, listOf(com.blaze.assistant.notify.Conversations.Msg(t0 - 120_000, "Mum", "Call me tonight")), null)
-        try { n.setAuto("wa:gloria", true) } catch (_: Throwable) { }
-        shot("28-replies") { SettingsFrame("Notification replies") { RepliesPage(previewAccess = true) } }
-    }
-
     // v0.23.0: views + skills. "Make flashcards" → skills on the work card, a Learn deck, a short reply.
     @Test fun viewsSkills() = shot("35-views-skills") {
         Column(Modifier.fillMaxSize()) {

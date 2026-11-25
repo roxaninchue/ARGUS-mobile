@@ -17,7 +17,11 @@ biometric, READ_MEDIA_*, battery-optimisation exemption, MODIFY_AUDIO_SETTINGS, 
 - [x] Bank mode + WRITE_SECURE_SETTINGS: bank/, BankModePage, BankModeService, bank_mode tool, Awareness line, Jarvis/Overlay gates, settings page + Security section, tests
 - [x] SMS & calls + contacts (code): Messaging (message_contact), CallCopilot (+service), SafeWalk (+receiver), SendCheck, Ussd (run_ussd), Skills find_contact/read_messages/send_sms/recent_calls/call_number, PimEdit add_contact/edit_contact, FastLane call_contact/send_text, CallControl cut to Argus call-screen only (no telecom), proactive SMS / missed-call sweep, PC message sends (answer "not sent"), contact QA case; manifest perms pending in the manifest chunk
 - [ ] Overlays SYSTEM_ALERT_WINDOW (orb, bin, live task card, overlay chat)
-- [ ] PACKAGE_USAGE_STATS, notification listener, WRITE_SETTINGS, ACCESS_NOTIFICATION_POLICY, USE_FULL_SCREEN_INTENT
+- [x] Notification listener: NotificationBrain (+service), Conversations, GroupBrain, MoneyRadar, ScamShield, Sensitive, ChatThreads, FollowUps / FollowUpLogic (+receiver; only fed by the listener), tools recent_notifications / reply_to_notification / notif_* / group_brain / money / follow_ups, Notification replies page, notification-access rows, proactive notification + chat digest, notification trigger event, other apps' media sessions
+- [x] PACKAGE_USAGE_STATS: app_usage tool, Most-used apps Home card (type kept so saved cards load), PhoneHealth unused/top apps, Jarvis usage line, usage-access prompts
+- [x] WRITE_SETTINGS + ACCESS_NOTIFICATION_POLICY (phone_mode tool), REQUEST_DELETE_PACKAGES (uninstall_app tool)
+- [x] Triggers: place_arrive / place_leave (location), bluetooth (BLUETOOTH_CONNECT), app_opened (had no caller since 0.55.18) removed; wifi kept
+- [ ] USE_FULL_SCREEN_INTENT
 - [ ] Location, BLUETOOTH_CONNECT, SET_WALLPAPER, REQUEST_DELETE_PACKAGES, termux RUN_COMMAND
 - [ ] Tests, guard baselines, docs; compile + unit tests green
 

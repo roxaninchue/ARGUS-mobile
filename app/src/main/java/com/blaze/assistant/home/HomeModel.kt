@@ -89,6 +89,7 @@ object WidgetTypes {
     const val ROUTINES = "routines"
     const val DEADLINES = "deadlines"
     const val GITHUB = "github"
+    /** Most-used apps: retired in the 2026-11-25 permission trim (Usage access); kept so saved cards still load. */
     const val APPS = "apps"
     const val CUSTOM = "custom"
     /** Owner 2026-11-14: "create a to-do list on my dashboard" → a checklist on Life ([HomeTodo]). */
@@ -96,7 +97,7 @@ object WidgetTypes {
     /** The "tell me what you're into" starter card (opens the interest picker). */
     const val INTO = "into"
 
-    val all = listOf(WEATHER, NEWS, CREATORS, SPORTS, PRICES, CALENDAR, ROUTINES, DEADLINES, GITHUB, APPS, CUSTOM, INTO, TODO)
+    val all = listOf(WEATHER, NEWS, CREATORS, SPORTS, PRICES, CALENDAR, ROUTINES, DEADLINES, GITHUB, CUSTOM, INTO, TODO)
 
     fun norm(t: String?): String? {
         val l = t.orEmpty().trim().lowercase().replace(' ', '_')
@@ -111,7 +112,6 @@ object WidgetTypes {
             "routine", "reminders", "reminder" -> ROUTINES
             "deadline", "study", "exams", "homework" -> DEADLINES
             "repo", "git" -> GITHUB
-            "most_used_apps", "usage", "app_usage" -> APPS
             "to_do", "todos", "todo_list", "to_do_list", "checklist", "tasks", "task_list", "shopping_list" -> TODO
             "text", "list", "link", "note" -> CUSTOM
             else -> null

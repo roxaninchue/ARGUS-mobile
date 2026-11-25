@@ -43,7 +43,6 @@ class BlazeApp : Application() {
         Thread({
             // v0.33.0 Life Log 2: recordings stopped but not yet reviewed (phone restarted, app killed) carry on.
             try { com.blaze.assistant.life.LifeLogWorker.resumePending(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: LifeLogWorker.r", e) }
-            try { com.blaze.assistant.notify.MoneyRadar.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: MoneyRadar.sc", e) }
             try { com.blaze.assistant.agent.TimeCapsule.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: TimeCapsule.sc", e) }
             try { com.blaze.assistant.agent.StudyNudge.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: StudyNudge.sch", e) }
             try { com.blaze.assistant.agent.MindReview.schedule(bgApp) } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("BlazeApp: MindReview.sch", e) }
@@ -138,7 +137,7 @@ class BlazeApp : Application() {
         com.blaze.assistant.device.StartLater.add("proactive.Triggers.init") { com.blaze.assistant.proactive.Triggers.init(this) }
         if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("proactive.Proactive.start") { com.blaze.assistant.proactive.Proactive.start(this) }
         // v0.38.0 Jarvis mode: questions, screen glances, camera looks, its own routines (per level).
-        if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("proactive.Jarvis.start") { com.blaze.assistant.proactive.FollowUps.init(this); com.blaze.assistant.proactive.Jarvis.start(this) }
+        if (!com.blaze.assistant.device.StartGuard.safeStart) com.blaze.assistant.device.StartLater.add("proactive.Jarvis.start") { com.blaze.assistant.proactive.Jarvis.start(this) }
         com.blaze.assistant.device.StartLater.add("ui.Overlay.watchTasks") { com.blaze.assistant.ui.Overlay.watchTasks(this) }
         // 0.50.0: edge particles while Argus controls the screen (suspends while idle)
         com.blaze.assistant.device.StartLater.add("ui.ScreenGlow.watch") { com.blaze.assistant.ui.ScreenGlow.watch(this) }

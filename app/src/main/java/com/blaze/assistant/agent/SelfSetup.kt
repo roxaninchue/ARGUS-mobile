@@ -42,8 +42,7 @@ object SelfSetup {
             Item("wake_word", "\u201cHey ${BrandName.NAME}\u201d listening", Settings.wakeWord && wakeModel, "Call ${BrandName.NAME} hands-free.", "action wake_on (after the model is installed)"),
             Item("assistant", "Default assistant", com.blaze.assistant.assist.BlazeInteractionService.isDefault(ctx), "Hold Home / power to call ${BrandName.NAME} over any app.", "open assistant"),
             Item("battery", "Unrestricted battery", battery, "Stops Android from killing ${BrandName.NAME} in the background (wake word, routines).", "open battery"),
-            Item("notification_access", "Notification access", com.blaze.assistant.notify.NotificationBrain.enabled(ctx), "Lets ${BrandName.NAME} read and reply to notifications and warn you about urgent ones.", "open notification_access"),
-            Item("skills", "Contacts, SMS, calls, calendar", skills.isEmpty(), if (skills.isEmpty()) "All granted." else "Missing: ${skills.joinToString()}.", "open settings control (grant them there)"),
+            Item("skills", "Calendar", skills.isEmpty(), if (skills.isEmpty()) "All granted." else "Missing: ${skills.joinToString()}.", "open settings control (grant them there)"),
             Item("fast_lane", "On-device fast lane", FastLane.ready(ctx), "Instant offline commands (about 35 MB).", "install fast_lane"),
             Item("terminal", "Terminal (shell + BusyBox)", java.io.File(ctx.applicationInfo.nativeLibraryDir, "libbusybox.so").exists(), "Built in; nothing to install.", "-"),
             Item("linux", "Linux (Alpine)", linux, "Real Linux for python3, node, git\u2026 (about 3.5 MB).", "install linux"),
@@ -76,7 +75,6 @@ object SelfSetup {
             "overlay" -> Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg)
             "app_permissions", "permissions", "microphone", "notifications" -> Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)
             "battery" -> Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            "notification_access" -> com.blaze.assistant.notify.NotificationBrain.settingsIntent()
             "assistant" -> { com.blaze.assistant.assist.BlazeInteractionService.openPicker(ctx); return "Opened the Digital assistant picker. Pick ${BrandName.NAME}." }
             "exact_alarms" -> if (Build.VERSION.SDK_INT >= 31) Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg) else null
             else -> null
