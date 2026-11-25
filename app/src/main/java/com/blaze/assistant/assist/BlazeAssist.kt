@@ -90,7 +90,6 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
             AssistPanel(
                 autoListen = autoListen,
                 onClose = { hide() },
-                onPin = { hide(); Overlay.showOrb(context) || run { Overlay.requestOverlayPermission(context); false } },
                 onExpand = { openApp(); hide() }
             )
         }
@@ -108,7 +107,7 @@ class BlazeSession(ctx: Context) : VoiceInteractionSession(ctx) {
 
     override fun onHide() {
         Voice.cancelListening()
-        Agent.overlayOpen = Overlay.orbShowing
+        Agent.overlayOpen = false
         super.onHide()
     }
 

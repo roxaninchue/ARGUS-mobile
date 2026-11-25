@@ -51,7 +51,6 @@ object AwarenessHooks {
             override fun onActivityDestroyed(a: Activity) {}
         })
         Awareness.readers += { viewNow() }
-        Awareness.readers += { phoneMedia(app) }
     }
 
     /** The view over the chat (Design, Learn…), with the design's title when it's Design. */
@@ -61,34 +60,6 @@ object AwarenessHooks {
         val name = com.blaze.assistant.ui.Views.find(v)?.name ?: v
         val title = if (v == "design") (try { Designs.current()?.title } catch (_: Throwable) { null })?.ifBlank { null } else null
         return listOf(Awareness.Now("view", "Open", title ?: name, if (title != null) "the Design view" else "${BrandName.NAME}"))
-    }
-
-    /** Other apps' media sessions (Argus's own are reported by the players themselves). */
-    private fun phoneMedia(ctx: Context): List<Awareness.Now> {
-        if (com.blaze.assistant.notify.NotificationBrain.instance == null) return emptyList()
-        val msm = ctx.getSystemService(MediaSessionManager::class.java) ?: return emptyList()
-        val list: List<MediaController> = try {
-            msm.getActiveSessions(ComponentName(ctx, com.blaze.assistant.notify.NotificationBrain::class.java))
-        } catch (_: Throwable) { return emptyList() }
-        return list.filter { it.packageName != ctx.packageName }.mapNotNull { c -> session(ctx, c) }.take(3)
-    }
-
-    private fun session(ctx: Context, c: MediaController): Awareness.Now? {
-        val md = c.metadata ?: return null
-        val title = md.getString(android.media.MediaMetadata.METADATA_KEY_TITLE)?.takeIf { it.isNotBlank() } ?: return null
-        val artist = md.getString(android.media.MediaMetadata.METADATA_KEY_ARTIST)
-            ?: md.getString(android.media.MediaMetadata.METADATA_KEY_ALBUM_ARTIST) ?: ""
-        val dur = md.getLong(android.media.MediaMetadata.METADATA_KEY_DURATION)
-        val st = c.playbackState
-        val playing = st?.state == PlaybackState.STATE_PLAYING || st?.state == PlaybackState.STATE_BUFFERING
-        if (st != null && st.state in setOf(PlaybackState.STATE_STOPPED, PlaybackState.STATE_NONE, PlaybackState.STATE_ERROR)) return null
-        // PlaybackState's position is as of lastPositionUpdateTime (elapsedRealtime); move it to wall-clock time.
-        val now = System.currentTimeMillis()
-        val pos = st?.let { s -> if (s.position < 0) -1L else s.position } ?: -1L
-        val at = st?.let { s -> now - (SystemClock.elapsedRealtime() - s.lastPositionUpdateTime).coerceAtLeast(0) } ?: now
-        val app = try { ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(c.packageName, 0)).toString() } catch (_: Throwable) { c.packageName }
-        return Awareness.Now("media:" + c.packageName, if (playing) "Playing" else "Paused", title, app,
-            if (artist.isNotBlank()) "by $artist" else "", pos, if (dur > 0) dur else -1, playing, at)
     }
 
     // ---------------- Argus's own players (called on the player's thread) ----------------

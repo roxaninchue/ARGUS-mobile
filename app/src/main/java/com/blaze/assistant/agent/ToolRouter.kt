@@ -16,7 +16,7 @@ object ToolRouter {
 
     /** Always sent. */
     private val core = setOf(
-        "save_file", "make_document", "remember", "forget", "memory_search", "memory_save", "memory_update", "memory_delete", "memory_merge", "open_view", "design", "about_blaze", "blaze_now", "jarvis_mode", "bank_mode", "follow_ups", "blaze_docs_search", "blaze_docs_read", "blazerouter", "processes", "process", "recall_memory", "device_status", "get_weather", "list_apps", "blaze_camera", "blaze_self", "ask_user", "self_test",
+        "save_file", "make_document", "remember", "forget", "memory_search", "memory_save", "memory_update", "memory_delete", "memory_merge", "open_view", "design", "about_blaze", "blaze_now", "jarvis_mode", "follow_ups", "blaze_docs_search", "blaze_docs_read", "blazerouter", "processes", "process", "recall_memory", "device_status", "get_weather", "list_apps", "blaze_camera", "blaze_self", "ask_user", "self_test",
         "web_search", "fetch_page", "load_tools", "find_tool", "goal", "use_skill", "find_skill", "search_past_chats", "run_skill",
         // Long chats (v0.15.0): always on hand so nothing older is ever out of reach.
         "search_chat", "read_turn", "read_artifact", "update_brief", "project_docs_search", "project_docs_read",
@@ -95,10 +95,6 @@ object ToolRouter {
         Group("seller", "brand kit for the user's store or business (posts, ads, listings, designs)",
             r("""\b(brand|store|shop|shopify|dropship\w*|listing|product|ads?|advert\w*|caption|posts?|content calendar|tiktok|instagram|facebook|marketing|customers?|orders?|digest|competitors?|homeglow)\b"""),
             { it == "brand_kit" }),
-        // 0.45.19: App Store (free open-source apps from their own releases, installed with Android's installer).
-        Group("appstore", "App Store: free open-source Android apps from their developers' releases, installed on this phone with Android's installer",
-            r("""\b(app ?store|apps?|install|f-?droid|open[- ]source|foss|apk|get (?:me )?(?:the |an? )?app)\b"""),
-            { it.startsWith("store_") }),
         Group("study", "flashcards (spaced repetition in the Learn view), study tools",
             r("""\b(flash ?cards?|quiz|revise|revision|study|studying|exam|test me|memori[sz]e|lecture|tutor)\b"""),
             { it == "flashcards" }),
@@ -107,7 +103,7 @@ object ToolRouter {
             { it.startsWith("browser_") }),
         Group("terminal", "Linux shell, code, files, Termux",
             r("""\b(shell|terminal|linux|command|script|code|coding|python|node|js|javascript|npm|pip|git|github|repo|clone|commit|push|pull|branch|api|json|csv|http|curl|download|install|file|files|folder|termux|run|compile|build|debug|server|program|calculate|convert)\b"""),
-            { it in setOf("run_shell", "linux_install", "terminal_jobs", "terminal_stop", "termux_run", "git", "schedule_command", "preview_server", "servers") || it in com.blaze.assistant.terminal.DevTools.names }),
+            { it in setOf("run_shell", "linux_install", "terminal_jobs", "terminal_stop", "git", "schedule_command", "preview_server", "servers") || it in com.blaze.assistant.terminal.DevTools.names }),
         Group("apps", "GitHub, Notion, Slack, Spotify connectors",
             r("""\b(github|repo|repos|repository|commits?|branch(?:es)?|issue|pull request|pr|notion|slack|spotify|playlist|song|music)\b|github\.com"""),
             { it.startsWith("github_") || it.startsWith("notion_") || it.startsWith("slack_") || it.startsWith("spotify_") }),

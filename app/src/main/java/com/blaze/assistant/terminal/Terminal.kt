@@ -3,7 +3,6 @@ package com.blaze.assistant.terminal
 
 import com.blaze.assistant.BrandName
 import android.content.Context
-import android.content.Intent
 import android.system.Os
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +20,7 @@ import java.util.concurrent.TimeUnit
 /**
  * A real shell on the phone: Android's sh plus ~300 BusyBox tools (vi, wget, httpd, tar, grep,
  * awk, nc…) shipped inside the APK. Home is filesDir/home. Long jobs (local servers) run in the
- * background. For a full Linux (pkg install python/nodejs/gradle) Argus hands commands to Termux.
+ * background. For a full Linux (apk add python3/nodejs/git) Argus runs its own Alpine (Linux.kt).
  */
 object Terminal {
     private lateinit var app: Context
@@ -400,77 +399,9 @@ object Terminal {
     fun stopJob(id: Int): String = synchronized(jobs) { jobs.remove(id)?.let { it.proc.destroy(); "Stopped job $id." } ?: "No job $id." }
     fun jobCount() = synchronized(jobs) { jobs.values.count { it.proc.isAlive } }
 
-    // ---------- Termux bridge ----------
-
-    fun termuxInstalled(ctx: Context) = try { ctx.packageManager.getPackageInfo("com.termux", 0); true } catch (_: Exception) { false }
-
-    const val TERMUX_FIX = "mkdir -p ~/.termux && echo \"allow-external-apps=true\" >> ~/.termux/termux.properties && termux-reload-settings"
-    private const val RESULT_ACTION = "com.blaze.assistant.TERMUX_RESULT"
-
-    /**
-     * Runs [cmd] in Termux and (in background mode) returns its real output. Sets itself up:
-     * asks Android for the "Run commands in Termux" permission with the system dialog (one tap,
-     * no Settings digging) and, if Termux still refuses, puts the one-line fix on the clipboard
-     * and opens Termux so the user only has to paste.
-     */
-    suspend fun runInTermux(ctx: Context, cmd: String, background: Boolean): String {
-        if (!termuxInstalled(ctx)) return "Termux isn't installed. ${BrandName.NAME}'s own Linux (run_code / run_shell) does the same job with no setup; use that."
-        val perm = "com.termux.permission.RUN_COMMAND"
-        if (!com.blaze.assistant.device.Perms.ensure(ctx, perm))
-            return "The user didn't allow 'Run commands in Termux' in the Android pop-up. Use ${BrandName.NAME}'s own Linux (run_code / run_shell) instead."
-        val id = System.nanoTime().toInt()
-        val result = kotlinx.coroutines.CompletableDeferred<android.os.Bundle?>()
-        val rx = object : android.content.BroadcastReceiver() {
-            override fun onReceive(c: Context, i: Intent) { result.complete(i.getBundleExtra("result")) }
-        }
-        val action = "$RESULT_ACTION.$id"
-        androidx.core.content.ContextCompat.registerReceiver(ctx, rx, android.content.IntentFilter(action), androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
-        val pi = android.app.PendingIntent.getBroadcast(ctx, id, Intent(action).setPackage(ctx.packageName),
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or (if (android.os.Build.VERSION.SDK_INT >= 31) android.app.PendingIntent.FLAG_MUTABLE else 0))
-        val i = Intent().setClassName("com.termux", "com.termux.app.RunCommandService").setAction("com.termux.RUN_COMMAND")
-            .putExtra("com.termux.RUN_COMMAND_PATH", "/data/data/com.termux/files/usr/bin/bash")
-            .putExtra("com.termux.RUN_COMMAND_ARGUMENTS", arrayOf("-lc", cmd))
-            .putExtra("com.termux.RUN_COMMAND_WORKDIR", "/data/data/com.termux/files/home")
-            .putExtra("com.termux.RUN_COMMAND_BACKGROUND", background)
-            .putExtra("com.termux.RUN_COMMAND_SESSION_ACTION", "0")
-            .putExtra("com.termux.RUN_COMMAND_PENDING_INTENT", pi)
-        return try {
-            if (android.os.Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(i) else ctx.startService(i)
-            val b = kotlinx.coroutines.withTimeoutOrNull(if (background) 120_000L else 8_000L) { result.await() }
-            val err = b?.getInt("err", -1) ?: -1
-            val errmsg = b?.getString("errmsg").orEmpty()
-            when {
-                b == null && background -> "Sent to Termux; no answer within 2 minutes (still running, or Termux blocked it silently). If nothing happened, call termux_run with command 'echo ok' to test the link."
-                b == null -> "Opened in a Termux window: $cmd"
-                errmsg.contains("allow-external-apps", true) || errmsg.contains("external app", true) -> needsFix(ctx)
-                else -> {
-                    val out = b.getString("stdout").orEmpty(); val se = b.getString("stderr").orEmpty()
-                    val code = if (b.containsKey("exitCode")) b.getInt("exitCode") else err
-                    buildString {
-                        append("exit ").append(code).append('\n')
-                        if (out.isNotBlank()) append(out.takeLast(6000))
-                        if (se.isNotBlank()) append("\n[stderr]\n").append(se.takeLast(3000))
-                        if (errmsg.isNotBlank() && out.isBlank()) append("\n[termux] ").append(errmsg.take(500))
-                    }
-                }
-            }
-        } catch (e: SecurityException) { needsFix(ctx) }
-        catch (e: Exception) { "Error: ${e.message}" }
-        finally { runCatching { ctx.unregisterReceiver(rx) } }
-    }
-
-    /** Termux blocks other apps until allow-external-apps is set inside Termux: copy the fix and open Termux. */
-    private fun needsFix(ctx: Context): String {
-        try { ctx.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(android.content.ClipData.newPlainText("Termux fix", TERMUX_FIX)) } catch (_: Exception) { }
-        try { ctx.packageManager.getLaunchIntentForPackage("com.termux")?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } } catch (_: Exception) { }
-        return "Termux is blocking other apps until one setting is on. ${BrandName.NAME} already copied the fix to the clipboard and opened Termux. " +
-            "Tell the user in ONE short line: 'Termux is open: long-press, tap Paste, press Enter, then come back.' When they're back, retry termux_run. " +
-            "(Better: ${BrandName.NAME}'s own Linux via run_code / run_shell needs none of this.)"
-    }
-
     // ---------- Tool definitions ----------
 
-    val names = setOf("run_shell", "terminal_jobs", "terminal_stop", "termux_run", "linux_install", "preview_server", Servers.NAME)
+    val names = setOf("run_shell", "terminal_jobs", "terminal_stop", "linux_install", "preview_server", Servers.NAME)
     private fun fn(name: String, desc: String, props: JSONObject, req: List<String>) = JSONObject().put("type", "function").put("function",
         JSONObject().put("name", name).put("description", desc).put("parameters", JSONObject().put("type", "object").put("properties", props).put("required", JSONArray(req))))
     private fun p(t: String, d: String) = JSONObject().put("type", t).put("description", d)
@@ -482,8 +413,9 @@ object Terminal {
         else "Run inside ${BrandName.NAME}'s ${TermLogic.distro(d)?.name ?: d} (${installHint(d)}, e.g. python3, nodejs, git) instead of the phone shell"
     }
 
-    /** v0.45.9: [tools] without the Termux check (no Context), so the full-list tests can build it on the JVM. */
-    fun tools(ctx: Context): List<JSONObject> = shellTools() + listOfNotNull(if (termuxInstalled(ctx)) termuxTool() else null)
+    /** The terminal tools ([shellTools]; v0.45.9 split kept so the full-list tests build it on the JVM). */
+    @Suppress("UNUSED_PARAMETER")
+    fun tools(ctx: Context): List<JSONObject> = shellTools()
 
     internal fun shellTools(): List<JSONObject> = buildList {
         add(fn("run_shell", "Run a shell command on the phone (Android sh + BusyBox: ls, cat, grep, sed, awk, wget, curl-less http via wget, tar, unzip, vi, nc, httpd, find, ps, top, df, du...). Working dir is ${BrandName.NAME}'s home (~). For a server the user will keep using (a site, a music or file server, an API), use the servers tool instead: it is named, kept running and restarted. Set background=true for downloads, scraping, one-off dev servers or anything over ~30 s: it keeps running if ${BrandName.NAME} is closed and the user gets a notification when it finishes or fails (optionally limit it with max_minutes). Returns exit code, current folder and output. The shell remembers cd between calls; put exports in ~/.blaze_env to keep them. For writing files use file_write, not echo/heredocs.",
@@ -497,8 +429,4 @@ object Terminal {
         add(fn("terminal_stop", "Stop a background shell job.", JSONObject().put("id", p("integer", "Job number")), listOf("id")))
         add(Servers.tool())
     }
-
-    private fun termuxTool(): JSONObject = fn("termux_run", "Run a command in the Termux app and get its output back. Only when the user wants Termux; ${BrandName.NAME}'s own Linux (run_code/run_shell) is the default. Sets itself up (permission pop-up, copies the one-line fix if Termux blocks it).",
-            JSONObject().put("command", p("string", "bash command")).put("background", p("boolean", "Run without opening a Termux window")), listOf("command"))
-
 }

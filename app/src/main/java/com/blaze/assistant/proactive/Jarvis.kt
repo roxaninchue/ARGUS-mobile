@@ -107,8 +107,6 @@ object Jarvis {
         val l = level
         if (l == Level.OFF || Proactive.quietNow() || busy() || !inUse()) return@withLock
         if (Proactive.paused) return@withLock   // owner 2026-11-19: heads-ups paused: no questions, glances, routine ideas or call offers
-        // v0.43.0: Bank mode on: no screen glances, camera looks or anything else until it's off.
-        if (com.blaze.assistant.bank.BankMode.active) return@withLock
         val lim = JarvisLogic.limits(l)
         val now = System.currentTimeMillis()
         val blazeFront = Awareness.get("screen") != null
@@ -221,19 +219,6 @@ object Jarvis {
 
     // ---------------- usage and its own routines ----------------
 
-    /** Today's top apps by screen time ("" without Usage access). */
-    fun usageToday(): String = try {
-        if (!com.blaze.assistant.home.HomeSources.usageAllowed(app)) "" else {
-            val usm = app.getSystemService(android.app.usage.UsageStatsManager::class.java)
-            val start = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) }.timeInMillis
-            val stats = usm?.queryAndAggregateUsageStats(start, System.currentTimeMillis()) ?: emptyMap()
-            val pm = app.packageManager
-            JarvisLogic.usageLine(stats.values.filter { it.packageName != app.packageName }.map { s ->
-                (try { pm.getApplicationLabel(pm.getApplicationInfo(s.packageName, 0)).toString() } catch (_: Throwable) { s.packageName }) to s.totalTimeInForeground
-            })
-        }
-    } catch (_: Throwable) { "" }
-
     private suspend fun selfRoutine(create: Boolean) {
         val existing = try { com.blaze.assistant.routine.Routines.all.value.joinToString("; ") { "${it.name} at %02d:%02d".format(it.hour, it.minute) } } catch (_: Throwable) { "" }
         val sys = "You are ${BrandName.NAME}, the user's phone assistant. Propose at most ONE routine you would run for them on a schedule that would genuinely help, " +
@@ -241,7 +226,7 @@ object Jarvis {
             "a weekly check-in on a goal). Never one that sends messages, spends money or deletes anything. Not a copy of an existing routine. ${Memory.promptBlock("routine habits").take(800)}\n" +
             "Reply ONLY with JSON: {\"name\": \"\" (empty = none), \"prompt\": \"what you will do each time, as an instruction to yourself\", \"hour\": 0-23, \"minute\": 0-59, " +
             "\"days\": bitmask Mon=1 Tue=2 Wed=4 Thu=8 Fri=16 Sat=32 Sun=64 (127 = every day), \"why\": \"one short sentence for the user\"}"
-        val idea = JarvisLogic.parseRoutine(llm(sys, "Existing routines: ${existing.ifBlank { "none" }}\nToday's usage: ${usageToday().ifBlank { "unknown" }}\n${Awareness.promptBlock()}")) ?: return
+        val idea = JarvisLogic.parseRoutine(llm(sys, "Existing routines: ${existing.ifBlank { "none" }}\n${Awareness.promptBlock()}")) ?: return
         val time = "%02d:%02d".format(idea.hour, idea.minute)
         if (create) {
             val r = com.blaze.assistant.routine.Routines.add(JarvisLogic.SELF_PREFIX + idea.name, idea.prompt, idea.hour, idea.minute, idea.days)

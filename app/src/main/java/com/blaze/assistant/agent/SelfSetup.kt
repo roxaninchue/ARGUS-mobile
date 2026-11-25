@@ -25,7 +25,6 @@ object SelfSetup {
     private fun perm(ctx: Context, p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
 
     fun audit(ctx: Context): List<Item> {
-        val overlay = android.provider.Settings.canDrawOverlays(ctx)
         val notifs = Build.VERSION.SDK_INT < 33 || perm(ctx, Manifest.permission.POST_NOTIFICATIONS)
         val mic = perm(ctx, Manifest.permission.RECORD_AUDIO)
         val battery = ctx.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(ctx.packageName) == true
@@ -35,15 +34,13 @@ object SelfSetup {
         val conns = try { com.blaze.assistant.connect.Connectors.connectedCount() } catch (_: Exception) { 0 }
         return listOf(
             Item("brain", "${BrandName.NAME} account", Settings.ready, "Needed to think and chat: ${BrandName.NAME} Cloud answers once you're signed in.", "open settings account and sign in", true),
-            Item("overlay", "Draw over apps", overlay, "Needed for the floating orb and the panel over other apps.", "open overlay", true),
             Item("microphone", "Microphone", mic, "Needed for voice and \u201cHey ${BrandName.NAME}\u201d.", "open app_permissions (or tap the mic in ${BrandName.NAME} once)", true),
             Item("notifications", "Notifications", notifs, "So ${BrandName.NAME} can tell you when tasks finish and send heads-ups.", "open app_permissions"),
             Item("wake_model", "\u201cHey ${BrandName.NAME}\u201d voice model", wakeModel, "Offline wake word (about 40 MB, one time).", "install wake_model"),
             Item("wake_word", "\u201cHey ${BrandName.NAME}\u201d listening", Settings.wakeWord && wakeModel, "Call ${BrandName.NAME} hands-free.", "action wake_on (after the model is installed)"),
             Item("assistant", "Default assistant", com.blaze.assistant.assist.BlazeInteractionService.isDefault(ctx), "Hold Home / power to call ${BrandName.NAME} over any app.", "open assistant"),
             Item("battery", "Unrestricted battery", battery, "Stops Android from killing ${BrandName.NAME} in the background (wake word, routines).", "open battery"),
-            Item("notification_access", "Notification access", com.blaze.assistant.notify.NotificationBrain.enabled(ctx), "Lets ${BrandName.NAME} read and reply to notifications and warn you about urgent ones.", "open notification_access"),
-            Item("skills", "Contacts, SMS, calls, calendar", skills.isEmpty(), if (skills.isEmpty()) "All granted." else "Missing: ${skills.joinToString()}.", "open settings control (grant them there)"),
+            Item("skills", "Calendar", skills.isEmpty(), if (skills.isEmpty()) "All granted." else "Missing: ${skills.joinToString()}.", "open settings control (grant them there)"),
             Item("fast_lane", "On-device fast lane", FastLane.ready(ctx), "Instant offline commands (about 35 MB).", "install fast_lane"),
             Item("terminal", "Terminal (shell + BusyBox)", java.io.File(ctx.applicationInfo.nativeLibraryDir, "libbusybox.so").exists(), "Built in; nothing to install.", "-"),
             Item("linux", "Linux (Alpine)", linux, "Real Linux for python3, node, git\u2026 (about 3.5 MB).", "install linux"),
@@ -73,10 +70,8 @@ object SelfSetup {
         val pkg = Uri.parse("package:" + ctx.packageName)
         val i: Intent? = when (target.lowercase().removePrefix("settings ").trim()) {
             "accessibility" -> Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-            "overlay" -> Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg)
             "app_permissions", "permissions", "microphone", "notifications" -> Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)
             "battery" -> Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            "notification_access" -> com.blaze.assistant.notify.NotificationBrain.settingsIntent()
             "assistant" -> { com.blaze.assistant.assist.BlazeInteractionService.openPicker(ctx); return "Opened the Digital assistant picker. Pick ${BrandName.NAME}." }
             "exact_alarms" -> if (Build.VERSION.SDK_INT >= 31) Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg) else null
             else -> null

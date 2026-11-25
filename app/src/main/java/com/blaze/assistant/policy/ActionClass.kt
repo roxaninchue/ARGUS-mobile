@@ -61,7 +61,7 @@ object ToolRegistry {
                     val arg: String = "action")
 
     /** Shell-like tools: classed per command by CommandPolicy (the registry's base is the fallback). */
-    val COMMAND_TOOLS = setOf("run_shell", "termux_run", "git")
+    val COMMAND_TOOLS = setOf("run_shell", "git")
 
     private fun d(c: ActionClass, vararg a: Pair<String, ActionClass>) = Decl(c, mapOf(*a))
 
@@ -82,7 +82,7 @@ object ToolRegistry {
             "phone_read", "phone_screenshot", "phone_status", "phone_wait", "processes", "project_docs_read", "project_docs_search",
             "read_artifact", "read_messages", "read_screen", "read_turn", "recall_memory", "recent_calls", "recent_notifications",
             "search_chat", "search_past_chats", "search_screen_memory", "self_test", "skill_file", "slack_channels", "slack_read",
-            "spotify_now_playing", "store_info", "store_search", "store_status", "terminal_jobs", "terminal_status", "use_skill", "wait",
+            "spotify_now_playing", "terminal_jobs", "terminal_status", "use_skill", "wait",
             "web_search")
         one("ask_user", Decl(READ, selfCard = true))
         // 2026-11-18: a PDF from this chat shown again (PdfPages); the Ask sheet's page tools (PageAgent) read like browser_*.
@@ -138,10 +138,9 @@ object ToolRegistry {
 
         // ---------------- SETTINGS: the phone's or ARGUS's settings, installs ----------------
         all(SETTINGS, "device_setting", "github_install_apk", "install_skill", "jarvis_mode", "linux_install",
-            "phone_mode", "store_install", "store_update", "update_blaze", "browser_vpn", "toggle_setting")
+            "phone_mode", "update_blaze", "browser_vpn", "toggle_setting")
         one("blaze_self", d(SETTINGS, "setup_check" to READ, "status" to READ))
         one("blazerouter", d(SETTINGS, "status" to READ, "dashboard" to READ))
-        one("bank_mode", d(SETTINGS, "status" to READ))
         one("call_copilot", d(SETTINGS, "status" to READ))
         one("halo_persona", d(SETTINGS, "list" to READ, "delete" to DELETE, "reset" to DELETE))
         one("skill_market", d(SETTINGS, "browse" to READ, "review" to READ, "share" to SEND))
@@ -157,11 +156,11 @@ object ToolRegistry {
         all(PHYSICAL, "blaze_camera", "browser_click", "browser_key", "browser_select", "browser_type", "compose_sms", "dial", "do_actions",
             "media_control", "navigate_to", "open_app", "open_camera", "open_settings", "open_settings_page", "open_url", "phone_act",
             "phone_handoff", "phone_open", "phone_task", "press_button", "run_plan", "scroll", "search_in_app", "set_volume", "spotify_control",
-            "spotify_play", "store_open", "system_action", "tap", "type_text")
+            "spotify_play", "system_action", "tap", "type_text")
         one("call_control", d(PHYSICAL, "status" to READ, "start_blaze_call" to SEND))
 
         // ---------------- commands: per command (CommandPolicy.actionClass); base = local work ----------------
-        all(WRITE_LOCAL, "run_shell", "termux_run")
+        all(WRITE_LOCAL, "run_shell")
         one("git", d(WRITE_LOCAL, "status" to READ, "log" to READ, "diff" to READ, "push" to WRITE_REMOTE))
         // owner 2026-11-20 terminal checkpoints: save / rollback change ARGUS's own terminal folders; delete drops a checkpoint
         one("terminal_checkpoint", d(WRITE_LOCAL, "list" to READ, "changes" to READ, "delete" to DELETE))

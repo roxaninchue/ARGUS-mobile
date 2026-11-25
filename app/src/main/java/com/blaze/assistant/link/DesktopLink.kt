@@ -264,14 +264,9 @@ object DesktopLink {
 
     fun stopInbox() { inbox?.cancel(); inbox = null; _connected.value = false }
 
-    /** A WhatsApp/Telegram reply drafted on the PC: the confirm card always shows, then Messaging sends it (v0.17.0). */
-    private suspend fun sendFromPc(id: String, s: PcMessages.Send) {
-        val reply = PcMessages.problem(s)?.let { "Not sent: $it" } ?: try {
-            PcMessages.outcome(withContext(Dispatchers.Main) {
-                com.blaze.assistant.phone.Messaging.run(com.blaze.assistant.agent.Agent.appContext(), JSONObject().put("to", s.to).put("text", s.text).put("app", s.app), always = true, from = pcName)
-            })
-        } catch (e: Exception) { "Not sent: the phone hit an error (${e.message})." }
-        runCatching { call("POST", "/v1/inbox/$id/reply", JSONObject().put("text", reply).toString(), 15_000) }
+    /** A WhatsApp/Telegram reply drafted on the PC (v0.17.0). The phone no longer sends messages (2026-11-25 permission trim), so the PC hears why. */
+    private suspend fun sendFromPc(id: String, @Suppress("UNUSED_PARAMETER") s: PcMessages.Send) {
+        runCatching { call("POST", "/v1/inbox/$id/reply", JSONObject().put("text", PcMessages.NOT_SENT).toString(), 15_000) }
     }
 
     private suspend fun answer(id: String, text: String) {

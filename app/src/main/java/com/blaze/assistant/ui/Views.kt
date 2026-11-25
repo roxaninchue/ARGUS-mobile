@@ -38,7 +38,6 @@ object Views {
         BlazeView("skills", "Skills", "Skill library: on, off, restore", page = "skills"),
         BlazeView("music", "Music", "${BrandName.NAME} Music: your songs, playlists, and songs to stream or download from YouTube", special = "music", aliases = listOf("songs", "player", "music player", "playlist", "playlists"), app = true, icon = "music"),
         BlazeView("video", "Movie", "${BrandName.NAME} Movie: movies and videos from YouTube, open-source providers you add, Jellyfin and your own videos; continue watching", special = "video", aliases = listOf("video", "videos", "movie", "movies", "films", "video player", "argus movie"), app = true, icon = "clapperboard"),
-        BlazeView("apps", "App Store", "Free open-source apps from their developers' own releases. Not made by Blazeinchue; install at your own risk", page = "appstore", aliases = listOf("app store", "appstore", "open source apps", "foss apps", "get apps"), app = true, icon = "blocks"),
         BlazeView("gallery", "Gallery", "Images, music and files ${BrandName.NAME} made", special = "gallery", app = true, icon = "image"),
         BlazeView("browser", "Browser", "${BrandName.NAME}'s own browser and tabs", special = "browser", app = true, icon = "globe"),
         BlazeView("phonebrowser", "${BrandName.NAME} Phone", "${BrandName.NAME}'s own phone browser: watch it log in and book, take control, hand back", special = "phonebrowser", aliases = listOf("blaze phone", "phone browser", "blaze phone browser", "blaze's phone"), app = true, icon = "smartphone"),

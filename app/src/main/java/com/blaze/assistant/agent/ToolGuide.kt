@@ -21,7 +21,6 @@ object ToolGuide {
         "run_shell" to "Not for writing files (file_write) or reading them (file_read); not for Python/Node snippets (run_code).",
         "run_code" to "For short programs and calculations. For long-running servers use run_shell background=true.",
         "file_write" to "Not for files the user should open (write here, then export_file).",
-        "termux_run" to "Only when Termux is needed; ${BrandName.NAME}'s own Linux (run_shell linux=true, run_code, git) needs no setup and returns output.",
         "linux_install" to "Rarely needed: run_code and git install Linux automatically.",
         "download_file" to "For files to keep. For API responses use http_request.",
         // Scheduling
@@ -32,11 +31,7 @@ object ToolGuide {
         "add_calendar_event" to "Phone calendar. For Google Calendar specifically use gcal_create.",
         "gcal_create" to "Google Calendar via the connected account. For the phone's own calendar use add_calendar_event.",
         // Messaging
-        "send_sms" to "Plain SMS only. For WhatsApp/Telegram or pictures use message_contact.",
-        "send_text" to "Plain SMS (quick lane). For WhatsApp/Telegram or pictures use message_contact.",
-        "message_contact" to "WhatsApp/Telegram/SMS to a person, text and/or a picture (image=\"last\" after generate_image). Finds the contact itself; several matches come back as options to ask about. Only a 'Sent to' result means sent.",
-        "compose_sms" to "Opens a filled-in SMS for the user to send themselves. To send directly use send_sms.",
-        "find_contact" to "Phone contacts (the same ones WhatsApp uses; emoji names and small typos match). Search with the shortest part of the name. For Google contacts use gcontacts_search; to add or change one use add_contact/edit_contact.",
+        "compose_sms" to "Opens a filled-in SMS for the user to send themselves. ${BrandName.NAME} never sends texts itself.",
         // Screen
         "open_app" to "To open an app AND search inside it use search_in_app.",
         // Memory

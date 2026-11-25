@@ -479,16 +479,6 @@ open class ShotsTest {
                 previewToday = 12 * 60_000L, previewChunks = 3, previewModel = false)
         }
     }
-    @Test fun replies() {
-        val n = com.blaze.assistant.notify.Conversations
-        n.reset()
-        n.add("com.whatsapp", "WhatsApp", "Gloria", false, listOf(com.blaze.assistant.notify.Conversations.Msg(t0, "Gloria", "Can you send the CIT102 notes?")), null)
-        n.add("com.whatsapp", "WhatsApp", "CS Year 2", true, listOf(com.blaze.assistant.notify.Conversations.Msg(t0 - 60_000, "Mutale", "Lab moved to 14:00")), null)
-        n.add("com.google.android.apps.messaging", "Messages", "Mum", false, listOf(com.blaze.assistant.notify.Conversations.Msg(t0 - 120_000, "Mum", "Call me tonight")), null)
-        try { n.setAuto("wa:gloria", true) } catch (_: Throwable) { }
-        shot("28-replies") { SettingsFrame("Notification replies") { RepliesPage(previewAccess = true) } }
-    }
-
     // v0.23.0: views + skills. "Make flashcards" → skills on the work card, a Learn deck, a short reply.
     @Test fun viewsSkills() = shot("35-views-skills") {
         Column(Modifier.fillMaxSize()) {
@@ -567,24 +557,6 @@ open class ShotsTest {
             }
         }
     }
-
-    // v0.24.5: the floating work banner (rounded dark card, mascot in a spinning ring, Stop pill) over a light and a dark app, and the Argus menu.
-    @Test fun workBanner() = shot("47-work-banner") {
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFFF4F4F4)).padding(top = 36.dp, start = 12.dp, end = 12.dp)) {
-                TaskCard(onOpen = {}, onStop = {}, step0 = "Opening YouTube and searching \u201clofi\u201d", tasks0 = 1)
-            }
-            Box(Modifier.fillMaxWidth().weight(1f).background(androidx.compose.ui.graphics.Color(0xFF111110)).padding(top = 36.dp, start = 12.dp, end = 12.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    TaskCard(onOpen = {}, onStop = {}, step0 = "Comparing prices at 3 shops", tasks0 = 2)
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) { BlazeMenuCard(listOf("Close all tabs" to {}, "New tab" to {})) }
-                }
-            }
-        }
-    }
-
-    // v0.23.4: Settings › Brains / Auto, models per provider with cooling counts, one provider opened.
-
 
     private fun fakePicture(seed: Int): androidx.compose.ui.graphics.ImageBitmap {
         val b = Bitmap.createBitmap(480, 360, Bitmap.Config.ARGB_8888)

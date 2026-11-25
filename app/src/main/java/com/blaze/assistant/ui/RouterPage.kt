@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 
-/** Settings › BlazeRouter: run the router (Alpine, Termux or directly), use it as the brain, open its dashboard. */
+/** Settings › BlazeRouter: run the router (Alpine or directly), use it as the brain, open its dashboard. */
 @Composable
 internal fun RouterPage(onClassic: () -> Unit) {
     val c = LocalBlaze.current.mono
@@ -74,11 +74,11 @@ internal fun RouterPage(onClassic: () -> Unit) {
             val on = runner == r
             Box(Modifier.then(if (on) Modifier.background(c.ink, PageGlass.row).hairline(c.ink, PageGlass.row) else Modifier.pageGlass(c, PageGlass.row, alpha = 0.06f)).clickable { runner = r; BlazeRouter.runner = r }
                 .padding(horizontal = 12.dp, vertical = 8.dp)) {
-                ButtonText(when (r) { "auto" -> "Auto"; "alpine" -> "Alpine"; "termux" -> "Termux"; else -> "Direct" }, color = if (on) c.paper else c.ink, size = 13.sp)
+                ButtonText(when (r) { "auto" -> "Auto"; "alpine" -> "Alpine"; else -> "Direct" }, color = if (on) c.paper else c.ink, size = 13.sp)
             }
         }
     }
-    Text(tr("Auto tries {0}'s Alpine Linux first, then Termux, then runs it straight from {1}.", BrandName.NAME, BrandName.NAME), modifier = Modifier.padding(top = 6.dp),
+    Text(tr("Auto tries {0}'s Alpine Linux first, then runs it straight from {1}.", BrandName.NAME, BrandName.NAME), modifier = Modifier.padding(top = 6.dp),
         style = TextStyle(fontFamily = Type.Sans, fontSize = 12.sp, color = c.sub))
     Spacer(Modifier.height(16.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

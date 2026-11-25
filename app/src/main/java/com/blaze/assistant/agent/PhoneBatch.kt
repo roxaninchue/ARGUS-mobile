@@ -42,7 +42,7 @@ object PhoneBatch {
     const val NOT_RUN = "Not run: an earlier step failed or was declined."
     /** Result starts that mean the step didn't happen (FastLane.FAIL_STARTS + refusals and gates). */
     val FAIL_STARTS = listOf("Error", "Not run", "Not done", "Not saved", "Refused", "Blocked", "Plan mode:", "Private chat:",
-        "Couldn't", "Could not", "Unknown", "No app", "No installed app", "Failed", "Can't", "Cannot", "Bank mode is on")
+        "Couldn't", "Could not", "Unknown", "No app", "No installed app", "Failed", "Can't", "Cannot")
 
     fun parse(o: JSONObject?): Batch? = try {
         if (o == null) null else {

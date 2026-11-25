@@ -36,30 +36,12 @@ object ClipAccess {
 
     private fun cm(ctx: Context) = ctx.getSystemService(ClipboardManager::class.java)
 
-    /** Run [block] while Argus holds input focus, so Android allows clipboard reads. */
-    private suspend fun <T> withFocus(ctx: Context, block: () -> T): T = withContext(Dispatchers.Main) {
-        if (Agent.inForeground) return@withContext block()
-        val (host, type) = if (android.provider.Settings.canDrawOverlays(ctx)) ctx.applicationContext to WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else return@withContext block() // no way to take focus; try anyway (works on older Android)
-        val wm = host.getSystemService(WindowManager::class.java)
-        val focused = CompletableDeferred<Unit>()
-        val v = object : View(host) {
-            override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
-                super.onWindowFocusChanged(hasWindowFocus)
-                if (hasWindowFocus) focused.complete(Unit)
-            }
-        }
-        val lp = WindowManager.LayoutParams(1, 1, type,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START }
-        try {
-            wm.addView(v, lp)
-            withTimeoutOrNull(800) { focused.await() }
-            block()
-        } finally {
-            try { wm.removeView(v) } catch (_: Exception) { }
-        }
-    }
+    /**
+     * Run [block] on the main thread. Android lets an app read the clipboard only while it has input focus; the 1-px
+     * overlay window that took focus from the background went with SYSTEM_ALERT_WINDOW (2026-11-25), so a background read
+     * gets what Android allows (older Android: everything; newer: nothing until Argus is open).
+     */
+    private suspend fun <T> withFocus(@Suppress("UNUSED_PARAMETER") ctx: Context, block: () -> T): T = withContext(Dispatchers.Main) { block() }
 
     /** What's on the clipboard now: its text and any files/images. */
     suspend fun read(ctx: Context): Clip? {

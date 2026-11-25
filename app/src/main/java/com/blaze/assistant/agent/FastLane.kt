@@ -118,9 +118,6 @@ object FastLane {
         put(fn("set_volume", "Change the volume", JSONObject().put("level", e("up", "down", "mute", "max")), listOf("level")))
         put(fn("media_control", "Control music or video playback", JSONObject().put("action", e("play", "pause", "next", "previous")), listOf("action")))
         put(fn("battery_level", "Tell the battery level", JSONObject(), emptyList()))
-        put(fn("call_contact", "Phone someone", JSONObject().put("name", p("string", "Contact name or number")), listOf("name")))
-        put(fn("send_text", "Send an SMS text message", JSONObject().put("to", p("string", "Contact name or number"))
-            .put("message", p("string", "Message text")), listOf("to", "message")))
         put(fn("web_search", "Search the web", JSONObject().put("query", p("string", "Search words")), listOf("query")))
         put(fn("navigate_to", "Get directions to a place in maps", JSONObject().put("place", p("string", "Destination")), listOf("place")))
     }
@@ -206,7 +203,7 @@ object FastLane {
         val name = call.optString("name")
         val a = call.optJSONObject("arguments") ?: JSONObject()
         val reply = one.run(name, a) ?: return null
-        if (conf >= 0.5 && name !in setOf("send_text", "call_contact", "web_search")) IntentCache.put(text, name, a)
+        if (conf >= 0.5 && name !in setOf("web_search")) IntentCache.put(text, name, a)
         return Result(reply, System.currentTimeMillis() - t0, name)
     }
 
@@ -342,8 +339,6 @@ object FastLane {
         // 0.45.15 (review 22 Oct #7): "Done: play." / "Directions … are open." were said without checking anything. Media keys
         // and directions go through the agent, which reads the player state / the front app back (ToolVerify).
         "media_control" -> null
-        "call_contact" -> Skills.run(ctx, "call_number", JSONObject().put("to", a.optString("name")))
-        "send_text" -> Skills.run(ctx, "send_sms", JSONObject().put("to", a.optString("to")).put("message", a.optString("message")))
         "web_search" -> null   // the cloud agent searches properly (in-app or web_search)
         "navigate_to" -> null
         "blaze_self" -> SelfSetup.open(ctx, a.optString("target"))

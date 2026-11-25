@@ -62,7 +62,7 @@ object TurnContextSource {
             if (installed != v && installed != "0.45.9") null
             else TurnContext.newInLine(v, Settings.str(NEW_IN_SEEN), Settings.int(NEW_IN_SHOWN, 0))
         } catch (_: Throwable) { null }
-        return TurnContext.block(TurnContext.Inputs(now, weather(), entries, dates, open(), newIn, calendarOff = !calendarAllowed()))
+        return TurnContext.block(TurnContext.Inputs(now, weather(), entries, dates, emptyList(), newIn, calendarOff = !calendarAllowed()))
     }
 
     /**
@@ -165,19 +165,10 @@ object TurnContextSource {
             calendar = calendarAllowed() || conn("google"),
             weather = signed || weather() != null,
             music = music,
-            sms = granted(Manifest.permission.SEND_SMS),
-            calls = granted(Manifest.permission.CALL_PHONE),
-            contacts = granted(Manifest.permission.READ_CONTACTS),
+            // 2026-11-25 permission trim: SMS, calls, contacts and location left the app, so chips never offer them.
+            sms = false, calls = false, contacts = false,
             email = conn("google"),
-            location = granted(Manifest.permission.ACCESS_COARSE_LOCATION),
+            location = false,
             phoneControl = false)   // 0.55.18: phone control left the app
     }
-
-    /** 1–3 unfinished things: live follow-ups first. */
-    private fun open(): List<String> = try {
-        val now = System.currentTimeMillis()
-        com.blaze.assistant.proactive.FollowUps.all().filter { com.blaze.assistant.proactive.FollowUpLogic.live(it, now) && it.needsReply && !it.replied }
-            .sortedByDescending { it.created }.take(3).map { i ->
-                "reply to ${i.person.ifBlank { i.conv }}" + (if (i.topic.isNotBlank()) " about ${i.topic}" else "") + (if (i.whenText.isNotBlank()) " (${i.whenText})" else "") }
-    } catch (_: Throwable) { emptyList() }
 }

@@ -253,8 +253,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
     private val askLock = kotlinx.coroutines.sync.Mutex()
 
     /**
-     * Pause the task and ask the user. In Argus it's a card in the chat; over another app the
-     * orb panel pops up with the question so the task continues right where it is.
+     * Pause the task and ask the user. In Argus it's a card in the chat; while the user is in another app a
+     * notification asks (the panel over other apps left with SYSTEM_ALERT_WINDOW, 2026-11-25).
      */
     suspend fun askUser(question0: String, options: List<String>, chat: String): String = askLock.withLock {
         val tag = kotlin.coroutines.coroutineContext[BgAgents.Tag]
@@ -262,12 +262,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         val d = kotlinx.coroutines.CompletableDeferred<String>()
         tag?.let { BgAgents.setWaiting(it.id, true) }
         _question.value = PendingQuestion(question, options.filter { it.isNotBlank() }.take(5), chat, d)
-        var popped = false
-        if (!inForeground && !overlayOpen) {
-            if (com.blaze.assistant.ui.Overlay.canDrawOverApps(app)) {
-                kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Overlay.openPanel(app, false) }; popped = true
-            } else Notifier.question(question)
-        }
+        if (!inForeground && !overlayOpen) Notifier.question(question)
         if (Voice.lastTurnByVoice && Voice.shouldSpeak()) Voice.speak(question)
         // Autopilot: the card stays up for two minutes in case they're there, then Argus decides itself.
         val ap = Modes.autopilot
@@ -276,7 +271,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         tag?.let { BgAgents.setWaiting(it.id, false) }
         _question.value = null
         Notifier.clearQuestion()
-        if (popped && a != null) kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.ui.Overlay.closePanel() }
         a ?: if (ap) Modes.AUTO_PREFIX + Modes.AUTO_REPLY else "(The user didn't answer within 15 minutes. Stop and say what you need.)"
     }
 
@@ -1404,7 +1398,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "Never tell the user you can't make images or music. " +
                     "DO IT, DON'T DIRECT: when something needs a permission or a setting, YOU fix it: ask with the tool that triggers Android's own pop-up, open the exact screen with blaze_self open or open_settings, and tell the user the one switch to flip there. " +
                     "Never hand the user a numbered list of where to tap in Settings; only if you tried and truly can't, say the ONE thing they must tap. Never ask them to type terminal commands: run them yourself. " +
-                    "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell) first; Termux only if the user asks for it. " +
+                    "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell). " +
                     "generate_image is ONLY for art and photos; charts, graphs and tables are made with run_code; a PDF, Word document or PowerPoint deck is ONE make_document call (never a reportlab / python-pptx script). If the terminal fails, say so plainly; never substitute an AI picture.")
             } else turn("make", if (prof.simple) PromptProfile.MAKE_SIMPLE else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             tail("setup") { SelfSetup.promptLine(app) }
@@ -1451,11 +1445,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         com.blaze.assistant.phone.AndroidControl.tools().forEach { t.put(it) }
         t.put(Autonomy.findToolDef()); t.put(Autonomy.goalTool()); t.put(Autonomy.permissionTool())
         com.blaze.assistant.proactive.Triggers.tools().forEach { t.put(it) }
-        t.put(com.blaze.assistant.phone.Ussd.tool())
-        t.put(com.blaze.assistant.phone.Messaging.tool())
         com.blaze.assistant.browser.BrowserTools.definitions().forEach { t.put(it) }
         t.put(SecretDesk.toolDef())   // 0.46.6 Secure form
-        com.blaze.assistant.appstore.StoreTools.definitions().forEach { t.put(it) }   // 0.45.19 App Store
         PhoneBrowserTools.definitions().forEach { t.put(it) }   // 0.45.19 Argus Phone browser
         PhoneInstanceTools.definitions().forEach { t.put(it) }   // Argus Phone power + instances (catalog, docs/PHONE-INSTANCES.md)
         // 16 Nov 2026 (Finn): the terminal and the specialists are always on (their switches left Settings with Jobs and Team & bots).
@@ -1477,8 +1468,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(SelfKnowledge.tool())
         t.put(Awareness.tool())
         t.put(com.blaze.assistant.proactive.Jarvis.tool())
-        t.put(com.blaze.assistant.bank.BankMode.tool())   // v0.43.0 Bank mode
-        t.put(com.blaze.assistant.proactive.FollowUps.tool())
         BlazeDocs.tools().forEach { t.put(it) }
         // v0.28.5: a project's full instructions / brief / notes as lookups; stripped from every chat that isn't in a project.
         ProjectDocs.tools().forEach { t.put(it) }
@@ -1494,8 +1483,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         if (Designs.templateLoader == null) Designs.templateLoader = { app.assets.open("skills/three-d-design/assets/mockup.html").bufferedReader().use { it.readText() } }
         t.put(Designs.tool())
         t.put(Seller.tool())
-        if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.NotificationBrain.tools().forEach { t.put(it) }
-        if (com.blaze.assistant.notify.NotificationBrain.instance != null) com.blaze.assistant.notify.Conversations.tools().forEach { t.put(it) }
         t.put(com.blaze.assistant.life.LifeLogs.tool())
         t.put(com.blaze.assistant.mediaapps.MediaFetch.tool())
         t.put(com.blaze.assistant.mediaapps.VideoTools.tool())   // v0.34.0
@@ -1504,8 +1491,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.mediaapps.MusicTools.tool())   // v0.34.0
         t.put(com.blaze.assistant.media.GalleryOps.tool())   // v0.34.0
         t.put(com.blaze.assistant.device.CameraMathTool.tool())   // v0.34.0
-        t.put(com.blaze.assistant.notify.MoneyRadar.tool())
-        t.put(com.blaze.assistant.phone.SafeWalk.tool())
         t.put(com.blaze.assistant.device.PhoneHealth.tool())
         t.put(TimeCapsule.tool())
         t.put(com.blaze.assistant.agent.query.QueryRuntime.tool())   // 0.51.0 BlazeQuery research (Halo Persona Studio tool removed)
@@ -1513,10 +1498,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         t.put(com.blaze.assistant.mediaapps.BeatLab.tool())
         t.put(com.blaze.assistant.mediaapps.ClipStudio.tool())
         t.put(DuoWorkspace.tool())
-        t.put(com.blaze.assistant.phone.CallCopilot.tool())
         t.put(com.blaze.assistant.mediaapps.CoverArt.tool())
         t.put(com.blaze.assistant.voice.ReadAloud.tool())
-        t.put(com.blaze.assistant.notify.GroupBrain.tool())
         // 0.55.0 lean harness (LeanTurn): the two catalog tools, and the phone's own tool rows in the blaze.db catalog.
         LeanTurn.areas = try { LeanAreas.all() } catch (_: Throwable) { emptyList() }   // 0.55.5: find_tools lists every area
         t.put(LeanTurn.findDef()); t.put(LeanTurn.loadSkillDef())
@@ -4632,7 +4615,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         }
 
 
-        /** 0.50.0: screen actions light the edge particles while they run (ScreenWork → ui.ScreenGlow). */
         /** 0.52.1 (MemoryLoop): memory lookups this turn, and the song a song-download turn has resolved ("" = none yet). */
         @Volatile var memoryLookups = 0
         @Volatile var songResolved = ""
@@ -4644,17 +4626,11 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (MemoryLoop.isLookup(name)) memoryLookups++
             if (TeamHooks.isBound(id)) TeamHooks.call(id, name, SecretVault.scrub(args.toString()))
             val toolT0 = System.currentTimeMillis()
-            val out = try { com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolScreen(name, args, shots) } }   // P1-TM-05 job tools; P2-SF-01 policy
+            val out = try { com.blaze.assistant.policy.PolicyRuntime.run(id, name, args.toString(), agentPlan) { TeamHooks.runTool(id, name, args.toString()) ?: runToolInner(name, args, shots) } }   // P1-TM-05 job tools; P2-SF-01 policy
                 finally { CallState.current().timing.tool(name, System.currentTimeMillis() - toolT0) }   // 0.54.6 TurnTiming: tool round trip (confirm waits included)
             if (TeamHooks.isBound(id)) TeamHooks.result(id, name, SecretVault.scrub(out)); ToolTrail.result(id, Friendly.exact(name, args)) { SecretVault.scrub(out) }   // M4 tool rows
             if (songResolved.isBlank() && MemoryLoop.songAsk(user)) try { MemoryLoop.learn(name, args.toString(), out)?.let { songResolved = it } } catch (e: Throwable) { com.blaze.assistant.device.CrashLog.quiet("Agent: MemoryLoop", e) }
             return out
-        }
-
-        private suspend fun runToolScreen(name: String, args: JSONObject, shots: MutableList<String>): String {
-            if (!com.blaze.assistant.phone.ScreenWork.isScreenTool(name)) return runToolInner(name, args, shots)
-            val tok = com.blaze.assistant.phone.ScreenWork.begin()
-            try { return runToolInner(name, args, shots) } finally { com.blaze.assistant.phone.ScreenWork.end(tok) }
         }
 
         private suspend fun runToolInner(name: String, args: JSONObject, shots: MutableList<String>): String {
@@ -4677,10 +4653,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
             if (agentId == null) FollowUpBind.toolGate(turnBind, name, args.toString())?.let { (t, d) ->
                 if (!confirm(t, d, "Do it", always = true)) return FollowUpBind.REFUSED
             }
-            // v0.43.0 Bank mode: Argus has stepped back, so it doesn't look at or act on the screen until the user turns it off.
-            if (com.blaze.assistant.bank.BankMode.active && (name in Orient.acting || name in Orient.looking || name == "open_app" || name == "search_in_app"))
-                return "Bank mode is on: ${BrandName.NAME} has stepped back so the user's banking app works, and doesn't read or use the screen. " +
-                    "Tell the user, and offer to turn Bank mode off (bank_mode action=off) when they're done banking."
             deviceLast(name, args)?.let { return it }
             val undoBefore = UndoCenter.snapshot(name)
             // 0.46.6 Secure form: {{secret:…}} handles become values here, on the phone, only for the hosts they were saved for;
@@ -4961,8 +4933,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 BlazeDocs.TOOL_READ -> { add(Role.STEP, "Reading ${BrandName.NAME}'s docs"); kotlinx.coroutines.withContext(Dispatchers.IO) { BlazeDocs.read(args) } }
                 ProjectDocs.TOOL_SEARCH -> { add(Role.STEP, "Checking the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.search(id, args) } }
                 ProjectDocs.TOOL_READ -> { add(Role.STEP, "Reading the project's notes"); kotlinx.coroutines.withContext(Dispatchers.IO) { ProjectDocs.read(id, args) } }
-                com.blaze.assistant.proactive.FollowUps.TOOL -> { add(Role.STEP, "Checking what you need to get back to"); com.blaze.assistant.proactive.FollowUps.run(args) }
-                com.blaze.assistant.bank.BankMode.TOOL -> { add(Role.STEP, if (args.optString("action") == "off") "Turning Bank mode off" else if (args.optString("action") == "on") "Turning Bank mode on" else "Checking Bank mode"); com.blaze.assistant.bank.BankMode.runTool(app, args) }
                 com.blaze.assistant.proactive.Jarvis.TOOL -> { add(Role.STEP, "Changing how often I reach out"); com.blaze.assistant.proactive.Jarvis.run(args) }
                 Awareness.TOOL -> { add(Role.STEP, "Checking what's going on"); kotlinx.coroutines.withContext(Dispatchers.IO) { Awareness.report(com.blaze.assistant.ui.Views.all.map { Triple(it.name, it.id, it.desc) }) } }
                 SelfKnowledge.TOOL -> { add(Role.STEP, "Checking my own setup"); kotlinx.coroutines.withContext(Dispatchers.IO) { SelfKnowledge.report(app, args.optString("section")) } }
@@ -5034,13 +5004,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             com.blaze.assistant.terminal.StorageAccess.granted(app))) + cpNote
                     }
                 }
-                "run_ussd" -> {
-                    val code = args.optString("code")
-                    add(Role.STEP, "Dialling $code")
-                    if (com.blaze.assistant.phone.Ussd.risky(code) && !confirm("Dial $code?", "This looks like a mobile money or multi-step code.", "Dial", always = true))
-                        "The user did NOT approve dialling $code."
-                    else com.blaze.assistant.phone.Ussd.run(app, code)
-                }
                 in com.blaze.assistant.terminal.DevTools.names -> {
                     add(Role.STEP, when (name) {
                         "run_code" -> "Running ${args.optString("language", "code")}"
@@ -5097,7 +5060,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (args.optString("action")) { "start" -> "Starting the ${args.optString("name").ifBlank { "" }} server".replace("  ", " "); "stop" -> "Stopping a server"; "restart" -> "Restarting a server"; "logs" -> "Reading a server's log"; else -> "Checking the servers" })
                     kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Servers.run(args) }
                 }
-                "termux_run" -> { add(Role.STEP, "Termux: " + args.optString("command").take(60)); com.blaze.assistant.terminal.Terminal.runInTermux(app, args.optString("command"), args.optBoolean("background", true)) }
                 "delegate" -> delegate(args)
                 "create_specialist" -> createSpecialist(args)
                 "recall_memory" -> { add(Role.STEP, if (MemoryIntent.meansAll(args.optString("query"))) "Looking through what I remember" else "Checking memory"); Memory.recall(args.optString("query")) }
@@ -5148,7 +5110,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 in BgAgents.toolNames -> BgAgents.run(name, args, id)
                 "call_control" -> {
                     add(Role.STEP, when (args.optString("action")) { "speaker" -> if (args.optBoolean("on", true)) "Loudspeaker on" else "Loudspeaker off"; "mute" -> if (args.optBoolean("on", true)) "Muting" else "Unmuting"
-                        "end" -> "Hanging up"; "answer" -> "Answering"; "decline" -> "Declining"; "start_blaze_call" -> "Starting a call"; "keypad" -> "Pressing ${args.optString("digits")}"; else -> "Call controls" })
+                        "end" -> "Hanging up"; "start_blaze_call" -> "Starting a call"; else -> "Call controls" })
                     com.blaze.assistant.phone.CallControl.run(app, args)
                 }
                 "clipboard" -> {
@@ -5220,19 +5182,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (name) { "run_skill" -> "Replaying skill \"${args.optString("name")}\""; "skill_manage" -> "Saving a skill"; else -> "Searching past chats" })
                     try { Learning.run(app, name, args).let { if (name == "run_skill") noteSkill(args, it) else it } } catch (e: CancellationException) { throw e } catch (e: Exception) { "Error: ${e.message}" }
                 }
-                "recent_notifications" -> { add(Role.STEP, "Checking notifications"); com.blaze.assistant.notify.NotificationBrain.list(args.optString("app").ifBlank { null }, args.optDouble("hours", 6.0)) }
-                com.blaze.assistant.phone.Messaging.NAME -> { add(Role.STEP, "Messaging ${args.optString("to")}"); com.blaze.assistant.phone.Messaging.run(app, args) }
                 com.blaze.assistant.browser.BrowserTools.SECURE -> secureInput(args)
                 SecretDesk.TOOL -> {
                     mood = Mood.IDLE
                     val r = SecretDesk.run(args, { add(Role.STEP, it) }, away = { label -> if (!inForeground) Notifier.actionRequired(label, "Secure form") }, context = lastUserText())
                     mood = Mood.ACTING
                     r
-                }
-                in com.blaze.assistant.appstore.StoreTools.names -> {
-                    com.blaze.assistant.appstore.AppStore.init(app); com.blaze.assistant.appstore.AppStore.refresh()
-                    add(Role.STEP, com.blaze.assistant.appstore.StoreTools.describe(name, args))
-                    com.blaze.assistant.appstore.StoreTools.run(name, args) { t, d -> confirm(t, d, "install", always = true) }
                 }
                 in PhoneBrowserTools.names -> {
                     // 0.45.19 Argus Phone: one screen, so parallel specialists take turns (the first to use it holds it).
@@ -5254,7 +5209,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, com.blaze.assistant.browser.BrowserTools.describe(name, args))
                     com.blaze.assistant.browser.BrowserTools.run(app, name, args)
                 }
-                "reply_to_notification" -> { add(Role.STEP, "Replying"); com.blaze.assistant.notify.NotificationBrain.reply(app, args.optInt("number"), args.optString("text")) }
                 com.blaze.assistant.phone.SettingsJump.TOOL -> com.blaze.assistant.phone.SettingsJump.run(app, args)
                 else -> when {
                     name in LongChat.names -> longChatTool(name, args)
@@ -5267,12 +5221,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                             "cache_summarize" -> "Reading the whole document"; "cache_toc" -> "Looking at the document's contents"; else -> "Reading the document" })
                         com.blaze.assistant.memory.CacheTier.run(name, args, id)
                     }
-                    name == "notif_reply" -> { add(Role.STEP, "Replying to ${args.optString("conversation").take(40)}")
-                        com.blaze.assistant.notify.Conversations.reply(app, args.optString("conversation"), args.optString("text")) }
-                    name in com.blaze.assistant.notify.Conversations.toolNames -> { add(Role.STEP, if (name == "notif_read") "Reading the chat with ${args.optString("conversation").take(40)}" else "Checking your chats")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.Conversations.run(app, name, args) } }
-                    name == com.blaze.assistant.phone.SafeWalk.TOOL -> { add(Role.STEP, "Safe Walk")
-                        com.blaze.assistant.phone.SafeWalk.run(app, args) }
                     name == com.blaze.assistant.device.PhoneHealth.TOOL -> { add(Role.STEP, "Checking your phone's health")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.device.PhoneHealth.run(app, args) } }
                     name == com.blaze.assistant.mediaapps.CoverArt.TOOL -> { add(Role.STEP, "Forging cover art")
@@ -5287,19 +5235,14 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         Marketplace.run(app, args) }
                     name == DuoWorkspace.TOOL -> { add(Role.STEP, "Workspace: ${args.optString("action")}")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { DuoWorkspace.run(app, args) } }
-                    name == com.blaze.assistant.phone.CallCopilot.TOOL -> { add(Role.STEP, "Call Copilot"); com.blaze.assistant.phone.CallCopilot.run(app, args) }
                     name == HaloStudio.TOOL -> "Halo is now part of ${BrandName.NAME} (0.51.0): there's no separate Halo persona to tune. Change ${BrandName.NAME}'s personality in Settings › Personality."
                     name == com.blaze.assistant.agent.query.QueryRuntime.TOOL -> {
                         add(Role.STEP, "Researching \u201c${args.optString("question").take(50)}\u201d")
                         val recent = try { msgs.takeLast(8).filter { it.role == Role.USER || it.role == Role.BLAZE }.map { it.text.take(300) } } catch (_: Throwable) { emptyList() }
                         com.blaze.assistant.agent.query.QueryRuntime.runTool(args, id, recent, isPrivate) { line -> scope.launch { if (mood != Mood.IDLE) status = line } }
                     }
-                    name == com.blaze.assistant.notify.GroupBrain.TOOL -> { add(Role.STEP, "Reading ${args.optString("group").take(40)}")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.GroupBrain.run(args) } }
                     name == TimeCapsule.TOOL -> { add(Role.STEP, if (args.optString("action") == "seal") "Sealing a time capsule" else "Time capsules")
                         kotlinx.coroutines.withContext(Dispatchers.IO) { TimeCapsule.run(app, args) } }
-                    name == com.blaze.assistant.notify.MoneyRadar.TOOL -> { add(Role.STEP, "Checking Money Radar")
-                        kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.notify.MoneyRadar.run(app, args) } }
                     name == com.blaze.assistant.device.CameraMathTool.TOOL -> { add(Role.STEP, "Working it out")
                         com.blaze.assistant.device.CameraMathTool.run(args) }
                     name == com.blaze.assistant.media.GalleryOps.TOOL -> { add(Role.STEP, com.blaze.assistant.media.GalleryOps.describe(args))

@@ -31,7 +31,6 @@ object SetupGate {
         Dep("linux", "Terminal (Linux)", "A small Linux on the phone (about 3.5 MB) for scripts, files, code and the tools ${BrandName.NAME} runs.", required = true),
         // 0.45.20 (item 15): no "accessibility" step (0.55.11: phone control is gone altogether).
         Dep("mic", "Microphone", "For talking to ${BrandName.NAME} and \u201cHey ${BrandName.NAME}\u201d.", required = false),
-        Dep("overlay", "Show over other apps", "So ${BrandName.NAME} can pop up wherever you are.", required = false),
         Dep("battery", "Keep working in the background", "Stops the phone putting ${BrandName.NAME} to sleep halfway through a job.", required = false),
         Dep("desktop", "Pair with ${BrandName.NAME} Desktop", "Share chats, keys and files with ${BrandName.NAME} on your computer (scan the code in ${BrandName.NAME} Desktop \u203a Phone).", required = false),
     )
@@ -64,7 +63,6 @@ object SetupGate {
         "notifications" to (Build.VERSION.SDK_INT < 33 || granted(ctx, Manifest.permission.POST_NOTIFICATIONS)),
         "linux" to try { com.blaze.assistant.terminal.Distros.installed(com.blaze.assistant.terminal.Distros.setupId()) || !com.blaze.assistant.terminal.Linux.supported() } catch (_: Throwable) { true },
         "mic" to granted(ctx, Manifest.permission.RECORD_AUDIO),
-        "overlay" to android.provider.Settings.canDrawOverlays(ctx),
         "battery" to (ctx.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(ctx.packageName) == true),
         "desktop" to try { com.blaze.assistant.link.DesktopLink.paired } catch (_: Throwable) { false },
     )

@@ -53,7 +53,7 @@ object SelfCheck {
         val L = com.blaze.assistant.terminal.Linux
         val linuxOk = if (L.installed()) try { withTimeoutOrNull(30_000) { T.run("echo linux-ok", 25, true) }?.contains("linux-ok") == true } catch (_: Exception) { false } else false
         out += Item("Linux", linuxOk || !L.supported(), when {
-            !L.supported() -> "Not supported on this CPU (Termux can be used instead)."
+            !L.supported() -> "Not supported on this CPU."
             !L.installed() -> "Not installed yet. run_code and git set it up automatically, or install it in Settings → Terminal."
             linuxOk -> "Alpine runs (${L.sizeMb()} MB)"
             else -> "Installed but didn't start. Reinstall it in Settings → Terminal." }, if (L.supported() && !linuxOk) "settings terminal" else "")
@@ -62,9 +62,7 @@ object SelfCheck {
         val free = ctx.filesDir.usableSpace / 1e9
         out += Item("Storage", free > 0.5, "%.1f GB free for ${BrandName.NAME}".format(free))
         // Runtime permissions
-        val P = Manifest.permission.READ_CONTACTS
-        listOf("Contacts" to arrayOf(P), "Calendar" to arrayOf(Manifest.permission.READ_CALENDAR), "SMS" to arrayOf(Manifest.permission.READ_SMS),
-            "Call log" to arrayOf(Manifest.permission.READ_CALL_LOG), "Location" to arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)).forEach { (label, perms) ->
+        listOf("Calendar" to arrayOf(Manifest.permission.READ_CALENDAR)).forEach { (label, perms) ->
             val ok = Perms.has(ctx, *perms)
             out += Item("$label permission", true, if (ok) "Allowed" else "Not yet allowed: ${BrandName.NAME} will ask the first time it needs it.")
         }
@@ -76,9 +74,6 @@ object SelfCheck {
             !FastLane.ready(ctx) -> "Model not downloaded yet."
             !Settings.fastLane -> "Downloaded but turned off."
             else -> "Ready · ${com.blaze.assistant.agent.IntentCache.size()} cached commands" })
-        out += Item("Notifications access", com.blaze.assistant.notify.NotificationBrain.enabled(ctx),
-            if (com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) "Can read and reply to notifications" else "Off: ${BrandName.NAME} can't see or react to notifications.", "notification_access")
-        out += Item("Overlay", android.provider.Settings.canDrawOverlays(ctx), if (android.provider.Settings.canDrawOverlays(ctx)) "Orb and live task card allowed" else "Not allowed: no floating orb or task card.", "overlay")
         val mic = ContextCompat.checkSelfPermission(ctx, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         out += Item("Microphone", mic, if (mic) "Allowed" else "Not allowed: voice and wake word won't work.", "app_permissions")
         val notif = android.os.Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED

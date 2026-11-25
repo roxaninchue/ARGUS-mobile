@@ -104,12 +104,10 @@ object PhoneQa {
             }
             PhoneCases.Verifier.DRAFT_NOT_SENT -> {
                 val words = p.screenWords()
-                val sent = sentSms(ctx, e["text"].orEmpty())
                 when {
-                    sent == true -> false to "an SMS with the text WAS sent"
                     words == null -> null to "phone control off"
                     e["text"].orEmpty().lowercase().split(' ').filter { it.length >= 3 }.all { it in words } ->
-                        true to "the compose box on ${p.foreground()} holds the text; " + (if (sent == false) "sent box has no such SMS" else "sent box not readable")
+                        true to "the compose box on ${p.foreground()} holds the text"
                     else -> false to "the draft text isn't on the screen (${p.foreground()})"
                 }
             }
@@ -143,11 +141,6 @@ object PhoneQa {
                 if (mode == android.app.UiModeManager.MODE_NIGHT_YES || night) true to "dark mode on (UiModeManager.nightMode=$mode, config night=$night)"
                 else false to "dark mode off (UiModeManager.nightMode=$mode, config night=$night)"
             }
-            PhoneCases.Verifier.CONTACT_SAVED -> when (p.contactHas(e["name"].orEmpty(), e["phone"].orEmpty())) {
-                true -> true to "ContactsContract has ${e["name"]} with ${e["phone"]}"
-                false -> false to "no ${e["name"]} with ${e["phone"]} in Contacts"
-                null -> null to "contacts not readable (permission)"
-            }
             PhoneCases.Verifier.OVERLAY_TAP -> {
                 val dnd = p.settingOn(e["setting"] ?: "do_not_disturb")
                 val shown = false   // 0.55.11: the pointer overlay went with phone control
@@ -172,14 +165,6 @@ object PhoneQa {
             }
         }
     }
-
-    /** true = an SMS with [text] is in the sent box from the last 15 min; false = none; null = can't read. */
-    private fun sentSms(ctx: Context, text: String): Boolean? = try {
-        if (ctx.checkSelfPermission(android.Manifest.permission.READ_SMS) != android.content.pm.PackageManager.PERMISSION_GRANTED) null
-        else ctx.contentResolver.query(android.net.Uri.parse("content://sms/sent"), arrayOf("body", "date"), "date > ?",
-            arrayOf((System.currentTimeMillis() - 15 * 60_000L).toString()), null)?.use { c ->
-            var hit = false; while (c.moveToNext()) if (c.getString(0).orEmpty().contains(text, true)) { hit = true; break }; hit }
-    } catch (_: Throwable) { null }
 
     /** An unscored turn that puts the phone in the state the case starts from (so "turn on" isn't already on). */
     private suspend fun setup(ctx: Context, c: PhoneCases.Case, p: VerifyProbes): String? = when (c.id) {
@@ -225,8 +210,7 @@ object PhoneQa {
         val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date(started))
         val meta = linkedMapOf("app" to com.blaze.assistant.BuildConfig.VERSION_NAME + " (" + com.blaze.assistant.BuildConfig.VERSION_CODE + ")",
             "device" to android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL + ", Android " + android.os.Build.VERSION.RELEASE,
-            "started" to SimpleDateFormat("yyyy-MM-dd HH:mm ZZZZ", Locale.US).format(Date(started)), "runs_per_case" to runs.toString(),
-            "notification_access" to (com.blaze.assistant.notify.NotificationBrain.instance != null).toString())
+            "started" to SimpleDateFormat("yyyy-MM-dd HH:mm ZZZZ", Locale.US).format(Date(started)), "runs_per_case" to runs.toString())
         val j = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.json", "application/json", PhoneQaReport.json(out, meta)))
         val m = SaveFileAndroid.save(ctx, SaveFile.Plan("blaze-phoneqa-$stamp.md", "text/markdown", PhoneQaReport.markdown(out, meta)))
         val sum = PhoneQaReport.summary(out).joinToString("\n") { "${it.case}: ${it.passed}/${it.runs}" + if (it.strict) " PASS" else " FAIL" }

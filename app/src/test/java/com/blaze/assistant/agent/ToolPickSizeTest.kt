@@ -28,8 +28,6 @@ class ToolPickSizeTest {
         add("AndroidControl") { com.blaze.assistant.phone.AndroidControl.tools() }
         add("Autonomy") { listOf(Autonomy.findToolDef(), Autonomy.goalTool(), Autonomy.permissionTool()) }
         add("Triggers") { com.blaze.assistant.proactive.Triggers.tools() }
-        add("Ussd") { com.blaze.assistant.phone.Ussd.tool() }
-        add("Messaging") { com.blaze.assistant.phone.Messaging.tool() }
         add("Browser") { com.blaze.assistant.browser.BrowserTools.definitions() }
         add("PhoneBrowser") { com.blaze.assistant.browser.phone.PhoneBrowserTools.definitions() }   // 0.45.19
         add("DevTools") { com.blaze.assistant.terminal.DevTools.tools() }
@@ -44,7 +42,6 @@ class ToolPickSizeTest {
         add("SelfKnowledge") { SelfKnowledge.tool() }
         add("Awareness") { Awareness.tool() }
         add("Jarvis") { com.blaze.assistant.proactive.Jarvis.tool() }
-        add("FollowUps") { com.blaze.assistant.proactive.FollowUps.tool() }
         add("BlazeDocs") { BlazeDocs.tools() }
         add("ProjectDocs") { ProjectDocs.tools() }
         add("HomeTools") { com.blaze.assistant.home.HomeTools.tools() }

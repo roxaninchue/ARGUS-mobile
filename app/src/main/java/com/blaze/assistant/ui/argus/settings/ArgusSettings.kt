@@ -11,7 +11,7 @@ import com.blaze.assistant.BrandName
  * The 0.52.3 profile (SpaceProfile / SpaceSettings) stays as is for the shell with `argus_look` off.
  *
  * Where 04's labels would promise something the page doesn't hold yet, the row says what the page holds (Deviations
- * in overhaul.md): "Approvals & app lock" (Security: app lock, approvals, Bank mode), "Wallet & logins", no People row
+ * in overhaul.md): "Approvals & app lock" (Security: app lock, approvals), "Wallet & logins", no People row
  * until the People graph (P5). No "Models & engines" row (2026-11-17): every message goes through ARGUS Cloud, so there
  * is nothing to pick.
  */
@@ -39,7 +39,7 @@ object ArgusSettings {
         Group(null, listOf(
             Row("knows", "What the team knows", "brain", "memory", listOf("memory", "remember", "learned", "profile", "facts")),
             Row("holding", "What ${BrandName.NAME} is holding", "brain", "holding", listOf("summary", "task", "skills")),
-            Row("approvals", "Approvals & app lock", "shield-check", "privacy", listOf("security", "approvals", "ask before", "lock", "bank mode", "risky")),
+            Row("approvals", "Approvals & app lock", "shield-check", "privacy", listOf("security", "approvals", "ask before", "lock", "risky")),
         )),
         Group("Team", listOf(
             Row("apps", "Apps & connectors", "plug", "connections", listOf("accounts", "google", "github", "slack", "notion", "spotify", "connectors")),
@@ -49,7 +49,7 @@ object ArgusSettings {
         Group("You & phone", listOf(
             Row("voice", "Voice", "mic", "voice", listOf("hey argus", "wake word", "voices", "my voice", "spoken replies")),
             Row("notifications", "Notifications & proactivity", "bell", "proactive", listOf("proactive", "triggers", "check-ins", "speak up")),
-            Row("phone", "Phone & permissions", "smartphone", "permissions", listOf("overlay", "microphone", "battery", "notifications access")),
+            Row("phone", "Phone & permissions", "smartphone", "permissions", listOf("microphone", "battery", "notifications")),
             Row("wallet", "Wallet & logins", "key", "secrets", listOf("keys", "tokens", "cards", "logins", "passwords")),
             Row("look", "Appearance", "palette", "look", listOf("theme", "dark", "light", "ground", "size", "handedness", "left-handed", "reduced motion", "animations")),
             Row("language", "Language", "globe", "language"),

@@ -1,3 +1,11 @@
+## Unreleased: permission trim (branch chore/trim-permissions-2, Draft MR !86)
+Finn (2026-11-25): strip the permissions Argus no longer needs. Removed with their code: the in-app App Store, Bank mode
+(WRITE_SECURE_SETTINGS), SMS / calls / contacts, overlays (SYSTEM_ALERT_WINDOW), the notification listener, usage stats,
+phone_mode (WRITE_SETTINGS, ACCESS_NOTIFICATION_POLICY), uninstall_app (REQUEST_DELETE_PACKAGES), the place / bluetooth /
+app_opened triggers, full-screen intents, termux_run (Termux RUN_COMMAND) and the router's Termux runner, and Gallery's
+Set as wallpaper (SET_WALLPAPER). Kept: foreground location (weather, get_location), YouTube / Music / Video / Movies, the
+VPN proxy, All files access, the self-updater, Argus Phone, the terminal and its Linux. HANDOFF.md section 0 has the list.
+
 ## Unreleased: Argus Phone step 2 (branch feat/phone-handoff-cards): handoff cards
 - Argus Phone asks for a sign-in with a secure card in the chat instead of handing over control: it finds the page's
   email / username and password fields, fills a saved login silently, otherwise asks once and types the answers

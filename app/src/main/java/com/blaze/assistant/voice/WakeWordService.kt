@@ -307,10 +307,7 @@ class WakeWordService : Service() {
         com.blaze.assistant.device.Sounds.wake()
         // Best path: as the default assistant, open Argus's assistant session over any app.
         if (BlazeInteractionService.showFromWake()) return
-        // Otherwise the overlay panel, if Argus may draw over apps.
-        if (com.blaze.assistant.ui.Overlay.canDrawOverApps(this)) {
-            android.os.Handler(mainLooper).post { com.blaze.assistant.ui.Overlay.openPanel(this, listen = true) }; return
-        }
+        // Otherwise Argus itself opens, listening (the panel over other apps left with SYSTEM_ALERT_WINDOW, 2026-11-25).
         val i = com.blaze.assistant.IntentKey.sign(this, Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_LISTEN, true))

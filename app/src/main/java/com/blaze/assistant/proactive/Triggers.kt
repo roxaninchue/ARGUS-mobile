@@ -14,8 +14,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * "When X happens, do Y". Events: a notification (from an app / containing words), battery
- * dropping below a level, the charger plugged in or out, an app opened. Each fire runs the
+ * "When X happens, do Y". Events: battery dropping below a level, the charger plugged in or out, joining Wi-Fi. Each fire runs the
  * trigger's prompt in its own background chat, with the event details attached.
  */
 object Triggers {
@@ -43,7 +42,7 @@ object Triggers {
         }
         val f = IntentFilter().apply { addAction(Intent.ACTION_BATTERY_CHANGED); addAction(Intent.ACTION_POWER_CONNECTED); addAction(Intent.ACTION_POWER_DISCONNECTED) }
         try { if (android.os.Build.VERSION.SDK_INT >= 33) app.registerReceiver(r, f, Context.RECEIVER_NOT_EXPORTED) else app.registerReceiver(r, f) } catch (_: Exception) { }
-        try { Autopilot.init(app) } catch (_: Throwable) { }   // v0.33.0 place / bluetooth / wifi events
+        try { Autopilot.init(app) } catch (_: Throwable) { }   // v0.33.0 wifi events
     }
 
     private fun load(): List<Trigger> = try {
@@ -61,16 +60,9 @@ object Triggers {
     fun add(name: String, event: String, match: String, prompt: String): String {
         val ev = event.lowercase().trim()
         if (ev !in EVENTS) return "Error: event must be one of ${EVENTS.joinToString()}."
-        // v0.33.0 Autopilot: a place is "Name@lat,lng[,radius m]"; "here" / "Name@here" = where the phone is now.
-        var m = match.trim()
-        if (ev.startsWith("place_")) {
-            if (m.equals("here", true) || m.endsWith("@here", true)) m = Autopilot.hereMatch(app, m.substringBefore("@").let { if (it.equals("here", true)) name else it }, 150)
-                ?: return "Error: no location fix for \"here\". Ask for location permission or the place's coordinates."
-            if (Autopilot.Geo.parse(m) == null) return "Error: a place must be Name@lat,lng[,radius] or \"here\". Use get_location or web_search for coordinates."
-        }
+        val m = match.trim()
         val tid = System.currentTimeMillis()
         save(all.value + Trigger(tid, name.ifBlank { prompt.take(30) }, ev, m, prompt))
-        if (ev.startsWith("place_")) Autopilot.schedulePlaces(app)
         return "Trigger \"$name\" saved: when $ev${if (match.isNotBlank()) " ($match)" else ""}, I'll: $prompt [ID ${com.blaze.assistant.agent.Processes.idFor("trigger", tid.toString())}]"
     }
     fun rename(id: Long, name: String) = save(all.value.map { if (it.id == id) it.copy(name = name.trim()) else it })
@@ -78,16 +70,6 @@ object Triggers {
     fun toggle(id: Long) = save(all.value.map { if (it.id == id) it.copy(enabled = !it.enabled) else it })
 
     // ---------- Events ----------
-
-    fun onNotification(ctx: Context, appName: String, title: String, text: String) {
-        if (!::app.isInitialized) return
-        val hay = "$appName $title $text"
-        all.value.filter { it.enabled && it.event == "notification" }.forEach { t ->
-            val words = t.match.split(',', '|').map { it.trim() }.filter { it.isNotEmpty() }
-            if (words.isEmpty() || words.any { hay.contains(it, true) }) fire(t, "Notification from $appName — $title: ${text.take(400)}")
-        }
-        Proactive.onNotification(appName, title, text)
-    }
 
     fun onBattery(level: Int) {
         all.value.filter { it.enabled && it.event == "battery_below" }.forEach { t ->
@@ -98,15 +80,9 @@ object Triggers {
             why = ProactiveDial.Why.battery(level), source = ProactiveDial.Source.DEVICE)
     }
 
-    fun onApp(pkg: String, label: String) {
-        if (!::app.isInitialized) return
-        all.value.filter { it.enabled && it.event == "app_opened" && (label.contains(it.match, true) || pkg.contains(it.match, true)) }
-            .forEach { fire(it, "The user just opened $label.") }
-    }
+    val EVENTS = setOf("battery_below", "charging", "wifi")
 
-    val EVENTS = setOf("notification", "battery_below", "charging", "app_opened", "place_arrive", "place_leave", "bluetooth", "wifi")
-
-    /** v0.33.0 bluetooth / wifi: fires triggers whose match is blank or part of [value] (device or network name). */
+    /** v0.33.0 wifi: fires triggers whose match is blank or part of [value] (the network name). */
     fun fireEvent(event: String, value: String, detail: String) {
         if (!::app.isInitialized) return
         all.value.filter { it.enabled && it.event == event && (it.match.isBlank() || value.contains(it.match, true)) }.forEach { fire(it, detail) }
@@ -130,11 +106,11 @@ object Triggers {
     val names = setOf("create_trigger", "list_triggers", "delete_trigger")
     fun tools(): List<JSONObject> = listOf(
         JSONObject().put("type", "function").put("function", JSONObject().put("name", "create_trigger")
-            .put("description", "Make ${BrandName.NAME} react to events on its own: 'when Mary texts, read it to me', 'when battery drops below 20, turn on saver', 'when I plug in, summarise my day', 'when I open Instagram, remind me of my goal'. For time-based things use create_routine instead.")
+            .put("description", "Make ${BrandName.NAME} react to events on its own: 'when battery drops below 20, turn on saver', 'when I plug in, summarise my day', 'when I join Wi-Fi, check for updates'. For time-based things use create_routine instead.")
             .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
                 .put("name", JSONObject().put("type", "string"))
                 .put("event", JSONObject().put("type", "string").put("enum", JSONArray(EVENTS.toList())))
-                .put("match", JSONObject().put("type", "string").put("description", "notification: words/app/sender to match (comma-separated, blank = all); battery_below: the % ; charging: 'plugged in' or 'unplugged'; app_opened: app name; place_arrive/place_leave: Name@lat,lng[,radius m] or \"here\"; bluetooth: part of the device name (blank = any); wifi: part of the network name"))
+                .put("match", JSONObject().put("type", "string").put("description", "battery_below: the % ; charging: 'plugged in' or 'unplugged'; wifi: part of the network name (blank = any; Android often hides the name)"))
                 .put("prompt", JSONObject().put("type", "string").put("description", "What ${BrandName.NAME} should do when it fires")))
                 .put("required", JSONArray(listOf("name", "event", "prompt"))))),
         JSONObject().put("type", "function").put("function", JSONObject().put("name", "list_triggers").put("description", "List event triggers.")

@@ -3,7 +3,6 @@ package com.blaze.assistant.media
 
 import com.blaze.assistant.BrandName
 import android.Manifest
-import android.app.WallpaperManager
 import android.content.ClipData
 import android.content.ContentUris
 import android.content.ContentValues
@@ -45,7 +44,7 @@ import java.io.File
 
 /**
  * v0.30.0 Gallery, Android side: reads shared storage (MediaStore) next to Argus's own gallery folder, keeps the
- * user's albums, makes thumbnails / cover art / durations, and does share, delete, rename and set-as-wallpaper.
+ * user's albums, makes thumbnails / cover art / durations, and does share, delete and rename.
  *
  * Without any storage permission Android still shows Argus everything Argus itself saved to shared storage (songs and
  * videos it downloaded to Music/Blaze and Movies/Blaze, Download/Blaze, Pictures/Blaze). Screenshots and Camera need
@@ -407,17 +406,6 @@ object GalleryRepo {
         }
         _albums.value = albumStore().albums
         refresh(); null
-    }
-
-    /** [which]: WallpaperManager.FLAG_SYSTEM (home), FLAG_LOCK, or both. Null on success, else a reason. */
-    suspend fun setWallpaper(e: Entry, which: Int): String? = withContext(Dispatchers.IO) {
-        try {
-            val wm = WallpaperManager.getInstance(app)
-            val cr = app.contentResolver
-            val input = if (e.isFile) File(e.path).inputStream() else cr.openInputStream(Uri.parse(e.id)) ?: return@withContext "Couldn't open the picture."
-            input.use { wm.setStream(it, null, true, which) }
-            null
-        } catch (ex: Exception) { "Couldn't set the wallpaper: ${ex.message ?: ex.javaClass.simpleName}" }
     }
 
     // ---------------------------------------------------------------- albums

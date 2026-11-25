@@ -27,7 +27,12 @@ class ToolRegistryTest {
     private val aliases = setOf("toggle_setting") +
         // 0.55.18 removed phone control; these stay declared so old bot rules, saved policies and replays still classify.
         setOf("do_actions", "look_at_screen", "phone_task", "press_button", "read_screen", "run_plan", "run_skill", "scroll",
-            "search_screen_memory", "system_action", "tap", "type_text", "wait", "watch")
+            "search_screen_memory", "system_action", "tap", "type_text", "wait", "watch") +
+        // 2026-11-25 permission trim (MR !86): SMS / calls / contacts, the notification listener, usage stats, phone_mode and
+        // uninstall_app left the app; same reason, they stay declared so old rules, policies and replays still classify.
+        setOf("add_contact", "app_usage", "call_contact", "call_copilot", "call_number", "edit_contact", "find_contact", "follow_ups",
+            "group_brain", "message_contact", "money", "notif_conversations", "notif_read", "notif_reply", "phone_mode", "read_messages",
+            "recent_calls", "recent_notifications", "reply_to_notification", "run_ussd", "safe_walk", "send_sms", "send_text", "uninstall_app")
 
     private fun scan(): Set<String> {
         val files = src.walkTopDown().filter { it.isFile && it.extension == "kt" }.map { it.readText() }.toList()
@@ -47,7 +52,7 @@ class ToolRegistryTest {
     @Test fun everyToolDefinedInTheAppHasAClass() {
         val found = scan()
         assertTrue("the scan finds the tools (${found.size})", found.size > 200)
-        for (known in listOf("send_sms", "run_shell", "web_search", "get_weather", "request_secret", "agent_delete", "gmail_send", "open_app"))
+        for (known in listOf("compose_sms", "run_shell", "web_search", "get_weather", "request_secret", "agent_delete", "gmail_send", "open_app"))
             assertTrue("scan misses $known", known in found)
         val missing = found.filter { !ToolRegistry.declared(it) }.sorted()
         assertTrue("tools without an ActionClass (declare them in policy/ActionClass.kt ToolRegistry): $missing", missing.isEmpty())

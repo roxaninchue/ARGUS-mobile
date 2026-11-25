@@ -8,9 +8,8 @@ import org.json.JSONObject
  *
  *   {"id": "...", "kind": "message", "to": "Chanda (HomeGlow customer)", "text": "Hi Chanda, ...", "app": "whatsapp"}
  *
- * The phone never sends without the user's tap: the confirm card is shown even in Autopilot or with a
- * standing OK (Agent.confirm always=true), with "Drafted on <PC>" on it. No model call is made. The
- * reply to the PC says what happened in one line. Plain-text requests keep working as before.
+ * 2026-11-25 permission trim: the phone no longer sends messages (SMS, WhatsApp, Telegram), so such a request gets
+ * [NOT_SENT] back and nothing is sent. Plain-text requests keep working as before.
  */
 object PcMessages {
     data class Send(val to: String, val text: String, val app: String)
@@ -23,19 +22,5 @@ object PcMessages {
         return Send(r.optString("to").trim(), (r.optString("message").ifBlank { r.optString("text") }).trim(), app)
     }
 
-    /** Why a send can't go, or null when it can. */
-    fun problem(s: Send): String? = when {
-        s.to.isBlank() -> "No recipient in the request."
-        s.text.isBlank() -> "The message is empty."
-        s.text.length > 4000 -> "The message is too long for one chat message (${s.text.length} characters)."
-        s.app !in setOf("whatsapp", "telegram", "any") -> "From the PC the phone sends WhatsApp or Telegram replies only (asked for ${s.app})."
-        else -> null
-    }
-
-    /** The one-line answer for the PC from what Messaging returned. */
-    fun outcome(result: String): String = when {
-        result.contains("declined", true) -> "Not sent: the user declined on the phone."
-        result.startsWith("Sent", true) -> result
-        else -> "Not sent: $result"
-    }
+    const val NOT_SENT = "Not sent: Argus on this phone no longer sends messages. Send it from the chat app yourself."
 }

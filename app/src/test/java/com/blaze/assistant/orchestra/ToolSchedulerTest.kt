@@ -58,7 +58,7 @@ class ToolSchedulerTest {
 
     @Test fun terminalCallsAreIsolatedUnlessTheyNameASession() {
         val calls = listOf(call(0, "run_shell", "command" to "ls"), call(1, "run_shell", "command" to "pwd"),
-            call(2, "termux_run", "session" to "build", "command" to "make"), call(3, "job_input", "session" to "build", "text" to "y"))
+            call(2, "run_code", "session" to "build", "command" to "make"), call(3, "job_input", "session" to "build", "text" to "y"))
         assertEquals(listOf(emptySet(), emptySet(), emptySet(), setOf(2)), ToolScheduler.plan(calls))
     }
 

@@ -43,8 +43,6 @@ object ToolVerify {
         suspend fun clockAlarmOn(pid: String, hhmm: String): Boolean? = null
         /** v0.45.13: the calendar provider has an event titled [title] starting at [startMs] (±1 min); null = can't read. */
         suspend fun calendarHas(title: String, startMs: Long): Boolean? = null
-        /** v0.45.13: the contacts provider has [name] (with [phone] when given); null = can't read. */
-        suspend fun contactHas(name: String, phone: String): Boolean? = null
         /** v0.45.13: a Clock app timer is running (its ongoing notification); null = can't tell. */
         suspend fun timerRunning(): Boolean? = null
         /** v0.45.13: title of what [pkg] is playing now ("" = nothing playing), null = can't tell. */
@@ -268,14 +266,6 @@ object ToolVerify {
                 true -> Verdict(Status.VERIFIED, "the phone's calendar lists \u201c$title\u201d at ${args.optString("start").trim()}")
                 false -> if (poll(waitMs) { p.calendarHas(title, t0) == true }) Verdict(Status.VERIFIED, "the phone's calendar lists \u201c$title\u201d")
                     else Verdict(Status.FAILED, "the calendar has no \u201c$title\u201d at ${args.optString("start").trim()}")
-            }
-        }
-        "add_contact" -> {
-            val nm = args.optString("name")
-            when (p.contactHas(nm, args.optString("phone"))) {
-                null -> null
-                true -> Verdict(Status.VERIFIED, "Contacts lists $nm" + args.optString("phone").takeIf { it.isNotBlank() }?.let { " with $it" }.orEmpty())
-                false -> Verdict(Status.FAILED, "Contacts has no $nm")
             }
         }
         "compose_sms" -> {

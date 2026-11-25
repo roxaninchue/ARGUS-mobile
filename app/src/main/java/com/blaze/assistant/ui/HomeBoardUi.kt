@@ -283,7 +283,7 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
     val owner = LocalLifecycleOwner.current
     DisposableEffect(owner) {
         val obs = androidx.lifecycle.LifecycleEventObserver { _, e ->
-            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) HomeBoard.data.value.forEach { (id, d) -> if (d.action in setOf("usage", "location", "calendar")) HomeBoard.refresh(id) }
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) HomeBoard.data.value.forEach { (id, d) -> if (d.action in setOf("location", "calendar")) HomeBoard.refresh(id) }
         }
         owner.lifecycle.addObserver(obs); onDispose { owner.lifecycle.removeObserver(obs) }
     }
@@ -321,7 +321,6 @@ fun HomePane(onAsk: (String) -> Unit, onQuote: (String) -> Unit = {},
             }
             a == "calendar" -> scope.launch { com.blaze.assistant.device.Perms.ensure(ctx, android.Manifest.permission.READ_CALENDAR); HomeBoard.refresh(w.id) }
             a == "city" -> cityFor = w.id
-            a == "usage" -> openUsageAccess(ctx)
             a == "interests" -> { onboarded = false }
             a.startsWith("ask:") -> { onAsk(a.removePrefix("ask:")); toast = "Asked ${BrandName.NAME}. The answer is in Chat." }
         }
@@ -517,11 +516,6 @@ fun openHomeLink(ctx: Context, url: String) {
             url.startsWith("https://") || url.startsWith("http://") -> ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
     } catch (_: Exception) { }
-}
-
-private fun openUsageAccess(ctx: Context) {
-    try { ctx.startActivity(Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-    catch (_: Exception) { try { ctx.startActivity(Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { } }
 }
 
 // ---------------------------------------------------------------- the board (stateless)
@@ -776,7 +770,6 @@ fun WidgetCard(
                     d.action == "location" -> "Allow location"
                     d.action == "city" -> "Type a city"
                     d.action == "calendar" -> "Allow calendar"
-                    d.action == "usage" -> "Open Usage access"
                     d.action == "interests" -> "Pick my interests"
                     d.action.startsWith("ask:") -> "Ask ${BrandName.NAME}"
                     else -> ""

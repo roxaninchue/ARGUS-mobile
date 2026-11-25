@@ -2,6 +2,46 @@
 
 This is the one current handoff. Older handoffs are listed in [docs/README.md](docs/README.md) (archive section).
 
+## 0. IN FLIGHT: permission trim (branch `chore/trim-permissions-2`, Draft MR into main)
+Finn (2026-11-25): strip the permissions Argus no longer needs. Started from main `006817fa`. Every commit ends `[skip ci]`.
+
+**Keep:** YouTube plug-in + Music/Video downloads (mediaapps/, storeapi/), Movies sources (movies/), the built-in VPN
+proxy (browser VPN + userspace `wgproxy/`, no VpnService), All files access (`MANAGE_EXTERNAL_STORAGE`), the self-updater
+(update/, `REQUEST_INSTALL_PACKAGES`, InstallReceiver), the Argus Phone in-app browser (browser/phone/, steps 1/1a/1b/2).
+Also INTERNET, network/wifi state, foreground services (mediaPlayback, dataSync, specialUse, microphone), POST_NOTIFICATIONS,
+WAKE_LOCK, RECEIVE_BOOT_COMPLETED (routines). Flagged but kept: mic/voice, camera, calendar, alarms/exact alarms,
+biometric, READ_MEDIA_*, battery-optimisation exemption, MODIFY_AUDIO_SETTINGS, quick settings tile, voice interaction.
+
+**Remove (status):**
+- [x] App Store: appstore/, AppStorePage, StoreInstallReceiver, assets/store, store/, STORE_CLEANROOM.md, store_* tools, tool group, settings page + view, tests
+- [x] Bank mode + WRITE_SECURE_SETTINGS: bank/, BankModePage, BankModeService, bank_mode tool, Awareness line, Jarvis/Overlay gates, settings page + Security section, tests
+- [x] SMS & calls + contacts (code): Messaging (message_contact), CallCopilot (+service), SafeWalk (+receiver), SendCheck, Ussd (run_ussd), Skills find_contact/read_messages/send_sms/recent_calls/call_number, PimEdit add_contact/edit_contact, FastLane call_contact/send_text, CallControl cut to Argus call-screen only (no telecom), proactive SMS / missed-call sweep, PC message sends (answer "not sent"), contact QA case; manifest perms pending in the manifest chunk
+- [x] Overlays SYSTEM_ALERT_WINDOW: floating orb + drag-to-bin, live task card, chat panel over other apps (Overlay keeps only openPanel/openApp: the assistant session or the app), ScreenGlow edge particles + ScreenWork, orb settings page / toggles / hide_orb / show_orb, overlay setup step and permission rows, the clipboard focus window, AssistPanel pin button, askUser pop-up (now a notification)
+- [x] Notification listener: NotificationBrain (+service), Conversations, GroupBrain, MoneyRadar, ScamShield, Sensitive, ChatThreads, FollowUps / FollowUpLogic (+receiver; only fed by the listener), tools recent_notifications / reply_to_notification / notif_* / group_brain / money / follow_ups, Notification replies page, notification-access rows, proactive notification + chat digest, notification trigger event, other apps' media sessions
+- [x] PACKAGE_USAGE_STATS: app_usage tool, Most-used apps Home card (type kept so saved cards load), PhoneHealth unused/top apps, Jarvis usage line, usage-access prompts
+- [x] WRITE_SETTINGS + ACCESS_NOTIFICATION_POLICY (phone_mode tool), REQUEST_DELETE_PACKAGES (uninstall_app tool)
+- [x] Triggers: place_arrive / place_leave (location), bluetooth (BLUETOOTH_CONNECT), app_opened (had no caller since 0.55.18) removed; wifi kept
+- [x] USE_FULL_SCREEN_INTENT: the wake prompt (Notifier.wakeHeard) is a max-priority heads-up without setFullScreenIntent
+- [x] Termux RUN_COMMAND: termux_run tool, Terminal.runInTermux / termuxInstalled / the allow-external-apps fix, the local model router's
+  "termux" runner (a saved "termux" choice reads as auto), RouterPage chip, SelfKnowledge / DevTools / SelfCheck lines, the
+  `<queries>` entry for com.termux. Kept: the terminal-emulator library (com.termux.terminal / view) and Termux's proot
+  binaries, which are Argus's own terminal and Linux. StepPill keeps the termux_run label so old chats still read right.
+- [x] SET_WALLPAPER: Gallery viewer's Wallpaper button, its dialog and GalleryRepo.setWallpaper
+- [x] BLUETOOTH_CONNECT: nothing used it any more (the bluetooth trigger went in the Triggers chunk; the Bluetooth state
+  read in VerifyProbes needs no permission on Android 12+ and fails soft below); manifest line only
+- [x] Manifest cleanup: SMS, calls, contacts, SYSTEM_ALERT_WINDOW, ACCESS_NOTIFICATION_POLICY, WRITE_SETTINGS,
+  PACKAGE_USAGE_STATS, REQUEST_DELETE_PACKAGES, BLUETOOTH_CONNECT, USE_FULL_SCREEN_INTENT, SET_WALLPAPER, termux RUN_COMMAND
+- **Location: KEPT (Finn, 2026-11-25).** ACCESS_COARSE_LOCATION / ACCESS_FINE_LOCATION stay for the Home weather card, the
+  get_weather fallback and get_location, all foreground. Play only restricts ACCESS_BACKGROUND_LOCATION (declaration form,
+  video, disclosure), which Argus does not declare. The place_arrive / place_leave triggers stay removed (they would need it).
+- [ ] Gate green on the branch head (compile + unit tests); then Finn decides on merge
+
+**How to continue:** branch from the MR head, keep removing, then
+`./gradlew :app:compileDebugKotlin :app:compileDebugUnitTestKotlin :app:testDebugUnitTest --continue` (JDK 17 build,
+JDK 21 for tests; see BUILDING.md), the rename guard with `--update-baseline` (tools/check-no-*.mjs; counts only go down),
+`node tools/check-do-not-port.mjs`. Grep `app/src/test` for every removed tool name / class / settings id
+(AGENTS.md rule 3). `policy/ActionClass.kt` must declare exactly the tools still defined (ToolRegistryTest).
+
 ## 1. Read first, in this order
 1. [STATUS.md](STATUS.md), the "Current state" and "Standing rules" sections: what is built, what is released, what
    waits on Finn.

@@ -150,7 +150,6 @@ fun ProactivePage() {
     com.blaze.assistant.ui.space.SpaceSegmented(ProactiveDial.Level.values().map { it.id to it.label }, dial.id,
         Modifier.fillMaxWidth(), tag = "proactive_level") { id -> dial = ProactiveDial.Level.of(id); P.level = dial }
     V18Note(ProactiveDial.note(dial) + " Every heads-up says why it came.", top = 6)
-    if (!com.blaze.assistant.notify.NotificationBrain.enabled(ctx)) { Spacer(Modifier.height(6.dp)); NotificationAccessRow() }
     val pm = ctx.getSystemService(android.os.PowerManager::class.java)
     if (pm?.isIgnoringBatteryOptimizations(ctx.packageName) != true) {
         Spacer(Modifier.height(8.dp))
@@ -175,16 +174,10 @@ fun ProactivePage() {
     ToggleRow("Look through the camera", "One front-camera frame while ${BrandName.NAME} is open; never saved. Android shows its camera dot", looks) { looks = !looks; J.cameraLooks = looks }
     if (looks && androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED)
         V18Note("Camera looks need the camera permission: open ${BrandName.NAME} Camera once and allow it.", top = 4)
-    if (!com.blaze.assistant.home.HomeSources.usageAllowed(ctx)) {
-        V18Note("Allow Usage access so ${BrandName.NAME} can see which apps you use and when, so it can time its help.", top = 6)
-        V18Button("Allow usage access", primary = false) {
-            try { ctx.startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) { }
-        }
-    }
 
     V18Section("Triggers")
     val triggers by com.blaze.assistant.proactive.Triggers.all.collectAsState()
-    V18Note("\u201cWhen X happens, do Y.\u201d Ask ${BrandName.NAME} in chat, e.g. \u201cwhen Mary texts, read it to me\u201d or \u201cwhen battery drops below 20, turn on saver\u201d.")
+    V18Note("\u201cWhen X happens, do Y.\u201d Ask ${BrandName.NAME} in chat, e.g. \u201cwhen battery drops below 20, turn on saver\u201d.")
     if (triggers.isNotEmpty()) Column(Modifier.fillMaxWidth().hairline(c.hair)) {
         triggers.forEach { t ->
             Row(Modifier.fillMaxWidth().hairlineBottom(c.hair).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {

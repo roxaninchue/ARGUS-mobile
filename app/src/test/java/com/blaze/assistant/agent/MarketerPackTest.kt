@@ -37,13 +37,7 @@ class MarketerPackTest {
         assertNull(PcMessages.parse(JSONObject().put("id", "1").put("text", "What's my battery?")))
         val s = PcMessages.parse(JSONObject().put("id", "2").put("kind", "message").put("to", "Chanda").put("text", "Hi Chanda, your lamp ships today."))!!
         assertEquals("whatsapp", s.app)
-        assertNull(PcMessages.problem(s))
-        assertTrue(PcMessages.problem(s.copy(app = "sms"))!!.contains("WhatsApp or Telegram"))
-        assertTrue(PcMessages.problem(s.copy(text = " ".trim()))!!.contains("empty"))
-        assertTrue(PcMessages.problem(s.copy(to = ""))!!.contains("recipient"))
-        assertEquals("Not sent: the user declined on the phone.", PcMessages.outcome("The user declined. Nothing was sent."))
-        assertEquals("Sent to Chanda on WhatsApp.", PcMessages.outcome("Sent to Chanda on WhatsApp."))
-        assertTrue(PcMessages.outcome("WhatsApp isn't installed.").startsWith("Not sent"))
+        assertTrue(PcMessages.NOT_SENT.startsWith("Not sent"))
         val legacy = PcMessages.parse(JSONObject().put("kind", "whatsapp_reply").put("to", "x").put("message", "hello"))!!
         assertEquals("hello", legacy.text)
     }
@@ -56,7 +50,8 @@ class MarketerPackTest {
         // v0.28.2: the decision moved to ConfirmGate (pure, see ConfirmGateTest); always = the card shows.
         assertTrue(agent.contains("ConfirmGate.decide(always,"))
         assertEquals(ConfirmGate.Decision.SHOW, ConfirmGate.decide(always = true, destructive = false, preApproved = true, autopilot = true, tainted = false))
-        assertTrue(File(root, "java/com/blaze/assistant/link/DesktopLink.kt").readText().contains("always = true, from = pcName"))
+        // 2026-11-25 permission trim: a message drafted on the PC is never sent from the phone.
+        assertTrue(File(root, "java/com/blaze/assistant/link/DesktopLink.kt").readText().contains("PcMessages.NOT_SENT"))
     }
 
     @Test fun marketerSkillsShipWithMatchingHashes() {

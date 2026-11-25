@@ -1,7 +1,6 @@
 package com.blaze.assistant
 
 import android.content.Intent
-import com.blaze.assistant.bank.BankModeLogic
 import com.blaze.assistant.browser.SavedPages
 import com.blaze.assistant.device.CrashLog
 import org.junit.Assert.assertEquals
@@ -49,17 +48,6 @@ class SecurityP4Test {
         assertFalse(SavedPages.fileAccessFor("file:///sdcard/Download/x.html"))
         assertFalse(SavedPages.fileAccessFor("file:///data/x/saved_pages/../../etc/abcd1234.mht"))
         assertFalse(SavedPages.fileAccessFor(null)); assertFalse(SavedPages.fileAccessFor(""))
-    }
-
-    // ---- #24 bank mode restore wording ----
-    @Test fun bankRestoreAskExplainsThenStops() {
-        assertEquals(BankModeLogic.RESTORE_ASK, BankModeLogic.restoreAsk(0, simple = true)!!.text)
-        val later = BankModeLogic.restoreAsk(2, simple = true)!!
-        assertTrue(later.text.contains("Bank apps won't open"))
-        assertFalse(later.text.contains("adb")); assertFalse(later.text.contains("computer command"))
-        assertTrue(BankModeLogic.restoreAsk(3, simple = false)!!.text.contains("computer command"))
-        assertNull(BankModeLogic.restoreAsk(BankModeLogic.RESTORE_GIVE_UP, simple = true))
-        assertNotNull(BankModeLogic.restoreAsk(BankModeLogic.RESTORE_GIVE_UP - 1, simple = true))
     }
 
     // ---- #13 leftover: Simple never hears about run_shell in the core prompt ----

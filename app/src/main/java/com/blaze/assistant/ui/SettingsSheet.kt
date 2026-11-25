@@ -160,19 +160,17 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                     "look" -> LookPage()
                     "language" -> LanguagePage()
                     "doing" -> DoingPage()
-                    "bank" -> BankModePage()
                     "connections" -> ConnectionsPage()
                     "desktop" -> DesktopPage()
                     "persona" -> PersonaSection()
                     "control" -> ControlPage()
                     "skills" -> SkillLibraryPage()
                     "voice" -> { VoiceSection(); MyVoiceSection(); VoiceTuning(); VoiceExtras() }
-                    "orb" -> OrbSection()
                     "routines" -> SchedulePage()
                     "memory" -> { MemoryPage(); LearningSection() }
                     "holding" -> HoldingPage()
                     "usage" -> { UsageSection(); CostCap() }
-                    // 0.52.3 Security: app lock and approvals, then Bank mode (it left the top list).
+                    // 0.52.3 Security: app lock and approvals.
                     "privacy" -> {
                         SecuritySection(); Spacer(Modifier.height(18.dp))
                         // P2-SF-04: Approvals & permissions (standing allows, autonomy, send scope, SpendGuard)
@@ -183,7 +181,6 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                                 // P2-SF-05: Activity (audit log)
                                 com.blaze.assistant.ui.argus.kit.SettingsItem("list-checks", "Activity", onClick = { page = "activity" })))
                         }
-                        Spacer(Modifier.height(18.dp)); BankModePage()
                     }
                     "policy" -> androidx.compose.runtime.CompositionLocalProvider(com.blaze.assistant.ui.argus.LocalArgusColors provides
                         com.blaze.assistant.ui.argus.ArgusColors.of(LocalBlaze.current.mono.dark)) {
@@ -206,9 +203,7 @@ fun SettingsScreen(start: String?, onDismiss: () -> Unit,
                     }
                     "learn" -> LearnPage(onBack = { back() }, onAsk = { text -> Agent.sharedDraft.value = Agent.SharedDraft(text); onDismiss() })
                     "seller" -> SellerPage()
-                    "appstore" -> AppStorePage()
                     "logs" -> LifeLogsPage()
-                    "replies" -> RepliesPage()
                     "logins" -> SavedLoginsPage()
                     "secrets" -> SavedSecretsPage()
                     "phonebrowser" -> PhoneBrowserSettingsPage()
@@ -237,7 +232,6 @@ private fun SpeedStatsPage() {
 private fun ControlPage() {
     Spacer(Modifier.height(8.dp))
     SkillsSection()
-    NotificationAccessRow()
 }
 
 @Composable
@@ -470,30 +464,6 @@ private fun VoiceSection() {
 
 
 @Composable
-private fun OrbSection() {
-    val c = LocalBlaze.current.mono
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    var on by remember { mutableStateOf(Overlay.orbShowing) }
-    var allowed by remember { mutableStateOf(Overlay.canDrawOverApps(ctx)) }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        while (true) { allowed = Overlay.canDrawOverApps(ctx); on = Overlay.orbShowing; kotlinx.coroutines.delay(1200) }
-    }
-    ToggleRow("Floating orb", if (on) "${BrandName.NAME} stays on screen. Tap to chat, hold to talk, drag to move"
-        else "Keep ${BrandName.NAME} on screen while you use other apps", on) {
-        if (on) { Overlay.hideOrb(ctx); on = false }
-        else if (!Overlay.showOrb(ctx)) Overlay.requestOverlayPermission(ctx) else on = true
-    }
-    if (!allowed) Row(
-        Modifier.fillMaxWidth().padding(top = 10.dp).hairline(c.hair).clickable { Overlay.requestOverlayPermission(ctx) }.padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(tr("Allow “Display over other apps” so you can type in the orb's chat"), modifier = Modifier.weight(1f),
-            style = TextStyle(fontFamily = Type.Sans, fontSize = 13.sp, color = c.body))
-        Label(tr("Allow →"), color = c.accent, size = 11.sp)
-    }
-}
-
-@Composable
 private fun PersonaSection() {
     val c = LocalBlaze.current.mono
     var pid by remember { mutableStateOf(Settings.personaId) }
@@ -521,9 +491,6 @@ private fun PersonaSection() {
     Spacer(Modifier.height(6.dp))
     var dots by remember { mutableStateOf(Settings.particles) }
     ToggleRow("Background particles", "Drifting dots. Turn off for the smoothest, lightest feel", dots) { dots = !dots; Settings.particles = dots }
-    // 0.50.0: Argus's edge particles while it controls the screen (ui/ScreenGlow)
-    var glowOn by remember { mutableStateOf(Settings.bool("screen_glow", true)) }
-    ToggleRow("Glow while ${BrandName.NAME} uses the screen", "Particles round the screen edges while ${BrandName.NAME} taps and types for you", glowOn) { glowOn = !glowOn; Settings.setBool("screen_glow", glowOn) }
     ToggleRow("Stream replies", "Words appear as ${BrandName.NAME} writes them", stream) { stream = !stream; Settings.streamReplies = stream }
     // 0.51.0 BlazeQuery (Halo Persona Studio removed: Halo is part of Argus now)
     var bqOn by remember { mutableStateOf(Settings.bool("blazequery", true)) }

@@ -44,7 +44,7 @@ object PolicyCalls {
 
     /** The command a shell / git call runs (kind + text), or null. A git call with a named action uses the registry. */
     fun commandOf(tool: String, a: JSONObject): Pair<CommandPolicy.Kind, String>? = when (tool) {
-        "run_shell", "termux_run" -> CommandPolicy.Kind.SHELL to a.optString("command", a.optString("cmd"))
+        "run_shell" -> CommandPolicy.Kind.SHELL to a.optString("command", a.optString("cmd"))
         "git" -> a.optString("action").lowercase().let { act ->
             if (act.isEmpty() || act == "raw") CommandPolicy.Kind.GIT to a.optString("args", a.optString("command")) else null }
         else -> null

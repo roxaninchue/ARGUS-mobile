@@ -17,7 +17,7 @@ class AppsPageModelTest {
 
     @Test fun tilesAreTheViewsMarkedAsAppsInRegistryOrder() {
         assertEquals(Views.all.filter { it.app }.map { it.id }, ids)
-        assertTrue(ids.containsAll(listOf("music", "video", "browser", "phonebrowser", "gallery", "design", "terminal", "projects", "apps")))
+        assertTrue(ids.containsAll(listOf("music", "video", "browser", "phonebrowser", "gallery", "design", "terminal", "projects")))   // "apps" was the App Store (removed 2026-11-25)
     }
 
     @Test fun settingsChatAndHomeAreNotApps() {

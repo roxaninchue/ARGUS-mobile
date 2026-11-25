@@ -229,7 +229,7 @@ object TimeEcho {
  * runner reads back after the turn. Shared by PhoneQa (device) and PhoneReplayRequestTest (model side). Pure.
  */
 object PhoneCases {
-    enum class Verifier { ALARM_SET, ALARM_OFF, CALENDAR_EVENT, DRAFT_NOT_SENT, MEDIA_PLAYING, SETTING_ON, TIMER_RUNNING, SETTINGS_VALUE, CONTACT_SAVED, MAPS_DIRECTIONS, OVERLAY_TAP }
+    enum class Verifier { ALARM_SET, ALARM_OFF, CALENDAR_EVENT, DRAFT_NOT_SENT, MEDIA_PLAYING, SETTING_ON, TIMER_RUNNING, SETTINGS_VALUE, MAPS_DIRECTIONS, OVERLAY_TAP }
 
     data class Case(val id: String, val prompt: String, val proof: Set<String>, val verifier: Verifier,
                     /** What the verifier reads back (shown in the report). */
@@ -258,8 +258,6 @@ object PhoneCases {
         Case("settings-value", "open display settings and turn dark mode on", setOf("open_settings_page", "device_setting")   // 0.55.18: no tap (phone control removed)
            , Verifier.SETTINGS_VALUE,
             "UiModeManager night mode / Settings.Secure ui_night_mode, and the switch in the tree", expect = mapOf("setting" to "dark_mode", "value" to "on")),
-        Case("contact-add", "add a contact QA Tester with number 0977123456", setOf("add_contact"), Verifier.CONTACT_SAVED,
-            "ContactsContract: a contact named QA Tester with 0977123456", expect = mapOf("name" to "QA Tester", "phone" to "0977123456")),
         Case("maps-directions", "get directions to Levy Junction Mall in Google Maps", setOf("navigate_to", "open_url"), Verifier.MAPS_DIRECTIONS,
             "Maps in front and its screen names the destination with a route (min / km / Start)", expect = mapOf("place" to "Levy Junction")),
         // v0.45.14 (user, live 0.45.13 21:38: the pointer overlay paused every action): a tap under the overlay must go
