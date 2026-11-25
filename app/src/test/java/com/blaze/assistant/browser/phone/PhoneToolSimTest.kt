@@ -239,7 +239,7 @@ class PhoneToolSimTest {
     }
     private fun handoff(d: PhoneDriver, cards: HandoffCards?, kind: String, vararg options: String) = runBlocking {
         PhoneBrowserTools.run(d, "phone_handoff", JSONObject().put("reason", "Sign in to Demo Tables").put("kind", kind)
-            .put("options", org.json.JSONArray(options.toList())), shots, { _, _, _ -> true }, cards)
+            .put("options", org.json.JSONArray(options.toList())), shots, cards) { _, _, _ -> true }
     }
 
     @After fun forgetHandoffs() = Handoffs.forget()

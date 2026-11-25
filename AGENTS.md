@@ -16,6 +16,11 @@ it yourself right before merging:
 WIP commits may carry `[skip ci]` (no Gate run); the last commit before the merge must not. Merge with
 `PUT /projects/87806466/merge_requests/<iid>/merge` and a `merge_commit_message` ending in `[skip ci]`, so the merge
 into `main` starts no APK build until Finn says build.
+**Before a merge or a build (2026-11-25, after red build #144):** (1) the branch head's Gate run is *finished* and
+green: compiling is not enough, most breakage is in tests that read the source as text; (2) a build commit goes only on a
+`main` whose last merged head had a green Gate; (3) when removing a feature, grep `app/src/test` for every removed tool
+name, class, settings id, string and count, and fix those tests in the same branch; (4) never add a parameter after a
+function-type parameter that callers pass as a trailing lambda. See failures/2026-11-25-red-build-144-stale-tests.md.
 Gate runs the unit suite in 4 shards plus a non-blocking quarantine shard (it used to run serially on one 4-core runner, and a hanging test ran it into the cap); how to read a run (seconds = Node checks, ~5 min = compile, 60 min = time cap, usually a hang to quarantine) is in **docs/GATE.md**.
 
 Read **docs/MODEL-FIRST.md** before changing anything the model sees or anything that routes a user's message.

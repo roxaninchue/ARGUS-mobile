@@ -4856,7 +4856,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "${BrandName.NAME} needs you on ${BrandName.NAME} Phone ($site): ${reason.take(80)}. Tap, then Take control.") }
             return ArgusPhone.browserTool(app, name, args,
                 ArgusPhone.owner(id, agentId)) {
-                PhoneBrowserTools.run(drv, name, args, shots, { t, d, a -> confirm(t, d, a, always = true) }, phoneCards)
+                PhoneBrowserTools.run(drv, name, args, shots, phoneCards) { t, d, a -> confirm(t, d, a, always = true) }
             }
         }
 

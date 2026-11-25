@@ -116,7 +116,7 @@ class PhoneUiFixesTest {
         val screen = src("browser/phone/PhoneBrowserActivity.kt")
         assertTrue(screen.contains("if (pip.value) PhonePipView()"))
         assertTrue(screen.contains("override fun onUserLeaveHint()"))
-        assertTrue(src("agent/Agent.kt").contains("com.blaze.assistant.browser.phone.PhoneBrowser.own(id, agentId)"))
+        assertTrue(src("agent/Agent.kt").contains("PhoneBrowser.own(id, agentId)"))   // imported since Argus Phone step 1
     }
 
     // ------------------------------------------------------------------ fix 6: Take control → only Hand back

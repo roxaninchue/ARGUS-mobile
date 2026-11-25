@@ -117,8 +117,9 @@ object PhoneBrowserTools {
 
     internal const val NO_PAGE = "${BrandName.NAME} Phone has no page open. Use phone_open first."
 
-    suspend fun run(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, confirm: suspend (String, String, String) -> Boolean,
-                    cards: HandoffCards? = null): String {
+    // cards sits before confirm: callers pass confirm as a trailing lambda (failures/2026-11-25-red-build-144-stale-tests.md).
+    suspend fun run(d: PhoneDriver, name: String, a: JSONObject, shots: MutableList<String>, cards: HandoffCards? = null,
+                    confirm: suspend (String, String, String) -> Boolean): String {
         // 0.45.19-speed: timings for phone_status (the user's approval time on a confirm card isn't Argus's).
         val t0 = d.now()
         var waited = 0L
