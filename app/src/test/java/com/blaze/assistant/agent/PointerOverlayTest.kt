@@ -11,9 +11,9 @@ class PointerOverlayTest {
     @Test fun overlayCaseIsStrict() {
         val c = PhoneCases.byId("overlay-taps")!!
         assertEquals(PhoneCases.Verifier.OVERLAY_TAP, c.verifier)
-        assertEquals(setOf("tap"), c.proof)
+        assertEquals(setOf("open_settings_page", "device_setting"), c.proof)   // 0.55.18: phone control removed, no tap
         assertEquals("open_settings_page", ToolTruth.phoneChoice(c.prompt, listOf("open_settings_page", "device_setting", "tap")))
-        assertEquals("tap", ToolTruth.follow(c.prompt)["open_settings"]); assertEquals("tap", ToolTruth.follow(c.prompt)["open_settings_page"])
+        assertTrue("no tap follows the settings page", ToolTruth.follow(c.prompt).isEmpty())
         assertTrue(PhoneCases.judge(c, listOf("open_settings_page" to Status.VERIFIED, "tap" to Status.VERIFIED), "Do Not Disturb is on.").pass)
         assertFalse(PhoneCases.judge(c, listOf("tap" to Status.VERIFIED), "Paused. Do Not Disturb is on.").pass)
         assertFalse(PhoneCases.judge(c, listOf("tap" to Status.UNVERIFIED), "Do Not Disturb is on.").pass)
