@@ -21,7 +21,6 @@ object ToolGuide {
         "run_shell" to "Not for writing files (file_write) or reading them (file_read); not for Python/Node snippets (run_code).",
         "run_code" to "For short programs and calculations. For long-running servers use run_shell background=true.",
         "file_write" to "Not for files the user should open (write here, then export_file).",
-        "termux_run" to "Only when Termux is needed; ${BrandName.NAME}'s own Linux (run_shell linux=true, run_code, git) needs no setup and returns output.",
         "linux_install" to "Rarely needed: run_code and git install Linux automatically.",
         "download_file" to "For files to keep. For API responses use http_request.",
         // Scheduling

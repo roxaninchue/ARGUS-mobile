@@ -49,7 +49,7 @@ object Git {
     suspend fun run(a: JSONObject): String = withContext(Dispatchers.IO) {
         Terminal.setup()
         if (!Linux.installed()) {
-            if (!Linux.supported()) return@withContext "Git needs ${BrandName.NAME}'s Linux, which this phone's CPU doesn't support. Use termux_run with git instead if Termux is installed."
+            if (!Linux.supported()) return@withContext "Git needs ${BrandName.NAME}'s Linux, which this phone's CPU doesn't support."
             Linux.install()
             if (!Linux.installed()) return@withContext "Couldn't set up Linux for git: ${Linux.status.value}"
         }

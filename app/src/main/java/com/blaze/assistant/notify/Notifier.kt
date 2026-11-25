@@ -307,7 +307,7 @@ object Notifier {
     fun userReplied(raw: String, chatId: String?, context: String? = null) =
         post(raw, BlazeThread.Kind.USER, chatId, context = context, quiet = true)
 
-    /** Fallback when Android blocks opening Argus from the background: a full-screen / heads-up prompt. */
+    /** Fallback when Android blocks opening Argus from the background: a heads-up prompt (no full-screen intent since the 2026-11-25 permission trim). */
     fun wakeHeard() {
         if (!allowed()) return
         val pi = PendingIntent.getActivity(app, 4,
@@ -318,7 +318,7 @@ object Notifier {
             .setSmallIcon(R.drawable.ic_stat_blaze).setColor(ACCENT)
             .setContentTitle("I'm listening")
             .setContentText("Tap to talk to ${BrandName.NAME}")
-            .setContentIntent(pi).setFullScreenIntent(pi, true)
+            .setContentIntent(pi)
             .setAutoCancel(true).setTimeoutAfter(15000)
             .setCategory(NotificationCompat.CATEGORY_CALL).setPriority(NotificationCompat.PRIORITY_MAX)
             .build()

@@ -17,8 +17,7 @@ import java.net.URL
  * libblazerouter.so and run as a local server on 127.0.0.1:20128 with its dashboard.
  *
  * Where it runs ([runner] pref "router_runner"): "alpine" = inside Argus's Alpine Linux (proot job),
- * "termux" = in the Termux app, "direct" = a plain child process. "auto" tries Alpine, then Termux,
- * then direct. Its data lives in ~/.blaze (filesDir/home/.blaze), the same layout as Desktop/CLI;
+ * "direct" = a plain child process. "auto" tries Alpine, then direct. Its data lives in ~/.blaze (filesDir/home/.blaze), the same layout as Desktop/CLI;
  * the phone's model keys are handed over at start (BLAZE_KEYS) so every preset can use them.
  */
 object BlazeRouter {
@@ -27,7 +26,7 @@ object BlazeRouter {
     const val BASE = "http://127.0.0.1:$PORT"
     // Every OmniRoute auto-preset is served; this one is the daily driver.
     const val DEFAULT_MODEL = "auto/best-free"
-    val RUNNERS = listOf("auto", "alpine", "termux", "direct")
+    val RUNNERS = listOf("auto", "alpine", "direct")
 
     data class State(val running: Boolean = false, val where: String = "", val note: String = "", val dashboard: String = "")
     val state = MutableStateFlow(State())
@@ -36,7 +35,7 @@ object BlazeRouter {
     private var jobId = 0
 
     var runner: String
-        get() = Settings.str("router_runner", "auto")
+        get() = Settings.str("router_runner", "auto").takeIf { it in RUNNERS } ?: "auto"
         set(v) = Settings.setStr("router_runner", v)
     var autostart: Boolean
         get() = Settings.bool("router_autostart", false)
@@ -84,7 +83,7 @@ object BlazeRouter {
         val bin = binary(ctx)
         if (!bin.exists()) return "This build has no BlazeRouter for this phone's CPU."
         val keys = keysJson()
-        val order = when (runner) { "alpine" -> listOf("alpine"); "termux" -> listOf("termux"); "direct" -> listOf("direct"); else -> listOf("alpine", "termux", "direct") }
+        val order = when (runner) { "alpine" -> listOf("alpine"); "direct" -> listOf("direct"); else -> listOf("alpine", "direct") }
         val notes = mutableListOf<String>()
         for (r in order) {
             val err = try { launch(ctx, r, bin, keys) } catch (e: Exception) { e.message ?: "failed" }
@@ -95,7 +94,7 @@ object BlazeRouter {
         return "BlazeRouter didn't start. " + notes.joinToString("; ")
     }
 
-    fun label(r: String) = when (r) { "alpine" -> "Alpine Linux"; "termux" -> "Termux"; "direct" -> "${BrandName.NAME}"; else -> r }
+    fun label(r: String) = when (r) { "alpine" -> "Alpine Linux"; "direct" -> "${BrandName.NAME}"; else -> r }
 
     /** Starts the server one way; null = launched (health is checked by the caller). */
     private suspend fun launch(ctx: Context, r: String, bin: File, keys: String): String? = when (r) {
@@ -113,15 +112,6 @@ object BlazeRouter {
                 if (out.contains("rror", true)) out else null
             }
         }
-        "termux" -> {
-            if (!com.blaze.assistant.terminal.Terminal.termuxInstalled(ctx)) "Termux isn't installed"
-            else {
-                // Termux can run the library (it's world-readable) but keeps its data in its own ~/.blaze.
-                val q = keys.replace("'", "'\\''")
-                val out = com.blaze.assistant.terminal.Terminal.runInTermux(ctx, "BLAZE_KEYS='$q' nohup '${bin.absolutePath}' >/dev/null 2>&1 &", background = true)
-                if (out.contains("didn't allow") || out.contains("isn't installed")) out else null
-            }
-        }
         else -> withContext(Dispatchers.IO) {
             val pb = ProcessBuilder(bin.absolutePath, "--home", home(ctx).absolutePath).redirectErrorStream(true)
             pb.environment()["BLAZE_KEYS"] = keys
@@ -135,7 +125,7 @@ object BlazeRouter {
     suspend fun stop(ctx: Context): String {
         proc?.destroy(); proc = null
         if (jobId > 0) runCatching { com.blaze.assistant.terminal.Terminal.stopJob(jobId) }; jobId = 0
-        // Termux (or a leftover) still answering: ask nicely through the run file's pid isn't possible, so say so.
+        // A leftover still answering: ask nicely through the run file's pid isn't possible, so say so.
         val still = waitDown()
         state.value = State(still, if (still) state.value.where else "", if (still) "Still running in ${label(state.value.where)}; stop it there." else "")
         return if (still) state.value.note else "BlazeRouter stopped."
@@ -148,7 +138,7 @@ object BlazeRouter {
 
     fun tool(): JSONObject = JSONObject().put("type", "function").put("function", JSONObject().put("name", "blazerouter")
         .put("description", "BlazeRouter, the local model router on this phone (OmniRoute presets like auto/best-free, auto/fast, chaos fan-out, last-known-good) with a web dashboard. " +
-            "status, start (runs in Alpine Linux, Termux or directly), stop, use (make it ${BrandName.NAME}'s brain), dashboard (open it).")
+            "status, start (runs in Alpine Linux or directly), stop, use (make it ${BrandName.NAME}'s brain), dashboard (open it).")
         .put("parameters", JSONObject().put("type", "object").put("properties", JSONObject()
             .put("action", JSONObject().put("type", "string").put("enum", org.json.JSONArray(listOf("status", "start", "stop", "use", "dashboard"))))
             .put("runner", JSONObject().put("type", "string").put("enum", org.json.JSONArray(RUNNERS)).put("description", "start: where to run it (default: the saved choice, auto)"))

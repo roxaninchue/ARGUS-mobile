@@ -58,7 +58,7 @@ object ToolScheduler {
         val fileWrite = setOf("file_write", "file_edit", "file_delete", "save_file", "make_document", "export_file", "download_file", "skill_file", "write_skill")
         val fileRead = setOf("file_read", "file_list", "file_search")
         /** Each call is its own terminal session unless it names one. */
-        val terminal = setOf("run_shell", "termux_run", "run_code", "linux_install", "terminal_stop", "preview_server", "job_input", "process")
+        val terminal = setOf("run_shell", "run_code", "linux_install", "terminal_stop", "preview_server", "job_input", "process")
         /** May put a card in front of the user (approval / question / send): one at a time. */
         val user = setOf("ask_user", "send_sms", "send_text", "compose_sms", "gmail_send", "slack_post", "call_contact", "call_number", "share_text", "share_to_app",
             "uninstall_app", "standing_permission", "notif_reply", "reply_to_notification", "github_install_apk", "delete_event", "memory_delete", "forget",

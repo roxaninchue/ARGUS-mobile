@@ -1398,7 +1398,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     "Never tell the user you can't make images or music. " +
                     "DO IT, DON'T DIRECT: when something needs a permission or a setting, YOU fix it: ask with the tool that triggers Android's own pop-up, open the exact screen with blaze_self open or open_settings, and tell the user the one switch to flip there. " +
                     "Never hand the user a numbered list of where to tap in Settings; only if you tried and truly can't, say the ONE thing they must tap. Never ask them to type terminal commands: run them yourself. " +
-                    "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell) first; Termux only if the user asks for it. " +
+                    "For terminal work use ${BrandName.NAME}'s own Linux (run_code / run_shell). " +
                     "generate_image is ONLY for art and photos; charts, graphs and tables are made with run_code; a PDF, Word document or PowerPoint deck is ONE make_document call (never a reportlab / python-pptx script). If the terminal fails, say so plainly; never substitute an AI picture.")
             } else turn("make", if (prof.simple) PromptProfile.MAKE_SIMPLE else PromptProfile.MAKE_SHORT + PromptProfile.TERMINAL_SHORT)
             tail("setup") { SelfSetup.promptLine(app) }
@@ -5060,7 +5060,6 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     add(Role.STEP, when (args.optString("action")) { "start" -> "Starting the ${args.optString("name").ifBlank { "" }} server".replace("  ", " "); "stop" -> "Stopping a server"; "restart" -> "Restarting a server"; "logs" -> "Reading a server's log"; else -> "Checking the servers" })
                     kotlinx.coroutines.withContext(Dispatchers.IO) { com.blaze.assistant.terminal.Servers.run(args) }
                 }
-                "termux_run" -> { add(Role.STEP, "Termux: " + args.optString("command").take(60)); com.blaze.assistant.terminal.Terminal.runInTermux(app, args.optString("command"), args.optBoolean("background", true)) }
                 "delegate" -> delegate(args)
                 "create_specialist" -> createSpecialist(args)
                 "recall_memory" -> { add(Role.STEP, if (MemoryIntent.meansAll(args.optString("query"))) "Looking through what I remember" else "Checking memory"); Memory.recall(args.optString("query")) }

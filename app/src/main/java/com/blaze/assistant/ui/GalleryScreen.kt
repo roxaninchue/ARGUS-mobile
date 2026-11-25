@@ -5,7 +5,6 @@ import com.blaze.assistant.ui.common.cutoutSafe
 
 import com.blaze.assistant.i18n.tr
 import com.blaze.assistant.BrandName
-import android.app.WallpaperManager
 import android.media.MediaPlayer
 import android.widget.MediaController
 import android.widget.Toast
@@ -69,7 +68,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.SwapVert
-import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Tune
@@ -130,12 +128,10 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Lock
 
 /**
  * v0.30.0 Gallery: All / Albums / Images / Music / Videos, automatic and user albums, search, sort, multi-select, and a
- * full-screen viewer (swipe, pinch zoom, play audio and video, share, rename, info, wallpaper, delete). Pure rules in
+ * full-screen viewer (swipe, pinch zoom, play audio and video, share, rename, info, delete). Pure rules in
  * media/GalleryModel.kt (GalleryModelTest); storage in media/GalleryRepo.kt.
  */
 
@@ -182,7 +178,6 @@ private sealed class GDialog {
     data class Delete(val items: List<Entry>, val fromViewer: Boolean) : GDialog()
     data class Rename(val item: Entry) : GDialog()
     data class Info(val item: Entry) : GDialog()
-    data class Wallpaper(val item: Entry) : GDialog()
     data class PickAlbum(val items: List<Entry>, val moveFrom: String?) : GDialog()
     object NewAlbum : GDialog()
     data class RenameAlbum(val album: AlbumStore.Album) : GDialog()
@@ -438,7 +433,6 @@ fun GalleryScreen(onDismiss: () -> Unit) {
                         "edit" -> editing = e
                         "rename" -> dialog = GDialog.Rename(e)
                         "info" -> dialog = GDialog.Info(e)
-                        "wallpaper" -> dialog = GDialog.Wallpaper(e)
                         "album" -> dialog = GDialog.PickAlbum(listOf(e), null)
                         "delete" -> dialog = GDialog.Delete(listOf(e), fromViewer = true)
                     }
@@ -467,14 +461,6 @@ fun GalleryScreen(onDismiss: () -> Unit) {
             scope.launch { GalleryRepo.rename(d.item, t)?.let { Toast.makeText(ctx, it, Toast.LENGTH_LONG).show() } }
         }
         is GDialog.Info -> InfoDialog(d.item) { dialog = null }
-        is GDialog.Wallpaper -> BlazeDialog(title = tr("Set as wallpaper"), body = tr("Where should this picture go?"), confirm = tr("Both"), dismiss = tr("Cancel"),
-            onDismiss = { dialog = null },
-            onConfirm = { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK) }) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PillButton(tr("Home screen"), primary = false, icon = Icons.Rounded.Home) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_SYSTEM) }
-                PillButton(tr("Lock screen"), primary = false, icon = Icons.Rounded.Lock) { dialog = null; setWallpaper(ctx, scope, d.item, WallpaperManager.FLAG_LOCK) }
-            }
-        }
         is GDialog.PickAlbum -> AlbumPicker(d, albums.filter { it.id != d.moveFrom }, onDismiss = { dialog = null }) { target, newName ->
             dialog = null
             val ids = d.items.map { it.id }
@@ -498,11 +484,6 @@ fun GalleryScreen(onDismiss: () -> Unit) {
             dismiss = tr("Cancel"), onDismiss = { dialog = null },
             onConfirm = { dialog = null; GalleryRepo.deleteAlbum(d.album.id); if (albumId == d.album.id) albumId = null })
     }
-}
-
-private fun setWallpaper(ctx: android.content.Context, scope: kotlinx.coroutines.CoroutineScope, e: Entry, which: Int) {
-    Toast.makeText(ctx, "Setting wallpaper\u2026", Toast.LENGTH_SHORT).show()
-    scope.launch { Toast.makeText(ctx, GalleryRepo.setWallpaper(e, which) ?: "Wallpaper set.", Toast.LENGTH_SHORT).show() }
 }
 
 // ---------------------------------------------------------------- pieces
@@ -739,7 +720,6 @@ private fun GalleryViewer(list: List<Entry>, start: Int, autoplay: String, origi
                 if (cur.kind == "image") BarAction(Icons.Rounded.Tune, "Edit", Color.White) { onAction("edit", cur) }
                 BarAction(Icons.Rounded.Edit, "Rename", Color.White) { onAction("rename", cur) }
                 BarAction(Icons.Rounded.Info, "Info", Color.White) { onAction("info", cur) }
-                if (cur.kind == "image") BarAction(Icons.Rounded.Wallpaper, "Wallpaper", Color.White) { onAction("wallpaper", cur) }
                 BarAction(Icons.Rounded.CreateNewFolder, "Album", Color.White) { onAction("album", cur) }
                 BarAction(Icons.Rounded.Delete, "Trash", Color.White) { onAction("delete", cur) }
             }

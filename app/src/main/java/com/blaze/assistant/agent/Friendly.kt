@@ -37,7 +37,7 @@ object Friendly {
             "file_list" -> "Looking through your files"
             "file_search" -> "Searching your files for " + q(or(v("pattern"), v("query")))
             "export_file" -> "Saving " + file() + " to your phone"
-            "run_shell", "termux_run" -> {
+            "run_shell" -> {
                 val cmd = v("command"); val sum = v("summary")
                 when {
                     installRe.containsMatchIn(cmd) -> "Installing packages"
@@ -179,7 +179,7 @@ object Friendly {
         lastTool == "web_search" -> "Going through the search results"
         lastTool in setOf("fetch_page", "browser_read") || lastTool.startsWith("browser_") -> "Reading the page"
         lastTool.startsWith("file_") -> "Going through the files"
-        lastTool in setOf("run_shell", "termux_run", "run_code") -> "Checking how that went"
+        lastTool in setOf("run_shell", "run_code") -> "Checking how that went"
         lastTool in setOf("read_screen", "look_at_screen", "tap", "type_text", "scroll", "run_plan", "do_actions", "open_app") -> "Looking at the screen"
         lastTool.startsWith("gmail_") -> "Going through your email"
         lastTool.contains("calendar") || lastTool.startsWith("gcal_") -> "Checking your schedule"
@@ -191,7 +191,7 @@ object Friendly {
     /** The exact call, for the expanded view. */
     fun exact(name: String, a: JSONObject): String {
         val cmd = a.optString("command")
-        if (cmd.isNotBlank() && name in setOf("run_shell", "termux_run")) return "$ " + cmd.take(400)
+        if (cmd.isNotBlank() && name == "run_shell") return "$ " + cmd.take(400)
         val body = a.keys().asSequence().joinToString(", ") { k -> "$k=" + a.opt(k).toString().replace("\n", " ").take(120) }
         return "$name($body)".take(500)
     }

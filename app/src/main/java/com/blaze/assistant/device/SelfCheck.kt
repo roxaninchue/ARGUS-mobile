@@ -53,7 +53,7 @@ object SelfCheck {
         val L = com.blaze.assistant.terminal.Linux
         val linuxOk = if (L.installed()) try { withTimeoutOrNull(30_000) { T.run("echo linux-ok", 25, true) }?.contains("linux-ok") == true } catch (_: Exception) { false } else false
         out += Item("Linux", linuxOk || !L.supported(), when {
-            !L.supported() -> "Not supported on this CPU (Termux can be used instead)."
+            !L.supported() -> "Not supported on this CPU."
             !L.installed() -> "Not installed yet. run_code and git set it up automatically, or install it in Settings → Terminal."
             linuxOk -> "Alpine runs (${L.sizeMb()} MB)"
             else -> "Installed but didn't start. Reinstall it in Settings → Terminal." }, if (L.supported() && !linuxOk) "settings terminal" else "")

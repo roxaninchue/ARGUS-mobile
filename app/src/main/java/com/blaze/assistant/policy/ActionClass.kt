@@ -61,7 +61,7 @@ object ToolRegistry {
                     val arg: String = "action")
 
     /** Shell-like tools: classed per command by CommandPolicy (the registry's base is the fallback). */
-    val COMMAND_TOOLS = setOf("run_shell", "termux_run", "git")
+    val COMMAND_TOOLS = setOf("run_shell", "git")
 
     private fun d(c: ActionClass, vararg a: Pair<String, ActionClass>) = Decl(c, mapOf(*a))
 
@@ -160,7 +160,7 @@ object ToolRegistry {
         one("call_control", d(PHYSICAL, "status" to READ, "start_blaze_call" to SEND))
 
         // ---------------- commands: per command (CommandPolicy.actionClass); base = local work ----------------
-        all(WRITE_LOCAL, "run_shell", "termux_run")
+        all(WRITE_LOCAL, "run_shell")
         one("git", d(WRITE_LOCAL, "status" to READ, "log" to READ, "diff" to READ, "push" to WRITE_REMOTE))
         // owner 2026-11-20 terminal checkpoints: save / rollback change ARGUS's own terminal folders; delete drops a checkpoint
         one("terminal_checkpoint", d(WRITE_LOCAL, "list" to READ, "changes" to READ, "delete" to DELETE))

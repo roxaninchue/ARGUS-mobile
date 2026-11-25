@@ -51,7 +51,7 @@ object FixCards {
      * permission. 0.53.7: a shell error put up "Allow this for Argus?" and the run gave up mid-task; for these the
      * error goes back to the model as it is (Terminal adds its own hint) and no card shows.
      */
-    val linuxTools = setOf("run_shell", "termux_run", "run_code", "linux_install", "terminal_jobs", "terminal_status", "job_input", "job_log",
+    val linuxTools = setOf("run_shell", "run_code", "linux_install", "terminal_jobs", "terminal_status", "job_input", "job_log",
         "terminal_stop", "preview_server", "servers", "git", "file_read", "file_write", "file_edit", "file_delete", "file_list", "file_search")
 
     /** The fix a tool result asks for, or null. */

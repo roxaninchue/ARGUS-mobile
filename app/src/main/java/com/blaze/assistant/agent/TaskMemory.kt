@@ -220,7 +220,7 @@ object TaskMemory {
             n.startsWith("browser_") || n == "open_url" -> web = Surface.BROWSER
             n.startsWith("phone_") -> web = Surface.PHONE
             n in setOf("tap", "type_text", "scroll", "swipe", "open_app", "read_screen", "look_at_screen", "press_button", "do_actions", "run_plan") -> other = Surface.SCREEN
-            n in setOf("run_shell", "termux_run", "terminal_run") && other == Surface.NONE -> other = Surface.TERMINAL
+            n in setOf("run_shell", "terminal_run") && other == Surface.NONE -> other = Surface.TERMINAL
         }
         return if (web != Surface.NONE) web else other
     }

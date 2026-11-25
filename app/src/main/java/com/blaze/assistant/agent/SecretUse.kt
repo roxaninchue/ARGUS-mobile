@@ -104,7 +104,7 @@ object SecretUse {
 
     fun channelOf(tool: String): Channel = when (tool) {
         "http_request", "fetch_page", "download_file" -> Channel.HTTP
-        "run_shell", "run_code", "termux_run", com.blaze.assistant.terminal.Git.NAME -> Channel.TERMINAL
+        "run_shell", "run_code", com.blaze.assistant.terminal.Git.NAME -> Channel.TERMINAL
         else -> if (tool.startsWith("browser_")) Channel.BROWSER else Channel.NONE
     }
 

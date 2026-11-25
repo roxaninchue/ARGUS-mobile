@@ -103,7 +103,7 @@ object ToolRouter {
             { it.startsWith("browser_") }),
         Group("terminal", "Linux shell, code, files, Termux",
             r("""\b(shell|terminal|linux|command|script|code|coding|python|node|js|javascript|npm|pip|git|github|repo|clone|commit|push|pull|branch|api|json|csv|http|curl|download|install|file|files|folder|termux|run|compile|build|debug|server|program|calculate|convert)\b"""),
-            { it in setOf("run_shell", "linux_install", "terminal_jobs", "terminal_stop", "termux_run", "git", "schedule_command", "preview_server", "servers") || it in com.blaze.assistant.terminal.DevTools.names }),
+            { it in setOf("run_shell", "linux_install", "terminal_jobs", "terminal_stop", "git", "schedule_command", "preview_server", "servers") || it in com.blaze.assistant.terminal.DevTools.names }),
         Group("apps", "GitHub, Notion, Slack, Spotify connectors",
             r("""\b(github|repo|repos|repository|commits?|branch(?:es)?|issue|pull request|pr|notion|slack|spotify|playlist|song|music)\b|github\.com"""),
             { it.startsWith("github_") || it.startsWith("notion_") || it.startsWith("slack_") || it.startsWith("spotify_") }),
