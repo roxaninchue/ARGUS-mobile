@@ -23,7 +23,8 @@ class SettingsAliasTest {
     private val sheet by lazy { File(root, "com/blaze/assistant/ui/SettingsSheet.kt").readText() }
 
     private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "bank", "voice", "permissions", "account", "updates",
-        "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "watches", "secrets", "logins",
+        "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "secrets",   // "watches" went with phone control in 0.55.18
+        "logins",
         "phonebrowser", "proactive", "orb", "logs", "replies", "usage", "backup", "ai", "memory",
         "routines", "skills", "learn", "appstore", "seller", "dashboard", "plan", "sync",
         // old aliases (0.52.3 declutter)

@@ -13,12 +13,12 @@ class ReplyFixTest {
     private fun call(n: String, a: String) = JSONObject().put("id", n).put("type", "function").put("function", JSONObject().put("name", n).put("arguments", a))
 
     @Test fun flowToolStandsAlone() {
-        val u = "open Do Not Disturb settings and turn it on"
-        val r = JSONObject().put("tool_calls", JSONArray().put(call("open_settings_page", "{\"page\":\"dnd\"}"))
-            .put(call("run_plan", "{\"steps\":[{\"action\":\"tap\",\"element\":{\"id\":\"17\"}}]}")))
-        assertEquals(1, ReplyFix.keepFlowTool(r, "open_settings_page", u))
+        // 0.55.18: the settings-page flow (open, then tap) went with phone control; the alarm flow is the two-step one left.
+        val u = "remove the alarm"
+        val r = JSONObject().put("tool_calls", JSONArray().put(call("processes", "{}")).put(call("process", "{\"id\":\"A2\"}")))
+        assertEquals(1, ReplyFix.keepFlowTool(r, "processes", u))
         assertEquals(1, r.getJSONArray("tool_calls").length())
-        assertEquals("open_settings_page", r.getJSONArray("tool_calls").getJSONObject(0).getJSONObject("function").getString("name"))
+        assertEquals("processes", r.getJSONArray("tool_calls").getJSONObject(0).getJSONObject("function").getString("name"))
         // Not a flow (set_alarm has no follow-up), or nothing named: untouched.
         val r2 = JSONObject().put("tool_calls", JSONArray().put(call("set_alarm", "{}")).put(call("read_screen", "{}")))
         assertEquals(0, ReplyFix.keepFlowTool(r2, "set_alarm", "set an alarm for 6:40 am"))
