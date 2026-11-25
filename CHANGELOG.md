@@ -1,3 +1,11 @@
+## Unreleased: Argus Phone step 2 (branch feat/phone-handoff-cards): handoff cards
+- Argus Phone asks for a sign-in with a secure card in the chat instead of handing over control: it finds the page's
+  email / username and password fields, fills a saved login silently, otherwise asks once and types the answers
+  straight into the page. Same for one-time codes. A cancel stops the sign-in for 10 minutes.
+- Choice card for options the page offers (a size, a time slot); returns the pick.
+- Take control stays for captchas, puzzles, card forms and pages that won't take a filled field.
+- docs/PHONE-INSTANCES.md "Step 2".
+
 ## Unreleased: Argus Phone step 1b (branch feat/phone-1b): no lost work between instances
 - Each instance has a scratch folder; lasting work goes in the shared home (`~`). Close, close all and reset move
   leftover scratch to `~/Recovered/<instance name>/` first and say so; nothing is deleted.
