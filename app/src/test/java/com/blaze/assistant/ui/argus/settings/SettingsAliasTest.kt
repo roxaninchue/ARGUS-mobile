@@ -23,7 +23,8 @@ class SettingsAliasTest {
     private val sheet by lazy { File(root, "com/blaze/assistant/ui/SettingsSheet.kt").readText() }
 
     private val PRE_053 = listOf("system", "feedback", "look", "language", "doing", "bank", "voice", "permissions", "account", "updates",
-        "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "watches", "secrets", "logins",
+        "about", "holding", "connections", "desktop", "control", "persona", "feel", "privacy", "secrets",   // "watches" went with phone control in 0.55.18
+        "logins",
         "phonebrowser", "proactive", "orb", "logs", "replies", "usage", "backup", "ai", "memory",
         "routines", "skills", "learn", "appstore", "seller", "dashboard", "plan", "sync",
         // old aliases (0.52.3 declutter)
@@ -38,7 +39,7 @@ class SettingsAliasTest {
         (page == "system" && "SpaceProfile.SYSTEM_PAGE -> " in sheet) || (page == "feedback" && "SpaceProfile.FEEDBACK_PAGE -> " in sheet)
 
     @Test fun everyPre053IdOpensAPage() {
-        assertEquals(42, settingsPages.size)   // P2-SF-04 added "policy" (Approvals & permissions), P2-SF-05 "activity"; 0.55.1 "developer" + "speed"
+        assertEquals(41, settingsPages.size)   // 0.55.18 removed the phone-control page; P2-SF-04 added "policy" (Approvals & permissions), P2-SF-05 "activity"; 0.55.1 "developer" + "speed"
         assertTrue(settingsPages.none { it.id == "specialists" || it.id == "terminal" || it.id == "device" })
         for (id in PRE_053) {
             val p = settingsStart(id)

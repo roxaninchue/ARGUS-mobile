@@ -29,7 +29,7 @@ class SetupChecklistTest {
     private fun store(): HomeStore = HomeStore(JdbcSql("jdbc:sqlite:" + File(dir, "blaze.db").path).also { open += it })
 
     @Test fun theStepsAreWhatTheAppCanCheckAndOpen() {
-        assertEquals(listOf("calendar", "google", "notifications", "wake_word", "assistant", "desktop", "accessibility"), SetupChecklist.STEPS.map { it.key })
+        assertEquals(listOf("calendar", "google", "notifications", "wake_word", "assistant", "desktop"), SetupChecklist.STEPS.map { it.key })   // 0.55.18: no phone-control step
         assertEquals("Set up ARGUS", SetupChecklist.TITLE)
         assertTrue(SetupChecklist.STEPS.any { it.text == "Turn on \u201cHey Argus\u201d" })
         assertTrue(SetupChecklist.STEPS.any { it.text == "Pair with Argus Desktop" })

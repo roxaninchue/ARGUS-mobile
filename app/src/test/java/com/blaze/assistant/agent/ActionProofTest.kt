@@ -107,18 +107,14 @@ class ActionProofTest {
 
     /** message_contact may only say "Sent to" from the notification reply or after the on-screen check says SENT. */
     @Test fun messagingOnlyClaimsAfterTheCheck() {
+        // 0.55.18: phone control is gone, so the app path never presses Send; the only "Sent to" left is a notification
+        // reply (NotificationBrain.sendReply), and every other result must not read like success.
         val src = File("src/main/java/com/blaze/assistant/phone/Messaging.kt").readText()
         val returns = Regex("""return "((?:[^"\\]|\\.)*)"""").findAll(src).map { it.range.first to it.groupValues[1] }.toList()
-        val verdictAt = src.indexOf("SendCheck.Verdict.SENT")
-        assertTrue(verdictAt > 0)
         for ((at, text) in returns) {
-            if (text.startsWith("Sent to")) {
-                val viaNotification = src.substring(maxOf(0, at - 120), at).contains("sendReply")
-                assertTrue("Unverified 'Sent to' at $at", viaNotification || at > verdictAt)
-            } else if (!text.startsWith("\$")) {
-                assertFalse("A failure result reads like success: $text", ClaimGuard.succeeded(text))
-            }
+            if (text.startsWith("Sent to")) assertTrue("Unverified 'Sent to' at $at", src.substring(maxOf(0, at - 120), at).contains("sendReply"))
+            else if (!text.startsWith("\$")) assertFalse("A failure result reads like success: $text", ClaimGuard.succeeded(text))
         }
-        assertEquals(1, returns.count { it.second.startsWith("Sent to") && it.first > verdictAt })
+        assertTrue("the app path says the user taps Send", src.contains("the user must tap Send"))
     }
 }

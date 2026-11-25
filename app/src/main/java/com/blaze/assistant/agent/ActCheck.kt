@@ -255,7 +255,8 @@ object PhoneCases {
             "WifiManager.isWifiEnabled, BluetoothAdapter.isEnabled, NotificationManager.currentInterruptionFilter", expect = mapOf("settings" to "wifi,bluetooth,do_not_disturb")),
         Case("timer", "set a timer for 2 minutes", setOf("set_timer"), Verifier.TIMER_RUNNING,
             "the Clock app's ongoing timer notification (or the timer screen)", expect = mapOf("seconds" to "120")),
-        Case("settings-value", "open display settings and turn dark mode on", setOf("tap", "device_setting"), Verifier.SETTINGS_VALUE,
+        Case("settings-value", "open display settings and turn dark mode on", setOf("open_settings_page", "device_setting")   // 0.55.18: no tap (phone control removed)
+           , Verifier.SETTINGS_VALUE,
             "UiModeManager night mode / Settings.Secure ui_night_mode, and the switch in the tree", expect = mapOf("setting" to "dark_mode", "value" to "on")),
         Case("contact-add", "add a contact QA Tester with number 0977123456", setOf("add_contact"), Verifier.CONTACT_SAVED,
             "ContactsContract: a contact named QA Tester with 0977123456", expect = mapOf("name" to "QA Tester", "phone" to "0977123456")),
@@ -263,7 +264,8 @@ object PhoneCases {
             "Maps in front and its screen names the destination with a route (min / km / Start)", expect = mapOf("place" to "Levy Junction")),
         // v0.45.14 (user, live 0.45.13 21:38: the pointer overlay paused every action): a tap under the overlay must go
         // through with the pointer shown, and nothing in the turn may say it paused.
-        Case("overlay-taps", "open Do Not Disturb settings and turn it on", setOf("tap"), Verifier.OVERLAY_TAP,
+        Case("overlay-taps", "open Do Not Disturb settings and turn it on", setOf("open_settings_page", "device_setting")   // 0.55.18: no tap
+           , Verifier.OVERLAY_TAP,
             "NotificationManager.currentInterruptionFilter (DND on), the pointer was on screen this run, and no step or result says paused",
             mustNotSay = listOf("paused"), expect = mapOf("setting" to "do_not_disturb")),
     )

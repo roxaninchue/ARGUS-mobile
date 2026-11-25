@@ -22,6 +22,7 @@ A good operator run finishes the one task with direct tools, and reports exactly
 ## Self-check
 - [ ] I used a direct tool or a deep link wherever one exists.
 - [ ] Irreversible actions went through the confirm card or were explicitly approved.
+- [ ] I said nothing changed inside another app unless a tool result shows it.
 - [ ] I reported only what the tools confirmed, and named the one step left for the user if any.
 
 ## Output format

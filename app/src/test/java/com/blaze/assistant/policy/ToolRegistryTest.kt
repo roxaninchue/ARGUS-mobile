@@ -24,7 +24,10 @@ class ToolRegistryTest {
         "clear", "remove", "search", "x")
 
     /** Declared names that no source defines on purpose: FastLane's on-device "toggle_setting" alias of device_setting. */
-    private val aliases = setOf("toggle_setting")
+    private val aliases = setOf("toggle_setting") +
+        // 0.55.18 removed phone control; these stay declared so old bot rules, saved policies and replays still classify.
+        setOf("do_actions", "look_at_screen", "phone_task", "press_button", "read_screen", "run_plan", "run_skill", "scroll",
+            "search_screen_memory", "system_action", "tap", "type_text", "wait", "watch")
 
     private fun scan(): Set<String> {
         val files = src.walkTopDown().filter { it.isFile && it.extension == "kt" }.map { it.readText() }.toList()
@@ -44,7 +47,7 @@ class ToolRegistryTest {
     @Test fun everyToolDefinedInTheAppHasAClass() {
         val found = scan()
         assertTrue("the scan finds the tools (${found.size})", found.size > 200)
-        for (known in listOf("send_sms", "run_shell", "web_search", "get_weather", "request_secret", "agent_delete", "gmail_send", "tap"))
+        for (known in listOf("send_sms", "run_shell", "web_search", "get_weather", "request_secret", "agent_delete", "gmail_send", "open_app"))
             assertTrue("scan misses $known", known in found)
         val missing = found.filter { !ToolRegistry.declared(it) }.sorted()
         assertTrue("tools without an ActionClass (declare them in policy/ActionClass.kt ToolRegistry): $missing", missing.isEmpty())
