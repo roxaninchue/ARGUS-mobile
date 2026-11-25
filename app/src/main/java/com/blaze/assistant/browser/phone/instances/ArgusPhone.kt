@@ -62,8 +62,8 @@ object ArgusPhone {
             core0 = c
             scope.launch {
                 try { c.load() } catch (e: Throwable) { CrashLog.quiet("ArgusPhone.load", e) }
-                PhoneBrowser.live.map { l -> listOf(l.mode, l.url, l.title, l.reason) }.distinctUntilChanged().collect { k ->
-                    try { c.onLive(k[0] as PhonePolicy.Mode, k[1] as String, k[2] as String, PhonePolicy.siteOf(k[1] as String), k[3] as String?) }
+                PhoneBrowser.live.map { l -> listOf(l.mode, l.url, l.title, l.reason, l.asking) }.distinctUntilChanged().collect { k ->
+                    try { c.onLive(k[0] as PhonePolicy.Mode, k[1] as String, k[2] as String, PhonePolicy.siteOf(k[1] as String), k[3] as String?, k[4] as String?) }
                     catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Throwable) { CrashLog.quiet("ArgusPhone.onLive", e) }
                 }
             }

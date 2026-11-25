@@ -47,7 +47,7 @@ object DeepState {
         if (i.task.isNotBlank()) o.put("task", i.task.take(80))
         o.put("tier", i.tier.name.lowercase())
         if (active) o.put("active", true)
-        o.put("mode", when (i.mode) { PhonePolicy.Mode.AGENT -> "argus"
+        o.put("mode", if (i.cards.isNotEmpty()) "waiting_on_user" else when (i.mode) { PhonePolicy.Mode.AGENT -> "argus"
             PhonePolicy.Mode.WAITING -> "waiting_on_user"
             PhonePolicy.Mode.USER -> "user_drives"
             else -> "idle" })

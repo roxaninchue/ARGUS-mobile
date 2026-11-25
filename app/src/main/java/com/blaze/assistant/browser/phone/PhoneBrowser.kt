@@ -67,6 +67,8 @@ object PhoneBrowser {
         val lowRam: Boolean = false,
         /** An agent turn is waiting on Hand back. */
         val agentWaiting: Boolean = false,
+        /** A phone_handoff chat card (sign-in, code, choice) waits on the user: its line. Null otherwise. */
+        val asking: String? = null,
     )
 
     private val _live = MutableStateFlow(Live())
@@ -163,11 +165,13 @@ object PhoneBrowser {
         if (chat != null) stopped = stopChat(chat) || stopped
         ownerChat = null; ownerAgent = null
         handBack?.cancel(); handBack = null
-        set { it.copy(step = "Stopped", reason = null, agentWaiting = false, at = System.currentTimeMillis(),
+        set { it.copy(step = "Stopped", reason = null, agentWaiting = false, asking = null, at = System.currentTimeMillis(),
             mode = if (it.mode == PhonePolicy.Mode.WAITING) PhonePolicy.Mode.AGENT else it.mode) }
         return stopped
     }
     fun step(what: String) { set { it.copy(step = what, at = System.currentTimeMillis()) } }
+    /** A chat card waits on the user ([what]), or no longer does (null): the tile, the instance and the notification say so. */
+    fun asking(what: String?) { set { it.copy(asking = what?.take(120), at = System.currentTimeMillis()) } }
     private fun touch() { lastActive = System.currentTimeMillis(); surface?.actedAt = lastActive; scheduleIdle() }
 
     // ------------------------------------------------------------------ lifecycle
@@ -715,6 +719,8 @@ object PhoneBrowser {
     @Synchronized fun watch(on: Boolean) { watchers = (watchers + if (on) 1 else -1).coerceAtLeast(0); surface?.watching = watchers }
 
     fun hasPage(): Boolean = web != null
+    /** The site Argus is driving on Argus Phone right now ("" when none, or the user has it). CredAsk's phone card. */
+    fun agentSite(): String = if (web != null && _live.value.mode == PhonePolicy.Mode.AGENT) PhonePolicy.siteOf(_live.value.url) else ""
     fun site(): String = session?.site.orEmpty()
     suspend fun mayAct(): Boolean = waitForUser()
 
@@ -744,5 +750,6 @@ object PhoneBrowser {
         override suspend fun resolve(query: String) = SiteResolver.resolve(query, PhoneBrowser.visits(ctx)) { q ->
             SiteResolver.parseSearch(com.blaze.assistant.agent.Web.search(q, 8)) }
         override fun step(what: String) = PhoneBrowser.step(what)
+        override fun asking(what: String?) = PhoneBrowser.asking(what)
     }
 }

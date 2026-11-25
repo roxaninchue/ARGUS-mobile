@@ -1,4 +1,14 @@
-## Unreleased: permission trim (branch chore/trim-permissions-2, Draft MR !86)
+## Unreleased: Argus Phone step 2 gaps (branch feat/phone-step2-gaps)
+- While a sign-in, code or choice card waits in the chat, Argus Phone says "Waiting on you" on its tile, in the picture-
+  in-picture window, on the instance (phone_instances: mode waiting_on_user) and in the notification; a notification also
+  comes when the user is away from the app. The card's line clears when it is answered, cancelled or stopped.
+- After Take control and Hand back, Argus gets "While they had it: ..." before the fresh read: where the page went, what
+  was filled, ticked, picked or cleared (secret and card values never shown), new headings, a confirmation or a sign-in
+  that appeared. So it doesn't redo the user's work.
+- A reply that asks for a login in the chat while Argus Phone has the page becomes Argus Phone's own sign-in card
+  (phone_handoff kind=sign_in) instead of the background browser's secure form.
+
+## Merged: permission trim (MR !86, 8d294d20)
 Finn (2026-11-25): strip the permissions Argus no longer needs. Removed with their code: the in-app App Store, Bank mode
 (WRITE_SECURE_SETTINGS), SMS / calls / contacts, overlays (SYSTEM_ALERT_WINDOW), the notification listener, usage stats,
 phone_mode (WRITE_SETTINGS, ACCESS_NOTIFICATION_POLICY), uninstall_app (REQUEST_DELETE_PACKAGES), the place / bluetooth /

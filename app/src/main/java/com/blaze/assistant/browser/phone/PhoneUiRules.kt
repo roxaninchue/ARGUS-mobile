@@ -11,15 +11,16 @@ object PhoneUiRules {
     const val RECENT_MS = 120_000L
 
     /** Shown while Argus works there (a step in the last [RECENT_MS]), while the user drives, and always while it waits. */
-    fun showTile(mode: PhonePolicy.Mode, at: Long, now: Long, hiddenAt: Long): Boolean {
-        val needsUser = mode == PhonePolicy.Mode.WAITING
+    fun showTile(mode: PhonePolicy.Mode, at: Long, now: Long, hiddenAt: Long, asking: Boolean = false): Boolean {
+        val needsUser = mode == PhonePolicy.Mode.WAITING || (asking && mode != PhonePolicy.Mode.OFF)
         val recent = mode == PhonePolicy.Mode.AGENT && now - at < RECENT_MS
         return (needsUser || recent || mode == PhonePolicy.Mode.USER) && (needsUser || hiddenAt < at)
     }
 
     fun host(url: String): String = url.removePrefix("https://").removePrefix("http://").removePrefix("www.").substringBefore('/')
 
-    fun pill(mode: PhonePolicy.Mode, step: String, reason: String?): String = when (mode) {
+    fun pill(mode: PhonePolicy.Mode, step: String, reason: String?, asking: String? = null): String = when (mode) {
+        PhonePolicy.Mode.AGENT -> if (asking != null) "Waiting on you: " + asking.ifBlank { "a card in the chat" } else step.ifBlank { "Browsing" }
         PhonePolicy.Mode.WAITING -> "${BrandName.NAME} needs you: " + (reason ?: "take control")
         PhonePolicy.Mode.USER -> "You're in control"
         PhonePolicy.Mode.OFF -> step.ifBlank { "Idle" }
@@ -83,8 +84,9 @@ object PhonePip {
     fun title(action: String): String = if (action == ACTION_STOP) "Stop" else "Open ${BrandName.NAME}"
 
     /** The one line drawn over the live view in the window (null = just the page). */
-    fun label(working: Boolean, mode: PhonePolicy.Mode, step: String): String? = when {
+    fun label(working: Boolean, mode: PhonePolicy.Mode, step: String, asking: Boolean = false): String? = when {
         mode == PhonePolicy.Mode.WAITING -> "${BrandName.NAME} needs you"
+        asking && mode == PhonePolicy.Mode.AGENT -> "Waiting on you"
         step == "Stopped" -> "Stopped"
         !working -> "Done"
         else -> null

@@ -55,6 +55,18 @@ object CredAsk {
      * Argus's browser ("" = none); [asks] = secure forms already asked on that host this session (99 after a cancel);
      * [guarded] = this turn already swapped one reply; [known] = the tools this request may call.
      */
+    /**
+     * Step 2 gap: the same ask while Argus Phone has the page ([phoneHost], "" = none): phone_handoff kind=sign_in, which
+     * reads the page's own fields, fills a saved login silently and keeps the per-site cancel rule (Handoffs).
+     */
+    fun decidePhone(reply: String, phoneHost: String, guarded: Boolean, known: Collection<String>): JSONObject? {
+        if (guarded || phoneHost.isBlank() || PHONE !in known || !asks(reply)) return null
+        val args = JSONObject().put("kind", "sign_in").put("reason", "Sign in to $phoneHost")
+        return JSONObject().put("id", "credask_phone_0").put("type", "function")
+            .put("function", JSONObject().put("name", PHONE).put("arguments", args.toString()))
+    }
+    const val PHONE = "phone_handoff"
+
     fun decide(reply: String, host: String, asks: Int, guarded: Boolean, known: Collection<String>, userText: String = ""): JSONObject? {
         if (guarded || host.isBlank() || asks >= 3 || CallScan.SECURE !in known) return null
         if (!asks(reply)) return null

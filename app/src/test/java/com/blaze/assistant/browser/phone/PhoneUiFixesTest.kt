@@ -145,6 +145,9 @@ class PhoneUiFixesTest {
         assertFalse("hidden until the next step", PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now - 10, now, now))
         assertTrue(PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now, now, now - 1))
         assertFalse(PhoneUiRules.showTile(PhonePolicy.Mode.OFF, now, now, -1))
+        assertTrue("a waiting chat card keeps the tile, even if hidden", PhoneUiRules.showTile(PhonePolicy.Mode.AGENT, now - 999_999, now, now, asking = true))
+        assertEquals("Waiting on you: Sign in to Demo", PhoneUiRules.pill(PhonePolicy.Mode.AGENT, "Typing", null, "Sign in to Demo"))
+        assertEquals("Waiting on you", PhonePip.label(true, PhonePolicy.Mode.AGENT, "x", asking = true))
         assertEquals("automationintesting.online", PhoneUiRules.host("https://www.automationintesting.online/reservation/1?x"))
         assertEquals("${BrandName.NAME} needs you: Solve the captcha", PhoneUiRules.pill(PhonePolicy.Mode.WAITING, "x", "Solve the captcha"))
         // The tile said "Tapping e61": an element id is never shown as if it were a button's name.

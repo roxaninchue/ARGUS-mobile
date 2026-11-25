@@ -336,12 +336,14 @@ object Handoffs {
     suspend fun run(d: PhoneDriver, kind0: String, reason: String, options: List<String>, cards: HandoffCards?): String {
         val kind = kind0.trim().lowercase().replace('-', '_').ifBlank { "control" }
         if (kind !in KINDS) return "Unknown kind \u201c${kind.take(20)}\u201d. Use one of: ${KINDS.joinToString()}."
-        if (kind == "control" || cards == null) return d.handoff(reason)
+        if (kind == "control" || cards == null) return HandBack.control(d, reason)
         if (kind == "choice") {
             val opts = options.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(5)
             if (opts.size < 2) return "kind=choice needs 2 to 5 options, worded as the page has them."
             d.step("Waiting for you: ${reason.take(60)}")
-            return "The user chose: \u201c${cards.choose(reason, opts).take(200)}\u201d. Act on it with phone_act."
+            d.asking(reason)
+            val pick = try { cards.choose(reason, opts) } finally { d.asking(null) }
+            return "The user chose: \u201c${pick.take(200)}\u201d. Act on it with phone_act."
         }
         if (!d.hasPage()) return PhoneBrowserTools.NO_PAGE
         if (!d.awaitAgentTurn()) return PhoneBrowserTools.USER_HAS_IT
@@ -357,8 +359,10 @@ object Handoffs {
         val answer = if (fromVault) { d.step("Using your saved sign-in for $site"); SecureInput.Answer(vault.mapValues { it.value.orEmpty() }, false) }
         else {
             d.step("Waiting for you: ${reason.take(60)}")
-            cards.secure(site, reason, if (kind == "code") "The code goes straight into $site." else "Your details go straight into $site and never through the chat.", fields)
-                ?: run {
+            d.asking(reason)
+            val got = try { cards.secure(site, reason, if (kind == "code") "The code goes straight into $site." else "Your details go straight into $site and never through the chat.", fields) }
+                finally { d.asking(null) }
+            got ?: run {
                     cancelled[site] = d.now()
                     return "The user cancelled the card (or didn't answer). STOP this sign-in now and don't ask again for $site. Say in one line what you needed; " +
                         "offer phone_handoff kind=control if they want to do it themselves."
@@ -383,3 +387,54 @@ object Handoffs {
     }
 }
 
+
+/**
+ * Step 2 gap (docs/ARGUS-PHONE.md 4b): after Take control and Hand back, Argus gets a fresh read plus a short "what
+ * changed while you had it", so it doesn't redo the user's work. Pure of Android (PhoneToolSimTest).
+ */
+object HandBack {
+    /** kind=control: remember the page, hand it over, and on Hand back say what changed before the fresh read. */
+    suspend fun control(d: PhoneDriver, reason: String): String {
+        val before = if (!d.hasPage()) null else { try { d.snapshot() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null } }
+        val out = d.handoff(reason)
+        val head = "The user handed back."
+        if (!out.startsWith(head) || before == null) return out
+        val after = try { d.snapshot() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { null } ?: return out
+        return "$head While they had it: ${changes(before, after)} Don't redo what they did." + out.removePrefix(head)
+    }
+
+    private fun place(u: String): String {
+        val noQuery = u.substringBefore('?').substringBefore('#')
+        return noQuery.removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/').take(80)
+    }
+    private val inputs = setOf("textbox", "input", "searchbox", "combobox", "listbox", "checkbox", "radio", "switch", "spinbutton")
+
+    /** One line: where the page went, what was filled, ticked or picked, what's new. Secret and card values never show. */
+    fun changes(b: PhonePolicy.Snapshot, a: PhonePolicy.Snapshot): String {
+        val out = ArrayList<String>()
+        if (place(b.url) != place(a.url)) out += "the page went from ${place(b.url).ifBlank { "a page" }} to ${place(a.url).ifBlank { "a page" }}" +
+            (if (a.title.isNotBlank()) " (\u201c${a.title.take(60)}\u201d)" else "")
+        else {
+            if (b.title != a.title && a.title.isNotBlank()) out += "the title is now \u201c${a.title.take(60)}\u201d"
+            val old = b.nodes.filter { it.role in inputs }.associateBy { it.id + "|" + it.name }
+            for (n in a.nodes.filter { it.role in inputs }) {
+                val o = old[n.id + "|" + n.name] ?: continue
+                val label = n.name.ifBlank { "a field" }.take(40)
+                when {
+                    n.checked != null && n.checked != o.checked -> out += (if (n.checked == true) "ticked" else "unticked") + " \u201c$label\u201d"
+                    n.value != o.value && n.value.isBlank() -> out += "cleared \u201c$label\u201d"
+                    n.value != o.value && (n.sensitive || n.card) -> out += "filled \u201c$label\u201d (hidden)"
+                    n.value != o.value -> out += "set \u201c$label\u201d to \u201c${n.value.take(40)}\u201d"
+                }
+                if (out.size >= 8) break
+            }
+            val newHeads = a.headings.filter { it.isNotBlank() && it !in b.headings }.take(3)
+            if (newHeads.isNotEmpty()) out += "new on the page: " + newHeads.joinToString("; ") { "\u201c${it.take(50)}\u201d" }
+        }
+        val vb = PhonePolicy.verify(b); val va = PhonePolicy.verify(a)
+        if (va.confirmed && !vb.confirmed) out += "the page now shows a confirmation" + (va.ref?.let { " ($it)" } ?: "")
+        if (va.loggedIn && !vb.loggedIn) out += "they're signed in now"
+        if (vb.blocker != null && va.blocker == null) out += "the block (${vb.blocker.take(40)}) is gone"
+        return if (out.isEmpty()) "nothing visible changed." else out.joinToString("; ").replaceFirstChar { it.uppercase() } + "."
+    }
+}

@@ -184,7 +184,25 @@ ARGUS-PHONE.md 4a, the handoff ladder. Branch `feat/phone-handoff-cards`.
   the "no saved login" reply points at the card instead of Take control.
 - Code: `HandoffCards` + `Handoffs` in `PhoneBrowserTools.kt`; the agent's cards in `Agent.kt` (`phoneCards`, next to
   `phoneInInstance`). Tests: `PhoneToolSimTest` (sign-in card, saved login, cancel, card fields, choice, read hint).
-- **Not in step 2**: the instance chip's "Waiting on you" (the card and the notification show it today); a fresh read
+- **Not in step 2** (closed in "Step 2 gaps" below): the instance chip's "Waiting on you" (the card and the notification show it today); a fresh read
   plus "what changed while you had it" after Hand back; CredAsk swapping a typed-in-chat password ask for the card
   while Argus Phone (not the background browser) has the page.
+
+## Step 2 gaps (2026-11-25)
+Branch `feat/phone-step2-gaps`. ARGUS-PHONE.md 4b. Closes the three "Not in step 2" items.
+- **Waiting on you for chat cards**: `PhoneDriver.asking` / `PhoneBrowser.Live.asking` hold the card's line while a
+  sign_in / code / choice card waits (set before the card, cleared in `finally`, and by Stop). `ArgusPhoneCore.onLive`
+  puts a `chat_card` PendingCard on the attached instance, so `doing()` (the notification) says "Waiting on you",
+  `DeepState` reports `mode: waiting_on_user`, the chat tile stays up (`PhoneUiRules.showTile(..., asking)`) with
+  "Waiting on you: ..." on its chip, and the PiP label says "Waiting on you". Agent's `phoneCards` posts the
+  action-required notification when the user is away from the app.
+- **What changed while you had it**: `HandBack.control` (PhoneBrowserTools.kt) reads the page before Take control and
+  again after Hand back; `HandBack.changes` gives one line: page moved (host + path, no query), fields set / cleared /
+  ticked (sensitive and card values only "(hidden)"), new headings, a confirmation, a sign-in, a blocker gone.
+- **CredAsk on Argus Phone**: `CredAsk.decidePhone` swaps a chat ask for a login into `phone_handoff kind=sign_in`
+  when `PhoneBrowser.agentSite()` is set (Argus drives a page there); otherwise the background browser's secure form
+  as before.
+- Tests: PhoneToolSimTest (aWaitingCardIsVisibleAndClearedAfter, handBackSaysWhatChanged, the captcha hand-back line),
+  PhoneUiFixesTest (tile, chip, PiP), SecureFormRenderTest (onArgusPhoneTheAskBecomesItsSignInCard), PhoneInstancesTest
+  (aChatCardShowsWaitingOnYouOnTheInstance).
 

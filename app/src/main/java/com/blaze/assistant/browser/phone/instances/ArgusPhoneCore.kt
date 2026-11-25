@@ -356,7 +356,7 @@ class ArgusPhoneCore(
      * instance goes cold (checkpointed). A page that appears with no instance attached (the user opened Argus Phone)
      * is adopted by the instance they watched last, or a new one.
      */
-    suspend fun onLive(mode: PhonePolicy.Mode, url: String, title: String, site: String, reason: String?) = lock.withLock {
+    suspend fun onLive(mode: PhonePolicy.Mode, url: String, title: String, site: String, reason: String?, asking: String? = null) = lock.withLock {
         load()
         var id = registry.active
         if (id == null) {
@@ -378,10 +378,17 @@ class ArgusPhoneCore(
         registry.update(id) { i ->
             val b = if (url.isBlank()) i.browser else BrowserState(url, title, site, if (i.browser?.url == url) i.browser.scrollY else 0)
             i.copy(mode = mode, browser = b, tier = Tier.LIVE, lastActiveAt = if (mode != i.mode) t else i.lastActiveAt,
-                cards = if (mode == PhonePolicy.Mode.WAITING) listOf(PendingCard("handoff", "take_control", reason.orEmpty().ifBlank { "Waiting on you" }, t)) else emptyList(),
+                cards = cardsFor(mode, reason, asking, t),
                 unsaved = i.unsaved && i.browser?.url == url)
         }
         service.changed()
+    }
+
+    /** What waits on the user in the attached instance: Take control, or a chat card (sign-in, code, choice; step 2). */
+    private fun cardsFor(mode: PhonePolicy.Mode, reason: String?, asking: String?, t: Long): List<PendingCard> = when {
+        mode == PhonePolicy.Mode.WAITING -> listOf(PendingCard("handoff", "take_control", reason.orEmpty().ifBlank { "Waiting on you" }, t))
+        asking != null && mode != PhonePolicy.Mode.OFF -> listOf(PendingCard("card", "chat_card", asking.ifBlank { "Waiting on you" }, t))
+        else -> emptyList()
     }
 
     /** Lapsed locks (checkpoint, then free) and the budget. Run every half minute by the service, and after changes. */

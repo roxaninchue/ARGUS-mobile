@@ -221,7 +221,7 @@ private fun PhoneScreen(control: Boolean, onTake: () -> Unit, onHandBack: () -> 
                 when {
                     control -> Text(PhoneUiRules.controlLine(live.agentWaiting),
                         maxLines = 2, style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Color(pal.barText)))
-                    else -> StatusPill(PhoneUiRules.pill(live.mode, live.step, live.reason), working = live.mode == PhonePolicy.Mode.AGENT,
+                    else -> StatusPill(PhoneUiRules.pill(live.mode, live.step, live.reason, live.asking), working = live.mode == PhonePolicy.Mode.AGENT,
                         chip = Color(pal.chip), onChip = Color(pal.onChip))
                 }
             }

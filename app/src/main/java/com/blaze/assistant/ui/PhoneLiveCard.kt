@@ -81,7 +81,7 @@ fun PhoneLiveCard() {
         while (live.mode == PhonePolicy.Mode.AGENT && now - live.at < PhoneUiRules.RECENT_MS) { delay(5_000); now = System.currentTimeMillis() }
     }
     val needsUser = live.mode == PhonePolicy.Mode.WAITING
-    val show = PhoneUiRules.showTile(live.mode, live.at, now, hiddenAt)
+    val show = PhoneUiRules.showTile(live.mode, live.at, now, hiddenAt, live.asking != null)
     val ctx = LocalContext.current
     val pal = phonePalette()
     AnimatedVisibility(show, enter = fadeIn(tween(180)) + slideInVertically(tween(220)) { it / 3 },
@@ -89,7 +89,7 @@ fun PhoneLiveCard() {
         DisposableEffect(Unit) { PhoneBrowser.watch(true); onDispose { PhoneBrowser.watch(false) } }
         val shape = Glass.card
         val host = PhoneUiRules.host(live.url)
-        val pill = PhoneUiRules.pill(live.mode, live.step, live.reason)
+        val pill = PhoneUiRules.pill(live.mode, live.step, live.reason, live.asking)
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
             .shadow(14.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(shape).background(Color(pal.card)).border(1.dp, Color(pal.cardBorder), shape)

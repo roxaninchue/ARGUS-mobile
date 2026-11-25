@@ -3804,8 +3804,12 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                     if (!routine && !credGuarded && (reply.optJSONArray("tool_calls")?.length() ?: 0) == 0) try {
                         val said = ReplyParts.split((reply.opt("content") as? String).orEmpty(), final = true).text
                         if (CredAsk.asks(said)) {
-                            val host = kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.browser.BrowserEngine.host() }
-                            CredAsk.decide(said, host, formAsks[host] ?: 0, credGuarded, ToolCalls.names(allTools), lastUserText())?.let { c ->
+                            // Step 2 gap: when Argus Phone (not the background browser) has the page, its own sign-in card.
+                            val phoneHost = kotlinx.coroutines.withContext(Dispatchers.Main) { PhoneBrowser.agentSite() }
+                            val host = if (phoneHost.isNotBlank()) "" else kotlinx.coroutines.withContext(Dispatchers.Main) { com.blaze.assistant.browser.BrowserEngine.host() }
+                            val swap = CredAsk.decidePhone(said, phoneHost, credGuarded, ToolCalls.names(allTools))
+                                ?: CredAsk.decide(said, host, formAsks[host] ?: 0, credGuarded, ToolCalls.names(allTools), lastUserText())
+                            swap?.let { c ->
                                 credGuarded = true
                                 if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
                                 reply.put("content", JSONObject.NULL).put("tool_calls", JSONArray().put(c))
@@ -4836,16 +4840,23 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         private val phoneCards = object : com.blaze.assistant.browser.phone.HandoffCards {
             override suspend fun secure(site: String, title: String, reason: String, fields: List<SecureInput.Field>): SecureInput.Answer? {
                 add(Role.STEP, "Waiting for you: ${title.take(60)}")
+                awayNote(title, site)
                 mood = Mood.IDLE
                 try { return askSecure(SecureInput.Request(ids.getAndIncrement(), site, title, reason, fields, false, kotlinx.coroutines.CompletableDeferred()), this@Session) }
                 finally { mood = Mood.ACTING }
             }
             override suspend fun choose(question: String, options: List<String>): String {
                 add(Role.STEP, "Asked: ${question.take(80)}")
+                awayNote(question, PhoneBrowser.site().ifBlank { "${BrandName.NAME} Phone" })
                 mood = Mood.IDLE
                 val a = try { askUser(question, options, title) } finally { mood = Mood.ACTING }
                 add(Role.STEP, "You answered: ${a.take(80)}")
                 return a
+            }
+            /** Step 2 gap: a card waits on the user while they're away from the app: one notification says so (4b). */
+            private fun awayNote(what: String, site: String) {
+                if (!inForeground) try { Notifier.actionRequired("Waiting on you: ${what.take(50)}", site,
+                    "${BrandName.NAME} Phone needs an answer in the chat ($site): ${what.take(80)}.") } catch (_: Throwable) { }
             }
             override fun saved(site: String, name: String) = Vault.get(site, name)
             override fun save(site: String, name: String, value: String) = Vault.save(site, name, value)

@@ -125,7 +125,7 @@ fun PhonePipView() {
     DisposableEffect(Unit) { PhoneBrowser.watch(true); onDispose { PhoneBrowser.watch(false) } }
     Box(Modifier.fillMaxSize().background(Color(pal.frame))) {
         PhoneFrame(live.frameNo, Modifier.fillMaxSize(), pal)
-        PhonePip.label(working, live.mode, live.step)?.let { t ->
+        PhonePip.label(working, live.mode, live.step, live.asking != null)?.let { t ->
             Text(t, Modifier.align(Alignment.BottomCenter).padding(6.dp).clip(Glass.pill).background(Color(pal.chip)).padding(horizontal = 8.dp, vertical = 3.dp),
                 style = TextStyle(fontFamily = Type.Sans, fontWeight = FontWeight.Medium, fontSize = 11.sp, color = Color(pal.onChip)))
         }

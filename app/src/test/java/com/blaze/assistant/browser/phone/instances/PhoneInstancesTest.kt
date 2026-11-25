@@ -213,6 +213,21 @@ class PhoneInstancesTest {
         assertEquals(1, st.prune(now + InstanceStore.KEEP_CLOSED_MS + 1))
     }
 
+    @Test fun aChatCardShowsWaitingOnYouOnTheInstance() = runBlocking {
+        val c = core()
+        c.powerOn()
+        c.beforeBrowserTool(argus, null, acts = true)
+        c.onLive(PhonePolicy.Mode.AGENT, "https://demo.example/login", "Login", "demo.example", null, "Sign in to Demo")
+        val i = c.registry.get(c.registry.active)!!
+        assertEquals("chat_card", i.cards.single().kind)
+        assertTrue(c.doing("Typing").startsWith("Waiting on you"))
+        val snap = c.snapshot()
+        val o = (0 until snap.length()).map { snap.getJSONObject(it) }.first { it.optBoolean("active") }
+        assertEquals("waiting_on_user", o.getString("mode"))
+        c.onLive(PhonePolicy.Mode.AGENT, "https://demo.example/login", "Login", "demo.example", null, null)
+        assertTrue(c.registry.get(c.registry.active)!!.cards.isEmpty())
+    }
+
     @Test fun afterProcessDeathInstancesComeBackColdFromCheckpoints() = runBlocking {
         val root = File(tmp, "death")
         val c1 = core(root = root)

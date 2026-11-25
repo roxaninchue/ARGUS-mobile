@@ -249,6 +249,18 @@ class SecureFormRenderTest {
         assertEquals(listOf(SecureInput.Kind.PASSWORD), kinds(JSONObject(pin.getJSONObject("function").getString("arguments"))))
     }
 
+    @Test fun onArgusPhoneTheAskBecomesItsSignInCard() = five {
+        val ask = "Could you please provide your username and password?"
+        val known = names + CredAsk.PHONE
+        val c = CredAsk.decidePhone(ask, "demo-tables.test", false, known)!!.getJSONObject("function")
+        assertEquals("phone_handoff", c.getString("name"))
+        assertEquals("sign_in", JSONObject(c.getString("arguments")).getString("kind"))
+        assertNull("no Argus Phone page", CredAsk.decidePhone(ask, "", false, known))
+        assertNull("once per turn", CredAsk.decidePhone(ask, "demo-tables.test", true, known))
+        assertNull("tool not offered", CredAsk.decidePhone(ask, "demo-tables.test", false, names))
+        assertNull("not an ask", CredAsk.decidePhone("You're signed in.", "demo-tables.test", false, known))
+    }
+
     @Test fun guardRespectsLimitsAndNeverAsksForCards() = five {
         val ask = "Could you please provide your username and password?"
         assertNull("no page open", CredAsk.decide(ask, "", 0, false, names))

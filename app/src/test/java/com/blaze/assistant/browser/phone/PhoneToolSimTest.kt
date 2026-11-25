@@ -26,6 +26,8 @@ class PhoneToolSimTest {
         override fun mode() = mode
         override fun site() = "demo-tables.test"
         override fun step(what: String) { steps++ }
+        val asks = mutableListOf<String?>()
+        override fun asking(what: String?) { asks += what }
         override suspend fun open(url: String): String {
             mode = PhonePolicy.Mode.AGENT
             page = if (url.contains("login") || !signedIn) "login" else "home"
@@ -197,7 +199,7 @@ class PhoneToolSimTest {
         act(d, "click", "target" to "e10")
         assertFalse(d.booked)   // the captcha held it: no false done
         val r = run(d, "phone_handoff", JSONObject().put("reason", "Solve the captcha"))
-        assertTrue(r.startsWith("The user handed back. Fresh read:")); assertEquals(1, d.handoffs)
+        assertTrue(r, r.startsWith("The user handed back. While they had it:") && r.contains("Fresh read:")); assertEquals(1, d.handoffs)
         assertTrue(act(d, "click", "target" to "e10").contains("VERIFIED: the page shows"))
         // Nobody comes: an honest stop.
         val d2 = DemoSite(userTakesOver = false); signIn(d2)
@@ -299,5 +301,35 @@ class PhoneToolSimTest {
         assertEquals("Asking you to sign in", PhoneBrowserTools.describe("phone_handoff", JSONObject().put("kind", "sign_in")))
         val code = Handoffs.code(PhonePolicy.Snapshot("2FA", "https://x.test/2fa", "Enter the code", listOf(PhonePolicy.Node("e1", "textbox", "Verification code", "")), false))
         assertEquals("e1", code?.node); assertEquals("code", code?.field?.name)
+    }
+
+    // ---------- Step 2 gaps (docs/ARGUS-PHONE.md 4b) ----------
+    @Test fun aWaitingCardIsVisibleAndClearedAfter() {
+        val d = DemoSite(); run(d, "phone_open", JSONObject().put("url", "https://demo-tables.test/login"))
+        handoff(d, Cards(), "sign_in")
+        assertEquals(listOf("Sign in to Demo Tables", null), d.asks)
+        val d4 = DemoSite(); run(d4, "phone_open", JSONObject().put("url", "https://demo-tables.test/login")); handoff(d4, Cards(answer = null), "sign_in")
+        assertEquals("cleared after a cancel too", listOf("Sign in to Demo Tables", null), d4.asks)
+        val d2 = DemoSite(); signIn(d2); handoff(d2, Cards(), "choice", "19:00", "20:00")
+        assertEquals(listOf("Sign in to Demo Tables", null), d2.asks)
+        val c = Cards(vault = hashMapOf("demo-tables.test/email" to "a@b.test", "demo-tables.test/password" to "p"))
+        val d3 = DemoSite(); run(d3, "phone_open", JSONObject().put("url", "https://demo-tables.test/login")); handoff(d3, c, "sign_in")
+        assertTrue("a silent fill asks nothing", d3.asks.isEmpty())
+    }
+
+    @Test fun handBackSaysWhatChanged() {
+        fun node(id: String, name: String, value: String = "", checked: Boolean? = null, sens: Boolean = false) =
+            PhonePolicy.Node(id, if (checked != null) "checkbox" else "textbox", name, value, checked = checked, sensitive = sens)
+        val b = PhonePolicy.Snapshot("Checkout", "https://shop.test/cart?sid=1", "", listOf(node("e1", "Name"), node("e2", "Gift wrap", checked = false),
+            node("e3", "Card code", sens = true), node("e4", "Note", "hi")), false)
+        val a = b.copy(nodes = listOf(node("e1", "Name", "Finn"), node("e2", "Gift wrap", checked = true), node("e3", "Card code", "123", sens = true), node("e4", "Note")),
+            headings = listOf("Delivery"))
+        val line = HandBack.changes(b, a)
+        assertTrue(line, line.contains("\u201cName\u201d to \u201cFinn\u201d") && line.contains("ticked \u201cGift wrap\u201d") &&
+            line.contains("filled \u201cCard code\u201d (hidden)") && line.contains("cleared \u201cNote\u201d") && line.contains("Delivery"))
+        assertFalse("secret values never show", line.contains("123"))
+        val moved = HandBack.changes(b, PhonePolicy.Snapshot("Thanks", "https://shop.test/done?token=abc", "Order confirmed", emptyList(), false))
+        assertTrue(moved, moved.contains("shop.test/cart to shop.test/done")); assertFalse(moved, moved.contains("token"))
+        assertEquals("nothing visible changed.", HandBack.changes(b, b))
     }
 }
