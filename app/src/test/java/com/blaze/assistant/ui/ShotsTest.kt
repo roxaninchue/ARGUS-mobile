@@ -558,6 +558,26 @@ open class ShotsTest {
         }
     }
 
+    private fun fakePicture(seed: Int): androidx.compose.ui.graphics.ImageBitmap {
+        val b = Bitmap.createBitmap(480, 360, Bitmap.Config.ARGB_8888)
+        val cv = android.graphics.Canvas(b)
+        val cols = listOf(0xFFFF9A3C.toInt(), 0xFF4C7DFF.toInt(), 0xFF66D8FF.toInt(), 0xFF2E7D5B.toInt(), 0xFFB04AD8.toInt(), 0xFFE0C04A.toInt())
+        val p = android.graphics.Paint().apply { shader = android.graphics.LinearGradient(0f, 0f, 480f, 360f, cols[seed % cols.size], cols[(seed + 2) % cols.size], android.graphics.Shader.TileMode.CLAMP) }
+        cv.drawRect(0f, 0f, 480f, 360f, p)
+        val w = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FFFFFF; textSize = 120f }
+        cv.drawCircle(360f, 90f, 50f, w)
+        cv.drawText("${seed + 1}", 40f, 320f, w)
+        return b.asImageBitmap()
+    }
+
+    @Composable private fun RichFrame(dark: Boolean, md: String) {
+        CompositionLocalProvider(RichImages.Local provides { url: String -> fakePicture(url.filter { it.isDigit() }.takeLast(1).toIntOrNull() ?: 0) }) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 20.dp)) {
+                AnswerBody(1L, md)
+            }
+        }
+    }
+
     @Test fun richSteps() = shot("53-rich-steps") {
         RichFrame(false, "Here's how to turn on battery saver:\n\n1. **Open Settings** and scroll to the bottom.\n2. **Tap Battery and device care**: it's the green icon.\n3. **Turn on Power saving** and pick \u201cLimit apps\u201d if you want more.\n\n## Victoria Falls\n![Victoria Falls from the Zambian side](https://example.org/p1.jpg)\nThe falls are about **1.7 km** wide and 108 m tall, on the Zambezi between Zambia and Zimbabwe. Go in April or May for the biggest spray.\n\n![Rainbow](https://example.org/p2.jpg)\n![Bridge](https://example.org/p3.jpg)\n![Gorge](https://example.org/p4.jpg)")
     }
