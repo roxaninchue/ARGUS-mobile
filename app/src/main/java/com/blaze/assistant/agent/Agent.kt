@@ -1629,7 +1629,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
         @Volatile var richRepaired = false
         // 0.53.7: per-turn flags live on the Session (reset at turn start), not as runLoop locals: every local that lives
         // across a suspension point is saved and restored at each one, and runLoop hit the JVM's 64 KB method limit.
-        private var claimNudged = false; private var proofNudged = false; private var promiseNudged = false
+        private var claimNudged = false; private var proofNudged = false; private var promiseNudges = 0
         private var emptyNudged = false; private var echoNudged = false; private var leakNudged = false; private var stubNudged = false
         private var refusalNudged = false; private var credGuarded = false; private var ledgerAsks = 0
         /** 0.53.6: tool calls not run this turn (cut off / unreadable), by tool; two of the same tool end the turn (cutStopped). */
@@ -3432,8 +3432,8 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                 resumeGoal = null
                 var nudgeCount = 0
                 var rewroteClaim = false
-                // One re-ask each per turn (promiseNudged 0.49.0, ledgerAsks = owed-reply ledger, credGuarded = CredAsk 0.45.19); Session fields (0.53.7).
-                claimNudged = false; proofNudged = false; promiseNudged = false; emptyNudged = false; echoNudged = false; stubNudged = false
+                // One re-ask each per turn (promiseNudges 0.49.0: up to ActionPromise.MAX_NUDGES since 26 Nov 2026, ledgerAsks = owed-reply ledger, credGuarded = CredAsk 0.45.19); Session fields (0.53.7).
+                claimNudged = false; proofNudged = false; promiseNudges = 0; emptyNudged = false; echoNudged = false; stubNudged = false
                 leakNudged = false; refusalNudged = false; credGuarded = false; ledgerAsks = 0
                 cutFails.clear(); cutStopped = false; cutCalls = emptyMap()
                 var lastOkStep = ""
@@ -3979,12 +3979,13 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                         // honest line with a Try again chip.
                         val phoneP = if (miss == null && synchronized(turnTools) { turnTools.isEmpty() }) ActionPromise.promises(textOut) else emptyList()
                         // Unreleased after 0.54.1: a final reply ending "Now let me write the PDF script…" (tools ran earlier) also gets one nudge.
+                        // 26 Nov 2026 (Finn: "Let me try that exact name" and the turn ended): up to ActionPromise.MAX_NUDGES re-asks, then the honest line.
                         // …and a turn asked for a PDF / Word / PowerPoint file can't end without it (ActionPromise.owedFile).
                         val owed = if (miss == null && !routine && phoneP.isEmpty()) ActionPromise.owedFile(lastUserText(), calledNames, savedPath, textOut) else null
                         val promised = phoneP.ifEmpty { if (miss == null && !routine) listOfNotNull(owed?.let { ActionPromise.OWED + it } ?: ActionPromise.dangling(textOut)) else emptyList() }
                         if (promised.isNotEmpty()) {
-                            if (!promiseNudged && nudgesLeft > 0 && step < maxSteps - 3) {
-                                promiseNudged = true
+                            if (promiseNudges < ActionPromise.MAX_NUDGES && nudgesLeft > 0 && step < maxSteps - 3) {
+                                promiseNudges++
                                 nudgeCount++
                                 nudgesLeft--
                                 if (liveId >= 0) { msgs = msgs.filterNot { it.id == liveId }; liveId = -1L }
@@ -3992,7 +3993,7 @@ data class Attachment(val name: String, val parts: List<JSONObject>, val thumb: 
                                 history.put(JSONObject().put("role", "user").put("content", RetryGuard.anchor(if (phoneP.isEmpty()) ActionPromise.nextNudge(promised.first()) else ActionPromise.nudge(promised.first()), lastUserText())))
                                 continue
                             }
-                            if (phoneP.isNotEmpty() || owed != null) { textOut = ActionPromise.honest(textOut, phoneP); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true }
+                            textOut = ActionPromise.honest(textOut, promised); reply.put("content", textOut); pendingFollowups = listOf(NudgePolicy.TRY_AGAIN); rewroteClaim = true
                         }
                     }
                     // v0.45.13 verify-after-act: opening an app is step 1, never the goal. A "done" for a multi-step ask whose only

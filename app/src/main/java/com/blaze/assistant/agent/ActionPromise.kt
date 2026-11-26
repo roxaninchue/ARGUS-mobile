@@ -63,15 +63,28 @@ object ActionPromise {
     // Unreleased after 0.54.1 (owner's phone, 21 Nov 08:12): after installing reportlab the reply ended "reportlab is ready. Now let
     // me write the full PDF-building script with all the data" and the turn stopped, twice, so no PDF ever came. Tools had run,
     // so [promises] (no-tool turns, phone things only) never looked. [dangling] reads only the LAST sentence of a final reply.
-    private val nextRx = Regex("""^(?:(?:ok(?:ay)?|right|great|now|next|so|then|alright)[,!.\s—-]*)*(?:(?:let me|i'?ll|i will|i'?m going to|i am going to|going to)\s+(?:now\s+|just\s+|go ahead and\s+)?(?:build|write|compile|make|create|generate|run|draft|put together|assemble|export|render|save|finish|start|fix|install|search|read|pull|fetch|turn|convert|format)\b|(?:building|writing|compiling|making|creating|generating|exporting|rendering|drafting|assembling|putting together|starting on|moving on to|on to)\b)""", ic)
-    private val notNext = Regex("""\b(?:if you|once you|when you|after you|would you|do you|want me|shall i|should i|later|tomorrow|wait|waiting|once it|when it|as soon as)\b""", ic)
+    private val nextRx = Regex("""^(?:(?:ok(?:ay)?|right|great|now|next|so|then|alright|oops|hmm|ah|got it)[,!.\s—-]*)*(?:(?:let me|i'?ll|i will|i'?m going to|i am going to|going to)\s+(?:now\s+|just\s+|go ahead and\s+|quickly\s+|actually\s+|first\s+|instead\s+)?(?:build|write|compile|make|create|generate|run|draft|put together|assemble|export|render|save|finish|start|fix|install|search|read|pull|fetch|turn|convert|format|try|retry|re-?run|check|look|test|verify|open|clone|download|use|grab|find|query|list|call|update|edit|patch|apply|push|inspect|debug|dig|set up|add|redo)\b|(?:building|writing|compiling|making|creating|generating|exporting|rendering|drafting|assembling|putting together|starting on|moving on to|on to)\b)""", ic)
+    // 26 Nov 2026 (Finn's phone, DeepSeek V4.1 Flash): after a failed command the reply ended "Let me try that exact name" and the
+    // turn stopped. A bare "Trying X now" / "Checking the logs…" is caught too, but only with now / again / an ellipsis / a colon,
+    // so "Looking good" or "Testing passed" never count.
+    private val nowIngRx = Regex("""^(?:(?:ok(?:ay)?|right|now|so|then|alright)[,!.\s—-]*)*(?:trying|retrying|re-?running|running|checking|installing|testing|searching|fetching|looking (?:into|up|at|for)|opening|downloading|cloning|calling|fixing|pulling)\b""", ic)
+    private val nowMark = Regex("""\b(?:now|again|right away)\b|…|\.\.\.|:\s*$""", ic)
+    private val notNext = Regex("""\b(?:if you|once you|when you|after you|would you|do you|want me|shall i|should i|later|tomorrow|wait|waiting|once it|when it|as soon as|next time|from now on|going forward|in (?:the )?future|let me know)\b""", ic)
 
-    /** The last sentence of [reply] when it only announces the next step ("Now let me write the script…"), else null. Pure. */
+    /**
+     * The last sentence of [reply] when it only announces the next step ("Now let me write the script…", "Let me try that
+     * exact name", "Trying Argus-cli now"), else null. A question, an offer ("Want me to…?", "Let me know if…") or a
+     * sign-off about later ("I'll check back tomorrow") is not one. Pure.
+     */
     fun dangling(reply: String): String? {
         val last = sentences(reply.replace(Regex("""<<\s*(?:done|continue)\s*>>""", ic), "")).lastOrNull() ?: return null
-        if (last.endsWith("?") || last.length > 220 || notNext.containsMatchIn(last)) return null
-        return last.takeIf { nextRx.containsMatchIn(it) }
+        val norm = last.replace('\u2019', '\'').trimEnd('*', '_', ' ')
+        if (norm.endsWith("?") || norm.length > 220 || notNext.containsMatchIn(norm)) return null
+        return last.takeIf { nextRx.containsMatchIn(norm) || (nowIngRx.containsMatchIn(norm) && nowMark.containsMatchIn(norm)) }
     }
+
+    /** How many times one turn is sent back to do the step its reply announced, before the honest line (26 Nov 2026: 2). */
+    const val MAX_NUDGES = 2
 
     fun nextNudge(said: String): String = if (said.startsWith(OWED)) fileNudge(said.removePrefix(OWED)) else "[${BrandName.NAME} check] Your reply ended with \u201c${said.take(160)}\u201d and the turn stopped there, so that " +
         "step never happened. Do it now with the real tool calls and carry on until the user's ask is finished and delivered (for a file: made, " +
